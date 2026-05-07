@@ -1,0 +1,13 @@
+﻿notebook,source,step,duration_seconds,records_processed,records_per_second,status,error_message,notes
+02_fuentes_mexico,SAT 69-B,download,0.0,0,0.0,manual_only,,Sin URL directa estable configurada; usar C:\Users\Giovanny\Desktop\web_scraping_peps\notebooks\raw\sat_69b
+02_fuentes_mexico,Servidores publicos sancionados,download,0.0,0,0.0,manual_only,,Sin URL directa estable configurada; usar C:\Users\Giovanny\Desktop\web_scraping_peps\notebooks\raw\sancionados
+02_fuentes_mexico,CompraNet,download,0.0,0,0.0,skipped_by_default,,ENABLE_LARGE_DOWNLOADS=False; usar carga manual en raw/compranet
+02_fuentes_mexico,DeclaraNet,download,0.0,0,0.0,manual_only,,Sin URL directa estable configurada; usar C:\Users\Giovanny\Desktop\web_scraping_peps\notebooks\raw\declaranet
+02_fuentes_mexico,SAT 69-B,parsing,0.001246,0,0.0,no_files,,files=0
+02_fuentes_mexico,Servidores publicos sancionados,parsing,0.000781,0,0.0,no_files,,files=0
+02_fuentes_mexico,CompraNet contratos publicos,parsing,0.000682,0,0.0,no_files,,files=0
+02_fuentes_mexico,DeclaraNet,parsing,0.000699,0,0.0,no_files,,files=0
+02_fuentes_mexico,SAT 69-B,matching,0.000324,0,0.0,no_candidates,,Coloca CSV/XLSX con columna de nombre en C:\Users\Giovanny\Desktop\web_scraping_peps\notebooks\raw\sat_69b
+02_fuentes_mexico,Servidores publicos sancionados,matching,0.00018,0,0.0,no_candidates,,Coloca CSV/XLSX con columna de nombre en C:\Users\Giovanny\Desktop\web_scraping_peps\notebooks\raw\sancionados
+02_fuentes_mexico,CompraNet contratos publicos,matching,0.000174,0,0.0,no_candidates,,Coloca CSV/XLSX con columna de nombre en C:\Users\Giovanny\Desktop\web_scraping_peps\notebooks\raw\compranet
+02_fuentes_mexico,DeclaraNet,matching,0.00018,0,0.0,no_candidates,,Coloca CSV/XLSX con columna de nombre en C:\Users\Giovanny\Desktop\web_scraping_peps\notebooks\raw\declaranet

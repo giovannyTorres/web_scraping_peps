@@ -1,0 +1,2 @@
+﻿test,synthetic_queries,mock_records,nominal_comparisons,duration_seconds,queries_per_second,matches_score_60_plus,avg_best_score
+rapidfuzz_extractOne_10000_vs_5000,10000,5000,50000000,0.923439,10829.08,10000,99.77
