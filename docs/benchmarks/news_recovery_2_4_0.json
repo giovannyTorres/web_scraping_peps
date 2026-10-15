@@ -1,12 +1,12 @@
 {
   "version": "2.4.0",
-  "validated_at": "2026-10-15T21:45:43.887800+00:00",
+  "validated_at": "2026-10-15T22:03:34.409149+00:00",
   "scope": "Synthetic local data, real SQLite scheduler/HTTP/analysis; no user bank accessed. Separate public source availability verification.",
   "unit": {
     "total": 437,
     "passed": 430,
     "skipped_optional_spacy": 7,
-    "seconds": 34.809
+    "seconds": 30.942
   },
   "browser": {
     "guided_workflow": {
@@ -210,7 +210,10 @@
     "peps/web/style.css": "0c3eb12369054631d865c3a6e32763af3cafc8591f2656bd32e370ee276a93cf",
     "scripts/test_download_recovery_ui.py": "e77da6d9de534a0ea845e8dbabe5cc8666b51fc373db71342e234e58838da831",
     "scripts/test_legacy_download_upgrade.py": "f0d254852e94a024370ffe0c0d163dc0829794cf2f1cc2695546622bd83e81e2",
-    "tests/test_news_upgrade.py": "695115ec5bb46913f13c6fb5ea012d45e0dfe3d2d88ce4e2a07b2c332fde059b"
+    "tests/test_news_upgrade.py": "695115ec5bb46913f13c6fb5ea012d45e0dfe3d2d88ce4e2a07b2c332fde059b",
+    "tests/test_progress.py": "fd990ebff92954a33b1f9f5d5db1520cada7f71f91b212655126830b75ef1737",
+    "scripts/build_windows.ps1": "7251d1754f0bf40ab7d3c8809ef5d8b307e16f38499a2f00175483f3b66e179d",
+    ".github/workflows/tests.yml": "a94713ece7066e758afeda08f765eb56e1bed7dff5014447df4b7b6137b54d2c"
   },
   "legacy_2_3_1_upgrade": {
     "passed": true,

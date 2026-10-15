@@ -170,6 +170,11 @@ class ProgressTests(unittest.TestCase):
         source = dict(news.sources()[0], download_articles=True, article_terms_approved=True, min_interval_seconds=0,
                       urls=[f'https://example.org/feed-{index}' for index in range(3)])
         news.config_path.write_text(json.dumps({'sources': [source], 'search': {'strategy': 'feeds'}}), encoding='utf-8')
+        news.queue(window='eta-fixture')
+        # This exercises committed progress, not the wall-clock scheduler. Make
+        # the real feed jobs ready together even on slower Windows runners.
+        with self.engine.store.connection() as con:
+            con.execute("UPDATE jobs SET due=0 WHERE kind='news_feed'")
         events, snapshots, clock = [], [], [0.]
         tracker = OperationTracker(clock=lambda: clock[0])
         tracker.start('download', phase='download')
@@ -182,12 +187,12 @@ class ProgressTests(unittest.TestCase):
 
             def fetch(self, url, _source):
                 if '/feed-' in url:
-                    feed_workers.wait(timeout=3)
+                    feed_workers.wait(timeout=10)
                     body = '<rss><channel>' + ''.join(
                         f'<item><title>Informe {i}</title><link>https://example.org/article-{i}</link></item>'
                         for i in range(6)) + '</channel></rss>'
                 else:
-                    article_workers.wait(timeout=3)
+                    article_workers.wait(timeout=10)
                     body = '<html><article><p>' + ('Contenido público de la sesión municipal. ' * 5) + url + '</p></article></html>'
                 return {'status': 'ok', 'url': url, 'body': body, 'sha256': digest(body), 'retrieved_at': now()}
 
@@ -199,7 +204,7 @@ class ProgressTests(unittest.TestCase):
             snapshots.append(tracker.snapshot())
 
         with patch('peps.collector.SafeFetcher', Fetcher):
-            result = news.acquire(workers=3, seconds=5, download_all=True, progress=observe)
+            result = news.acquire(queue=False, workers=3, seconds=30, download_all=True, progress=observe)
         self.assertEqual(result['completed'], 9)
         self.assertEqual(result['pending'], 0)
         self.assertEqual(result['total'], 9)

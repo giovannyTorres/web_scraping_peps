@@ -37,7 +37,7 @@ condiciones, comprobaciones y hashes del código validado.
 
 | Comprobación | Resultado |
 | --- | --- |
-| Suite completa | 437 pruebas: 430 correctas y 7 opcionales de spaCy omitidas; 34.809 s. |
+| Suite completa | 437 pruebas: 430 correctas y 7 opcionales de spaCy omitidas; 30.942 s. |
 | Flujo guiado | 72 comprobaciones de navegador. |
 | Descarga de 235 referencias y 64 pendientes | 39 comprobaciones de navegador, con scheduler y HTTP locales reales. |
 | Importación | 32 comprobaciones de navegador. |
