@@ -266,6 +266,16 @@ def pipeline_worker(args):
         timings['warm_heavy_explanation'] = summary(heavy_current)
         timings['warm_heavy_historical_explanation'] = summary(historical)
 
+        # Explicitly complete the local workflow for this synthetic fixture.
+        # Reading a previously computed result must never trigger scoring.
+        from peps.news import NewsAcquirer
+        from peps.workflow import GuidedWorkflow
+        workflow = GuidedWorkflow(engine.store, NewsAcquirer(engine).sources)
+        workflow.set_mode('local')
+        workflow.confirm_sources()
+        workflow.mark_analysis()
+        checks['http_workflow'] = {'mode': 'local', 'explicitly_confirmed': True,
+                                   'analysis_current': workflow.snapshot()['analysis_current']}
         # Calls made by the real UI, including a historical note beyond its page cap.
         server, token = create_server(engine)
         thread = threading.Thread(target=server.serve_forever, kwargs={'poll_interval': .05}, daemon=True)
@@ -282,6 +292,8 @@ def pipeline_worker(args):
             finally:
                 connection.close()
 
+        read_guard = patch.object(engine, 'rescore', side_effect=AssertionError('HTTP reads must not calculate scores'))
+        implicit_scoring = read_guard.start()
         try:
             http_small, sizes = [], []
             for _ in range(args.repeats):
@@ -311,7 +323,10 @@ def pipeline_worker(args):
                 'target_response_bytes': size, 'explanation_response_bytes': exp_size}
             if args.heavy_notes > 200:
                 assert outside and len(current['evidence']) == 200
+            checks['http_reads_implicit_scoring_calls'] = implicit_scoring.call_count
+            assert implicit_scoring.call_count == 0
         finally:
+            read_guard.stop()
             server.shutdown(); server.server_close(); thread.join(timeout=2)
 
         with engine.store.connection() as con:

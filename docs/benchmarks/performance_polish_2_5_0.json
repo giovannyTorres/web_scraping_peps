@@ -1,0 +1,2423 @@
+{
+  "version": "2.5.0",
+  "generated_at": "2026-10-15T22:37:25.816492+00:00",
+  "baseline_main": "d2adee42d18e2db544427b447f43e07828a69bc6",
+  "scope": "Synthetic local data, no personal or internal bank corpus. Browser HTTP is loopback.",
+  "code_sha256": {
+    "peps/__init__.py": "190183a7e2e6cbcced392a0e19e64045cf5ba8cee8394f78bc0c7fcb78bcf182",
+    "peps/__main__.py": "3129adff95e0f38b87ab34cddfc27082c7892bcaec267ff5d40f160fdf55b44a",
+    "peps/advanced_nlp.py": "1ac3b13daeaef6b76da4f553bfe367604790c04d670d0f4a6418d0f2fbb547cc",
+    "peps/app.py": "66311c509343fce11219e7a5499715a103b1bf53ffcba89ba4f1b90367042f01",
+    "peps/cli.py": "058c0826b124e26ed71ea026a4efa26aa8ad3f0c390f262e81ee96eb9c6670af",
+    "peps/collector.py": "65053cfa545eb618ef8272c9fcc082e1373402844bae27dd6576aabd5aa4e0dd",
+    "peps/context_model.py": "ada181d47cc0bd45c4bb3124db9920ee52fdb4e7115643a582c05f56de30a59b",
+    "peps/contextual.py": "7713ec854c309e1f4ca807fb31f2b464af5495fbd05e4f77ca42865e4baa40d8",
+    "peps/defaults/news_sources.json": "1d62a39e5c8ec5db9a0ac24a320bd397fd7b5183895a19dd6d45a46fd599a7d4",
+    "peps/defaults/sources.json": "d687b2ed74a193ceaf80aeccc9c3ebaf25701302d3de50313650195b24320e8a",
+    "peps/engine.py": "3f1f948bd2860674aaf9422636b50e1a829e051f3456a0f43cee6bedac076b37",
+    "peps/explainability.py": "79228231f1d1e10506adfe20be0aa96a978877cf73756e5cb85479592ce6bcfb",
+    "peps/identity.py": "f05524947d5b1d765803da6faa145f3b422a61a10971a1caca3c6983f3436d2f",
+    "peps/importing.py": "54fc447531cecb986c3e4be4570d0d3f2280a4f86d5dd50e60c0109bf008e310",
+    "peps/licenses/CONTEXT_MODEL_CODE.txt": "a16813d6a62abd0dc9287c55e432283deaac308e9896c24a8a8bf61dbb16ec85",
+    "peps/licenses/CONTEXT_MODEL_DATA.txt": "1ad99d1281f8ea7ea0964d348b82245382979a8d3cf2d9a2dc70bac49dbc9ed4",
+    "peps/licenses/FONT_SOURCES.txt": "2bd04ff61208bd77cfe4db490f3f167c614c4873218341f737cb75f834382e45",
+    "peps/licenses/LATO_OFL.txt": "74ba064d03f1f1c4a952da936c3eb71866c34404916734de3cae73b34357e59e",
+    "peps/licenses/SOURCE_SERIF_4_OFL.txt": "5f94c3fd3a23131a417ab5a0c8452de57e70c3cfb9f604d88241f7065ebf9fd9",
+    "peps/models/context-role-es-v1.json": "ba227bc782936a1e19901f8a1464618e160a5e525593c71affd1705f45a8f563",
+    "peps/news.py": "8ca959fdf08d32f54fc889d3009cc1e4dbe5389d38e0da556f682de99b2eaf9e",
+    "peps/news_search.py": "0834999b8a605edc133c27dcddab1df3602c13980add841c9770e55ef7e07593",
+    "peps/nlp.py": "f7e5ed8cbcf844139314a294932c511a4049802caadec64a4e14e70ea24daadf",
+    "peps/official.py": "c864c512d84b06a1caf3b458c1cadf5820b805a2be7dc6f1c4c59cae0cfb66cf",
+    "peps/scoring.py": "ff4e9e9f19cb0c781f02c06b68c2e2eaa00ee08f22dd8f71219fa5042879fe7e",
+    "peps/sources.py": "05875aa5ff4a42ff97f32de0dd8bc33921c6a0c6f056beb72beae1d384bc7f1a",
+    "peps/store.py": "1acd1ff51ba9993bf452b6327cdc24f69b6589f4e7e9a6e1266be665b8c4dbd9",
+    "peps/web/app.js": "065f54e1ccbb12d3c184c938e9f95fa5025f8f888fcc67ee2305c5232809a496",
+    "peps/web/fonts/Lato-Bold.woff2": "898fe2248312995b4b089601fa76a0da61b47de58b95bb88291230f2a3db764d",
+    "peps/web/fonts/Lato-Regular.woff2": "d414a00ed3e47a8cc7462bd43975f0214a05c10b70b5f22686430beb6057ae2c",
+    "peps/web/fonts/SourceSerif4-Roman.woff2": "4453d73855919eb67a8291bf2bad07782ecaf8af0e4e363d58948ff993209d51",
+    "peps/web/import.js": "001462e226849b64e06b267700e8105faca8530cf673a35e32afa2db67d05726",
+    "peps/web/index.html": "2b1a8ec6c629283b3b982de6885e37f85db9c170ecc27766e7423d06577a29ca",
+    "peps/web/style.css": "98745a5c58c07508c64bdef0304d95ef0e493160f006d8e160c47bce90299e8c",
+    "peps/web/workflow.js": "7991d04042d4900a314aa8e763d3cfcdbf868778a88ff7390d3bdbc32f1e6c19",
+    "peps/workflow.py": "55260ffeead1ee18fc764b1d02da22719cb61a2391778d2d2ee9649be052623a"
+  },
+  "unit": {
+    "tests": 454,
+    "passed": 447,
+    "skipped_optional_spacy": 7,
+    "wall_seconds": 35.331
+  },
+  "browser": {
+    "guided": {
+      "kind": "synthetic_offline_guided_workflow_browser_validation",
+      "processed_at": "2026-10-15T22:32:00.829188+00:00",
+      "playwright_version": "1.62.0",
+      "fixtures": "Una empresa ficticia, una fuente .invalid, dos tareas locales y una fase controlada de diez fragmentos sintéticos; sin HTTP externo.",
+      "scenarios": [
+        "Five explicit steps, one current step and keyboard navigation.",
+        "Import saves fictional entities and advances without automatically scoring.",
+        "Sources and local/online scope require explicit user selection.",
+        "Controlled download exposes truthful progress, elapsed time and unknown ETA.",
+        "Concurrent mutation APIs reject imports, source changes, analysis and duplicate starts.",
+        "Double click, a second tab and reload preserve the same server operation.",
+        "Pause waits for the active request and resume processes remaining work.",
+        "Analysis runs separately; results remain unavailable until explicit analysis.",
+        "Mobile and desktop screenshots, no horizontal overflow, no external requests or browser errors."
+      ],
+      "checks": {
+        "webscope_title_and_visible_wordmark": true,
+        "local_lato_regular_and_bold_and_serif_are_loaded": true,
+        "rendered_body_uses_lato": true,
+        "rendered_heading_uses_source_serif_4": true,
+        "heading_font_is_a_loaded_variable_face": true,
+        "font_files_are_served_locally_with_woff2_mime": true,
+        "canonical_palette_is_rendered_in_root_sidebar_navigation_and_wordmark": true,
+        "primary_hover_uses_canonical_light_blue": true,
+        "five_explicit_steps": true,
+        "empty_bank_starts_with_data": true,
+        "results_and_export_blocked_before_analysis": true,
+        "one_accessible_current_step": true,
+        "five_accessible_step_bars_and_global_progress": true,
+        "pending_step_bars_start_at_zero": true,
+        "step_navigation_works_with_keyboard": true,
+        "import_does_not_autoscore": true,
+        "import_advances_to_sources": true,
+        "explanation_api_does_not_score_implicitly": true,
+        "analysis_requires_explicit_mode_and_source_step": true,
+        "download_rejects_missing_source_authorization": true,
+        "explicit_source_authorization_saved": true,
+        "download_needs_explicit_network_consent": true,
+        "double_click_starts_one_download": true,
+        "download_reports_honest_indeterminate_progress": true,
+        "indeterminate_progress_does_not_invent_percentage": true,
+        "running_download_step_has_indeterminate_bar": true,
+        "busy_server_rejects_import_preview": true,
+        "busy_server_rejects_import_confirm": true,
+        "busy_server_rejects_import_entities": true,
+        "busy_server_rejects_import_documents": true,
+        "busy_server_rejects_source": true,
+        "busy_server_rejects_news_source": true,
+        "busy_server_rejects_workflow_mode": true,
+        "busy_server_rejects_workflow_confirm_sources": true,
+        "busy_server_rejects_workflow_analyze": true,
+        "busy_server_rejects_score": true,
+        "busy_server_rejects_news_attribute": true,
+        "busy_server_rejects_news_acquire": true,
+        "busy_server_rejects_export_ticket": true,
+        "busy_server_rejects_retry": true,
+        "busy_server_rejects_collect": true,
+        "busy_server_rejects_review": true,
+        "busy_server_rejects_replay": true,
+        "busy_explanation_request_cannot_change_scores": true,
+        "second_tab_observes_same_operation": true,
+        "reload_preserves_operation_without_restart": true,
+        "pause_request_accepted": true,
+        "pause_waits_for_inflight_request": true,
+        "paused_operation_does_not_claim_completion": true,
+        "paused_step_never_shows_complete_progress": true,
+        "pending_tasks_need_resume_or_explicit_partial_close": true,
+        "resume_accepted": true,
+        "resume_preserves_single_queue_and_completes_remaining_tasks": true,
+        "resume_does_not_enqueue_discovery_again": true,
+        "completed_download_still_requires_analysis": true,
+        "first_analysis_forecast_has_no_invented_numeric_eta": true,
+        "analysis_has_measured_units_and_bounded_percent": true,
+        "analysis_holds_server_mutation_lock": true,
+        "eta_uses_completed_units_and_elapsed_sample": true,
+        "phase_eta_is_measured_from_three_controlled_completed_units": true,
+        "numeric_eta_is_visible_after_sufficient_sample": true,
+        "analysis_step_bar_tracks_current_phase": true,
+        "explicit_analysis_enables_results_and_export": true,
+        "completed_steps_show_complete_bars": true,
+        "results_show_real_saved_score": true,
+        "mobile_has_no_horizontal_page_overflow": true,
+        "completed_flow_survives_reload": true,
+        "mobile_step_selector_is_operable": true,
+        "switching_scope_invalidates_previous_results": true,
+        "local_mode_blocks_download_api": true,
+        "explicit_local_analysis_does_not_download": true,
+        "no_external_requests": true,
+        "no_browser_errors": true,
+        "audit_chain_preserved": true
+      },
+      "timings_ms": {
+        "single_import_to_sources": 1181.5455920004752
+      },
+      "screenshots": [
+        "runtime/guided-ui-validation/desktop-empty-workflow.png",
+        "runtime/guided-ui-validation/desktop-running-download.png",
+        "runtime/guided-ui-validation/desktop-paused-download.png",
+        "runtime/guided-ui-validation/desktop-analysis-progress.png",
+        "runtime/guided-ui-validation/desktop-analysis-eta.png",
+        "runtime/guided-ui-validation/desktop-results.png",
+        "runtime/guided-ui-validation/mobile-results.png",
+        "runtime/guided-ui-validation/mobile-workflow.png",
+        "runtime/guided-ui-validation/mobile-local-results.png"
+      ],
+      "browser_version": "154.0.8037.57",
+      "branding": {
+        "requested": [
+          {
+            "family": "Lato",
+            "weight": 400,
+            "loaded": 1,
+            "checked": true
+          },
+          {
+            "family": "Lato",
+            "weight": 700,
+            "loaded": 1,
+            "checked": true
+          },
+          {
+            "family": "Source Serif 4",
+            "weight": 700,
+            "loaded": 1,
+            "checked": true
+          }
+        ],
+        "faces": [
+          {
+            "family": "Lato",
+            "weight": "400",
+            "status": "loaded"
+          },
+          {
+            "family": "Lato",
+            "weight": "700",
+            "status": "loaded"
+          },
+          {
+            "family": "Source Serif 4",
+            "weight": "200 900",
+            "status": "loaded"
+          }
+        ],
+        "root": {
+          "fontFamily": "Lato, \"Segoe UI\", Arial, sans-serif",
+          "fontWeight": "400",
+          "color": "rgb(7, 33, 70)",
+          "backgroundColor": "rgb(244, 244, 244)",
+          "borderLeftColor": "rgb(7, 33, 70)"
+        },
+        "body": {
+          "fontFamily": "Lato, \"Segoe UI\", Arial, sans-serif",
+          "fontWeight": "400",
+          "color": "rgb(7, 33, 70)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "borderLeftColor": "rgb(7, 33, 70)"
+        },
+        "heading": {
+          "fontFamily": "\"Source Serif 4\", Georgia, \"Times New Roman\", serif",
+          "fontWeight": "600",
+          "color": "rgb(7, 33, 70)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "borderLeftColor": "rgb(7, 33, 70)"
+        },
+        "sidebar": {
+          "fontFamily": "Lato, \"Segoe UI\", Arial, sans-serif",
+          "fontWeight": "400",
+          "color": "rgb(212, 237, 252)",
+          "backgroundColor": "rgb(7, 33, 70)",
+          "borderLeftColor": "rgb(0, 68, 129)"
+        },
+        "wordmarkAccent": {
+          "fontFamily": "Lato, \"Segoe UI\", Arial, sans-serif",
+          "fontWeight": "700",
+          "color": "rgb(45, 204, 205)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "borderLeftColor": "rgb(45, 204, 205)"
+        },
+        "navigation": {
+          "fontFamily": "Lato, \"Segoe UI\", Arial, sans-serif",
+          "fontWeight": "400",
+          "color": "rgb(255, 255, 255)",
+          "backgroundColor": "rgb(0, 68, 129)",
+          "borderLeftColor": "rgb(20, 100, 165)"
+        },
+        "primary": {
+          "fontFamily": "Lato, \"Segoe UI\", Arial, sans-serif",
+          "fontWeight": "700",
+          "color": "rgb(255, 255, 255)",
+          "backgroundColor": "rgb(0, 68, 129)",
+          "borderLeftColor": "rgb(0, 68, 129)"
+        },
+        "font_responses": [
+          {
+            "url": "http://127.0.0.1:46203/fonts/Lato-Regular.woff2",
+            "status": 200,
+            "content_type": "font/woff2"
+          },
+          {
+            "url": "http://127.0.0.1:46203/fonts/Lato-Bold.woff2",
+            "status": 200,
+            "content_type": "font/woff2"
+          },
+          {
+            "url": "http://127.0.0.1:46203/fonts/SourceSerif4-Roman.woff2",
+            "status": 200,
+            "content_type": "font/woff2"
+          }
+        ]
+      },
+      "page_errors": [],
+      "network_request_count": 173,
+      "expected_server_conflicts": 25,
+      "passed": true
+    },
+    "recovery": {
+      "kind": "synthetic_real_scheduler_download_recovery",
+      "processed_at": "2026-10-15T22:32:00.913462+00:00",
+      "checks": {
+        "fixture_has_235_metadata_articles_zero_bodies_64_deferred_tasks": true,
+        "targeted_historical_scope_is_saved_through_real_ui": true,
+        "historical_plan_is_entity_directed_and_does_not_claim_complete_archive": true,
+        "authorized_archive_plans_named_entity_searches_starting_in_2016": true,
+        "matching_persisted_scope_allows_resuming_the_existing_queue": true,
+        "real_scheduler_reports_backoff_without_fetching_future_jobs": true,
+        "backoff_reports_a_real_future_retry_instead_of_a_frozen_percentage": true,
+        "resume_keeps_exact_job_ids_attempts_due_and_payloads": true,
+        "235_articles_and_64_pending_are_visible": true,
+        "analysis_is_guarded_until_explicit_partial_close": true,
+        "paused_queue_survives_reload_without_automatic_acquisition": true,
+        "polling_preserves_scroll_in_the_large_news_register": true,
+        "mobile_has_no_horizontal_overflow": true,
+        "mobile_partial_close_is_reachable_by_scrolling": true,
+        "inactive_partial_close_keeps_all_64_jobs_and_records_limitations": true,
+        "partial_close_does_not_claim_full_download_completion": true,
+        "actual_analysis_completes_with_the_unchanged_inactive_queue": true,
+        "saved_score_archives_235_metadata_only_articles_and_64_pending_tasks": true,
+        "partial_acquisition_snapshot_remains_replayable": true,
+        "all_235_preserved_articles_remain_unique": true,
+        "mobile_resume_is_reachable_by_scrolling": true,
+        "every_resume_suppresses_new_discovery": true,
+        "resume_revokes_previous_partial_results_while_the_worker_is_active": true,
+        "active_worker_blocks_workflow_finish_download": true,
+        "active_worker_blocks_workflow_accept_partial": true,
+        "active_worker_blocks_workflow_analyze": true,
+        "active_worker_blocks_workflow_mode": true,
+        "active_worker_blocks_import_entities": true,
+        "pause_is_only_a_request_while_transport_is_active": true,
+        "resume_does_not_add_jobs_or_rewrite_other_backoff_tasks": true,
+        "real_worker_acknowledges_user_pause_and_preserves_64_pending": true,
+        "backoff_does_not_consume_an_extra_retry_attempt": true,
+        "partial_close_remains_available_after_user_pause": true,
+        "analysis_can_be_repeated_after_another_explicit_inactive_close": true,
+        "changing_the_historical_range_requires_a_new_search_without_rewriting_old_jobs": true,
+        "ui_distinguishes_a_new_historical_search_from_resuming_the_old_scope": true,
+        "api_rejects_resuming_a_different_scope_without_touching_the_old_queue": true,
+        "no_external_browser_requests_or_browser_errors": true,
+        "audit_chain_is_valid_after_recovery_and_analysis": true
+      },
+      "screenshots": [
+        "runtime/download-recovery-ui-validation/targeted-historical-coverage.png",
+        "runtime/download-recovery-ui-validation/desktop-235-news-64-pending.png",
+        "runtime/download-recovery-ui-validation/mobile-235-news-64-pending.png",
+        "runtime/download-recovery-ui-validation/mobile-partial-results.png"
+      ],
+      "fixture": {
+        "articles": 235,
+        "full_bodies": 0,
+        "metadata_only_articles": 235,
+        "deferred_tasks": 64,
+        "retry_seconds": 3600,
+        "real_scheduler": true,
+        "real_local_http": true,
+        "replaced_boundary": "external HTTP transport only"
+      },
+      "oldest_historical_query": {
+        "query": "\"Entidad Sintética Aurora de Recuperación\"",
+        "query_type": "identity",
+        "entity_ids": [
+          "recovery-fixture"
+        ],
+        "names": [
+          "Entidad Sintética Aurora de Recuperación",
+          "Aurora Sintética de Prueba"
+        ],
+        "source_id": "fixture_archive",
+        "kind": "news_query",
+        "start": "20160101000000",
+        "end": "20170101000000",
+        "result_limit": 10,
+        "url": "https://archive.fixture.invalid/?s=%22Entidad+Sint%C3%A9tica+Aurora+de+Recuperaci%C3%B3n%22&feed=rss2&year=2016"
+      },
+      "search_config": {
+        "strategy": "targeted",
+        "preset": "identity",
+        "start": "2016-01-01",
+        "end": "2026-10-15",
+        "window": "year",
+        "max_queries": 1000,
+        "include_aliases": true,
+        "use_context": true
+      },
+      "search_plan": {
+        "config": {
+          "strategy": "targeted",
+          "preset": "identity",
+          "start": "2016-01-01",
+          "end": "2026-10-15",
+          "window": "year",
+          "max_queries": 1000,
+          "include_aliases": true,
+          "use_context": true
+        },
+        "warnings": [
+          "fixture_rss: feed general omitido en búsqueda dirigida; use estrategia feeds para adquirirlo.",
+          "fixture_gdelt: GDELT DOC sólo cubre su ventana reciente de hasta 3 meses; el período anterior no se consulta.",
+          "fixture_archive: búsqueda del editor por frase y año/mes; RSS limitado y archivo no exhaustivo. Las fechas son filtros solicitados, no garantía de cobertura; se conservan las fechas reportadas."
+        ],
+        "sources": [
+          {
+            "id": "fixture_gdelt",
+            "source_name": "Búsqueda histórica ficticia",
+            "scope": "recent_rolling_window",
+            "start": "2026-07-17T22:32:10.272431+00:00",
+            "end_exclusive": "2026-10-15T22:32:10.272431+00:00",
+            "windows": 1,
+            "window_unit": "year",
+            "max_records_per_response": 250,
+            "historical": false,
+            "complete_archive": false
+          },
+          {
+            "id": "fixture_archive",
+            "source_name": "Archivo histórico ficticio",
+            "scope": "publisher_historical_search",
+            "start": "2016-01-01T00:00:00+00:00",
+            "end_exclusive": "2026-10-16T00:00:00+00:00",
+            "windows": 11,
+            "window_unit": "year",
+            "max_records_per_response": 10,
+            "historical": true,
+            "complete_archive": false
+          }
+        ],
+        "truncated": false,
+        "requested_start": "2016-01-01T00:00:00+00:00",
+        "requested_end_exclusive": "2026-10-16T00:00:00+00:00",
+        "coverage": "best_effort_not_exhaustive",
+        "identity_policy": "Queries retrieve candidates; identity must be corroborated from the source.",
+        "entities_planned": 1,
+        "query_count": 36,
+        "entities_covered": 1,
+        "entities_total": 1,
+        "queries_required": 36,
+        "estimated_schedule_seconds": 165,
+        "schedule_estimate_note": "Programación mínima orientativa por intervalos de host; excluye latencia, robots, reintentos y divisiones adicionales. No es un SLA ni ETA de finalización.",
+        "queries": [
+          {
+            "query": "\"Entidad Sintética Aurora de Recuperación\"",
+            "query_type": "identity",
+            "entity_ids": [
+              "recovery-fixture"
+            ],
+            "names": [
+              "Entidad Sintética Aurora de Recuperación",
+              "Aurora Sintética de Prueba"
+            ],
+            "source_id": "fixture_gdelt",
+            "kind": "news_query",
+            "start": "20260717223210",
+            "end": "20261015223210",
+            "result_limit": 250,
+            "url": "https://fixture.invalid/gdelt?query=%22Entidad+Sint%C3%A9tica+Aurora+de+Recuperaci%C3%B3n%22&mode=ArtList&format=json&sort=DateDesc&maxrecords=250&startdatetime=20260717223210&enddatetime=20261015223210"
+          },
+          {
+            "query": "\"Entidad Sintética Aurora de Recuperación\"",
+            "query_type": "identity",
+            "entity_ids": [
+              "recovery-fixture"
+            ],
+            "names": [
+              "Entidad Sintética Aurora de Recuperación",
+              "Aurora Sintética de Prueba"
+            ],
+            "source_id": "fixture_archive",
+            "kind": "news_query",
+            "start": "20260101000000",
+            "end": "20261016000000",
+            "result_limit": 10,
+            "url": "https://archive.fixture.invalid/?s=%22Entidad+Sint%C3%A9tica+Aurora+de+Recuperaci%C3%B3n%22&feed=rss2&year=2026"
+          },
+          {
+            "query": "\"Aurora Sintética de Prueba\"",
+            "query_type": "alias",
+            "entity_ids": [
+              "recovery-fixture"
+            ],
+            "names": [
+              "Entidad Sintética Aurora de Recuperación",
+              "Aurora Sintética de Prueba"
+            ],
+            "source_id": "fixture_gdelt",
+            "kind": "news_query",
+            "start": "20260717223210",
+            "end": "20261015223210",
+            "result_limit": 250,
+            "url": "https://fixture.invalid/gdelt?query=%22Aurora+Sint%C3%A9tica+de+Prueba%22&mode=ArtList&format=json&sort=DateDesc&maxrecords=250&startdatetime=20260717223210&enddatetime=20261015223210"
+          },
+          {
+            "query": "\"Aurora Sintética de Prueba\"",
+            "query_type": "alias",
+            "entity_ids": [
+              "recovery-fixture"
+            ],
+            "names": [
+              "Entidad Sintética Aurora de Recuperación",
+              "Aurora Sintética de Prueba"
+            ],
+            "source_id": "fixture_archive",
+            "kind": "news_query",
+            "start": "20260101000000",
+            "end": "20261016000000",
+            "result_limit": 10,
+            "url": "https://archive.fixture.invalid/?s=%22Aurora+Sint%C3%A9tica+de+Prueba%22&feed=rss2&year=2026"
+          },
+          {
+            "query": "\"Entidad Sintética Aurora de Recuperación\" \"Organización enteramente ficticia\"",
+            "query_type": "context",
+            "entity_ids": [
+              "recovery-fixture"
+            ],
+            "names": [
+              "Entidad Sintética Aurora de Recuperación",
+              "Aurora Sintética de Prueba"
+            ],
+            "source_id": "fixture_gdelt",
+            "kind": "news_query",
+            "start": "20260717223210",
+            "end": "20261015223210",
+            "result_limit": 250,
+            "url": "https://fixture.invalid/gdelt?query=%22Entidad+Sint%C3%A9tica+Aurora+de+Recuperaci%C3%B3n%22+%22Organizaci%C3%B3n+enteramente+ficticia%22&mode=ArtList&format=json&sort=DateDesc&maxrecords=250&startdatetime=20260717223210&enddatetime=20261015223210"
+          },
+          {
+            "query": "\"Entidad Sintética Aurora de Recuperación\" \"Organización enteramente ficticia\"",
+            "query_type": "context",
+            "entity_ids": [
+              "recovery-fixture"
+            ],
+            "names": [
+              "Entidad Sintética Aurora de Recuperación",
+              "Aurora Sintética de Prueba"
+            ],
+            "source_id": "fixture_archive",
+            "kind": "news_query",
+            "start": "20260101000000",
+            "end": "20261016000000",
+            "result_limit": 10,
+            "url": "https://archive.fixture.invalid/?s=%22Entidad+Sint%C3%A9tica+Aurora+de+Recuperaci%C3%B3n%22+%22Organizaci%C3%B3n+enteramente+ficticia%22&feed=rss2&year=2026"
+          },
+          {
+            "query": "\"Entidad Sintética Aurora de Recuperación\"",
+            "query_type": "identity",
+            "entity_ids": [
+              "recovery-fixture"
+            ],
+            "names": [
+              "Entidad Sintética Aurora de Recuperación",
+              "Aurora Sintética de Prueba"
+            ],
+            "source_id": "fixture_archive",
+            "kind": "news_query",
+            "start": "20250101000000",
+            "end": "20260101000000",
+            "result_limit": 10,
+            "url": "https://archive.fixture.invalid/?s=%22Entidad+Sint%C3%A9tica+Aurora+de+Recuperaci%C3%B3n%22&feed=rss2&year=2025"
+          },
+          {
+            "query": "\"Aurora Sintética de Prueba\"",
+            "query_type": "alias",
+            "entity_ids": [
+              "recovery-fixture"
+            ],
+            "names": [
+              "Entidad Sintética Aurora de Recuperación",
+              "Aurora Sintética de Prueba"
+            ],
+            "source_id": "fixture_archive",
+            "kind": "news_query",
+            "start": "20250101000000",
+            "end": "20260101000000",
+            "result_limit": 10,
+            "url": "https://archive.fixture.invalid/?s=%22Aurora+Sint%C3%A9tica+de+Prueba%22&feed=rss2&year=2025"
+          },
+          {
+            "query": "\"Entidad Sintética Aurora de Recuperación\" \"Organización enteramente ficticia\"",
+            "query_type": "context",
+            "entity_ids": [
+              "recovery-fixture"
+            ],
+            "names": [
+              "Entidad Sintética Aurora de Recuperación",
+              "Aurora Sintética de Prueba"
+            ],
+            "source_id": "fixture_archive",
+            "kind": "news_query",
+            "start": "20250101000000",
+            "end": "20260101000000",
+            "result_limit": 10,
+            "url": "https://archive.fixture.invalid/?s=%22Entidad+Sint%C3%A9tica+Aurora+de+Recuperaci%C3%B3n%22+%22Organizaci%C3%B3n+enteramente+ficticia%22&feed=rss2&year=2025"
+          },
+          {
+            "query": "\"Entidad Sintética Aurora de Recuperación\"",
+            "query_type": "identity",
+            "entity_ids": [
+              "recovery-fixture"
+            ],
+            "names": [
+              "Entidad Sintética Aurora de Recuperación",
+              "Aurora Sintética de Prueba"
+            ],
+            "source_id": "fixture_archive",
+            "kind": "news_query",
+            "start": "20240101000000",
+            "end": "20250101000000",
+            "result_limit": 10,
+            "url": "https://archive.fixture.invalid/?s=%22Entidad+Sint%C3%A9tica+Aurora+de+Recuperaci%C3%B3n%22&feed=rss2&year=2024"
+          }
+        ],
+        "queries_preview_truncated": true
+      },
+      "final_workflow": {
+        "mode": "online",
+        "sources_confirmed": true,
+        "steps": [
+          {
+            "id": "data",
+            "number": 1,
+            "label": "Importar banco",
+            "status": "complete",
+            "reason": ""
+          },
+          {
+            "id": "sources",
+            "number": 2,
+            "label": "Configurar fuentes",
+            "status": "complete",
+            "reason": ""
+          },
+          {
+            "id": "download",
+            "number": 3,
+            "label": "Descargar documentos",
+            "status": "complete",
+            "reason": "Descarga finalizada con cobertura parcial; las tareas pendientes se conservan."
+          },
+          {
+            "id": "analysis",
+            "number": 4,
+            "label": "Analizar evidencia",
+            "status": "complete",
+            "reason": ""
+          },
+          {
+            "id": "results",
+            "number": 5,
+            "label": "Consultar resultados",
+            "status": "ready",
+            "reason": ""
+          }
+        ],
+        "recommended_step": "results",
+        "actions": {
+          "import": {
+            "enabled": true,
+            "reason": ""
+          },
+          "configure_sources": {
+            "enabled": true,
+            "reason": ""
+          },
+          "download": {
+            "enabled": true,
+            "reason": ""
+          },
+          "analyze": {
+            "enabled": true,
+            "reason": ""
+          },
+          "view_results": {
+            "enabled": true,
+            "reason": ""
+          },
+          "export": {
+            "enabled": true,
+            "reason": ""
+          },
+          "review": {
+            "enabled": true,
+            "reason": ""
+          },
+          "accept_partial": {
+            "enabled": true,
+            "reason": ""
+          },
+          "finish_download": {
+            "enabled": true,
+            "reason": ""
+          }
+        },
+        "counts": {
+          "entities": 1,
+          "documents": 235,
+          "sources": 3,
+          "articles": 235,
+          "pending_downloads": 64,
+          "scores": 1
+        },
+        "analysis_current": true,
+        "coverage": {
+          "pending_downloads": 64,
+          "queued": 0,
+          "deferred": 64,
+          "running": 0,
+          "active_running": 0,
+          "expired_running": 0,
+          "worker_active": false,
+          "ready": 0,
+          "done": 0,
+          "blocked": 0,
+          "dead": 0,
+          "cancelled": 0,
+          "next_retry_at": 1792107121.0403311,
+          "next_retry_seconds": 3571.7057967185974,
+          "queue_signature": "6d37b6dc6706d5f943c422177532876f1b1b10e522e2a2983cca1956bc478033",
+          "failed": 0,
+          "unfetched_articles": 0,
+          "saturated_windows": 0,
+          "insufficient_documents": false,
+          "resume_available": true,
+          "needs_new_search": false,
+          "acquisition_current": true,
+          "search_plan": null,
+          "acquisition_context": {
+            "search": {
+              "end": "2026-10-15",
+              "include_aliases": true,
+              "max_queries": 1000,
+              "preset": "identity",
+              "start": "2016-01-01",
+              "strategy": "targeted",
+              "use_context": true,
+              "window": "year"
+            }
+          },
+          "plan_truncated": false,
+          "plan_warnings": [],
+          "partial": true,
+          "accepted_partial": true,
+          "closed_partial": true,
+          "limitations": {
+            "active_running": 0,
+            "articles": 235,
+            "blocked": 0,
+            "cancelled": 0,
+            "captured_at": "2026-10-15T22:32:28.917421+00:00",
+            "dead": 0,
+            "decision": "Cierre explícito con cobertura disponible; la cola se conserva para una reanudación posterior.",
+            "deferred": 64,
+            "documents": 235,
+            "done": 0,
+            "expired_running": 0,
+            "failed": 0,
+            "insufficient_documents": false,
+            "next_retry_at": 1792107121.0403311,
+            "next_retry_seconds": 3572.1235299110413,
+            "pending_downloads": 64,
+            "queued": 0,
+            "running": 0,
+            "saturated_windows": 0,
+            "search_plan": null,
+            "unfetched_articles": 0
+          },
+          "stop_reason": "cancelled",
+          "waiting": true,
+          "status": "closed_partial",
+          "mode": "online"
+        }
+      },
+      "changed_scope_workflow": {
+        "mode": "online",
+        "sources_confirmed": true,
+        "steps": [
+          {
+            "id": "data",
+            "number": 1,
+            "label": "Importar banco",
+            "status": "complete",
+            "reason": ""
+          },
+          {
+            "id": "sources",
+            "number": 2,
+            "label": "Configurar fuentes",
+            "status": "complete",
+            "reason": ""
+          },
+          {
+            "id": "download",
+            "number": 3,
+            "label": "Descargar documentos",
+            "status": "paused",
+            "reason": "Complete la descarga o acepte explícitamente su cobertura parcial al terminar."
+          },
+          {
+            "id": "analysis",
+            "number": 4,
+            "label": "Analizar evidencia",
+            "status": "blocked",
+            "reason": "Hay descargas pendientes; reanude o finalice explícitamente la descarga con la cobertura disponible."
+          },
+          {
+            "id": "results",
+            "number": 5,
+            "label": "Consultar resultados",
+            "status": "blocked",
+            "reason": "Ejecute el análisis de los datos vigentes."
+          }
+        ],
+        "recommended_step": "download",
+        "actions": {
+          "import": {
+            "enabled": true,
+            "reason": ""
+          },
+          "configure_sources": {
+            "enabled": true,
+            "reason": ""
+          },
+          "download": {
+            "enabled": true,
+            "reason": ""
+          },
+          "analyze": {
+            "enabled": false,
+            "reason": "Hay descargas pendientes; reanude o finalice explícitamente la descarga con la cobertura disponible."
+          },
+          "view_results": {
+            "enabled": false,
+            "reason": "Ejecute el análisis de los datos vigentes."
+          },
+          "export": {
+            "enabled": false,
+            "reason": "Ejecute el análisis de los datos vigentes."
+          },
+          "review": {
+            "enabled": false,
+            "reason": "Ejecute el análisis de los datos vigentes."
+          },
+          "accept_partial": {
+            "enabled": false,
+            "reason": "La adquisición no corresponde a los datos vigentes; confirme las fuentes y reanude la descarga antes de finalizarla."
+          },
+          "finish_download": {
+            "enabled": false,
+            "reason": "La adquisición no corresponde a los datos vigentes; confirme las fuentes y reanude la descarga antes de finalizarla."
+          }
+        },
+        "counts": {
+          "entities": 1,
+          "documents": 235,
+          "sources": 3,
+          "articles": 235,
+          "pending_downloads": 64,
+          "scores": 1
+        },
+        "analysis_current": false,
+        "coverage": {
+          "pending_downloads": 64,
+          "queued": 0,
+          "deferred": 64,
+          "running": 0,
+          "active_running": 0,
+          "expired_running": 0,
+          "worker_active": false,
+          "ready": 0,
+          "done": 0,
+          "blocked": 0,
+          "dead": 0,
+          "cancelled": 0,
+          "next_retry_at": 1792107121.0403311,
+          "next_retry_seconds": 3570.9573431015015,
+          "queue_signature": "6d37b6dc6706d5f943c422177532876f1b1b10e522e2a2983cca1956bc478033",
+          "failed": 0,
+          "unfetched_articles": 0,
+          "saturated_windows": 0,
+          "insufficient_documents": false,
+          "resume_available": false,
+          "needs_new_search": true,
+          "acquisition_current": false,
+          "search_plan": null,
+          "acquisition_context": {
+            "search": {
+              "end": "2026-10-15",
+              "include_aliases": true,
+              "max_queries": 1000,
+              "preset": "identity",
+              "start": "2016-01-01",
+              "strategy": "targeted",
+              "use_context": true,
+              "window": "year"
+            }
+          },
+          "plan_truncated": false,
+          "plan_warnings": [],
+          "partial": true,
+          "accepted_partial": false,
+          "closed_partial": false,
+          "limitations": {
+            "active_running": 0,
+            "articles": 235,
+            "blocked": 0,
+            "cancelled": 0,
+            "captured_at": "2026-10-15T22:32:28.917421+00:00",
+            "dead": 0,
+            "decision": "Cierre explícito con cobertura disponible; la cola se conserva para una reanudación posterior.",
+            "deferred": 64,
+            "documents": 235,
+            "done": 0,
+            "expired_running": 0,
+            "failed": 0,
+            "insufficient_documents": false,
+            "next_retry_at": 1792107121.0403311,
+            "next_retry_seconds": 3572.1235299110413,
+            "pending_downloads": 64,
+            "queued": 0,
+            "running": 0,
+            "saturated_windows": 0,
+            "search_plan": null,
+            "unfetched_articles": 0
+          },
+          "stop_reason": "cancelled",
+          "waiting": true,
+          "status": "closed_partial",
+          "mode": "online"
+        }
+      },
+      "resume_payloads": [
+        {
+          "online": true,
+          "resume": true
+        },
+        {
+          "online": true,
+          "resume": true
+        },
+        {
+          "online": true,
+          "resume": true
+        }
+      ],
+      "transport_runtime_calls": [
+        "https://fixture.invalid/article/234"
+      ],
+      "browser_version": "154.0.8037.57",
+      "passed": true
+    },
+    "import": {
+      "kind": "synthetic_offline_import_browser_validation",
+      "processed_at": "2026-10-15T22:32:01.942829+00:00",
+      "playwright_version": "1.62.0",
+      "fixtures": "Fictional single name, CSV with duplicate/blank headings, custom entity kinds, invalid row, CP1252 and UTF-16 files",
+      "checks": {
+        "empty_workflow_starts_with_name_and_csv_entry_points": true,
+        "individual_type_is_required_without_silent_person_default": true,
+        "single_identity_hints_and_aliases_persist": true,
+        "individual_save_preserves_explicit_analysis_step": true,
+        "explicit_analysis_opens_real_auditable_explanation": true,
+        "windows1252_upload_decodes_accents": true,
+        "late_preview_cannot_restore_source_edited_during_request": true,
+        "utf16_upload_and_tab_detection_preserve_unicode": true,
+        "duplicate_and_blank_headers_get_distinct_mapping_controls": true,
+        "mapping_requires_user_review": true,
+        "uploaded_cells_render_as_text_without_html_execution": true,
+        "unknown_type_values_explicitly_prompt_for_user_identification": true,
+        "invalid_row_blocks_confirmation": true,
+        "preview_exposes_names_kinds_and_invalid_row": true,
+        "changing_column_mapping_invalidates_confirmation": true,
+        "csv_custom_kind_values_and_optional_identity_hints_saved": true,
+        "invalid_row_omitted_only_after_explicit_choice": true,
+        "ignored_column_is_not_persisted": true,
+        "csv_save_does_not_run_implicit_scoring": true,
+        "explicit_analysis_reveals_imported_list_without_previous_filter": true,
+        "analyzed_imported_list_links_to_existing_score_audit": true,
+        "double_confirmation_click_submits_one_operation": true,
+        "mobile_import_has_no_horizontal_page_overflow": true,
+        "clear_import_releases_file_and_preview_after_receipt": true,
+        "headerless_split_names_compose_full_name_from_user_mapping": true,
+        "missing_receipt_unlocks_inputs_with_honest_uncertainty": true,
+        "missing_receipt_invalidates_previous_csv_confirmation": true,
+        "missing_receipt_never_auto_reimports_or_retries_tracking": true,
+        "missing_receipt_explicit_workflow_can_verify_saved_entities": true,
+        "no_external_requests": true,
+        "no_browser_errors": true,
+        "import_preserves_audit_chain": true
+      },
+      "timings_ms": {
+        "single_save_to_source_step": 616.9499820025521,
+        "csv_parse_to_mapping": 122.54809000296518,
+        "csv_confirmation_to_persisted_entities": 84.69337499991525
+      },
+      "screenshots": [
+        "runtime/import-ui-validation/desktop-preview.png",
+        "runtime/import-ui-validation/mobile-mapping.png"
+      ],
+      "browser_version": "154.0.8037.57",
+      "page_errors": [],
+      "passed": true
+    },
+    "explanation": {
+      "kind": "synthetic_offline_browser_validation",
+      "processed_at": "2026-10-15T22:32:00.749644+00:00",
+      "browser": "Chromium",
+      "playwright_version": "1.62.0",
+      "fixtures": "211 synthetic documents, 4 synthetic entities; no real notes",
+      "checks": {
+        "actual_score_and_scale": true,
+        "real_factors_and_nonadditive_delta": true,
+        "unicode_exact_citation_after_1800_chars": true,
+        "citation_loads_evidence_beyond_200_notes": true,
+        "xss_rendered_as_plain_text": true,
+        "auxiliary_separate_from_factors": true,
+        "replay_matches": true,
+        "desktop_explanation_heading_visible": true,
+        "current_review_creates_new_evaluation": true,
+        "historical_notes_readonly": true,
+        "return_to_current": true,
+        "stale_review_rejected_without_overwriting": true,
+        "zero_is_insufficient_not_risk_absence": true,
+        "unicode_astral_offsets": true,
+        "explicit_empty_identity_selection_stays_unchecked_after_save": true,
+        "entity_selection_race_does_not_replace_latest": true,
+        "mobile_no_horizontal_page_overflow": true,
+        "no_external_requests": true,
+        "no_browser_errors": true
+      },
+      "screenshots": [
+        "runtime/ui-validation/desktop-citation.png",
+        "runtime/ui-validation/desktop-explanation.png",
+        "runtime/ui-validation/mobile.png"
+      ],
+      "browser_version": "154.0.8037.57",
+      "entity_open_latency_ms": 897.8956359969743,
+      "page_errors": [],
+      "passed": true
+    }
+  },
+  "polling": {
+    "before": {
+      "kind": "synthetic_local_http_browser_polling",
+      "checks": {
+        "stats_does_not_return_document_bodies": true,
+        "entities_summary=1_does_not_return_document_bodies": true,
+        "news_summary=1_does_not_return_document_bodies": true,
+        "browser_polling_stays_on_loopback_and_has_no_script_errors": true,
+        "desktop_bank_has_no_horizontal_overflow": true,
+        "polling_preserves_all_data_and_audit_integrity": true
+      },
+      "processed_at": "2026-10-15T22:24:33.310576+00:00",
+      "fixture": {
+        "documents": 1000,
+        "entities": 20
+      },
+      "source_hashes_before": {
+        "peps/app.py": "bf775af1ab9750015f301cc2ae237d5bb84535bdf4add16683cb2f4fe13cd448",
+        "peps/store.py": "9b3b283c635292bf3027e23d64e59adaddadc36f863139a3211020ad437ed44a",
+        "peps/engine.py": "3f1f948bd2860674aaf9422636b50e1a829e051f3456a0f43cee6bedac076b37",
+        "peps/workflow.py": "18b34d80a2a28bfe42c83a85d0e29dfae8ddb325a722c310d55dc9ff3e818c97",
+        "peps/web/app.js": "cd039fd4723c514a7fa4e64cd9bd43570a76defdf552196d4b7a9d322ad2e952",
+        "peps/web/workflow.js": "0b41611866fea80952635a9f325519ce06768a2f3c44b8a96c0ddfb36ad0edb7"
+      },
+      "limits": [
+        "Synthetic closed-mode corpus; no external acquisition.",
+        "Observed timings are not an SLA or pass/fail latency threshold."
+      ],
+      "http": {
+        "stats": {
+          "bytes": [
+            3074,
+            3073,
+            3074
+          ],
+          "sqlite_statements": [
+            26,
+            26,
+            26
+          ],
+          "elapsed_ms": [
+            3.6346650013001636,
+            2.9799010007991455,
+            2.9083619992889
+          ],
+          "median_ms": 2.9799010007991455
+        },
+        "entities?summary=1": {
+          "bytes": [
+            5220,
+            5220,
+            5220
+          ],
+          "sqlite_statements": [
+            20,
+            20,
+            20
+          ],
+          "elapsed_ms": [
+            14.357288000610424,
+            13.790422999591101,
+            13.692017000721535
+          ],
+          "median_ms": 13.790422999591101
+        },
+        "news?summary=1": {
+          "bytes": [
+            220,
+            220,
+            220
+          ],
+          "sqlite_statements": [
+            11,
+            11,
+            11
+          ],
+          "elapsed_ms": [
+            2.2868659980304074,
+            2.11189000037848,
+            2.0622479969460983
+          ],
+          "median_ms": 2.11189000037848
+        }
+      },
+      "browser": {
+        "unchanged_row_retained": true,
+        "keyboard_focus_retained": false,
+        "entity_childlist_mutations": 0,
+        "horizontal_overflow": false,
+        "elapsed_ms": 30046.450776997517,
+        "tab": "sources",
+        "request_counts": {
+          "/api/stats": 29,
+          "/api/entities?q=&offset=0": 29
+        },
+        "response_bytes": 472552523,
+        "sqlite_statements": 1334
+      },
+      "source_hashes_after": {
+        "peps/app.py": "bf775af1ab9750015f301cc2ae237d5bb84535bdf4add16683cb2f4fe13cd448",
+        "peps/store.py": "9b3b283c635292bf3027e23d64e59adaddadc36f863139a3211020ad437ed44a",
+        "peps/engine.py": "3f1f948bd2860674aaf9422636b50e1a829e051f3456a0f43cee6bedac076b37",
+        "peps/workflow.py": "18b34d80a2a28bfe42c83a85d0e29dfae8ddb325a722c310d55dc9ff3e818c97",
+        "peps/web/app.js": "cd039fd4723c514a7fa4e64cd9bd43570a76defdf552196d4b7a9d322ad2e952",
+        "peps/web/workflow.js": "0b41611866fea80952635a9f325519ce06768a2f3c44b8a96c0ddfb36ad0edb7"
+      },
+      "source_unchanged_during_measurement": true,
+      "passed": true
+    },
+    "after": {
+      "kind": "synthetic_local_http_browser_polling",
+      "checks": {
+        "stats_does_not_return_document_bodies": true,
+        "entities_does_not_return_document_bodies": true,
+        "entities_summary=1_does_not_return_document_bodies": true,
+        "compact_entity_rows_omit_explanation_and_provenance": true,
+        "news_summary=1_does_not_return_document_bodies": true,
+        "browser_polling_stays_on_loopback_and_has_no_script_errors": true,
+        "inactive_results_tab_never_fetches_entities_during_polling": true,
+        "desktop_bank_has_no_horizontal_overflow": true,
+        "unchanged_results_keep_the_same_dom_row_and_keyboard_focus": true,
+        "latest_search_wins_after_a_controlled_late_response": true,
+        "stats_and_entities_refreshes_do_not_overlap": true,
+        "shutdown_tolerates_a_late_stats_response_without_page_errors": true,
+        "shutdown_stops_polling_even_after_thirty_seconds_of_browser_time": true,
+        "polling_preserves_all_data_and_audit_integrity": true,
+        "read_only_polling_does_not_append_audit_events": true
+      },
+      "processed_at": "2026-10-15T22:35:49.626977+00:00",
+      "fixture": {
+        "documents": 1000,
+        "entities": 20
+      },
+      "source_hashes_before": {
+        "peps/app.py": "66311c509343fce11219e7a5499715a103b1bf53ffcba89ba4f1b90367042f01",
+        "peps/store.py": "1acd1ff51ba9993bf452b6327cdc24f69b6589f4e7e9a6e1266be665b8c4dbd9",
+        "peps/engine.py": "3f1f948bd2860674aaf9422636b50e1a829e051f3456a0f43cee6bedac076b37",
+        "peps/workflow.py": "55260ffeead1ee18fc764b1d02da22719cb61a2391778d2d2ee9649be052623a",
+        "peps/web/app.js": "065f54e1ccbb12d3c184c938e9f95fa5025f8f888fcc67ee2305c5232809a496",
+        "peps/web/workflow.js": "7991d04042d4900a314aa8e763d3cfcdbf868778a88ff7390d3bdbc32f1e6c19"
+      },
+      "limits": [
+        "Synthetic closed-mode corpus; no external acquisition.",
+        "Observed timings are not an SLA or pass/fail latency threshold."
+      ],
+      "http": {
+        "stats": {
+          "bytes": [
+            4095,
+            4095,
+            4095
+          ],
+          "sqlite_statements": [
+            26,
+            26,
+            26
+          ],
+          "elapsed_ms": [
+            3.4711339976638556,
+            2.9222649973235093,
+            2.5179709991789423
+          ],
+          "median_ms": 2.9222649973235093
+        },
+        "entities": {
+          "bytes": [
+            8045550,
+            8045550,
+            8045550
+          ],
+          "sqlite_statements": [
+            20,
+            20,
+            20
+          ],
+          "elapsed_ms": [
+            282.28454499912914,
+            174.36261599868885,
+            155.53540899782092
+          ],
+          "median_ms": 174.36261599868885
+        },
+        "entities?summary=1": {
+          "bytes": [
+            3620,
+            3620,
+            3620
+          ],
+          "sqlite_statements": [
+            20,
+            20,
+            20
+          ],
+          "elapsed_ms": [
+            14.398698000150034,
+            13.468222998199053,
+            11.555255001439946
+          ],
+          "median_ms": 13.468222998199053
+        },
+        "news?summary=1": {
+          "bytes": [
+            220,
+            220,
+            220
+          ],
+          "sqlite_statements": [
+            11,
+            11,
+            11
+          ],
+          "elapsed_ms": [
+            2.0126269992033485,
+            2.0451969976420514,
+            2.1179399991524406
+          ],
+          "median_ms": 2.0451969976420514
+        }
+      },
+      "browser": {
+        "unchanged_row_retained": true,
+        "keyboard_focus_retained": null,
+        "entity_childlist_mutations": 0,
+        "horizontal_overflow": false,
+        "elapsed_ms": 30011.927167000977,
+        "tab": "sources",
+        "request_counts": {
+          "/api/stats": 10
+        },
+        "response_bytes": 40957,
+        "response_bytes_by_path": {
+          "/api/stats": 40957
+        },
+        "sqlite_statements": 260,
+        "visible_results_row_and_focus_retained": true,
+        "maximum_stats_or_entities_requests_inflight": 1
+      },
+      "shutdown": {
+        "controlled_late_response": true,
+        "browser_seconds_advanced": 30,
+        "requests_after_close": [],
+        "page_errors": []
+      },
+      "source_hashes_after": {
+        "peps/app.py": "66311c509343fce11219e7a5499715a103b1bf53ffcba89ba4f1b90367042f01",
+        "peps/store.py": "1acd1ff51ba9993bf452b6327cdc24f69b6589f4e7e9a6e1266be665b8c4dbd9",
+        "peps/engine.py": "3f1f948bd2860674aaf9422636b50e1a829e051f3456a0f43cee6bedac076b37",
+        "peps/workflow.py": "55260ffeead1ee18fc764b1d02da22719cb61a2391778d2d2ee9649be052623a",
+        "peps/web/app.js": "065f54e1ccbb12d3c184c938e9f95fa5025f8f888fcc67ee2305c5232809a496",
+        "peps/web/workflow.js": "7991d04042d4900a314aa8e763d3cfcdbf868778a88ff7390d3bdbc32f1e6c19"
+      },
+      "source_unchanged_during_measurement": true,
+      "passed": true
+    }
+  },
+  "workflow_sql": {
+    "method": "Same disposable DB measured before then after indexes;100 fresh-connection snapshots each;10 warmups;observed time fixed;10k randomized REAL lease timestamps;no network/cache",
+    "baseline_sha256": "18b34d80a2a28bfe42c83a85d0e29dfae8ddb325a722c310d55dc9ff3e818c97",
+    "measured_after_sha256": "78b33559d8d78bc008fb955fa1eb65a179e1601bcd5c8f25c11351d3a9cad99e",
+    "runs": [
+      {
+        "fixture": {
+          "jobs": 1000,
+          "news_jobs": 800,
+          "entities": 100,
+          "documents": 100,
+          "news_articles": 100,
+          "query_windows": 10,
+          "audit": 200,
+          "job_payload_padding_bytes": 512,
+          "document_text_bytes": 2496,
+          "related_table_scaling": "constant_100"
+        },
+        "before": {
+          "median_ms": 1.666289,
+          "p95_ms": 1.970056,
+          "min_ms": 1.465691,
+          "max_ms": 2.226794,
+          "samples": 100
+        },
+        "after": {
+          "median_ms": 1.153572,
+          "p95_ms": 1.408821,
+          "min_ms": 1.038479,
+          "max_ms": 1.598987,
+          "samples": 100
+        },
+        "median_speedup": 1.444,
+        "additive_index_initialization_ms": 1.332969,
+        "indexes": [
+          {
+            "name": "jobs_news_workflow",
+            "sql": "CREATE INDEX jobs_news_workflow ON jobs (status,due,lease_until,kind,attempts,updated_at) WHERE kind GLOB 'news_*'"
+          },
+          {
+            "name": "documents_workflow_kind",
+            "sql": "CREATE INDEX documents_workflow_kind ON documents(source_kind)"
+          }
+        ],
+        "index_bytes": {
+          "documents_workflow_kind": 4096,
+          "jobs_news_workflow": 57344
+        },
+        "checks": {
+          "snapshot_fully_identical_at_fixed_observed_time": true,
+          "queue_signature_preserves_varied_real_lease_aggregates": true,
+          "external_queue_commit_visible_on_next_snapshot": true,
+          "external_document_commit_visible_on_next_snapshot": true
+        },
+        "select_count": 17
+      },
+      {
+        "fixture": {
+          "jobs": 10000,
+          "news_jobs": 8000,
+          "entities": 100,
+          "documents": 100,
+          "news_articles": 100,
+          "query_windows": 10,
+          "audit": 200,
+          "job_payload_padding_bytes": 512,
+          "document_text_bytes": 2496,
+          "related_table_scaling": "constant_100"
+        },
+        "before": {
+          "median_ms": 14.237734,
+          "p95_ms": 16.087553,
+          "min_ms": 13.273855,
+          "max_ms": 20.390383,
+          "samples": 100
+        },
+        "after": {
+          "median_ms": 4.870861,
+          "p95_ms": 5.865118,
+          "min_ms": 4.538439,
+          "max_ms": 7.025835,
+          "samples": 100
+        },
+        "median_speedup": 2.923,
+        "additive_index_initialization_ms": 7.629067,
+        "indexes": [
+          {
+            "name": "jobs_news_workflow",
+            "sql": "CREATE INDEX jobs_news_workflow ON jobs (status,due,lease_until,kind,attempts,updated_at) WHERE kind GLOB 'news_*'"
+          },
+          {
+            "name": "documents_workflow_kind",
+            "sql": "CREATE INDEX documents_workflow_kind ON documents(source_kind)"
+          }
+        ],
+        "index_bytes": {
+          "documents_workflow_kind": 4096,
+          "jobs_news_workflow": 512000
+        },
+        "checks": {
+          "snapshot_fully_identical_at_fixed_observed_time": true,
+          "queue_signature_preserves_varied_real_lease_aggregates": true,
+          "external_queue_commit_visible_on_next_snapshot": true,
+          "external_document_commit_visible_on_next_snapshot": true
+        },
+        "select_count": 17
+      },
+      {
+        "fixture": {
+          "jobs": 1000,
+          "news_jobs": 800,
+          "entities": 1000,
+          "documents": 1000,
+          "news_articles": 1000,
+          "query_windows": 100,
+          "audit": 2000,
+          "job_payload_padding_bytes": 512,
+          "document_text_bytes": 2496,
+          "related_table_scaling": "proportional"
+        },
+        "before": {
+          "median_ms": 2.500789,
+          "p95_ms": 2.874715,
+          "min_ms": 2.306158,
+          "max_ms": 3.206114,
+          "samples": 100
+        },
+        "after": {
+          "median_ms": 1.339475,
+          "p95_ms": 1.610917,
+          "min_ms": 1.170229,
+          "max_ms": 1.829114,
+          "samples": 100
+        },
+        "median_speedup": 1.867,
+        "additive_index_initialization_ms": 2.467355,
+        "indexes": [
+          {
+            "name": "jobs_news_workflow",
+            "sql": "CREATE INDEX jobs_news_workflow ON jobs (status,due,lease_until,kind,attempts,updated_at) WHERE kind GLOB 'news_*'"
+          },
+          {
+            "name": "documents_workflow_kind",
+            "sql": "CREATE INDEX documents_workflow_kind ON documents(source_kind)"
+          }
+        ],
+        "index_bytes": {
+          "documents_workflow_kind": 20480,
+          "jobs_news_workflow": 57344
+        },
+        "checks": {
+          "snapshot_fully_identical_at_fixed_observed_time": true,
+          "queue_signature_preserves_varied_real_lease_aggregates": true,
+          "external_queue_commit_visible_on_next_snapshot": true,
+          "external_document_commit_visible_on_next_snapshot": true
+        },
+        "select_count": 17
+      },
+      {
+        "fixture": {
+          "jobs": 10000,
+          "news_jobs": 8000,
+          "entities": 10000,
+          "documents": 10000,
+          "news_articles": 10000,
+          "query_windows": 1000,
+          "audit": 20000,
+          "job_payload_padding_bytes": 512,
+          "document_text_bytes": 2496,
+          "related_table_scaling": "proportional"
+        },
+        "before": {
+          "median_ms": 22.85358,
+          "p95_ms": 24.60704,
+          "min_ms": 21.399619,
+          "max_ms": 27.848189,
+          "samples": 100
+        },
+        "after": {
+          "median_ms": 5.968934,
+          "p95_ms": 6.822331,
+          "min_ms": 5.582076,
+          "max_ms": 9.53729,
+          "samples": 100
+        },
+        "median_speedup": 3.829,
+        "additive_index_initialization_ms": 16.96123,
+        "indexes": [
+          {
+            "name": "jobs_news_workflow",
+            "sql": "CREATE INDEX jobs_news_workflow ON jobs (status,due,lease_until,kind,attempts,updated_at) WHERE kind GLOB 'news_*'"
+          },
+          {
+            "name": "documents_workflow_kind",
+            "sql": "CREATE INDEX documents_workflow_kind ON documents(source_kind)"
+          }
+        ],
+        "index_bytes": {
+          "documents_workflow_kind": 167936,
+          "jobs_news_workflow": 512000
+        },
+        "checks": {
+          "snapshot_fully_identical_at_fixed_observed_time": true,
+          "queue_signature_preserves_varied_real_lease_aggregates": true,
+          "external_queue_commit_visible_on_next_snapshot": true,
+          "external_document_commit_visible_on_next_snapshot": true
+        },
+        "select_count": 17
+      }
+    ],
+    "write_cost": {
+      "generated_at": "2026-10-15T22:27:14.031962+00:00",
+      "method": "7 independent temporary databases per index; direct synthetic inserts/updates in one transaction; commit included; excludes network, NLP, audit overhead; WAL Store defaults",
+      "runs": [
+        {
+          "jobs": 1000,
+          "results": {
+            "baseline": {
+              "ddl": null,
+              "insert_jobs_one_transaction": {
+                "median_ms": 2.550074,
+                "p95_ms": 2.790759,
+                "min_ms": 2.381259,
+                "max_ms": 2.790759,
+                "samples": 7
+              },
+              "update_1000_jobs_one_transaction": {
+                "median_ms": 2.894832,
+                "p95_ms": 3.239585,
+                "min_ms": 2.601566,
+                "max_ms": 3.239585,
+                "samples": 7
+              },
+              "insert_1000_non_news_jobs_one_transaction": {
+                "median_ms": 1.949056,
+                "p95_ms": 2.703523,
+                "min_ms": 1.888108,
+                "max_ms": 2.703523,
+                "samples": 7
+              },
+              "create_index_on_populated_jobs": null,
+              "index_bytes_after_updates_and_1000_non_news": null
+            },
+            "selected_partial_original_order_cover": {
+              "ddl": "CREATE INDEX jobs_trial ON jobs(status,due,lease_until,kind,attempts,updated_at) WHERE kind GLOB 'news_*'",
+              "insert_jobs_one_transaction": {
+                "median_ms": 3.253044,
+                "p95_ms": 3.470888,
+                "min_ms": 3.107483,
+                "max_ms": 3.470888,
+                "samples": 7
+              },
+              "update_1000_jobs_one_transaction": {
+                "median_ms": 4.106617,
+                "p95_ms": 4.607281,
+                "min_ms": 3.921531,
+                "max_ms": 4.607281,
+                "samples": 7
+              },
+              "insert_1000_non_news_jobs_one_transaction": {
+                "median_ms": 2.16012,
+                "p95_ms": 2.873514,
+                "min_ms": 2.027155,
+                "max_ms": 2.873514,
+                "samples": 7
+              },
+              "create_index_on_populated_jobs": {
+                "median_ms": 0.632747,
+                "p95_ms": 1.008304,
+                "min_ms": 0.576713,
+                "max_ms": 1.008304,
+                "samples": 7
+              },
+              "index_bytes_after_updates_and_1000_non_news": 65536
+            },
+            "kind_status_cover": {
+              "ddl": "CREATE INDEX jobs_trial ON jobs(kind,status,attempts,due,lease_until,updated_at)",
+              "insert_jobs_one_transaction": {
+                "median_ms": 3.204104,
+                "p95_ms": 4.572264,
+                "min_ms": 3.166517,
+                "max_ms": 4.572264,
+                "samples": 7
+              },
+              "update_1000_jobs_one_transaction": {
+                "median_ms": 4.158025,
+                "p95_ms": 4.412908,
+                "min_ms": 4.08981,
+                "max_ms": 4.412908,
+                "samples": 7
+              },
+              "insert_1000_non_news_jobs_one_transaction": {
+                "median_ms": 2.811711,
+                "p95_ms": 3.605335,
+                "min_ms": 2.70352,
+                "max_ms": 3.605335,
+                "samples": 7
+              },
+              "create_index_on_populated_jobs": {
+                "median_ms": 1.119959,
+                "p95_ms": 1.21866,
+                "min_ms": 1.085767,
+                "max_ms": 1.21866,
+                "samples": 7
+              },
+              "index_bytes_after_updates_and_1000_non_news": 147456
+            },
+            "partial_kind_status_cover": {
+              "ddl": "CREATE INDEX jobs_trial ON jobs(kind,status,attempts,due,lease_until,updated_at) WHERE kind GLOB 'news_*'",
+              "insert_jobs_one_transaction": {
+                "median_ms": 3.496328,
+                "p95_ms": 4.587281,
+                "min_ms": 3.108718,
+                "max_ms": 4.587281,
+                "samples": 7
+              },
+              "update_1000_jobs_one_transaction": {
+                "median_ms": 4.191291,
+                "p95_ms": 5.252664,
+                "min_ms": 3.884574,
+                "max_ms": 5.252664,
+                "samples": 7
+              },
+              "insert_1000_non_news_jobs_one_transaction": {
+                "median_ms": 2.218481,
+                "p95_ms": 2.710675,
+                "min_ms": 2.004156,
+                "max_ms": 2.710675,
+                "samples": 7
+              },
+              "create_index_on_populated_jobs": {
+                "median_ms": 0.623262,
+                "p95_ms": 0.865016,
+                "min_ms": 0.56739,
+                "max_ms": 0.865016,
+                "samples": 7
+              },
+              "index_bytes_after_updates_and_1000_non_news": 69632
+            },
+            "partial_status_kind_cover": {
+              "ddl": "CREATE INDEX jobs_trial ON jobs(status,kind,attempts,due,lease_until,updated_at) WHERE kind GLOB 'news_*'",
+              "insert_jobs_one_transaction": {
+                "median_ms": 3.205392,
+                "p95_ms": 4.835632,
+                "min_ms": 3.111312,
+                "max_ms": 4.835632,
+                "samples": 7
+              },
+              "update_1000_jobs_one_transaction": {
+                "median_ms": 4.18953,
+                "p95_ms": 5.578519,
+                "min_ms": 3.942308,
+                "max_ms": 5.578519,
+                "samples": 7
+              },
+              "insert_1000_non_news_jobs_one_transaction": {
+                "median_ms": 2.026845,
+                "p95_ms": 2.574358,
+                "min_ms": 1.999501,
+                "max_ms": 2.574358,
+                "samples": 7
+              },
+              "create_index_on_populated_jobs": {
+                "median_ms": 0.624769,
+                "p95_ms": 0.720998,
+                "min_ms": 0.598841,
+                "max_ms": 0.720998,
+                "samples": 7
+              },
+              "index_bytes_after_updates_and_1000_non_news": 69632
+            },
+            "documents_source_kind": {
+              "create_index_on_populated_documents": {
+                "median_ms": 0.872122,
+                "p95_ms": 1.489532,
+                "min_ms": 0.823952,
+                "max_ms": 1.489532,
+                "samples": 7
+              },
+              "index_bytes": 20480
+            }
+          }
+        },
+        {
+          "jobs": 10000,
+          "results": {
+            "baseline": {
+              "ddl": null,
+              "insert_jobs_one_transaction": {
+                "median_ms": 33.921319,
+                "p95_ms": 36.429838,
+                "min_ms": 33.113201,
+                "max_ms": 36.429838,
+                "samples": 7
+              },
+              "update_1000_jobs_one_transaction": {
+                "median_ms": 3.643503,
+                "p95_ms": 4.072196,
+                "min_ms": 3.290772,
+                "max_ms": 4.072196,
+                "samples": 7
+              },
+              "insert_1000_non_news_jobs_one_transaction": {
+                "median_ms": 2.012907,
+                "p95_ms": 2.342953,
+                "min_ms": 1.98441,
+                "max_ms": 2.342953,
+                "samples": 7
+              },
+              "create_index_on_populated_jobs": null,
+              "index_bytes_after_updates_and_1000_non_news": null
+            },
+            "selected_partial_original_order_cover": {
+              "ddl": "CREATE INDEX jobs_trial ON jobs(status,due,lease_until,kind,attempts,updated_at) WHERE kind GLOB 'news_*'",
+              "insert_jobs_one_transaction": {
+                "median_ms": 45.816791,
+                "p95_ms": 49.904029,
+                "min_ms": 41.925865,
+                "max_ms": 49.904029,
+                "samples": 7
+              },
+              "update_1000_jobs_one_transaction": {
+                "median_ms": 5.428617,
+                "p95_ms": 6.121125,
+                "min_ms": 5.08393,
+                "max_ms": 6.121125,
+                "samples": 7
+              },
+              "insert_1000_non_news_jobs_one_transaction": {
+                "median_ms": 2.22239,
+                "p95_ms": 3.289876,
+                "min_ms": 1.991344,
+                "max_ms": 3.289876,
+                "samples": 7
+              },
+              "create_index_on_populated_jobs": {
+                "median_ms": 7.382283,
+                "p95_ms": 7.62643,
+                "min_ms": 6.392625,
+                "max_ms": 7.62643,
+                "samples": 7
+              },
+              "index_bytes_after_updates_and_1000_non_news": 630784
+            },
+            "kind_status_cover": {
+              "ddl": "CREATE INDEX jobs_trial ON jobs(kind,status,attempts,due,lease_until,updated_at)",
+              "insert_jobs_one_transaction": {
+                "median_ms": 47.132895,
+                "p95_ms": 49.002296,
+                "min_ms": 45.433901,
+                "max_ms": 49.002296,
+                "samples": 7
+              },
+              "update_1000_jobs_one_transaction": {
+                "median_ms": 5.444597,
+                "p95_ms": 7.873458,
+                "min_ms": 5.201688,
+                "max_ms": 7.873458,
+                "samples": 7
+              },
+              "insert_1000_non_news_jobs_one_transaction": {
+                "median_ms": 2.913955,
+                "p95_ms": 3.274344,
+                "min_ms": 2.799109,
+                "max_ms": 3.274344,
+                "samples": 7
+              },
+              "create_index_on_populated_jobs": {
+                "median_ms": 9.818929,
+                "p95_ms": 10.339273,
+                "min_ms": 8.797277,
+                "max_ms": 10.339273,
+                "samples": 7
+              },
+              "index_bytes_after_updates_and_1000_non_news": 860160
+            },
+            "partial_kind_status_cover": {
+              "ddl": "CREATE INDEX jobs_trial ON jobs(kind,status,attempts,due,lease_until,updated_at) WHERE kind GLOB 'news_*'",
+              "insert_jobs_one_transaction": {
+                "median_ms": 45.422682,
+                "p95_ms": 47.677141,
+                "min_ms": 43.192087,
+                "max_ms": 47.677141,
+                "samples": 7
+              },
+              "update_1000_jobs_one_transaction": {
+                "median_ms": 5.105735,
+                "p95_ms": 5.635023,
+                "min_ms": 4.884379,
+                "max_ms": 5.635023,
+                "samples": 7
+              },
+              "insert_1000_non_news_jobs_one_transaction": {
+                "median_ms": 2.164445,
+                "p95_ms": 2.624033,
+                "min_ms": 2.08118,
+                "max_ms": 2.624033,
+                "samples": 7
+              },
+              "create_index_on_populated_jobs": {
+                "median_ms": 8.353928,
+                "p95_ms": 8.922332,
+                "min_ms": 7.260819,
+                "max_ms": 8.922332,
+                "samples": 7
+              },
+              "index_bytes_after_updates_and_1000_non_news": 630784
+            },
+            "partial_status_kind_cover": {
+              "ddl": "CREATE INDEX jobs_trial ON jobs(status,kind,attempts,due,lease_until,updated_at) WHERE kind GLOB 'news_*'",
+              "insert_jobs_one_transaction": {
+                "median_ms": 44.738757,
+                "p95_ms": 46.341283,
+                "min_ms": 43.268288,
+                "max_ms": 46.341283,
+                "samples": 7
+              },
+              "update_1000_jobs_one_transaction": {
+                "median_ms": 5.152513,
+                "p95_ms": 7.017109,
+                "min_ms": 4.944905,
+                "max_ms": 7.017109,
+                "samples": 7
+              },
+              "insert_1000_non_news_jobs_one_transaction": {
+                "median_ms": 2.091301,
+                "p95_ms": 2.212964,
+                "min_ms": 2.068593,
+                "max_ms": 2.212964,
+                "samples": 7
+              },
+              "create_index_on_populated_jobs": {
+                "median_ms": 6.967825,
+                "p95_ms": 7.421595,
+                "min_ms": 6.64128,
+                "max_ms": 7.421595,
+                "samples": 7
+              },
+              "index_bytes_after_updates_and_1000_non_news": 630784
+            },
+            "documents_source_kind": {
+              "create_index_on_populated_documents": {
+                "median_ms": 8.860845,
+                "p95_ms": 13.438284,
+                "min_ms": 8.261112,
+                "max_ms": 13.438284,
+                "samples": 7
+              },
+              "index_bytes": 167936
+            }
+          }
+        }
+      ]
+    }
+  },
+  "news_runtime": {
+    "reference": {
+      "schema_version": 1,
+      "label": "committed-HEAD-reference-not-original-exploratory-before",
+      "created_at": "2026-10-15T22:33:54.368533+00:00",
+      "python": "3.12.14",
+      "platform": "Linux-6.18.44-x86_64-with-glibc2.41",
+      "source_root": "/tmp/peps-news-bench-reference-82irnprk/reference",
+      "git": {
+        "head": "d2adee42d18e2db544427b447f43e07828a69bc6",
+        "status_porcelain": ""
+      },
+      "source_hashes_before": {
+        "peps/news.py": "ecf93241efd0a1c2fd8749981096dec43898eb6f5da294272e4dd07a3995e8f4",
+        "peps/news_search.py": "a29406adb00a00ab32b6eb0511d32a32b499f8eeff7be30a84e24c0fdad6c439",
+        "peps/engine.py": "0b0e2e37563952a2cbec79cc917b40f5a49460bb3faffeef980cf6eb65f4554a",
+        "peps/store.py": "bd1e2dc3ea67fd76efd17cf98db22742d69a924732f29655596467e1a76f8434",
+        "peps/identity.py": "f05524947d5b1d765803da6faa145f3b422a61a10971a1caca3c6983f3436d2f",
+        "peps/collector.py": "65053cfa545eb618ef8272c9fcc082e1373402844bae27dd6576aabd5aa4e0dd"
+      },
+      "script_sha256": "a1dd5c78adb1a80a06994a0f0cf8b391d09559c2826d1c04225f0e24fc2358db",
+      "fixture": {
+        "now": "2026-10-15T12:00:00+00:00",
+        "source": {
+          "id": "synthetic-publisher",
+          "source_name": "Synthetic publisher",
+          "kind": "rss",
+          "search_kind": "wordpress_rss",
+          "search_url": "https://publisher.invalid/",
+          "base_url": "https://publisher.invalid/",
+          "allowed_hosts": [
+            "publisher.invalid"
+          ],
+          "enabled": true,
+          "terms_approved": true,
+          "search_max_records": 10,
+          "min_interval_seconds": 5,
+          "min_window_seconds": 86400
+        },
+        "settings": {
+          "strategy": "targeted",
+          "start": "2016-01-01",
+          "end": "2026-10-15",
+          "max_queries": 10000,
+          "include_aliases": true,
+          "use_context": true
+        },
+        "entity_sizes": [
+          326,
+          10000
+        ],
+        "queue_sizes": [
+          1000,
+          10000
+        ],
+        "max_processed": 200,
+        "workers": 4,
+        "preview_entities": 10000
+      },
+      "plans": [
+        {
+          "entities": 326,
+          "seconds": 0.3715338519978104,
+          "queries": 10000,
+          "required": 14344
+        },
+        {
+          "entities": 10000,
+          "seconds": 0.679341661001672,
+          "queries": 10000,
+          "required": 440000
+        }
+      ],
+      "homonyms": [
+        {
+          "entities": 326,
+          "seconds": 0.015821913999388926,
+          "queries": 12,
+          "query_links": 326
+        },
+        {
+          "entities": 10000,
+          "seconds": 3.3620333799990476,
+          "queries": 12,
+          "query_links": 10000
+        }
+      ],
+      "scheduler": [
+        {
+          "queue": 1000,
+          "processed": 200,
+          "seconds": 1.527411356997618,
+          "snapshots": 402,
+          "events": 402,
+          "pending": 800,
+          "stop_reason": "job_limit"
+        },
+        {
+          "queue": 10000,
+          "processed": 200,
+          "seconds": 7.630630381001538,
+          "snapshots": 402,
+          "events": 402,
+          "pending": 9800,
+          "stop_reason": "job_limit"
+        }
+      ],
+      "limitations": [
+        "Synthetic SQLite tasks completed without HTTP or article extraction.",
+        "Wall time varies with CPU, storage and antivirus; no latency thresholds.",
+        "Timing excludes fixture setup; no claim about coverage, identity or ETA accuracy.",
+        "Compare source hashes as well as Git HEAD when the checkout is dirty."
+      ],
+      "preview": {
+        "entities": 10000,
+        "cold_seconds": 1.275289505996625,
+        "warm_seconds": 0.6779534790002799,
+        "queries": 10000,
+        "same_result": true
+      },
+      "source_hashes_after": {
+        "peps/news.py": "ecf93241efd0a1c2fd8749981096dec43898eb6f5da294272e4dd07a3995e8f4",
+        "peps/news_search.py": "a29406adb00a00ab32b6eb0511d32a32b499f8eeff7be30a84e24c0fdad6c439",
+        "peps/engine.py": "0b0e2e37563952a2cbec79cc917b40f5a49460bb3faffeef980cf6eb65f4554a",
+        "peps/store.py": "bd1e2dc3ea67fd76efd17cf98db22742d69a924732f29655596467e1a76f8434",
+        "peps/identity.py": "f05524947d5b1d765803da6faa145f3b422a61a10971a1caca3c6983f3436d2f",
+        "peps/collector.py": "65053cfa545eb618ef8272c9fcc082e1373402844bae27dd6576aabd5aa4e0dd"
+      },
+      "source_unchanged_during_measurement": true
+    },
+    "after": {
+      "schema_version": 1,
+      "label": "performance-polish-reproducible",
+      "created_at": "2026-10-15T22:33:30.070659+00:00",
+      "python": "3.12.14",
+      "platform": "Linux-6.18.44-x86_64-with-glibc2.41",
+      "source_root": "/workspace/web_scraping_peps",
+      "git": {
+        "head": "d2adee42d18e2db544427b447f43e07828a69bc6",
+        "status_porcelain": "M .github/workflows/tests.yml\n M README.md\n M docs/FLUJO_GUIADO.md\n M peps/__init__.py\n M peps/app.py\n M peps/engine.py\n M peps/news.py\n M peps/news_search.py\n M peps/store.py\n M peps/web/app.js\n M peps/web/index.html\n M peps/web/style.css\n M peps/web/workflow.js\n M peps/workflow.py\n M pyproject.toml\n M scripts/benchmark_explanation_pipeline.py\n M scripts/test_workflow_ui.py\n M tests/test_app.py\n M tests/test_explanation_performance.py\n M tests/test_news_runtime.py\n M tests/test_news_search.py\n M tests/test_score_history.py\n M tests/test_workflow.py\n?? docs/VALIDACION_2_5_0.md\n?? scripts/benchmark_explanation_reads.py\n?? scripts/benchmark_news_runtime.py\n?? scripts/benchmark_ui_polling.py"
+      },
+      "source_hashes_before": {
+        "peps/news.py": "8ca959fdf08d32f54fc889d3009cc1e4dbe5389d38e0da556f682de99b2eaf9e",
+        "peps/news_search.py": "0834999b8a605edc133c27dcddab1df3602c13980add841c9770e55ef7e07593",
+        "peps/engine.py": "3f1f948bd2860674aaf9422636b50e1a829e051f3456a0f43cee6bedac076b37",
+        "peps/store.py": "1acd1ff51ba9993bf452b6327cdc24f69b6589f4e7e9a6e1266be665b8c4dbd9",
+        "peps/identity.py": "f05524947d5b1d765803da6faa145f3b422a61a10971a1caca3c6983f3436d2f",
+        "peps/collector.py": "65053cfa545eb618ef8272c9fcc082e1373402844bae27dd6576aabd5aa4e0dd"
+      },
+      "script_sha256": "a1dd5c78adb1a80a06994a0f0cf8b391d09559c2826d1c04225f0e24fc2358db",
+      "fixture": {
+        "now": "2026-10-15T12:00:00+00:00",
+        "source": {
+          "id": "synthetic-publisher",
+          "source_name": "Synthetic publisher",
+          "kind": "rss",
+          "search_kind": "wordpress_rss",
+          "search_url": "https://publisher.invalid/",
+          "base_url": "https://publisher.invalid/",
+          "allowed_hosts": [
+            "publisher.invalid"
+          ],
+          "enabled": true,
+          "terms_approved": true,
+          "search_max_records": 10,
+          "min_interval_seconds": 5,
+          "min_window_seconds": 86400
+        },
+        "settings": {
+          "strategy": "targeted",
+          "start": "2016-01-01",
+          "end": "2026-10-15",
+          "max_queries": 10000,
+          "include_aliases": true,
+          "use_context": true
+        },
+        "entity_sizes": [
+          326,
+          10000
+        ],
+        "queue_sizes": [
+          1000,
+          10000
+        ],
+        "max_processed": 200,
+        "workers": 4,
+        "preview_entities": 10000
+      },
+      "plans": [
+        {
+          "entities": 326,
+          "seconds": 0.4603352480007743,
+          "queries": 10000,
+          "required": 14344
+        },
+        {
+          "entities": 10000,
+          "seconds": 0.7434818830006407,
+          "queries": 10000,
+          "required": 440000
+        }
+      ],
+      "homonyms": [
+        {
+          "entities": 326,
+          "seconds": 0.003880440999637358,
+          "queries": 12,
+          "query_links": 326
+        },
+        {
+          "entities": 10000,
+          "seconds": 0.0604963139994652,
+          "queries": 12,
+          "query_links": 10000
+        }
+      ],
+      "scheduler": [
+        {
+          "queue": 1000,
+          "processed": 200,
+          "seconds": 0.793650023999362,
+          "snapshots": 203,
+          "events": 402,
+          "pending": 800,
+          "stop_reason": "job_limit"
+        },
+        {
+          "queue": 10000,
+          "processed": 200,
+          "seconds": 3.7421194210000976,
+          "snapshots": 203,
+          "events": 402,
+          "pending": 9800,
+          "stop_reason": "job_limit"
+        }
+      ],
+      "limitations": [
+        "Synthetic SQLite tasks completed without HTTP or article extraction.",
+        "Wall time varies with CPU, storage and antivirus; no latency thresholds.",
+        "Timing excludes fixture setup; no claim about coverage, identity or ETA accuracy.",
+        "Compare source hashes as well as Git HEAD when the checkout is dirty."
+      ],
+      "preview": {
+        "entities": 10000,
+        "cold_seconds": 1.0514604029995098,
+        "warm_seconds": 0.0009799649997148663,
+        "queries": 10000,
+        "same_result": true
+      },
+      "source_hashes_after": {
+        "peps/news.py": "8ca959fdf08d32f54fc889d3009cc1e4dbe5389d38e0da556f682de99b2eaf9e",
+        "peps/news_search.py": "0834999b8a605edc133c27dcddab1df3602c13980add841c9770e55ef7e07593",
+        "peps/engine.py": "3f1f948bd2860674aaf9422636b50e1a829e051f3456a0f43cee6bedac076b37",
+        "peps/store.py": "1acd1ff51ba9993bf452b6327cdc24f69b6589f4e7e9a6e1266be665b8c4dbd9",
+        "peps/identity.py": "f05524947d5b1d765803da6faa145f3b422a61a10971a1caca3c6983f3436d2f",
+        "peps/collector.py": "65053cfa545eb618ef8272c9fcc082e1373402844bae27dd6576aabd5aa4e0dd"
+      },
+      "source_unchanged_during_measurement": true
+    }
+  },
+  "explanation_profile": {
+    "before": {
+      "entities": 20,
+      "documents": 1000,
+      "scoring_seconds": 2.482803901999432,
+      "read20_profiled_seconds": 1.0847949540002446,
+      "counts": {
+        "entities": 20,
+        "documents": 1000,
+        "evidence": 1000,
+        "scores": 20,
+        "audit": 1041,
+        "jobs": {},
+        "recent_errors": []
+      }
+    },
+    "after": {
+      "entities": 20,
+      "documents": 1000,
+      "scoring_seconds": 1.876990674998524,
+      "read20_profiled_seconds": 0.3710898780009302,
+      "counts": {
+        "entities": 20,
+        "documents": 1000,
+        "evidence": 1000,
+        "scores": 20,
+        "audit": 1041,
+        "jobs": {},
+        "recent_errors": []
+      }
+    },
+    "limits": "Exploratory comparable profiles did not capture source hashes at measurement time; source hashes were not invented retrospectively. Use benchmark_explanation_reads.py to reproduce current separate vs bundled snapshots."
+  },
+  "legacy_upgrade": {
+    "kind": "actual_installed_231_to_current_http_recovery",
+    "checks": {
+      "bank_and_receipt_were_created_by_the_actual_231_release": true,
+      "opening_with_current_engine_preserves_the_original_jobs_articles_and_audit_prefix": true,
+      "catalog_upgrade_only_adds_disabled_unapproved_sources": true,
+      "existing_source_permissions_are_preserved": true,
+      "legacy_paused_receipt_is_rebound_without_inventing_a_new_matching_scope": true,
+      "new_targeted_plan_is_empty_for_the_original_generic_rss_permissions": true,
+      "original_queue_can_resume_even_when_new_targeted_plan_is_empty": true,
+      "upgraded_scheduler_retains_the_exact_64_jobs_and_backoff": true,
+      "upgraded_paused_bank_can_close_partial_coverage_without_rewriting_the_queue": true,
+      "upgraded_bank_can_analyze_and_archive_the_actual_metadata_and_pending_limits": true,
+      "upgraded_partial_score_remains_replayable": true,
+      "all_original_articles_jobs_and_audit_history_survive_upgrade": true
+    },
+    "external_requests": 0,
+    "current_version": "2.4.0",
+    "disabled_source_ids_added": [
+      "desinformemonos_search",
+      "google_news_search"
+    ],
+    "legacy_receipt": {
+      "download": {
+        "at": "2026-10-15T22:28:16.833575+00:00",
+        "details": {
+          "cancelled": true,
+          "pending": 64
+        },
+        "signature": {
+          "bank": 1,
+          "corpus": [
+            3,
+            0,
+            0
+          ],
+          "sources": [
+            2,
+            "2890de93094f75940079fcad7a4ea67d95c22805ebf8e3880698ad7b7af0e6a2"
+          ]
+        },
+        "status": "paused"
+      },
+      "mode": "online",
+      "sources_confirmed": {
+        "mode": "online",
+        "sources": [
+          2,
+          "2890de93094f75940079fcad7a4ea67d95c22805ebf8e3880698ad7b7af0e6a2"
+        ]
+      },
+      "version": 1
+    },
+    "legacy_module_file": "/workspace/web_scraping_peps/runtime/webscope-packaging-validation/venv/lib/python3.12/site-packages/peps/__init__.py",
+    "legacy_snapshots": {
+      "jobs": {
+        "rows": 64,
+        "sha256": "b12d25d584759a7d9d453350a2306dc2e4724eb006d81fb5d2e466253095819f"
+      },
+      "news_articles": {
+        "rows": 235,
+        "sha256": "9defef227d3f7335436f74669c42971dab0681f3d9b99a7f1ce305be52f7c3ea"
+      },
+      "audit": {
+        "rows": 3,
+        "sha256": "b1fbd2ada4c45d9ea48883bbe1553eece86f3f2b98c3319be91fc7b344684ee9"
+      }
+    },
+    "acquisition": {
+      "accepted_partial": true,
+      "articles": 235,
+      "failed_tasks": 0,
+      "full_articles": 0,
+      "limitations": {
+        "active_running": 0,
+        "articles": 235,
+        "blocked": 0,
+        "cancelled": 0,
+        "captured_at": "2026-10-15T22:28:16.918833+00:00",
+        "dead": 0,
+        "decision": "Cierre explícito con cobertura disponible; la cola se conserva para una reanudación posterior.",
+        "deferred": 64,
+        "documents": 0,
+        "done": 0,
+        "expired_running": 0,
+        "failed": 0,
+        "insufficient_documents": true,
+        "next_retry_at": 1792106896.8179822,
+        "next_retry_seconds": 3599.899538755417,
+        "pending_downloads": 64,
+        "queued": 0,
+        "running": 0,
+        "saturated_windows": 0,
+        "search_plan": null,
+        "unfetched_articles": 235
+      },
+      "metadata_only_articles": 235,
+      "mode": "online",
+      "partial": true,
+      "pending_tasks": 64,
+      "planning_truncated": false,
+      "planning_warnings": [],
+      "search": null,
+      "search_plan": null,
+      "status": "closed_partial"
+    },
+    "passed": true
+  },
+  "wheel": {
+    "manifest": {
+      "wheel": "/workspace/web_scraping_peps/runtime/performance-polish-validation/distribution/release-wheels/peps_mx-2.5.0-py3-none-any.whl",
+      "sha256": "81c5969eb2a0a932f668cd5ef0285ad8dd765d2f13aa91dc6437d830b430e2af",
+      "bytes": 1325880,
+      "version": "2.5.0",
+      "source_files_compared": 36,
+      "source_mismatches": [],
+      "required_runtime_dependencies": [],
+      "console_scripts": {
+        "peps": "peps.cli:main",
+        "webscope": "peps.cli:main"
+      }
+    },
+    "validation": {
+      "ok": true,
+      "kind": "wheel",
+      "executable": "/workspace/web_scraping_peps/runtime/performance-polish-validation/distribution/release-venv/bin/webscope",
+      "package_dir": "/workspace/web_scraping_peps/runtime/performance-polish-validation/distribution/release-venv/lib/python3.12/site-packages/peps",
+      "resources": {
+        "defaults/sources.json": {
+          "bytes": 3763,
+          "sha256": "d687b2ed74a193ceaf80aeccc9c3ebaf25701302d3de50313650195b24320e8a"
+        },
+        "defaults/news_sources.json": {
+          "bytes": 12570,
+          "sha256": "1d62a39e5c8ec5db9a0ac24a320bd397fd7b5183895a19dd6d45a46fd599a7d4"
+        },
+        "models/context-role-es-v1.json": {
+          "bytes": 1432196,
+          "sha256": "ba227bc782936a1e19901f8a1464618e160a5e525593c71affd1705f45a8f563"
+        },
+        "licenses/CONTEXT_MODEL_CODE.txt": {
+          "bytes": 1357,
+          "sha256": "a16813d6a62abd0dc9287c55e432283deaac308e9896c24a8a8bf61dbb16ec85"
+        },
+        "licenses/CONTEXT_MODEL_DATA.txt": {
+          "bytes": 7446,
+          "sha256": "1ad99d1281f8ea7ea0964d348b82245382979a8d3cf2d9a2dc70bac49dbc9ed4"
+        },
+        "web/index.html": {
+          "bytes": 34893,
+          "sha256": "2b1a8ec6c629283b3b982de6885e37f85db9c170ecc27766e7423d06577a29ca"
+        },
+        "web/app.js": {
+          "bytes": 38734,
+          "sha256": "065f54e1ccbb12d3c184c938e9f95fa5025f8f888fcc67ee2305c5232809a496"
+        },
+        "web/import.js": {
+          "bytes": 30773,
+          "sha256": "001462e226849b64e06b267700e8105faca8530cf673a35e32afa2db67d05726"
+        },
+        "web/workflow.js": {
+          "bytes": 51560,
+          "sha256": "7991d04042d4900a314aa8e763d3cfcdbf868778a88ff7390d3bdbc32f1e6c19"
+        },
+        "web/style.css": {
+          "bytes": 68040,
+          "sha256": "98745a5c58c07508c64bdef0304d95ef0e493160f006d8e160c47bce90299e8c"
+        },
+        "web/fonts/Lato-Regular.woff2": {
+          "bytes": 212004,
+          "sha256": "d414a00ed3e47a8cc7462bd43975f0214a05c10b70b5f22686430beb6057ae2c"
+        },
+        "web/fonts/Lato-Bold.woff2": {
+          "bytes": 211256,
+          "sha256": "898fe2248312995b4b089601fa76a0da61b47de58b95bb88291230f2a3db764d"
+        },
+        "web/fonts/SourceSerif4-Roman.woff2": {
+          "bytes": 427556,
+          "sha256": "4453d73855919eb67a8291bf2bad07782ecaf8af0e4e363d58948ff993209d51"
+        },
+        "licenses/LATO_OFL.txt": {
+          "bytes": 4407,
+          "sha256": "74ba064d03f1f1c4a952da936c3eb71866c34404916734de3cae73b34357e59e"
+        },
+        "licenses/SOURCE_SERIF_4_OFL.txt": {
+          "bytes": 4400,
+          "sha256": "5f94c3fd3a23131a417ab5a0c8452de57e70c3cfb9f604d88241f7065ebf9fd9"
+        },
+        "licenses/FONT_SOURCES.txt": {
+          "bytes": 1613,
+          "sha256": "2bd04ff61208bd77cfe4db490f3f167c614c4873218341f737cb75f834382e45"
+        }
+      },
+      "commands": [
+        "--help",
+        "peps --help",
+        "import-entities",
+        "import-documents",
+        "score",
+        "explain",
+        "replay",
+        "score-history",
+        "audit",
+        "stats",
+        "export",
+        "backup",
+        "news-stats",
+        "ui --no-browser"
+      ],
+      "context_method": {
+        "available": true,
+        "components": {
+          "discriminative": {
+            "artifact_sha256": "ba227bc782936a1e19901f8a1464618e160a5e525593c71affd1705f45a8f563",
+            "available": true,
+            "classes": [
+              "accused",
+              "complainant",
+              "incidental",
+              "indirect",
+              "insufficient",
+              "negated",
+              "resolved",
+              "victim"
+            ],
+            "config": {
+              "C": 4.0,
+              "char_ngram_range": [
+                3,
+                5
+              ],
+              "char_weight": 0.55,
+              "fit_intercept": true,
+              "mask": "ENTITY_TARGET",
+              "max_clause_chars": 1800,
+              "max_clauses": 48,
+              "max_iter": 1200,
+              "min_df": 2,
+              "minimum_margin": 0.7,
+              "seed": 14015,
+              "sublinear_tf": true,
+              "word_ngram_range": [
+                1,
+                3
+              ],
+              "word_weight": 1.0
+            },
+            "config_hash": "cfc5174ed6b5d764d58fad885ff3f979b33e402b0ac8d7f10f36e28eeee80544",
+            "corpus_sha256": "f24e47520ef4900d76005969b82e5278f9c2204dfa1296aea30748a4f31e6531",
+            "license": {
+              "license_url": "https://creativecommons.org/publicdomain/zero/1.0/legalcode",
+              "scope": "Only original synthetic fixtures and numeric weights; existing project licensing is unchanged.",
+              "synthetic_corpus": "CC0-1.0",
+              "training_libraries": "scikit-learn, NumPy, SciPy: BSD-3-Clause; joblib BSD-3-Clause; threadpoolctl BSD-3-Clause",
+              "weights": "CC0-1.0"
+            },
+            "model_hash": "ba227bc782936a1e19901f8a1464618e160a5e525593c71affd1705f45a8f563",
+            "model_version": "es-context-discriminative-1.0.0",
+            "runtime_config_hash": "8806813034f55e34f35cc1846dfb089f46ada08c05d02dc1e3fc1363b624f37f",
+            "runtime_limits": {
+              "max_aliases": 32,
+              "max_input_chars": 60000,
+              "max_mention_candidates": 128,
+              "max_name_chars": 512
+            },
+            "training": {
+              "examples": 384,
+              "families": 96,
+              "provenance": "synthetic_only",
+              "python_version": "3.12.14",
+              "seed": 14015,
+              "sklearn_version": "1.8.0",
+              "validation_scope": "feasibility_only_not_validated_on_real_news"
+            }
+          }
+        },
+        "config": {
+          "enriched_policy": "discriminative_role_plus_optional_advanced_extraction_no_vote",
+          "hybrid_policy": "both_available_nonabstaining_same_role",
+          "identity_policy": "current_resolution_or_current_named_human_review_selected_mentions",
+          "max_identity_mentions": 256,
+          "max_input_chars": 60000,
+          "max_segments": 48,
+          "mixed_selected_homonym_clause": "exclude_clause",
+          "score_effect": "auxiliary_only",
+          "version": "contextual-orchestrator-1.0.0"
+        },
+        "config_hash": "1c68d822566876c2b547b8f98d88ad31e7bb7be5945d282eec182331982301db",
+        "identity_method": {
+          "model_version": "es-mx-identity-indexed-1.0.0",
+          "rules_hash": "d719bb275b67ec31666318e2aed55ca03546ef3e071e60869fcfa7a5644a4d05"
+        },
+        "method": "discriminative",
+        "model_hash": "931b3b86eaae82524033a54485a8e92bfba2677e7600963131ca82801ba466dc",
+        "model_version": "contextual-orchestrator-1.0.0",
+        "orchestrator_config_hash": "e89d79f90639cadf0cb72070f388b0e7487c988408df6f7ffa43dc0b2cc7b09f",
+        "score_effect": "auxiliary_only"
+      },
+      "network_mode": "closed; disabled sources; HTTP smoke only on 127.0.0.1",
+      "offline_socket_and_dns_guard": true,
+      "limits": [
+        "Synthetic fixture; no live acquisition or predictive quality measurement.",
+        "Frozen smoke exercises the shared runtime via the console executable."
+      ]
+    }
+  },
+  "limits": [
+    "Observed wall times on a shared Linux host are not download or coverage guarantees.",
+    "ETAs require work observations; source waits and growing discovery queues can prevent a global forecast.",
+    "Windows and optional NLP validation is performed by CI on this change."
+  ]
+}

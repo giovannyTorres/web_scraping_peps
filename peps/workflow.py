@@ -6,7 +6,9 @@ come from existing audit events and small SQL aggregates, not document hashes.
 from __future__ import annotations
 
 from copy import deepcopy
+import json
 import math
+import sqlite3
 import threading
 import time
 import uuid
@@ -30,13 +32,35 @@ class OperationTracker:
     _TEXT = ('next_retry', 'current_source', 'job_kind', 'last_error')
     _STOP_REASONS = ('completed', 'cancelled', 'time_limit', 'job_limit', 'backoff', 'scheduled', 'external_lease')
 
-    def __init__(self, clock=None):
+    _LABELS = {'download': 'Descargar documentos', 'attribution': 'Atribuir evidencia', 'scoring': 'Calcular resultados'}
+    _UNITS = {'download': 'tareas', 'attribution': 'artículos', 'scoring': 'entidades'}
+    _STAGES = ('fetch', 'discovery', 'process')
+
+    def __init__(self, clock=None, store=None):
         self._clock = clock or time.monotonic
+        self._store = store
         self._lock = threading.RLock()
         self.cancel_event = threading.Event()
         self._started = self._phase_started = self._clock()
         self._phase_baseline = 0
         self._ended = None
+        self._phases, self._tasks, self._profiles = {}, {}, {}
+        self._profiles_dirty = False
+        if store is not None:
+            with store.connection() as con:
+                con.execute('CREATE TABLE IF NOT EXISTS workflow_timing_profiles(id INTEGER PRIMARY KEY CHECK(id=1),payload TEXT NOT NULL,updated_at TEXT NOT NULL)')
+                row = con.execute('SELECT payload FROM workflow_timing_profiles WHERE id=1').fetchone()
+            if row:
+                try:
+                    profiles = json.loads(row[0])
+                    if isinstance(profiles, dict):
+                        for key, samples in list(profiles.items())[:128]:
+                            if isinstance(key, str) and isinstance(samples, list):
+                                self._profiles[key[:700]] = [sample for sample in samples[-24:]
+                                    if isinstance(sample, dict) and self._seconds(sample.get('seconds'))
+                                    and type(sample.get('units')) is int and sample['units'] > 0]
+                except (TypeError, ValueError):
+                    pass
         self._state = {'id': None, 'operation_id': None, 'kind': None, 'status': 'idle',
                        'phase': '', 'completed': 0, 'total': None, 'unit': '', 'message': '', 'result': None, 'details': {}}
 
@@ -54,6 +78,11 @@ class OperationTracker:
             self.cancel_event.clear()
             self._started = self._phase_started = self._clock()
             self._phase_baseline, self._ended = 0, None
+            self._tasks = {}
+            planned = ('attribution', 'scoring') if kind == 'analysis' else ('download',) if kind == 'download' else ()
+            self._phases = {name: self._new_phase(name) for name in planned}
+            if phase:
+                self._begin_phase(phase, total, unit)
             self._state = {'id': identifier, 'operation_id': identifier, 'kind': kind, 'status': 'running',
                            'phase': phase, 'completed': 0, 'total': total, 'unit': unit, 'message': message, 'result': None, 'details': {}}
             return identifier
@@ -86,7 +115,115 @@ class OperationTracker:
                               and type(value) is int and 0 <= value <= 2 ** 63 - 1}
         if 'wait_seconds' in result and 'next_retry_seconds' not in result:
             result['next_retry_seconds'] = result['wait_seconds']
+        if isinstance(values.get('task_timings'), dict):
+            result['task_timings'] = {key: value for key, value in values['task_timings'].items()
+                                      if key in cls._STAGES and cls._seconds(value, zero=True)}
         return result
+
+    @staticmethod
+    def _seconds(value, zero=False):
+        return type(value) in (int, float) and math.isfinite(value) and (value >= 0 if zero else value > 0)
+
+    def _new_phase(self, phase):
+        return {'id': phase, 'label': self._LABELS.get(phase, phase), 'status': 'ready',
+                'completed': 0, 'total': None, 'unit': self._UNITS.get(phase, ''),
+                '_started': None, '_ended': None, '_recorded': False}
+
+    def _begin_phase(self, phase, total, unit):
+        if phase not in self._phases and len(self._phases) >= 8:
+            return
+        value = self._phases.setdefault(phase, self._new_phase(phase))
+        value.update(status='running', total=total, unit=unit or value['unit'])
+        if value['_started'] is None:
+            value['_started'] = self._clock()
+
+    def _observe(self, key, seconds, units=1):
+        if not self._seconds(seconds) or type(units) is not int or units <= 0:
+            return
+        if key not in self._profiles and len(self._profiles) >= 128:
+            self._profiles.pop(next(iter(self._profiles)))
+        samples = self._profiles.setdefault(key, [])
+        sample = {'seconds': float(seconds), 'units': units}
+        samples.append(sample)
+        del samples[:-24]
+        self._profiles_dirty = True
+        return sample
+
+    def _rate(self, key):
+        samples = self._profiles.get(key, ())
+        units = sum(sample['units'] for sample in samples)
+        return (sum(sample['seconds'] for sample in samples) / units, len(samples)) if units else (None, 0)
+
+    def _finish_phase(self, status='completed'):
+        phase = self._phases.get(self._state['phase'])
+        if phase is None:
+            return
+        if phase['_ended'] is not None:
+            if status in ('paused', 'failed'):
+                phase['status'] = status
+                if phase['_recorded']:
+                    samples = self._profiles.get('phase:' + phase['id'], [])
+                    samples[:] = [sample for sample in samples if sample is not phase.get('_profile_sample')]
+                    phase['_recorded'] = False
+                    self._profiles_dirty = True
+            return
+        phase.update(status=status, _ended=self._clock())
+        # Interrupted phases and incomplete denominators never train a profile.
+        if (status == 'completed' and not phase['_recorded'] and phase['total'] is not None
+                and phase['completed'] == phase['total'] and phase['completed'] > 0):
+            sample = self._observe('phase:' + phase['id'], phase['_ended'] - phase['_started'], phase['completed'])
+            phase['_profile_sample'], phase['_recorded'] = sample, sample is not None
+
+    def _completion_allowed(self):
+        details = self._state['details']
+        return (self._state['status'] != 'cancel_requested' and not self.cancel_event.is_set()
+                and not details.get('cancelled') and details.get('stop_reason') != 'cancelled'
+                and not any(details.get(key, 0) for key in ('pending', 'failed', 'blocked', 'dead')))
+
+    @staticmethod
+    def _task_key(source, kind, stage):
+        return 'task:' + canonical([source, kind, stage])
+
+    def _task_event(self, values):
+        event = values.get('task_event')
+        identifier = values.get('task_id', values.get('job_id'))
+        if event not in ('start', 'stage', 'finish') or type(identifier) not in (str, int):
+            return
+        identifier = str(identifier)[:200]
+        moment = self._clock()
+        if event == 'start' and identifier not in self._tasks and len(self._tasks) < 32:
+            source, kind = values.get('current_source'), values.get('job_kind')
+            self._tasks[identifier] = {'id': identifier, 'label': str(values.get('task_label') or source or 'Documento')[:300],
+                'source': str(source or '')[:200], 'kind': str(kind or '')[:200],
+                'stage': values.get('task_stage') if values.get('task_stage') in self._STAGES else 'fetch',
+                'status': 'running', '_started': moment, '_stage_started': moment}
+        task = self._tasks.get(identifier)
+        if task is None:
+            return
+        if event == 'stage' and values.get('task_stage') in self._STAGES and values['task_stage'] != task['stage']:
+            task.update(stage=values['task_stage'], _stage_started=moment)
+        if event == 'finish':
+            if values.get('task_status', values.get('job_status')) == 'done':
+                timings = self._details(values).get('task_timings', {})
+                for stage, duration in timings.items():
+                    self._observe(self._task_key(task['source'], task['kind'], stage), duration)
+            del self._tasks[identifier]
+
+    def estimate_phases(self, kind, totals):
+        """Prior observations only; callers supply fresh counts without another SQL scan."""
+        with self._lock:
+            phases = ('attribution', 'scoring') if kind == 'analysis' else ('download',)
+            result = []
+            for phase in phases:
+                total = totals.get(phase) if isinstance(totals, dict) else None
+                rate, count = self._rate('phase:' + phase)
+                valid = type(total) is int and total >= 0
+                eta = math.ceil(total * rate) if valid and rate is not None else None
+                result.append({'id': phase, 'label': self._LABELS[phase], 'status': 'ready', 'completed': 0,
+                    'total': total if valid else None, 'unit': self._UNITS[phase], 'elapsed_seconds': 0.,
+                    'eta_seconds': eta, 'eta_kind': 'estimated' if eta is not None else 'unknown',
+                    'eta_basis': 'previous_observations' if eta is not None else None, 'sample_count': count})
+            return result
 
     @staticmethod
     def _validate_count(value, field, optional=False):
@@ -111,6 +248,8 @@ class OperationTracker:
                 raise WorkflowError('El trabajo completado no puede exceder el total.', 400)
             phase = values.get('phase', self._state['phase'])
             if phase != self._state['phase']:
+                previous = self._phases.get(self._state['phase'])
+                self._finish_phase('completed' if previous and previous['total'] == previous['completed'] and self._completion_allowed() else 'paused')
                 self._phase_started, self._phase_baseline = self._clock(), completed
             elif completed < self._state['completed']:
                 raise WorkflowError('El progreso no puede retroceder dentro de una fase.', 400)
@@ -119,6 +258,14 @@ class OperationTracker:
                     self._state[key] = str(values[key])
             self._state.update(completed=completed, total=total)
             self._state['details'].update(self._details(values))
+            if phase:
+                self._begin_phase(phase, total, self._state['unit'])
+                if phase in self._phases:
+                    self._phases[phase].update(completed=completed, total=total)
+            self._task_event(values)
+            if values.get('event') == 'finish':
+                complete = total is not None and completed == total
+                self._finish_phase('completed' if (complete or values.get('queue_complete')) and self._completion_allowed() else 'paused')
             return True
 
     def finish(self, status='completed', message='', result=None, operation_id=None):
@@ -127,10 +274,24 @@ class OperationTracker:
         with self._lock:
             if not self.busy or (operation_id is not None and operation_id != self._state['operation_id']):
                 return False
-            self._state.update(status=status, message=message or self._state['message'], result=deepcopy(result))
             if isinstance(result, dict):
                 self._state['details'].update(self._details(result))
+            if status == 'completed' and not self._completion_allowed():
+                status = 'paused'
+            self._finish_phase(status)
+            self._state.update(status=status, message=message or self._state['message'], result=deepcopy(result))
             self._ended = self._clock()
+            self._tasks.clear()
+            if self._profiles_dirty and self._store is not None:
+                # Timing history is advisory. One bounded write at closure; no
+                # SQL or persistence in progress callbacks or polling snapshots.
+                try:
+                    with self._store.connection() as con:
+                        con.execute('INSERT OR REPLACE INTO workflow_timing_profiles VALUES(1,?,?)',
+                                    (canonical(self._profiles), now()))
+                    self._profiles_dirty = False
+                except sqlite3.Error:
+                    pass
             return True
 
     def request_cancel(self):
@@ -141,25 +302,85 @@ class OperationTracker:
             self._state.update(status='cancel_requested', message='Pausa solicitada; esperando que termine el trabajo actual.')
             return self._state['operation_id']
 
+    def _phase_eta(self, phase, moment, waiting=False):
+        completed, total = phase['completed'], phase['total']
+        if phase['status'] == 'completed':
+            return 0, 'completed', 'reported_completion', 0
+        if waiting:
+            return None, 'waiting', 'scheduled_retry', 0
+        if not self.busy or phase['status'] != 'running' or total is None or total <= completed:
+            return None, 'unknown', None, 0
+        elapsed = max(0., moment - self._phase_started)
+        units = completed - self._phase_baseline
+        if units >= 3 and elapsed >= 3:
+            return max(1, math.ceil((total - completed) * elapsed / units)), 'measured', 'current_phase_throughput', units
+        rate, count = self._rate('phase:' + phase['id'])
+        if rate is not None:
+            return max(1, math.ceil((total - completed) * rate)), 'estimated', 'previous_observations', count
+        return None, 'unknown', None, 0
+
+    def _task_progress(self, value, moment):
+        phases = []
+        current_eta = (None, 'unknown', None, 0)
+        for phase in self._phases.values():
+            row = {key: item for key, item in phase.items() if not key.startswith('_')}
+            ended = phase['_ended'] if phase['_ended'] is not None else moment
+            row['elapsed_seconds'] = round(max(0., ended - phase['_started']), 3) if phase['_started'] is not None else 0.
+            waiting = phase['id'] == value['phase'] and value.get('waiting', False)
+            eta = self._phase_eta(phase, ended, waiting)
+            # Discovery and retry queues can grow or require external permission;
+            # a phase rate cannot promise an end-to-end download time.
+            if phase['id'] == 'download' and (value.get('discovery_pending') or value.get('failed') or value.get('deferred')) and not waiting:
+                eta = (None, 'unknown', 'queue_can_change', 0)
+            row.update(eta_seconds=eta[0], eta_kind=eta[1], eta_basis=eta[2], sample_count=eta[3])
+            phases.append(row)
+            if phase['id'] == value['phase']:
+                current_eta = eta
+        active = []
+        for task in self._tasks.values():
+            row = {key: item for key, item in task.items() if not key.startswith('_')}
+            stage_elapsed = max(0., moment - task['_stage_started'])
+            rate, count = self._rate(self._task_key(task['source'], task['kind'], task['stage']))
+            remaining = rate - stage_elapsed if rate is not None else None
+            eta = max(1, math.ceil(remaining)) if remaining is not None and remaining > 0 else None
+            row.update(elapsed_seconds=round(max(0., moment - task['_started']), 3),
+                       stage_elapsed_seconds=round(stage_elapsed, 3), eta_seconds=eta,
+                       eta_kind='estimated' if eta is not None else 'unknown', eta_scope='current_stage',
+                       eta_basis='previous_stage_observations' if eta is not None else 'observation_exceeded' if rate is not None else None,
+                       sample_count=count)
+            active.append(row)
+        jobs = value.get('jobs') or {}
+        done = jobs.get('done', value.get('done', value['completed']))
+        pending, failed = value.get('pending', 0), value.get('failed', 0)
+        queue_eta = current_eta
+        if value.get('waiting'):
+            queue_eta = (value.get('next_retry_seconds'), 'waiting', 'scheduled_retry', 0)
+        elif value['kind'] != 'download':
+            queue_eta = (None, 'unknown', None, 0)
+        queue = {'completed': done, 'pending': pending, 'ready': value.get('ready', 0),
+                 'active': value.get('active_tasks', len(active)), 'deferred': value.get('deferred', 0), 'failed': failed,
+                 'total': None if value.get('discovery_pending') else done + pending + failed + jobs.get('cancelled', 0),
+                 'eta_seconds': queue_eta[0], 'eta_kind': queue_eta[1], 'eta_basis': queue_eta[2], 'sample_count': queue_eta[3],
+                 'next_retry_seconds': value.get('next_retry_seconds')}
+        return {'phases': phases, 'active': active, 'queue': queue}, current_eta
+
     def snapshot(self):
         with self._lock:
             value = deepcopy(self._state)
             value.update(deepcopy(value['details']))
-            elapsed = max(0., (self._ended if self._ended is not None else self._clock()) - self._started)
+            moment = self._ended if self._ended is not None else self._clock()
+            elapsed = max(0., moment - self._started)
             completed, total = value['completed'], value['total']
             percent = None if total is None or total == 0 else min(100, 100 * completed / total)
             if percent is not None and value['status'] != 'completed':
                 percent = min(99., percent)
-            phase_elapsed = max(0., self._clock() - self._phase_started)
-            units = completed - self._phase_baseline
-            eta = None
-            if self.busy and not value.get('waiting') and total is not None and total > completed and units >= 3 and phase_elapsed >= 3:
-                eta = max(1, math.ceil((total - completed) * phase_elapsed / units))
             if value.get('next_retry_at') is not None:
                 value['next_retry_seconds'] = max(0., round(value['next_retry_at'] - time.time(), 3))
                 value['details']['next_retry_seconds'] = value['next_retry_seconds']
+            task_progress, eta = self._task_progress(value, moment)
             value.update(busy=self.busy, percent=round(percent, 1) if percent is not None else None,
-                         elapsed_seconds=round(elapsed, 3), eta_seconds=eta,
+                         elapsed_seconds=round(elapsed, 3), eta_seconds=eta[0], eta_kind=eta[1], eta_basis=eta[2], sample_count=eta[3],
+                         task_progress=task_progress,
                          last_result=deepcopy(value['result']), label=value['message'],
                          error=value['message'] if value['status'] == 'failed' else None)
             return value
@@ -176,6 +397,14 @@ class GuidedWorkflow:
             con.execute('CREATE TABLE IF NOT EXISTS workflow_state(id INTEGER PRIMARY KEY CHECK(id=1),payload TEXT NOT NULL,updated_at TEXT NOT NULL)')
             con.execute('INSERT OR IGNORE INTO workflow_state VALUES(1,?,?)',
                         (canonical({'version': 1, 'mode': 'online'}), now()))
+            # Poll persisted changes through compact covering indexes instead
+            # of revisiting wide job payloads and document bodies. The partial
+            # job index excludes unrelated collection/scoring work.
+            # Keep jobs_ready's leading order: the persisted queue signature
+            # includes a REAL sum, whose rounding must not change on upgrade.
+            con.execute("CREATE INDEX IF NOT EXISTS jobs_news_workflow ON jobs "
+                        "(status,due,lease_until,kind,attempts,updated_at) WHERE kind GLOB 'news_*'")
+            con.execute('CREATE INDEX IF NOT EXISTS documents_workflow_kind ON documents(source_kind)')
 
     @staticmethod
     def _state(con):
@@ -255,7 +484,10 @@ class GuidedWorkflow:
         except (ValueError, TypeError, OSError):
             sources, source_error = [], 'Revise la configuración de fuentes.'
         bank = con.execute("SELECT value FROM meta WHERE key='news_identity_revision'").fetchone()
-        documents = con.execute('SELECT count(*),COALESCE(MAX(rowid),0) FROM documents').fetchone()
+        # Separate scalar aggregates retain SQLite's fast count and
+        # last-row lookup, which a combined count/MAX aggregate cannot use.
+        documents = con.execute('SELECT (SELECT count(*) FROM documents),'
+                                '(SELECT COALESCE(MAX(rowid),0) FROM documents)').fetchone()
         counts = {'entities': con.execute('SELECT count(*) FROM entities').fetchone()[0],
                   'documents': documents[0], 'sources': sum(s.get('enabled') is True and s.get('terms_approved') is True for s in sources),
                   'articles': 0, 'pending_downloads': 0,

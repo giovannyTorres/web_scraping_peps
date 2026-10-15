@@ -103,7 +103,11 @@ impide analizar los documentos locales confirmados.
 | Requiere atención | Se produjo un error; no se anuncia finalización correcta. |
 | Completado | El paso terminó para los datos y alcance vigentes. |
 
-El tiempo restante se estima por fase, a partir de al menos tres unidades y tres
-segundos medidos. Si no hay total conocido o muestra suficiente se muestra
-**aún no estimable**. Las demoras de fuentes externas no se sustituyen por una
-cuenta regresiva simulada.
+El tiempo restante se muestra por fase y por etapa de cada tarea activa. Para una
+fase se usa el rendimiento de esta sesión tras al menos tres unidades y tres
+segundos medidos, o muestras anteriores conservadas en el mismo equipo. Antes de
+la primera muestra aparece **Calculando estimación**; una previsión superada se
+reajusta. Las esperas de fuentes indican el próximo intento permitido y se
+separan del procesamiento. La descarga puede descubrir nuevas tareas y carecer
+de un total global estable. El detalle y la validación están en
+[VALIDACION_2_5_0.md](VALIDACION_2_5_0.md).

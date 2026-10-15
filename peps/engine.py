@@ -22,13 +22,20 @@ def _emit_progress(callback, phase, completed, total, unit, message, *, event='p
             pass
 
 
-def _job_progress(store, kind_prefix=None, unreported_ids=()):
+def _job_progress(store, kind_prefix=None, unreported_ids=(), *, readiness=False):
+    current = time.time()
+    extra = ("sum(attempts<5 AND due<=? AND (status IN ('queued','deferred') OR "
+             "(status='running' AND COALESCE(lease_until,0)<=?))) AS ready,"
+             "sum(status='running' AND lease_until>?) AS active_running,"
+             "min(CASE WHEN attempts<5 AND status IN ('queued','deferred') THEN due "
+             "WHEN status='running' THEN max(due,COALESCE(lease_until,0)) END) AS next_due,") if readiness else ''
+    parameters = ((current, current, current) if readiness else ()) + (kind_prefix, (kind_prefix or '') + '%')
     with store.connection() as con:
         con.execute('BEGIN')
-        rows = con.execute("SELECT status,count(*) AS n,"
+        rows = con.execute("SELECT status,count(*) AS n," + extra +
                            "sum(kind IN ('discover','news_feed','news_query')) AS discovery "
                            'FROM jobs WHERE (? IS NULL OR kind LIKE ?) GROUP BY status',
-                           (kind_prefix, (kind_prefix or '') + '%')).fetchall()
+                           parameters).fetchall()
         jobs = {row['status']: row['n'] for row in rows}
         discovery_pending = sum(row['discovery'] for row in rows if row['status'] in ('queued', 'running', 'deferred'))
         # Other workers can commit before they obtain the callback lock. Keep
@@ -39,10 +46,16 @@ def _job_progress(store, kind_prefix=None, unreported_ids=()):
                                                ','.join('?' for _ in unreported_ids) + ')',
                                                tuple(unreported_ids)).fetchone()[0]
     pending = sum(jobs.get(state, 0) for state in ('queued', 'running', 'deferred'))
-    return dict(jobs=jobs, pending=pending, deferred=jobs.get('deferred', 0),
+    result = dict(jobs=jobs, pending=pending, deferred=jobs.get('deferred', 0),
                 blocked=jobs.get('blocked', 0), dead=jobs.get('dead', 0),
                 failed=jobs.get('blocked', 0) + jobs.get('dead', 0), queue_complete=pending == 0,
                 discovery_pending=discovery_pending, unreported_completed=unreported_completed)
+    if readiness:
+        due = [row['next_due'] for row in rows if row['next_due'] is not None]
+        result.update(ready=sum(row['ready'] or 0 for row in rows),
+                      active_running=sum(row['active_running'] or 0 for row in rows),
+                      next_due=min(due) if due else None, queue_observed_at=current)
+    return result
 
 
 def normalized(text):
@@ -180,6 +193,7 @@ class Engine:
         from .contextual import analyze_evidence, get_method_info
         from .explainability import explain_score, scoring_fingerprint
         mode = self.context_mode()
+        authority, context_method = scoring_fingerprint(), get_method_info(mode)
         count = 0
         if entity_id and isinstance(entity_id, str):
             ids = [entity_id]
@@ -219,8 +233,7 @@ class Engine:
                         con.execute('UPDATE evidence SET analysis=? WHERE id=?', (canonical(item['analysis']), item['id']))
                     result = score_entity(entity, evidence)
                     result['contextual_analysis'] = [analyze_evidence(entity, item, mode) for item in evidence]
-                    result['provenance'] = {'score_authority': scoring_fingerprint(),
-                                            'context_method': get_method_info(mode)}
+                    result['provenance'] = {'score_authority': authority, 'context_method': context_method}
                     if acquisition is not None:
                         # Coverage is a historical limit, never a scoring input.
                         result['provenance']['acquisition'] = json.loads(canonical(acquisition))
@@ -249,39 +262,38 @@ class Engine:
     def explanation(self, entity_id, run_id=None):
         from .explainability import VERSION, scoring_fingerprint
         from .contextual import get_method_info
-        entity = self.store.get_entity(entity_id)
-        if not entity:
+        bundle = self.store.score_run_bundle(entity_id, run_id)
+        if not bundle['entity_exists']:
             raise ValueError('Entidad inexistente')
+        run = bundle['run']
         if run_id:
-            run = self.store.get_score_run(run_id, entity_id)
             if not run:
                 raise ValueError('Evaluación inexistente para esta entidad')
         else:
-            run = self.store.latest_score_run(entity_id)
             provenance = (run or {}).get('result', {}).get('provenance', {})
             if (not run or provenance.get('score_authority') != scoring_fingerprint()
                     or provenance.get('context_method') != get_method_info(self.context_mode())
                     or run['result'].get('explainability', {}).get('version') != VERSION
                     or run['result'].get('as_of') != now()[:10]):
                 self.rescore(entity_id)
-                run = self.store.latest_score_run(entity_id)
+                bundle = self.store.score_run_bundle(entity_id)
+                run = bundle['run']
         return {'entity': run['entity_snapshot'], 'result': run['result'],
                 'explanation': run['result'].get('explainability', {}),
                 'run': {'id': run['id'], 'created_at': run['created_at'], 'historical': bool(run_id)},
-                'history': self.store.score_history(entity_id),
+                'history': bundle['history'],
                 'evidence_count': len(run['evidence_manifest'])}
 
     def replay_score(self, run_id):
         from .explainability import scoring_fingerprint
         from .scoring import score_entity
-        run = self.store.get_score_run(run_id)
+        run, evidence = self.store.score_run_evidence(run_id)
         if not run:
             raise ValueError('Evaluación inexistente')
         result = run['result']
         if result.get('provenance', {}).get('score_authority') != scoring_fingerprint():
             return {'status': 'unsupported', 'matched': False, 'run_id': run_id,
                     'reason': 'La versión, configuración o código del scorer difieren del snapshot. La evaluación histórica se conserva sin reinterpretarla.'}
-        evidence = self.store.materialize_run_evidence(run)
         replayed = score_entity(run['entity_snapshot'], evidence, as_of=result['as_of'])
         recorded = {key: value for key, value in result.items()
                     if key not in {'contextual_analysis', 'provenance', 'explainability'}}

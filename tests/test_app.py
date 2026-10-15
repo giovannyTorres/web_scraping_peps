@@ -119,6 +119,18 @@ class LocalAppTests(unittest.TestCase):
                         self.assertFalse(self.engine.online)
             queue.assert_not_called()
 
+    def test_collection_with_exhausted_tasks_does_not_report_success(self):
+        self.engine.store.import_entities([{'id': 'errors', 'name': 'Persona Sintética con Incidencias'}])
+        self.authorize_news_source()
+        with patch.object(self.engine, 'queue_discovery', return_value=0), \
+             patch.object(self.engine, 'run', return_value={'processed': 1, 'pending': 0, 'failed': 1}):
+            code, body, _ = self.request('/api/collect', 'POST', {'online': True})
+            self.assertEqual(200, code, body)
+            operation = self.wait_operation('paused')
+        self.assertEqual(1, operation['failed'])
+        self.assertNotEqual(100, operation['percent'])
+        self.assertTrue(all(phase['status'] != 'completed' for phase in operation['task_progress']['phases']))
+
     def test_resume_requires_boolean_and_does_not_enqueue_new_searches(self):
         from peps.news import NewsAcquirer
         from peps.workflow import GuidedWorkflow
@@ -388,6 +400,37 @@ class LocalAppTests(unittest.TestCase):
         self.assertTrue(stale['score_available'])
         self.assertFalse(stale['score_current'])
         self.assertIsNone(stale['score'])
+
+    def test_compact_entity_list_preserves_scores_without_expanding_saved_explanations(self):
+        self.engine.store.import_entities([{'id': 'compact', 'name': 'Entidad Sintética Compacta'}])
+        self.engine.import_documents([{'url': 'https://fixture.invalid/compact', 'source_kind': 'official',
+            'entity_ids': ['compact'], 'text': 'Entidad Sintética Compacta fue acusada de fraude.',
+            'published_at': '2026-10-10'}])
+        self.analyze_local()
+        with patch.object(self.engine, 'rescore', side_effect=AssertionError('GET must never score')):
+            full_code, full_body, _ = self.request('/api/entities')
+            small_code, small_body, _ = self.request('/api/entities?summary=1&q=Compacta')
+        self.assertEqual((200, 200), (full_code, small_code))
+        full, small = json.loads(full_body)[0], json.loads(small_body)[0]
+        self.assertEqual(full['id'], small['id'])
+        self.assertEqual({key: full['score'][key] for key in ('score', 'status')}, small['score'])
+        self.assertNotIn('result', small)
+        self.assertNotIn('result', full)
+        self.assertIn('evidence_audit', full['score'])
+        self.assertLess(len(small_body), len(full_body) / 2)
+        self.assertTrue(small['score_current'])
+        self.engine.store.import_entities([{'id': 'new', 'name': 'Otra Entidad Sintética'}])
+        code, body, _ = self.request('/api/entities?summary=1&q=Compacta')
+        self.assertEqual(200, code)
+        stale = json.loads(body)[0]
+        self.assertTrue(stale['score_available'])
+        self.assertFalse(stale['score_current'])
+        self.assertIsNone(stale['score'])
+        self.assertNotIn('result', stale)
+        code, body, _ = self.request('/api/entities?q=Compacta')
+        self.assertEqual(200, code)
+        self.assertIsNone(json.loads(body)[0]['score'])
+        self.assertNotIn('result', json.loads(body)[0])
 
     def test_explanation_snapshot_evidence_and_replay_keep_session_protection(self):
         self.engine.store.import_entities([{'id': 'why-fixture', 'name': 'Entidad Sintética Aurora', 'kind': 'company'}])

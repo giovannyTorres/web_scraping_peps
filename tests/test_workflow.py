@@ -148,6 +148,115 @@ class OperationTrackerTests(unittest.TestCase):
         self.tracker.update(completed=3, waiting=True)
         self.assertIsNone(self.tracker.snapshot()['eta_seconds'])
 
+    def test_empty_queue_with_failures_or_cancellation_never_completes_a_phase(self):
+        cases = ({'failed': 1}, {'blocked': 1}, {'dead': 1}, {'cancelled': True}, {'stop_reason': 'cancelled'}, {})
+        for extra in cases:
+            with self.subTest(extra=extra):
+                tracker = OperationTracker(clock=self.clock)
+                tracker.start('download', phase='download', total=3)
+                if not extra:
+                    tracker.request_cancel()
+                self.clock.value += 10
+                tracker.update({'event': 'finish', 'completed': 3, 'pending': 0, 'queue_complete': True, **extra})
+                snapshot = tracker.snapshot()
+                self.assertEqual(snapshot['task_progress']['phases'][0]['status'], 'paused')
+                self.assertNotEqual(snapshot['task_progress']['phases'][0]['eta_kind'], 'completed')
+                tracker.finish(result={'pending': 0, **extra})
+                self.assertEqual(tracker.snapshot()['status'], 'paused')
+                self.assertLess(tracker.snapshot()['percent'], 100)
+                self.assertIsNone(tracker.estimate_phases('download', {'download': 3})[0]['eta_seconds'])
+
+    def test_worker_final_failure_overrides_an_earlier_completion_callback(self):
+        self.tracker.start('download', phase='download', total=3)
+        self.clock.value = 10
+        self.tracker.update({'event': 'finish', 'completed': 3, 'queue_complete': True})
+        self.assertEqual(self.tracker.snapshot()['task_progress']['phases'][0]['status'], 'completed')
+        self.tracker.finish(result={'pending': 0, 'failed': 1})
+        snapshot = self.tracker.snapshot()
+        self.assertEqual(snapshot['status'], 'paused')
+        self.assertEqual(snapshot['task_progress']['phases'][0]['status'], 'paused')
+        self.assertLess(snapshot['percent'], 100)
+        self.assertIsNone(self.tracker.estimate_phases('download', {'download': 3})[0]['eta_seconds'])
+
+    def test_task_stage_estimates_use_finished_observations_and_show_overruns(self):
+        self.tracker.start('download', phase='download', total=2)
+        self.tracker.update(task_event='start', task_id='one', task_stage='fetch',
+                            current_source='Fuente ficticia', job_kind='news_article')
+        self.clock.value = 4
+        first = self.tracker.snapshot()['task_progress']['active'][0]
+        self.assertEqual(first['elapsed_seconds'], 4)
+        self.assertEqual(first['eta_kind'], 'unknown')
+        self.tracker.update(task_event='stage', task_id='one', task_stage='process')
+        self.clock.value = 5
+        self.tracker.update(completed=1, task_event='finish', task_id='one', task_status='done',
+                            task_timings={'fetch': 4., 'process': 1., 'secret': 99, 'discovery': float('nan')})
+        self.tracker.update(task_event='start', task_id='two', task_stage='fetch',
+                            current_source='Fuente ficticia', job_kind='news_article')
+        self.clock.value = 6
+        active = self.tracker.snapshot()['task_progress']['active'][0]
+        self.assertEqual((active['eta_seconds'], active['eta_kind'], active['sample_count']), (3, 'estimated', 1))
+        self.assertEqual(active['eta_scope'], 'current_stage')
+        self.assertNotIn('secret', self.tracker.snapshot()['details']['task_timings'])
+        self.tracker.update(task_event='stage', task_id='two', task_stage='process')
+        self.assertEqual(self.tracker.snapshot()['task_progress']['active'][0]['eta_seconds'], 1)
+        self.clock.value = 8
+        overdue = self.tracker.snapshot()['task_progress']['active'][0]
+        self.assertIsNone(overdue['eta_seconds'])
+        self.assertEqual(overdue['eta_basis'], 'observation_exceeded')
+        self.tracker.update({'completed': 2, 'task_event': 'finish', 'task_id': 'two', 'task_status': 'done',
+                             'task_timings': {'fetch': 1., 'process': 2.}, 'event': 'finish'})
+        self.tracker.finish()
+        self.assertEqual(self.tracker.snapshot()['task_progress']['active'], [])
+
+    def test_phase_history_survives_restart_and_callbacks_never_query_sql(self):
+        with tempfile.TemporaryDirectory() as directory:
+            store = Engine(Path(directory)).store
+            tracker = OperationTracker(clock=self.clock, store=store)
+            tracker.start('analysis', phase='attribution', total=10, unit='artículos')
+            with patch.object(store, 'connection', wraps=store.connection) as connection:
+                self.clock.value = 20
+                tracker.update({'completed': 10, 'event': 'finish'})
+                tracker.update(phase='scoring', completed=0, total=5, unit='entidades')
+                self.clock.value = 25
+                tracker.update({'completed': 5, 'event': 'finish'})
+                tracker.snapshot()
+                tracker.estimate_phases('analysis', {'attribution': 8, 'scoring': 4})
+                connection.assert_not_called()
+                tracker.finish()
+                self.assertEqual(connection.call_count, 1)
+            restored = OperationTracker(clock=self.clock, store=store)
+            estimates = restored.estimate_phases('analysis', {'attribution': 8, 'scoring': 4})
+            self.assertEqual([phase['eta_seconds'] for phase in estimates], [16, 4])
+            self.assertTrue(all(phase['eta_kind'] == 'estimated' for phase in estimates))
+            restored.start('analysis', phase='attribution', total=8)
+            snapshot = restored.snapshot()
+            self.assertEqual((snapshot['eta_seconds'], snapshot['eta_kind']), (16, 'estimated'))
+            self.assertEqual(snapshot['task_progress']['phases'][1]['status'], 'ready')
+            self.clock.value = 31
+            restored.update(completed=3)
+            self.assertEqual((restored.snapshot()['eta_seconds'], restored.snapshot()['eta_kind']), (10, 'measured'))
+
+    def test_partial_phases_and_failed_tasks_do_not_train_completion_predictions(self):
+        self.tracker.start('analysis', phase='attribution', total=10)
+        self.clock.value = 10
+        self.tracker.update(completed=3)
+        self.tracker.finish('paused')
+        self.assertIsNone(self.tracker.estimate_phases('analysis', {'attribution': 10})[0]['eta_seconds'])
+        self.tracker.start('download', phase='download')
+        self.tracker.update(task_event='start', task_id=7, task_stage='fetch', current_source='Sintética', job_kind='news_article')
+        self.clock.value = 15
+        self.tracker.update(task_event='finish', task_id=7, task_status='deferred', task_timings={'fetch': 5.})
+        self.tracker.update(task_event='start', task_id=8, task_stage='fetch', current_source='Sintética', job_kind='news_article')
+        self.assertEqual(self.tracker.snapshot()['task_progress']['active'][0]['eta_kind'], 'unknown')
+        self.tracker.update(waiting=True, next_retry_at=1100., pending=64, deferred=64, discovery_pending=1)
+        with patch('peps.workflow.time.time', return_value=1000.):
+            snapshot = self.tracker.snapshot()
+        self.assertIsNone(snapshot['eta_seconds'])
+        self.assertEqual(snapshot['eta_kind'], 'waiting')
+        self.assertEqual(snapshot['task_progress']['queue']['eta_seconds'], 100.)
+        self.assertEqual(snapshot['task_progress']['queue']['eta_kind'], 'waiting')
+        self.assertIsNone(snapshot['task_progress']['queue']['total'])
+
 
 class GuidedWorkflowTests(unittest.TestCase):
     def setUp(self):
@@ -181,6 +290,34 @@ class GuidedWorkflowTests(unittest.TestCase):
         self.assertEqual(snapshot['recommended_step'], 'data')
         self.assertFalse(snapshot['actions']['analyze']['enabled'])
         self.assertEqual(self.engine.store.stats()['scores'], 0)
+
+    def test_query_indexes_preserve_partial_receipt_and_never_hide_external_changes(self):
+        self.import_bank()
+        with self.engine.store.connection() as con:
+            con.execute('DROP INDEX jobs_news_workflow')
+            con.execute('DROP INDEX documents_workflow_kind')
+        for index in range(64):
+            identifier = self.engine.store.enqueue('news_article', {'synthetic': index})
+            with self.engine.store.connection() as con:
+                con.execute("UPDATE jobs SET status='running',due=?,lease_until=? WHERE id=?",
+                            (float(index % 7), .1 + index / 13, identifier))
+        self.workflow.mark_download(status='paused')
+        closed = self.workflow.finish_download()
+        self.assertTrue(closed['coverage']['closed_partial'])
+        fingerprint = closed['coverage']['queue_signature']
+        upgraded = GuidedWorkflow(self.engine.store, lambda: deepcopy(self.sources))
+        current = upgraded.snapshot()
+        self.assertEqual(current['coverage']['queue_signature'], fingerprint)
+        self.assertTrue(current['coverage']['closed_partial'])
+        self.assertTrue(current['actions']['analyze']['enabled'])
+        with self.engine.store.connection() as external:
+            external.execute("UPDATE jobs SET status='done' WHERE id=?", (identifier,))
+        changed = upgraded.snapshot()
+        self.assertEqual(changed['coverage']['pending_downloads'], 63)
+        self.assertFalse(changed['coverage']['accepted_partial'])
+        self.document()
+        self.assertEqual(upgraded.snapshot()['counts']['documents'], 1)
+        self.assertFalse(upgraded.snapshot()['coverage']['acquisition_current'])
 
     def test_local_mode_is_explicit_persisted_and_can_report_insufficient_documents(self):
         self.import_bank()
