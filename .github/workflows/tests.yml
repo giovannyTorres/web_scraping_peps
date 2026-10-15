@@ -16,6 +16,7 @@ jobs:
       - run: python -m playwright install --with-deps chromium
       - run: python scripts/test_workflow_ui.py
       - run: python scripts/test_download_recovery_ui.py
+      - run: python scripts/benchmark_ui_polling.py --tab sources --duration 6 --assert-optimized
       - run: python scripts/test_import_ui.py
       - run: python scripts/test_explainability_ui.py
       - uses: actions/upload-artifact@v4
@@ -25,6 +26,7 @@ jobs:
           path: |
             runtime/guided-ui-validation/
             runtime/download-recovery-ui-validation/
+            runtime/ui-polling-validation/
             runtime/import-ui-validation/
             runtime/ui-validation/
   unit:

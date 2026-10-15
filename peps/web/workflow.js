@@ -10,7 +10,7 @@ window.pepsWorkflow = (() => {
     {id:'results',tab:'bank',title:'Revisa los resultados con contexto',description:'Consulta la evidencia original y comprueba las coincidencias antes de tomar decisiones.'}
   ];
   const labels = {complete:'Completado',ready:'Listo para continuar',blocked:'Pendiente',running:'En curso',paused:'En pausa',error:'Requiere atención'};
-  const state = {hooks:null,workflow:null,operation:{},current:'import',initialized:false,first:true,requesting:false,observedOperation:null,finishedOperation:null,searchLoaded:false,searchLoading:false,searchDirty:false,searchRequest:0};
+  const state = {hooks:null,workflow:null,operation:{},current:'import',initialized:false,first:true,requesting:false,observedOperation:null,finishedOperation:null,searchLoaded:false,searchLoading:false,searchDirty:false,searchRequest:0,phaseNodes:new Map(),taskNodes:new Map(),estimateNodes:new Map()};
   function stepFor(tab) { return steps.find(step=>step.tab===tab); }
   function serverStep(tab) { const step=stepFor(tab);return state.workflow?.steps?.find(item=>item.id===step?.id); }
   function action(name) { return state.workflow?.actions?.[name] || {enabled:false,reason:'Consultando el estado del proceso…'}; }
@@ -24,7 +24,7 @@ window.pepsWorkflow = (() => {
     return allowed;
   }
   function navigate(tab) { return state.hooks.switchTab(tab); }
-  function setText(id,text) { if($(id))$(id).textContent=text||''; }
+  function setText(id,text) { const element=$(id),value=text??'';if(element&&element.textContent!==String(value))element.textContent=String(value); }
   function setButton(id,enabled,reason,reasonId) {
     const button=$(id);if(!button)return;
     button.disabled=!enabled;
@@ -72,13 +72,13 @@ window.pepsWorkflow = (() => {
     setText('workflow-queue-state',workerActive||op.busy&&op.kind==='download'?'Descarga activa':coverage.closed_partial?'Cobertura parcial aceptada':pending?'Pendientes guardadas':context.attempted?'Sesión terminada':'Sin actividad');
     const delay=retryDelay(context);
     setText('workflow-download-wait',pending?(workerActive?'Hay trabajo activo; el análisis seguirá bloqueado hasta que termine.':delay!==null&&delay>0?'Próximo intento permitido en aproximadamente '+formatTime(delay)+'. Reanuda la descarga para que procese las tareas cuando estén disponibles.':Number(coverage.queued||0)>0?'Hay tareas en cola listas para reanudar.':'No hay una espera estimable para las tareas restantes. Puedes reanudar o continuar con cobertura parcial.'):'No hay tareas pendientes de descarga.');
-    const issues=$('workflow-download-issues');issues.replaceChildren();
+    const issues=$('workflow-download-issues');
     const notes=[];
     if(Number(coverage.deferred||0))notes.push(Number(coverage.deferred).toLocaleString('es-MX')+' tareas esperan una pausa de la fuente, un reintento o su programación.');
     if(Number(coverage.expired_running||0))notes.push(Number(coverage.expired_running).toLocaleString('es-MX')+' tareas tienen un turno vencido; no representan un trabajador activo.');
     if(Number(coverage.failed||0))notes.push(Number(coverage.failed).toLocaleString('es-MX')+' tareas registran errores o bloqueos. Su ausencia se señalará como límite de cobertura.');
     for(const item of coverage.reasons||[])if(typeof item==='string')notes.push(item);else if(item?.reason)notes.push(item.reason+(item.count?' ('+item.count+')':''));
-    for(const note of notes){const li=document.createElement('li');li.textContent=note;issues.append(li);}
+    const notesKey=JSON.stringify(notes);if(issues.dataset.notesKey!==notesKey){issues.dataset.notesKey=notesKey;issues.replaceChildren();for(const note of notes){const li=document.createElement('li');li.textContent=note;issues.append(li);}}
     issues.hidden=!notes.length;
   }
   function searchPayload() {
@@ -133,6 +133,87 @@ window.pepsWorkflow = (() => {
     catch(error){setText('workflow-search-status','No se pudo cargar la búsqueda: '+error.message);}
     finally{if(request===state.searchRequest){state.searchLoading=false;renderActions();}}
   }
+  function timingEstimate(item,paused=false) {
+    const kind=item?.eta_kind||'unknown',seconds=item?.eta_seconds;
+    if(kind==='completed'||['completed','complete','done'].includes(item?.status))return {text:'Terminada',kind:'completed',basis:'Trabajo completado'};
+    if(kind==='waiting')return {text:Number.isFinite(seconds)?'Próximo intento en ≈ '+formatTime(seconds):'Esperando a la fuente',kind,basis:'Espera programada; no es tiempo de descarga'};
+    if(paused)return {text:'Estimación en pausa',kind:'paused',basis:'Reanuda para actualizar los tiempos'};
+    if(Number.isFinite(seconds)&&seconds>=0&&['measured','estimated'].includes(kind))return {text:'Restante estimado: ≈ '+formatTime(seconds),kind,basis:kind==='measured'?'Calculado con el trabajo de esta sesión':'Estimado con observaciones previas'};
+    return {text:'Calculando estimación',kind:'unknown',basis:'Aún no hay trabajo observado suficiente'};
+  }
+  function timingCard(kind) {
+    const element=document.createElement('article');element.className=kind==='phase'?'phase-progress-card':'task-timing-row';
+    const heading=document.createElement('div');heading.className='timing-card-heading';
+    const title=document.createElement(kind==='phase'?'h4':'strong'),status=document.createElement('span');status.className='timing-status';heading.append(title,status);
+    const source=document.createElement('p');source.className='timing-source';
+    const progress=document.createElement('progress');progress.max=100;progress.className='timing-progress';
+    const counts=document.createElement('p');counts.className='timing-counts';
+    const meta=document.createElement('div');meta.className='timing-meta';
+    const elapsed=document.createElement('span'),eta=document.createElement('span');eta.className='timing-eta';meta.append(elapsed,eta);
+    const basis=document.createElement('p');basis.className='timing-basis';element.append(heading,source,progress,counts,meta,basis);
+    return {element,title,status,source,progress,counts,elapsed,eta,basis};
+  }
+  function updateTimingCard(card,item,kind) {
+    const put=(element,value)=>{const text=String(value??'');if(element.textContent!==text)element.textContent=text;};
+    const paused=kind!=='estimate'&&!state.operation.busy&&['paused','cancel_requested','failed'].includes(state.operation.status);
+    const rawStatus=item.status||'running',status=paused&&['running','waiting'].includes(rawStatus)?'paused':rawStatus;
+    const stageLabels={fetch:'Descargando',fetching:'Descargando',discovery:'Revisando resultados',process:'Conservando documento',download:'Descargando',robots:'Comprobando acceso',extract:'Extrayendo texto',extracting:'Extrayendo texto',parse:'Leyendo contenido',parsing:'Leyendo contenido',saving:'Guardando',waiting:'En espera',attribution:'Relacionando entidades',scoring:'Calculando score'};
+    put(card.title,item.label||{saving:'Guardar información',download:'Descargar noticias',attribution:'Relacionar entidades',scoring:'Calcular scores'}[item.id]||'Tarea en curso');
+    put(card.status,{running:'En curso',waiting:'En espera',paused:'En pausa',completed:'Terminada',complete:'Terminada',pending:'Pendiente',ready:'Preparada',error:'Con error',failed:'Con error'}[status]||'En curso');
+    card.element.dataset.status=status;card.element.dataset[kind==='task'?'taskId':'phase']=String(item.id||'');
+    const description=[item.source,kind==='task'?(stageLabels[item.stage]||item.stage):''].filter(Boolean).join(' · ');put(card.source,description);card.source.hidden=!description;
+    const total=Number.isFinite(item.total)&&item.total>0?item.total:null,completed=Number.isFinite(item.completed)?item.completed:null;
+    const finished=['completed','complete','done'].includes(status);
+    if(finished)card.progress.value=100;else if(['ready','pending','paused','failed'].includes(status)&&total===null)card.progress.value=0;else if(total!==null&&completed!==null)card.progress.value=Math.min(99,Math.max(0,100*completed/total));else card.progress.removeAttribute('value');
+    card.progress.setAttribute('aria-label','Progreso de '+card.title.textContent);
+    const units={entities:'entidades',documents:'documentos',articles:'noticias',jobs:'tareas',urls:'enlaces'};
+    const countText=completed!==null?completed.toLocaleString('es-MX')+(total!==null?' de '+total.toLocaleString('es-MX'):'')+' '+(units[item.unit]||item.unit||'elementos'):'';
+    put(card.counts,countText);card.counts.hidden=!countText;
+    card.progress.setAttribute('aria-valuetext',finished?'Trabajo terminado':countText||'Avance aún no cuantificable; se muestra la actividad real');
+    put(card.elapsed,kind==='estimate'?'Aún no iniciada':kind==='task'&&item.eta_scope==='current_stage'&&Number.isFinite(item.stage_elapsed_seconds)?'Tarea: '+formatTime(item.elapsed_seconds||0)+' · etapa: '+formatTime(item.stage_elapsed_seconds):Number.isFinite(item.elapsed_seconds)?formatTime(item.elapsed_seconds)+' transcurridos':'Tiempo aún no disponible');
+    const estimate=timingEstimate(item,paused);const notStarted=kind==='estimate'||['ready','pending'].includes(status),currentStage=kind==='task'&&item.eta_scope==='current_stage';let etaText=notStarted&&estimate.kind==='unknown'?'Se estimará al iniciar':currentStage?estimate.text.replace('Restante estimado','Esta etapa: restante estimado'):estimate.text;let basisText=notStarted&&estimate.kind==='unknown'?'Primera ejecución: se necesita trabajo observado':estimate.basis;if(currentStage&&['estimated','measured'].includes(estimate.kind))basisText+=' de esta etapa; no es el tiempo total de la noticia';if(item.eta_basis==='observation_exceeded'){etaText='Reajustando estimación';basisText='Está tardando más que las observaciones previas; la actividad sigue en curso';}put(card.eta,etaText);put(card.basis,basisText);card.eta.dataset.kind=estimate.kind;
+    if(item.eta_basis)card.basis.title=String(item.eta_basis);
+  }
+  function renderTiming() {
+    const data=state.operation.task_progress,phases=Array.isArray(data?.phases)?data.phases:[],tasks=Array.isArray(data?.active)?data.active:[];
+    const phaseBox=$('workflow-phase-progress'),details=$('workflow-task-timing'),taskBox=$('workflow-active-tasks');
+    const compact=state.current==='bank'&&!state.operation.busy&&state.operation.status==='completed';
+    if(compact){if(phaseBox.parentNode!==details)details.insertBefore(phaseBox,taskBox);}else if(phaseBox.parentNode===details)details.before(phaseBox);
+    if(details.dataset.compact!==String(compact)){details.dataset.compact=String(compact);if(compact)details.open=false;}
+    phaseBox.hidden=!phases.length;
+    for(const [box,items,nodes,kind] of [[phaseBox,phases,state.phaseNodes,'phase'],[$('workflow-active-tasks'),tasks,state.taskNodes,'task']]){
+      const keys=new Set();
+      items.forEach((item,index)=>{const key=String(item.id??index);keys.add(key);let card=nodes.get(key);if(!card){card=timingCard(kind);nodes.set(key,card);box.append(card.element);}updateTimingCard(card,item,kind);});
+      for(const [key,card] of nodes)if(!keys.has(key)){card.element.remove();nodes.delete(key);}
+    }
+    const queue=data?.queue;
+    details.hidden=!data;
+    setText('workflow-task-timing-title',compact?'Ver tiempos de las fases terminadas':tasks.length?'Ver tiempos de las tareas ('+tasks.length+' activas)':'Ver tiempos y esperas');
+    $('workflow-task-empty').hidden=!!tasks.length||compact;
+    if(queue&&state.operation.kind==='download'){
+      const estimate=timingEstimate(queue,!state.operation.busy&&state.operation.status==='paused');
+      const next=queue.next_retry_seconds,context=downloadContext();
+      setText('workflow-operation-eta',context.coverage.closed_partial?'Cobertura parcial guardada; las tareas restantes se conservan.':!state.operation.busy&&state.operation.status==='completed'&&Number(queue.pending||0)===0?'Operación terminada':!state.operation.busy&&state.operation.status==='failed'?'Operación detenida; consulta el error.':estimate.kind==='waiting'&&Number.isFinite(next)?'Próximo intento de la cola en ≈ '+formatTime(next):'Cola · '+estimate.text);
+    } else if(phases.length){
+      const current=phases.find(phase=>phase.id===state.operation.phase)||phases.find(phase=>phase.status==='running');
+      if(current){const estimate=timingEstimate(current,!state.operation.busy&&state.operation.status==='paused');setText('workflow-operation-eta',estimate.text);}
+    }
+  }
+  function renderPreflightEstimates() {
+    const estimates=state.operation.task_progress?.estimates;
+    const items=Array.isArray(estimates)?estimates:Object.values(estimates||{});
+    const analysis=items.filter(item=>['attribution','scoring'].includes(item.id));
+    const box=$('workflow-analysis-estimates'),show=analysis.length&&!state.operation.busy&&!state.workflow?.analysis_current;
+    box.hidden=!show;
+    const keys=new Set();
+    for(const item of analysis){const key=String(item.id);keys.add(key);let card=state.estimateNodes.get(key);if(!card){card=timingCard('phase');state.estimateNodes.set(key,card);box.append(card.element);}updateTimingCard(card,{...item,status:'ready',completed:null,total:null},'estimate');}
+    for(const [key,card] of state.estimateNodes)if(!keys.has(key)){card.element.remove();state.estimateNodes.delete(key);}
+    const download=items.find(item=>item.id==='download');
+    if(!download||state.operation.busy||downloadContext().local){$('workflow-download-estimate').hidden=true;return;}
+    $('workflow-download-estimate').hidden=false;
+    const estimate=timingEstimate(download);
+    setText('workflow-download-estimate',estimate.kind==='waiting'?(Number.isFinite(download.eta_seconds)?'Próximo intento permitido en ≈ '+formatTime(download.eta_seconds)+'. La espera no es una estimación de descarga.':'Hay una espera programada por la fuente.'):['measured','estimated'].includes(estimate.kind)&&Number.isFinite(download.eta_seconds)?'Tiempo estimado de descarga: ≈ '+formatTime(download.eta_seconds)+'. Basado en trabajo observado; puede cambiar con las fuentes.':'Tiempo de descarga: se estimará al observar las primeras tareas. Las pausas de las fuentes se muestran por separado.');
+  }
   function renderOperation() {
     const op=state.operation;
     const operationTab={import:'import',document_import:'sources',download:'news',analysis:'analysis'}[op.kind];
@@ -147,7 +228,7 @@ window.pepsWorkflow = (() => {
     const completed=Number.isFinite(op.completed)?op.completed:null;
     const percent=Number.isFinite(op.percent)?Math.min(100,Math.max(0,op.percent)):(total!==null&&completed!==null?Math.min(100,100*completed/total):null);
     progress.hidden=!op.busy&&percent===null;
-    if(percent!==null) { progress.value=percent;setText('workflow-operation-percent',Math.round(percent)+' %'); }
+    if(percent!==null) { progress.value=percent;setText('workflow-operation-percent',Math.round(percent)+' % de la fase'); }
     else { progress.removeAttribute('value');setText('workflow-operation-percent',op.busy?'En curso':labels[op.status]||'Estado conservado'); }
     const units={entities:'entidades',documents:'documentos',articles:'noticias',jobs:'tareas',urls:'enlaces'};
     let detail=completed!==null?completed.toLocaleString('es-MX')+(total!==null?' de '+total.toLocaleString('es-MX'):'')+' '+(units[op.unit]||op.unit||'elementos'):'Preparando la operación';
@@ -158,6 +239,7 @@ window.pepsWorkflow = (() => {
     $('workflow-operation-error').hidden=!op.error;
     setText('workflow-operation-error',op.error);
     if(op.kind==='download'&&state.workflow){const context=downloadContext(),delay=retryDelay(context);if(!op.busy&&context.coverage.closed_partial){$('workflow-operation').dataset.status='completed';setText('workflow-operation-label','Descarga cerrada con cobertura parcial');setText('workflow-operation-eta','Las tareas pendientes se conservan para reanudar después.');}else if(!op.busy&&context.pending){setText('workflow-operation-label','Descarga en pausa · '+context.pending.toLocaleString('es-MX')+' tareas pendientes');setText('workflow-operation-eta',delay!==null&&delay>0?'Próximo intento permitido en aproximadamente '+formatTime(delay):'Reanuda la descarga o continúa con cobertura parcial.');}else if(op.busy&&delay!==null&&delay>0&&(context.coverage.waiting||op.waiting||(op.last_result||op.result||{}).waiting)){setText('workflow-operation-eta','Espera de la fuente: próximo intento en aproximadamente '+formatTime(delay));}}
+    renderTiming();
   }
   function renderNavigation() {
     for(const step of steps) {
@@ -169,7 +251,10 @@ window.pepsWorkflow = (() => {
       button.classList.toggle('active',current);
       if(current)button.setAttribute('aria-current','step');else button.removeAttribute('aria-current');
       button.querySelector('.step-number').textContent=data?.status==='complete'?'✓':String(steps.indexOf(step)+1).padStart(2,'0');
-      setText('step-reason-'+step.id,data?.reason||labels[data?.status]||'Pendiente');
+      const counts=state.workflow?.counts||{};
+      const hints={data:Number(counts.entities||0)>0?Number(counts.entities).toLocaleString('es-MX')+(Number(counts.entities)===1?' entidad guardada':' entidades guardadas'):'Un nombre o una lista para comenzar',sources:state.workflow?.sources_confirmed?'Origen y permisos confirmados':'Elige origen y permisos',download:state.workflow?.mode==='local'?'Recorrido sin conexión':Number(counts.pending_downloads||0)>0?Number(counts.pending_downloads).toLocaleString('es-MX')+' tareas pendientes':'Noticias y fuentes conservadas',analysis:state.workflow?.analysis_current?'Evaluación actualizada':'Atribución y cálculo local',results:action('view_results').enabled?'Expedientes disponibles':'Explicaciones y revisión'};
+      setText('step-reason-'+step.id,data?.status==='blocked'?'Completa los pasos anteriores':hints[step.id]||labels[data?.status]||'Pendiente');
+      button.title=data?.reason||hints[step.id]||'';
       const progress=$('workflow-step-progress-'+step.id);
       const operationStep={import:'data',document_import:'sources',download:'download',acquire:'download',analysis:'analysis',analyze:'analysis',rescore:'analysis'}[state.operation.kind];
       const isOperation=operationStep===step.id;
@@ -203,7 +288,7 @@ window.pepsWorkflow = (() => {
     }
   }
   function renderPrimary() {
-    const button=$('workflow-primary');document.querySelector('.workflow-overview').hidden=state.current==='news';button.closest('.workflow-overview-action').hidden=state.current==='news';let label,enabled=true,reason='';
+    const button=$('workflow-primary');document.querySelector('.workflow-overview').hidden=state.current==='news';button.closest('.workflow-overview-action').hidden=['import','sources','news','analysis'].includes(state.current);let label,enabled=true,reason='';
     const opBusy=busy();
     if(state.current==='import') {
       const sources=serverStep('sources');
@@ -225,9 +310,9 @@ window.pepsWorkflow = (() => {
     } else if(state.current==='bank') {
       label='Consultar evidencia';enabled=true;reason='Selecciona una entidad para abrir su expediente.';
     } else { label='Volver al proceso';enabled=true; }
-    button.replaceChildren(document.createTextNode(label));
+    if(button.dataset.label!==label){button.dataset.label=label;button.replaceChildren(document.createTextNode(label));
     const arrow=document.createElementNS('http://www.w3.org/2000/svg','svg');arrow.setAttribute('viewBox','0 0 24 24');arrow.setAttribute('fill','none');arrow.setAttribute('stroke','currentColor');arrow.setAttribute('stroke-width','1.8');arrow.setAttribute('aria-hidden','true');
-    const path=document.createElementNS('http://www.w3.org/2000/svg','path');path.setAttribute('d','M5 12h14m-6-6 6 6-6 6');arrow.append(path);button.append(arrow);
+    const path=document.createElementNS('http://www.w3.org/2000/svg','path');path.setAttribute('d','M5 12h14m-6-6 6 6-6 6');arrow.append(path);button.append(arrow);}
     setButton('workflow-primary',enabled,reason,'workflow-primary-reason');
   }
   function renderActions() {
@@ -276,6 +361,10 @@ window.pepsWorkflow = (() => {
     setButton('workflow-download-next',context.canContinue,context.canContinue?'La información conservada está lista para el análisis.':serverStep('analysis')?.reason||action('analyze').reason,'workflow-download-reason');
     renderDownloadActivity();
     setText('workflow-analysis-title',state.operation.busy&&['attribution','scoring'].includes(state.operation.phase)?'Análisis en curso':state.workflow.analysis_current?'El análisis está actualizado':action('analyze').enabled?'Todo listo para analizar':'Completa la preparación');
+    const resultsReady=!!action('view_results').enabled;
+    $('workflow-analyze').classList.toggle('primary',!resultsReady);
+    if($('workflow-analyze').dataset.currentLabel!==String(resultsReady)){$('workflow-analyze').dataset.currentLabel=String(resultsReady);$('workflow-analyze').textContent=resultsReady?'Volver a analizar':'Analizar y calcular score';}
+    $('workflow-results-next').classList.toggle('primary',resultsReady);
     setButton('workflow-analyze',!opBusy&&action('analyze').enabled,action('analyze').reason||'Se calcularán las entidades y se conservará una evaluación explicable.','workflow-analysis-reason');
     setButton('news-attribute',!opBusy&&action('analyze').enabled,action('analyze').reason);
     setButton('score',!opBusy&&action('analyze').enabled,action('analyze').reason);
@@ -290,6 +379,7 @@ window.pepsWorkflow = (() => {
     setButton('import-documents',!opBusy&&Number(counts.entities||0)>0,Number(counts.entities||0)>0?'':'Primero carga una lista de entidades.');
     for(const id of ['doc-text','doc-file','entity-text','entity-file'])if($(id))$(id).disabled=opBusy;
     if(state.current==='sources'&&state.searchLoading){setButton('workflow-sources-next',false,'Cargando la configuración de búsqueda…','workflow-sources-reason');}
+    renderPreflightEstimates();
     if(window.pepsImport?.syncButtons)window.pepsImport.syncButtons();
     renderPrimary();
   }

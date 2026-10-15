@@ -3,7 +3,7 @@ const token=document.querySelector('meta[name=peps-token]').content;
 const $=id=>document.getElementById(id);
 let offset=0, selected=null, entities=[], activeTab='import', refreshing=null;
 async function api(path,data){const r=await fetch('/api/'+path,{method:data?'POST':'GET',headers:{'X-PEPS-Token':token,...(data?{'Content-Type':'application/json'}:{})},body:data?JSON.stringify(data):undefined});if(!r.ok){let e=await r.json();const error=Error(e.error||r.statusText);error.status=r.status;throw error;}const value=await r.json();if(data&&window.pepsWorkflow?.observe)window.pepsWorkflow.observe(value);return value;}
-function message(text,error=false){$('message').hidden=false;$('message').textContent=text;$('message').className=error?'error':'';}
+function message(text,error=false){if(pollStopped)return;$('message').hidden=false;$('message').textContent=text;$('message').className=error?'error':'';}
 function el(tag,text,cls){const e=document.createElement(tag);if(text!==undefined)e.textContent=text;if(cls)e.className=cls;return e;}
 function action(id,fn){$(id).onclick=async()=>{if(window.pepsWorkflow&&!window.pepsWorkflow.canAction(id))return;$(id).disabled=true;try{await fn();await refresh(true);}catch(e){message(e.message,true);}finally{if(!['previous','next'].includes(id))$(id).disabled=false;if(window.pepsWorkflow)window.pepsWorkflow.update(lastStats);}};}
 const kinds={person:'Persona',company:'Empresa',organization:'Organismo'};
@@ -17,7 +17,7 @@ function list(items,cls){const ul=el('ul',undefined,cls);for(const item of items
 function jsonDetails(title,value){const detail=el('details',undefined,'technical');detail.append(el('summary',title));detail.ontoggle=()=>{if(detail.open&&!detail.dataset.rendered){detail.append(el('pre',JSON.stringify(value,null,2)));detail.dataset.rendered='true';}};return detail;}
 function dateLabel(value){return value?new Date(value).toLocaleString('es-MX',{dateStyle:'medium',timeStyle:'short'}):'sin fecha';}
 function numberLabel(value){return Number(value||0).toLocaleString('es-MX',{maximumFractionDigits:3});}
-function renderEntities(){const key=JSON.stringify([offset,selected,window.pepsWorkflow?.canOpenTab('bank'),entities.map(item=>[item.id,item.name,item.kind,item.score?.score,item.score?.status,item.score_available])]);if(key===renderedEntitiesKey)return;renderedEntitiesKey=key;const body=$('entities');body.replaceChildren();$('empty').hidden=entities.length>0;for(const item of entities){const tr=el('tr',undefined,'entity-row'+(selected===item.id?' selected':''));tr.tabIndex=0;tr.setAttribute('aria-label',`Consultar ${item.name}`);tr.setAttribute('aria-selected',String(selected===item.id));tr.setAttribute('aria-disabled',String(window.pepsWorkflow?!window.pepsWorkflow.canOpenTab('bank'):false));tr.append(el('td',item.name),el('td',kinds[item.kind]||item.kind));const score=el('td');score.append(el('span',item.score?String(item.score.score):'—','score'+(item.score?.score>=50?' urgent':'')));tr.append(score);const status=el('td');status.append(el('span',item.score?({validated:'Revisado',provisional:'Provisional',no_evidence:'Sin evidencia'}[item.score.status]||item.score.status):(item.score_available?'Pendiente de actualizar':'Sin evaluar'),'badge'));tr.append(status);const open=()=>showDetail(item);tr.onclick=open;tr.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();open();}};body.append(tr);}$('page').textContent=String(offset/100+1);$('previous').disabled=offset===0;$('next').disabled=entities.length<100;}
+function renderEntities(){const key=JSON.stringify([offset,selected,window.pepsWorkflow?.canOpenTab('bank'),entities.map(item=>[item.id,item.name,item.kind,item.score?.score,item.score?.status,item.score_available])]);if(key===renderedEntitiesKey)return;renderedEntitiesKey=key;const body=$('entities');body.replaceChildren();$('empty').hidden=entities.length>0;if(!entities.length){const searching=!!$('search').value.trim();$('empty').querySelector('h3').textContent=searching?'No hay coincidencias':'Empieza con un nombre o una lista';$('empty').querySelector('p').textContent=searching?'Prueba con otro nombre, una parte del apellido o borra la búsqueda.':'Agrega personas, empresas u organizaciones para consultar su evidencia y entender su score.';$('empty').querySelector('.actions').hidden=searching;}for(const item of entities){const tr=el('tr',undefined,'entity-row'+(selected===item.id?' selected':''));tr.tabIndex=0;tr.setAttribute('aria-label',`Consultar ${item.name}`);tr.setAttribute('aria-selected',String(selected===item.id));tr.setAttribute('aria-disabled',String(window.pepsWorkflow?!window.pepsWorkflow.canOpenTab('bank'):false));tr.append(el('td',item.name),el('td',kinds[item.kind]||item.kind));const score=el('td');score.append(el('span',item.score?String(item.score.score):'—','score'+(item.score?.score>=50?' urgent':'')));tr.append(score);const status=el('td');status.append(el('span',item.score?({validated:'Revisado',provisional:'Provisional',no_evidence:'Sin evidencia'}[item.score.status]||item.score.status):(item.score_available?'Pendiente de actualizar':'Sin evaluar'),'badge'));tr.append(status);const open=()=>showDetail(item);tr.onclick=open;tr.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();open();}};body.append(tr);}$('page').textContent=String(offset/100+1);$('previous').disabled=offset===0;$('next').disabled=entities.length<100;}
 // Persisted evaluations supply both scores and their evidence; list rows are only a cache.
 async function showDetail(item,runId=null){
   if(!runId&&window.pepsWorkflow&&!window.pepsWorkflow.canOpenTab('bank',true))return;
@@ -147,11 +147,82 @@ function renderTechnical(card,state){
   const details=el('details',undefined,'technical scoring-technical');details.append(el('summary','Desglose técnico auditable y reproducción'),el('p',`Evaluación ${state.data.run.id} · ${state.data.result.model_version}`,'muted'));const replay=el('button','Reproducir cálculo conservado');replay.type='button';const outcome=el('div');outcome.setAttribute('role','status');replay.onclick=async()=>{replay.disabled=true;outcome.replaceChildren(el('p','Reproduciendo cálculo local…','muted'));try{const result=await api('replay',{run_id:state.data.run.id});if(detailState!==state)return;outcome.replaceChildren(el('p',result.matched?'El cálculo y la traza coinciden con la evaluación conservada.':result.status==='unsupported'?'Esta versión no puede reproducir el cálculo histórico.':'El cálculo difiere de la evaluación conservada.',result.matched?'replay-ok':'error'),el('p',result.reason,'muted'),el('pre',JSON.stringify(result,null,2)));}catch(error){outcome.replaceChildren(el('p',error.message,'error'));}finally{replay.disabled=false;}};
   details.append(replay,outcome,jsonDetails('Resultado íntegro, parámetros y versiones',state.data.result));card.append(details);
 }
-async function loadSources(){const sources=await api('sources');const container=$('sources');container.replaceChildren();for(const source of sources){const row=el('div',undefined,'source');const info=el('div');info.append(el('strong',source.name||source.id),el('p',source.base_url||source.url||''),el('p',`Tipo: ${source.kind} · Pausa: ${source.min_interval_seconds||5}s · ${source.discovery?'Descubrimiento':'Contenido / importación'}`));const choices=el('div');const enabled=el('input');enabled.type='checkbox';enabled.checked=source.enabled;const terms=el('input');terms.type='checkbox';terms.checked=source.terms_approved;const l1=el('label');l1.append(enabled,document.createTextNode('Habilitada'));const l2=el('label');l2.append(terms,document.createTextNode('Condiciones de uso revisadas'));choices.append(l1,l2);for(const c of [enabled,terms])c.onchange=async()=>{try{await api('source',{id:source.id,enabled:enabled.checked,terms_approved:terms.checked});message('Configuración de fuente guardada.');await refresh(true);}catch(e){message(e.message,true);}};row.append(info,choices);container.append(row);}}
-function refresh(force=false){if(refreshing)return force?refreshing.then(()=>refresh(true),()=>refresh(true)):refreshing;refreshing=(async()=>{const stats=await api('stats');lastStats=stats;if(window.pepsWorkflow)window.pepsWorkflow.update(stats);for(const key of ['entities','documents','evidence'])$('m-'+key).textContent=stats[key].toLocaleString('es-MX');$('m-jobs').textContent=String((stats.jobs.queued||0)+(stats.jobs.deferred||0)+(stats.jobs.running||0));$('operation').textContent=stats.operation.busy?(stats.operation.label||'Procesando…'):'Listo para continuar';$('mode').textContent=stats.online?'Red autorizada':'Modo cerrado';$('jobs').textContent=JSON.stringify(stats.jobs);$('errors').textContent=stats.recent_errors.map(e=>`${e.status}: ${e.error}`).join('\n');$('capacity').textContent=JSON.stringify(stats.capacity,null,2);if(stats.operation.error&&stats.operation.status==='error')message(stats.operation.error,true);entities=await api('entities?q='+encodeURIComponent($('search').value)+'&offset='+offset);renderEntities();if(activeTab==='news')await loadNews(false);})().finally(()=>{refreshing=null;});return refreshing;}
-async function switchTab(tab){if(window.pepsWorkflow&&!window.pepsWorkflow.canOpenTab(tab,true))return;activeTab=tab;for(const b of document.querySelectorAll('[data-tab]'))b.classList.toggle('active',b.dataset.tab===tab);for(const p of document.querySelectorAll('[data-panel]'))p.hidden=p.dataset.panel!==tab;if(window.pepsWorkflow)window.pepsWorkflow.onNavigate(tab);if(tab==='sources')await Promise.all([loadSources(),loadNews()]);if(tab==='news')await loadNews(false);}
+function bindSourceChecks(checks,path,source,confirmation){
+  let saved=Object.fromEntries(Object.keys(checks).map(key=>[key,!!source[key]]));
+  for(const input of Object.values(checks))input.onchange=async()=>{
+    const values=Object.fromEntries(Object.entries(checks).map(([key,field])=>[key,field.checked]));
+    for(const field of Object.values(checks))field.disabled=true;
+    try{await api(path,{id:source.id,...values});saved=values;message(confirmation);await refresh(true);}
+    catch(error){for(const [key,field]of Object.entries(checks))field.checked=saved[key];message(error.message,true);}
+    finally{for(const field of Object.values(checks))field.disabled=false;window.pepsWorkflow?.update(lastStats);}
+  };
+}
+async function loadSources(){const sources=await api('sources');if(pollStopped)return;const container=$('sources');container.replaceChildren();for(const source of sources){const row=el('div',undefined,'source');const info=el('div');info.append(el('strong',source.name||source.id),el('p',source.base_url||source.url||''),el('p',`Tipo: ${source.kind} · Pausa: ${source.min_interval_seconds||5}s · ${source.discovery?'Descubrimiento':'Contenido / importación'}`));const choices=el('div');const enabled=el('input');enabled.type='checkbox';enabled.checked=source.enabled;const terms=el('input');terms.type='checkbox';terms.checked=source.terms_approved;const l1=el('label');l1.append(enabled,document.createTextNode('Habilitada'));const l2=el('label');l2.append(terms,document.createTextNode('Condiciones de uso revisadas'));choices.append(l1,l2);bindSourceChecks({enabled,terms_approved:terms},'source',source,'Configuración de fuente guardada.');row.append(info,choices);container.append(row);}}
+// Keep polling serial and fetch only the visible view. A summary never opens a score run.
+let refreshRequested=false, pollTimer=null, pollStopped=false, pollFailures=0;
+let loadedEntitiesKey=null, loadedNewsKey=null;
+function schedulePoll(){
+  clearTimeout(pollTimer);
+  if(pollStopped)return;
+  const base=document.hidden?15000:lastStats.operation?.busy?1000:3000;
+  const delay=Math.min(document.hidden?60000:15000,base*Math.pow(2,Math.min(pollFailures,3)));
+  pollTimer=setTimeout(()=>refresh().catch(()=>{}),delay);
+}
+async function loadEntities(stats,force=false){
+  const query=$('search').value, pageOffset=offset;
+  const key=JSON.stringify([query,pageOffset,stats.entities,stats.scores,stats.audit,stats.workflow?.analysis_current]);
+  if(!force&&key===loadedEntitiesKey)return;
+  const rows=await api('entities?summary=1&q='+encodeURIComponent(query)+'&offset='+pageOffset);
+  if(pollStopped)return;
+  if(activeTab!=='bank'||query!==$('search').value||pageOffset!==offset){
+    if(activeTab==='bank')refreshRequested=true;
+    return;
+  }
+  entities=rows;loadedEntitiesKey=key;renderEntities();
+}
+function refresh(force=false){
+  if(refreshing){if(force)refreshRequested=true;return refreshing;}
+  clearTimeout(pollTimer);
+  refreshing=(async()=>{
+    let reload=force;
+    do{
+      refreshRequested=false;
+      const stats=await api('stats');if(pollStopped)return;lastStats=stats;pollFailures=0;
+      if(window.pepsWorkflow)window.pepsWorkflow.update(stats);
+      for(const key of ['entities','documents','evidence'])$('m-'+key).textContent=stats[key].toLocaleString('es-MX');
+      $('m-jobs').textContent=String((stats.jobs.queued||0)+(stats.jobs.deferred||0)+(stats.jobs.running||0));
+      $('operation').textContent=stats.operation.busy?(stats.operation.label||'Procesando…'):'Listo para continuar';
+      $('mode').textContent=stats.online?'Red autorizada':'Modo cerrado';
+      $('jobs').textContent=JSON.stringify(stats.jobs);
+      $('errors').textContent=stats.recent_errors.map(e=>`${e.status}: ${e.error}`).join('\n');
+      $('capacity').textContent=JSON.stringify(stats.capacity,null,2);
+      if(stats.operation.error&&stats.operation.status==='failed')message(stats.operation.error,true);
+      if(activeTab==='bank')await loadEntities(stats,reload);
+      if(activeTab==='news'){
+        const key=JSON.stringify([stats.documents,stats.audit,stats.workflow?.counts?.articles,stats.jobs]);
+        if(reload||key!==loadedNewsKey){await loadNews(false);loadedNewsKey=key;}
+      }
+      reload=refreshRequested;
+    }while(refreshRequested&&!pollStopped);
+  })().catch(error=>{
+    pollFailures++;
+    if(!pollStopped)$('operation').textContent='Reconectando con la aplicación local…';
+    throw error;
+  }).finally(()=>{refreshing=null;schedulePoll();});
+  return refreshing;
+}
+async function switchTab(tab){
+  if(window.pepsWorkflow&&!window.pepsWorkflow.canOpenTab(tab,true))return;
+  activeTab=tab;
+  for(const b of document.querySelectorAll('[data-tab]'))b.classList.toggle('active',b.dataset.tab===tab);
+  for(const p of document.querySelectorAll('[data-panel]'))p.hidden=p.dataset.panel!==tab;
+  if(window.pepsWorkflow)window.pepsWorkflow.onNavigate(tab);
+  if(tab==='sources')await Promise.all([loadSources(),loadNews()]);
+  if(tab==='news')await loadNews(false);
+  if(tab==='bank')await refresh(true);
+}
 for(const btn of document.querySelectorAll('[data-tab]'))btn.onclick=()=>switchTab(btn.dataset.tab).catch(error=>message(error.message,true));
-let debounce;$('search').oninput=()=>{clearTimeout(debounce);debounce=setTimeout(()=>{offset=0;refresh().catch(e=>message(e.message,true));},250);};
+let debounce;$('search').oninput=()=>{clearTimeout(debounce);debounce=setTimeout(()=>{offset=0;refresh(true).catch(e=>message(e.message,true));},250);};
 action('previous',async()=>{offset=Math.max(0,offset-100);});action('next',async()=>{offset+=100;});
 action('score',async()=>{await switchTab('analysis');message('Inicia el análisis desde este paso para conservar su progreso y explicación.');});
 action('import-entities',async()=>{await api('import-entities',{text:$('entity-text').value});message('Importación en curso.');});
@@ -163,12 +234,16 @@ action('retry',async()=>{await api('retry',{});message('Tareas fallidas reencola
 action('audit-check',async()=>{$('audit-result').textContent=JSON.stringify(await api('audit'),null,2);});
 action('backup',async()=>{$('audit-result').textContent=JSON.stringify(await api('backup',{}),null,2);});
 action('export',async()=>{const result=await api('export-ticket',{});const a=el('a');a.href=result.url;a.download='webscope-export.jsonl';a.click();message('Exportación por registros iniciada; el navegador la guardará en disco.');});
-$('shutdown').onclick=async()=>{try{await api('shutdown',{});document.body.replaceChildren(el('main','WebScope se cerró. Puedes cerrar esta pestaña.'));clearInterval(timer);}catch(e){message(e.message,true);}};
+$('shutdown').onclick=async()=>{try{await api('shutdown',{});document.body.replaceChildren(el('main','WebScope se cerró. Puedes cerrar esta pestaña.'));pollStopped=true;clearTimeout(pollTimer);}catch(e){message(e.message,true);}};
 
 const identityLabels={matched:'Coincidencia corroborada por reglas; requiere revisión',candidate:'Candidato sin identidad confirmada',ambiguous:'Homónimo o identidad ambigua',rejected:'Incompatible con las anclas verificadas'};
 function renderIdentity(block,ev){const resolution=ev.identity_resolution;if(!resolution)return;block.append(el('h3',identityLabels[resolution.status]||resolution.status));for(const reason of resolution.reasons||[])block.append(el('p',reason,'muted'));const spans=(resolution.mentions||[]).slice(0,100);if(spans.length){block.append(el('p','Selecciona las menciones que comprobaste que corresponden a esta entidad.','muted'));for(const m of spans){const label=el('label',undefined,'check');const checkbox=el('input');checkbox.type='checkbox';checkbox.className='identity-span';checkbox.dataset.start=String(m.start);checkbox.dataset.end=String(m.end);checkbox.checked=Array.isArray(ev.review?.identity_spans)?ev.review.identity_spans.some(span=>span.start===m.start&&span.end===m.end):!!m.identity_supported||spans.length===1;const chars=codepoints(ev.text);const context=chars.slice(Math.max(0,m.start-45),Math.min(chars.length,m.end+100)).join('');label.append(checkbox,document.createTextNode(context));block.append(label);}}}
 function reviewIdentitySpans(block,ev){if(!ev.identity_resolution)return undefined;return Array.from(block.querySelectorAll('.identity-span:checked')).map(e=>({start:Number(e.dataset.start),end:Number(e.dataset.end)}));}
-async function loadNews(includeSources=true){const data=await api(includeSources?'news':'news?summary=1');$('news-summary').textContent=JSON.stringify(data.stats,null,2);if(data.plan!==undefined)$('news-plan').textContent=JSON.stringify(data.plan,null,2);const articlesKey=JSON.stringify(data.articles||[]);if(articlesKey!==renderedNewsArticlesKey){renderedNewsArticlesKey=articlesKey;const articles=$('news-articles');articles.replaceChildren();for(const article of data.articles){const row=el('div',undefined,'evidence');row.append(el('strong',article.title||article.canonical_url),el('p',`${article.publisher_id} · ${article.scope==='full_article'?'Cuerpo conservado':'Metadatos del feed'} · ${article.status}`,'muted'));const a=el('a',article.canonical_url);a.href=article.canonical_url;a.target='_blank';a.rel='noopener noreferrer';row.append(a);articles.append(row);}if(!data.articles.length)articles.append(el('p','Aún no hay noticias adquiridas.','muted'));}if(!includeSources)return;const container=$('news-sources');container.replaceChildren();for(const source of data.sources){const row=el('div',undefined,'source');const info=el('div');info.append(el('strong',source.source_name||source.id),el('p',source.url||source.base_url||''),el('p',source.review_note||''));const controls=el('div');const fields=[['enabled','Fuente habilitada'],['terms_approved','Condiciones del feed revisadas'],['download_articles','Conservar cuerpos'],['article_terms_approved','Uso del cuerpo autorizado']];const checks={};for(const [key,labelText]of fields){const label=el('label');const input=el('input');input.type='checkbox';input.checked=!!source[key];checks[key]=input;label.append(input,document.createTextNode(labelText));controls.append(label);}for(const input of Object.values(checks))input.onchange=async()=>{try{await api('news-source',{id:source.id,...Object.fromEntries(Object.entries(checks).map(([key,e])=>[key,e.checked]))});message('Condiciones y alcance guardados en la bitácora.');await refresh(true);}catch(error){message(error.message,true);}};row.append(info,controls);container.append(row);}}
+async function loadNews(includeSources=true){const data=await api(includeSources?'news':'news?summary=1');if(pollStopped)return;$('news-summary').textContent=JSON.stringify(data.stats,null,2);if(data.plan!==undefined)$('news-plan').textContent=JSON.stringify(data.plan,null,2);const articlesKey=JSON.stringify(data.articles||[]);if(articlesKey!==renderedNewsArticlesKey){renderedNewsArticlesKey=articlesKey;const articles=$('news-articles');articles.replaceChildren();for(const article of data.articles){const row=el('div',undefined,'evidence');row.append(el('strong',article.title||article.canonical_url),el('p',`${article.publisher_id} · ${article.scope==='full_article'?'Cuerpo conservado':'Metadatos del feed'} · ${article.status}`,'muted'));const a=el('a',article.canonical_url);a.href=article.canonical_url;a.target='_blank';a.rel='noopener noreferrer';row.append(a);articles.append(row);}if(!data.articles.length)articles.append(el('p','Aún no hay noticias adquiridas.','muted'));}if(!includeSources)return;const container=$('news-sources');container.replaceChildren();for(const source of data.sources){const row=el('div',undefined,'source');const info=el('div');info.append(el('strong',source.source_name||source.id));
+  const address=source.url||source.base_url||'';
+  let host=address;try{host=new URL(address).hostname;}catch{}
+  info.append(sourceLink(address,host));
+  if(source.review_note){const conditions=el('details',undefined,'source-conditions');conditions.append(el('summary','Condiciones y alcance'),el('p',source.review_note));info.append(conditions);}const controls=el('div');const fields=[['enabled','Fuente habilitada'],['terms_approved','Condiciones del feed revisadas'],['download_articles','Conservar cuerpos'],['article_terms_approved','Uso del cuerpo autorizado']];const checks={};for(const [key,labelText]of fields){const label=el('label');const input=el('input');input.type='checkbox';input.checked=!!source[key];checks[key]=input;label.append(input,document.createTextNode(labelText));controls.append(label);}bindSourceChecks(checks,'news-source',source,'Condiciones y alcance guardados en la bitácora.');row.append(info,controls);container.append(row);}}
 action('news-acquire',async()=>{await api('news-acquire',{online:$('news-online').checked});message('Adquisición en curso: fuentes compartidas y enlaces únicos.');});
 action('news-attribute',async()=>{await api('workflow-analyze',{});message('Atribución y cálculo iniciados. Las ambigüedades conservan su estado.');});
 
@@ -181,4 +256,5 @@ if(window.pepsImport)window.pepsImport.init({api,refresh,switchTab,message,onImp
   await switchTab('bank');$('search').value=item.name||'';offset=0;await refresh(true);await showDetail(item);
 }});
 
-refresh().catch(e=>message(e.message,true));const timer=setInterval(()=>refresh().catch(()=>{}),1000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&!pollStopped)refresh(true).catch(()=>{});else schedulePoll();});
+refresh().catch(e=>message(e.message,true));

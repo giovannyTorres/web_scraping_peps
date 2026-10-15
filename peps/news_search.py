@@ -162,8 +162,8 @@ def _bound(value, end=False):
     return datetime.combine(parsed + timedelta(days=1 if end else 0), time.min, timezone.utc)
 
 
-def wordpress_queries(entity, config):
-    variants = _variants(entity, config['include_aliases'])
+def wordpress_queries(entity, config, *, variants=None):
+    variants = _variants(entity, config['include_aliases']) if variants is None else variants
     context = entity.get('context') or {}
     hints = [_phrase(context.get(key)) for key in ('state', 'municipality', 'role', 'position')
              if config['use_context'] and isinstance(context, dict) and _phrase(context.get(key))]
@@ -303,19 +303,19 @@ def build_search_plan(entities, sources, config=None, *, start=None, end=None, n
         total_ids = {str(entity['id']) for entity in entities}
         for source, windows in prepared:
             grouped = {}
+            source_suffix = ''
+            if source.get('kind') == 'gdelt':
+                if source.get('source_lang'):
+                    source_suffix += ' sourcelang:' + source['source_lang']
+                if source.get('source_country'):
+                    source_suffix += ' sourcecountry:' + source['source_country']
+            max_chars = min(1500, max(1, int(source.get('max_query_chars', 500))))
             for entity in entities:
                 variants = _variants(entity, config['include_aliases'])
-                source_suffix = ''
-                if source.get('kind') == 'gdelt':
-                    if source.get('source_lang'):
-                        source_suffix += ' sourcelang:' + source['source_lang']
-                    if source.get('source_country'):
-                        source_suffix += ' sourcecountry:' + source['source_country']
-                max_chars = min(1500, max(1, int(source.get('max_query_chars', 500))))
                 if source.get('search_kind') == 'wordpress_rss' or source.get('kind') == 'gdelt':
                     # GDELT rejects nested OR groups. Separate exact-phrase
                     # requests also keep short aliases bound to a context hint.
-                    queries = wordpress_queries(entity, config)
+                    queries = wordpress_queries(entity, config, variants=variants)
                 else:
                     queries = entity_queries(entity, config, max(1, max_chars - len(source_suffix)))
                 for rank, query in enumerate(queries):
@@ -323,11 +323,12 @@ def build_search_plan(entities, sources, config=None, *, start=None, end=None, n
                     if len(text) > max_chars:
                         plan['warnings'].append(source['id'] + ': una consulta excede el límite local de longitud y fue omitida; revise nombres/contexto o aumente el límite de la fuente.')
                         continue
-                    template = grouped.setdefault(text, {**query, 'query': text, 'rank': rank, 'entity_ids': [], 'names': []})
+                    template = grouped.setdefault(text, {**query, 'query': text, 'rank': rank, 'entity_ids': {}, 'names': {}})
                     template['rank'] = min(rank, template['rank'])
-                    template['entity_ids'] = list(dict.fromkeys([*template['entity_ids'], str(entity['id'])]))
-                    template['names'] = list(dict.fromkeys([*template['names'], *variants]))
-            templates.append((source, windows, list(grouped.values())))
+                    template['entity_ids'][str(entity['id'])] = None
+                    template['names'].update(dict.fromkeys(variants))
+            templates.append((source, windows, [dict(query, entity_ids=list(query['entity_ids']), names=list(query['names']))
+                                                for query in grouped.values()]))
         required = sum(len(windows) * len(queries) for _, windows, queries in templates)
         # Give every PEP a primary-name query before spending the budget on
         # aliases/context or advancing to the next historical window.

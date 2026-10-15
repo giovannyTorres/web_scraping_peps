@@ -2,7 +2,10 @@
 
 Nombre de la herramienta: **WebScope**. Subtítulo: **Web scraping y análisis
 documental**. La versión 2.3.1 actualiza la identidad visual y conserva el flujo
-guiado de adquisición, análisis y consulta.
+guiado de adquisición, análisis y consulta. El pulido 2.5 aumenta los textos
+funcionales a 12–14 px, usa controles móviles de 16 px y presenta estimaciones por
+fase y tarea. Las [capturas y comprobaciones actuales](VALIDACION_2_5_0.md)
+complementan la validación original de identidad.
 
 ## Color y tipografía
 

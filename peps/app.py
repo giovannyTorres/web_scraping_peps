@@ -26,7 +26,7 @@ def create_server(engine, port=0):
     news = NewsAcquirer(engine)
     token = secrets.token_urlsafe(32)
     web = Path(__file__).parent / 'web'
-    tracker = OperationTracker()
+    tracker = OperationTracker(store=engine.store)
     workflow = GuidedWorkflow(engine.store, sources_provider=news.sources)
     lock = threading.RLock()
     tickets = {}
@@ -48,7 +48,7 @@ def create_server(engine, port=0):
             try:
                 result = fn()
                 paused = engine.stop_event.is_set() or (isinstance(result, dict) and
-                    (result.get('cancelled') or result.get('pending', 0) or result.get('status') == 'paused'))
+                    (result.get('cancelled') or result.get('pending', 0) or result.get('failed', 0) or result.get('status') == 'paused'))
                 tracker.finish(status='paused' if paused else 'completed', result=result,
                                operation_id=operation_id,
                                message=(result.get('message') if isinstance(result, dict) else None) or
@@ -112,13 +112,14 @@ def create_server(engine, port=0):
         """HTTP reads never launch scoring; computation belongs to step four."""
         if not run_id:
             workflow.require('view_results', tracker.snapshot())
-        run = engine.store.get_score_run(run_id, entity_id) if run_id else engine.store.latest_score_run(entity_id)
+        bundle = engine.store.score_run_bundle(entity_id, run_id=run_id)
+        run = bundle['run']
         if not run:
             raise WorkflowError('Completa el paso «Analizar y calcular» para obtener el scoring.', 409)
         return {'entity': run['entity_snapshot'], 'result': run['result'],
                 'explanation': run['result'].get('explainability', {}),
                 'run': {'id': run['id'], 'created_at': run['created_at'], 'historical': bool(run_id)},
-                'history': engine.store.score_history(entity_id), 'evidence_count': len(run['evidence_manifest'])}
+                'history': bundle['history'], 'evidence_count': len(run['evidence_manifest'])}
 
     def prune_imports(reserve_slot=False):
         cutoff = time.monotonic() - import_ttl
@@ -246,8 +247,13 @@ def create_server(engine, port=0):
                     self.reply((web / 'fonts' / Path(path).name).read_bytes(), content_type='font/woff2')
                 elif path == '/api/stats':
                     operation = tracker.snapshot()
+                    current_workflow = workflow.snapshot(operation)
+                    counts = current_workflow['counts']
+                    operation['task_progress']['estimates'] = tracker.estimate_phases('analysis', {
+                        'attribution': counts['articles'], 'scoring': counts['entities']
+                    }) + tracker.estimate_phases('download', {'download': None})
                     self.reply(dict(engine.store.stats(), online=engine.online, operation=operation,
-                                    workflow=workflow.snapshot(operation), capacity=capacity()))
+                                    workflow=current_workflow, capacity=capacity()))
                 elif path == '/api/workflow':
                     self.reply(workflow.snapshot(tracker.snapshot()))
                 elif path == '/api/import-status':
@@ -263,8 +269,10 @@ def create_server(engine, port=0):
                         self.reply(operation)
                 elif path == '/api/entities':
                     current = workflow.snapshot(tracker.snapshot())['actions']['view_results']['enabled']
-                    rows = engine.store.list_entities(query.get('q', [''])[0], query.get('limit', [100])[0], query.get('offset', [0])[0])
+                    rows = engine.store.list_entities(query.get('q', [''])[0], query.get('limit', [100])[0], query.get('offset', [0])[0],
+                                                      summary=query.get('summary', ['0'])[0] == '1')
                     for row in rows:
+                        row.pop('result', None)  # Internal SQL alias must not duplicate or expose stale scores.
                         row['score_available'] = row['score'] is not None
                         row['score_current'] = current and row['score_available']
                         if not current:

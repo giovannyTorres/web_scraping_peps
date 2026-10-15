@@ -36,6 +36,36 @@ class NewsRuntimeTests(unittest.TestCase):
         with patch('peps.collector.SafeFetcher', NoNetworkFetcher):
             return self.news.acquire(queue=False, **kwargs)
 
+    def test_task_stages_report_real_fetch_and_discovery_time_after_commit(self):
+        self.source['source_name'] = 'Fuente sintética legible'
+        self.news.config_path.write_text(json.dumps({'sources': [self.source], 'search': {'strategy': 'feeds'}}), encoding='utf-8')
+        self.store.enqueue('news_feed', {'source_id': 'fixture', 'url': self.source['url']})
+        events, persisted = [], []
+
+        class Fetcher(NoNetworkFetcher):
+            def fetch(self, url, source):
+                return {'url': url, 'status': 'ok', 'body': '<rss><channel><item><title>Informe</title>'
+                        '<link>https://example.org/task</link></item></channel></rss>'}
+
+        def observe(event):
+            events.append(event)
+            if event.get('task_event') == 'finish':
+                persisted.append(self.news.stats()['articles'])
+
+        with patch('peps.collector.SafeFetcher', Fetcher):
+            result = self.news.acquire(queue=False, seconds=2, workers=1, progress=observe)
+        tasks = [event for event in events if event.get('task_event')]
+        self.assertEqual([event['task_event'] for event in tasks], ['start', 'stage', 'finish'])
+        self.assertEqual([event['task_stage'] for event in tasks], ['fetch', 'discovery', 'discovery'])
+        self.assertEqual([event['completed'] for event in tasks], [0, 0, 1])
+        self.assertTrue(all('Fuente sintética legible' in event['task_label'] for event in tasks))
+        self.assertEqual(persisted, [1])
+        self.assertEqual(result['completed'], 1)
+        final = tasks[-1]
+        self.assertGreaterEqual(final['task_timings']['fetch'], 0)
+        self.assertAlmostEqual(sum(final['task_timings'].values()), final['task_seconds'])
+        self.assertEqual(final['task_status'], 'done')
+
     def test_exhausted_queued_and_deferred_jobs_are_retired_instead_of_remaining_pending(self):
         for state in ('queued', 'deferred'):
             job_id = self.store.enqueue('news_feed', {'state': state}, key=state)
@@ -46,6 +76,8 @@ class NewsRuntimeTests(unittest.TestCase):
         self.assertEqual(result['pending'], 0)
         self.assertEqual(result['dead'], 2)
         self.assertEqual(result['stop_reason'], 'completed')
+        self.assertIn('2 tareas con error', result['message'])
+        self.assertIn('cobertura disponible', result['message'])
         self.assertTrue(self.store.verify_audit()['ok'])
         self.assertEqual(self.store.retry_failed(), 2)
         self.assertIsNotNone(self.store.claim(kind_prefix='news_'))

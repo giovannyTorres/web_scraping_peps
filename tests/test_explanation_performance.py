@@ -19,12 +19,19 @@ class ExplanationPerformanceTests(unittest.TestCase):
             entities = fixture_entities(20, heavy_notes=0)
             engine.store.import_entities(entities)
             engine.import_documents(fixture_documents(entities, notes_per_entity=2, heavy_notes=0))
-            start = time.perf_counter()
+            start, cpu_start = time.perf_counter(), time.process_time()
             self.assertEqual(engine.rescore(), 20)
-            explanations = [engine.explanation(entity['id']) for entity in entities]
+            with patch.object(engine.store, '_assert_audit_chain', wraps=engine.store._assert_audit_chain) as chain, \
+                 patch.object(engine.store, '_decode_score_run', wraps=engine.store._decode_score_run) as decode:
+                explanations = [engine.explanation(entity['id']) for entity in entities]
             elapsed = time.perf_counter()-start
-            # Deliberately broad; observes a severe regression, not a hardware SLA.
-            self.assertLessEqual(elapsed, 5.0, f'20-entity local batch took {elapsed:.3f}s')
+            cpu_elapsed = time.process_time()-cpu_start
+            # Count the costly work directly; allow OS filesystem scheduling to
+            # vary independently from this process's computational budget.
+            self.assertEqual(chain.call_count, 20)
+            self.assertEqual(decode.call_count, 20)
+            self.assertLessEqual(cpu_elapsed, 5.0, f'20-entity local batch consumed {cpu_elapsed:.3f}s CPU')
+            self.assertLessEqual(elapsed, 5.0, f'20-entity local batch took {elapsed:.3f}s wall time')
             first = explanations[0]
             canonical = score_entity(first['entity'], engine.store.evidence(first['entity']['id']),
                                      first['result']['as_of'])
@@ -35,6 +42,20 @@ class ExplanationPerformanceTests(unittest.TestCase):
             self.assertGreater(checked['literal_scoring_citations_checked'], 0)
             self.assertTrue(engine.replay_score(first['run']['id'])['matched'])
             self.assertFalse(guard, 'Default pipeline attempted a Python socket operation')
+
+    def test_replay_uses_one_verified_read_snapshot_and_hashes_each_source_once(self):
+        with tempfile.TemporaryDirectory() as directory, network_guard():
+            engine = Engine(directory)
+            entities = fixture_entities(1, heavy_notes=0)
+            engine.store.import_entities(entities)
+            engine.import_documents(fixture_documents(entities, notes_per_entity=10, heavy_notes=0))
+            engine.rescore()
+            run = engine.store.latest_score_run(entities[0]['id'])
+            with patch.object(engine.store, '_assert_audit_chain', wraps=engine.store._assert_audit_chain) as chain, \
+                 patch.object(engine.store, '_document_record_hash', wraps=engine.store._document_record_hash) as documents:
+                self.assertTrue(engine.replay_score(run['id'])['matched'])
+            self.assertEqual(chain.call_count, 1)
+            self.assertEqual(documents.call_count, 10)
 
     def test_targeted_historical_note_is_not_lost_after_page_200(self):
         with tempfile.TemporaryDirectory() as directory, network_guard() as guard:

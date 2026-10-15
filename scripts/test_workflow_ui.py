@@ -163,7 +163,7 @@ def validate_branding(page, address, font_responses, report, checked):
       return {requested,faces:Array.from(document.fonts).map(face=>({family:face.family,weight:face.weight,status:face.status})),
         root:style(':root'),body:style('body'),heading:style('h1'),sidebar:style('.app-sidebar'),
         wordmarkAccent:style('.brand span'),navigation:style('[data-workflow-step="data"]'),
-        primary:style('#workflow-primary')};
+        primary:style('#single-save')};
     }""")
     checked('local_lato_regular_and_bold_and_serif_are_loaded',
             len(fonts['requested']) == 3 and all(item['loaded'] > 0 and item['checked'] for item in fonts['requested']))
@@ -182,11 +182,11 @@ def validate_branding(page, address, font_responses, report, checked):
             fonts['navigation']['borderLeftColor'] == 'rgb(20, 100, 165)' and
             fonts['primary']['backgroundColor'] == 'rgb(0, 68, 129)' and
             fonts['wordmarkAccent']['color'] == 'rgb(45, 204, 205)')
-    page.locator('#workflow-primary').hover()
-    expect(page.locator('#workflow-primary')).to_have_css('background-color', 'rgb(20, 100, 165)')
+    page.locator('#single-save').hover()
+    expect(page.locator('#single-save')).to_have_css('background-color', 'rgb(20, 100, 165)')
     checked('primary_hover_uses_canonical_light_blue')
     page.mouse.move(0, 0)
-    expect(page.locator('#workflow-primary')).to_have_css('background-color', 'rgb(0, 68, 129)')
+    expect(page.locator('#single-save')).to_have_css('background-color', 'rgb(0, 68, 129)')
     report['branding'] = fonts
     report['branding']['font_responses'] = list(font_responses)
 
@@ -208,6 +208,7 @@ def run_validation(args):
     from peps.app import create_server
     from peps.engine import Engine
     from peps.news import NewsAcquirer
+    from peps.workflow import OperationTracker
 
     artifacts = ROOT / 'runtime' / 'guided-ui-validation'
     artifacts.mkdir(parents=True, exist_ok=True)
@@ -231,6 +232,7 @@ def run_validation(args):
 
     controlled = ControlledOperations()
     analysis_entered, analysis_release, analysis_eta_ready = threading.Event(), threading.Event(), threading.Event()
+    measured_clock = [0.0]
     synthetic_fragments = tuple('Fragmento enteramente sintético número ' + str(index) for index in range(10))
     original_attribute = NewsAcquirer.attribute
 
@@ -239,14 +241,13 @@ def run_validation(args):
         if progress:
             progress({'phase': 'attribution', 'event': 'start', 'completed': 0,
                       'total': len(synthetic_fragments), 'unit': 'fragmentos sintéticos', 'message': 'Atribución sintética en curso'})
-            progress({'phase': 'attribution', 'event': 'progress', 'completed': 1,
-                      'total': len(synthetic_fragments), 'unit': 'fragmentos sintéticos', 'message': 'Un fragmento sintético revisado'})
-        # The production tracker estimates only after three completed units and
-        # three elapsed seconds. Keep this fixture's denominator fixed at ten.
-        if not analysis_release.wait(3.2) and progress:
-            progress({'phase': 'attribution', 'event': 'progress', 'completed': 3,
-                      'total': len(synthetic_fragments), 'unit': 'fragmentos sintéticos',
-                      'message': 'Tres fragmentos sintéticos revisados'})
+            # Advance the injected clock only for explicitly completed fixture
+            # units. ETA assertions never depend on the runner's wall-clock speed.
+            for completed in range(1, 4):
+                measured_clock[0] += 1.5
+                progress({'phase': 'attribution', 'event': 'progress', 'completed': completed,
+                          'total': len(synthetic_fragments), 'unit': 'fragmentos sintéticos',
+                          'message': 'Tres fragmentos sintéticos revisados' if completed == 3 else 'Fragmento sintético revisado'})
             analysis_eta_ready.set()
         if not analysis_release.wait(20):
             raise TimeoutError('The browser did not release the controlled analysis fixture')
@@ -272,7 +273,9 @@ def run_validation(args):
                 'download_articles': False, 'article_terms_approved': False,
                 'review_note': 'Fixture local sin solicitudes externas.', 'min_interval_seconds': 1}]}), encoding='utf-8')
             with patch.object(NewsAcquirer, 'acquire', lambda acquirer, *a, **kw: controlled.acquire(acquirer, *a, **kw)), \
-                    patch.object(NewsAcquirer, 'attribute', synthetic_analysis):
+                    patch.object(NewsAcquirer, 'attribute', synthetic_analysis), \
+                    patch('peps.app.OperationTracker', lambda **kwargs: OperationTracker(
+                        **dict(kwargs, clock=lambda: measured_clock[0]))):
                 server, _ = create_server(engine)
                 thread = threading.Thread(target=server.serve_forever, daemon=True)
                 thread.start()
@@ -421,6 +424,10 @@ def run_validation(args):
                         page.locator('[data-panel="news"]').wait_for()
                         page.locator('#news-acquire').click()
                         page.locator('[data-panel="analysis"]').wait_for()
+                        forecast = api(page, 'stats')['body']['operation']['task_progress']['estimates']
+                        scoring_forecast = next(item for item in forecast if item['id'] == 'scoring')
+                        checked('first_analysis_forecast_has_no_invented_numeric_eta',
+                                scoring_forecast['eta_kind'] == 'unknown' and scoring_forecast['eta_seconds'] is None)
                         page.locator('#workflow-analyze').focus()
                         page.keyboard.press('Enter')
                         wait_until(page, analysis_entered.is_set, 'Keyboard did not start explicit analysis')
@@ -434,7 +441,12 @@ def run_validation(args):
                         estimated = api(page, 'stats')['body']['operation']
                         checked('eta_uses_completed_units_and_elapsed_sample', estimated['completed'] == 3 and estimated['total'] == 10 and
                                 estimated['elapsed_seconds'] >= 3 and isinstance(estimated['eta_seconds'], (int, float)) and estimated['eta_seconds'] > 0)
-                        expect(page.locator('#workflow-operation-eta')).to_contain_text('Tiempo restante estimado:')
+                        phase = next(item for item in estimated['task_progress']['phases'] if item['id'] == 'attribution')
+                        checked('phase_eta_is_measured_from_three_controlled_completed_units',
+                                phase['eta_kind'] == 'measured' and phase['completed'] == 3 and
+                                phase['elapsed_seconds'] == 4.5 and phase['eta_seconds'] > 0)
+                        expect(page.locator('#workflow-operation-eta')).to_contain_text(re.compile(r'restante estimado:', re.I))
+                        expect(page.locator('#workflow-phase-progress [data-phase="attribution"] .timing-eta')).to_have_attribute('data-kind', 'measured')
                         checked('numeric_eta_is_visible_after_sufficient_sample')
                         checked('analysis_step_bar_tracks_current_phase',
                                 float(page.locator('#workflow-step-progress-analysis').get_attribute('value')) == 30 and

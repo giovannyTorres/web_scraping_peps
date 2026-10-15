@@ -1,4 +1,4 @@
-# WebScope 2.4.0
+# WebScope 2.5.0
 
 Banco local de noticias y documentos públicos sobre personas, empresas y organizaciones mexicanas. Separa la adquisición de fuentes autorizadas de la atribución local de identidad, conserva procedencia y versiones, y ordena la revisión documental con una puntuación explicable.
 
@@ -7,6 +7,8 @@ Banco local de noticias y documentos públicos sobre personas, empresas y organi
 La interfaz organiza el trabajo en cinco pasos: **cargar lista → preparar fuentes → descargar noticias → analizar y calcular → revisar resultados**. Cada paso muestra su estado, el avance disponible y el motivo de cualquier bloqueo. Importar datos ya no ejecuta scoring; el cálculo se inicia explícitamente después de terminar la adquisición. Consulte [FLUJO_GUIADO.md](docs/FLUJO_GUIADO.md) para recorrerlo y [VALIDACION_2_3_0.md](docs/VALIDACION_2_3_0.md) para sus comprobaciones.
 
 La versión 2.4 corrige las descargas que quedaban en pausa sin una salida: distingue tareas listas, aplazadas y agotadas, muestra el próximo intento permitido y reanuda sin crear nuevas consultas. También permite **cerrar la descarga con cobertura parcial** cuando ya no hay ningún trabajador activo. Conserva las noticias y la cola pendiente; la evaluación guarda esa limitación. La [guía de recuperación y búsqueda histórica](docs/RECUPERACION_DESCARGA.md) explica cómo retomar un banco existente y preparar consultas dirigidas por nombre y fechas. La [validación 2.4.0](docs/VALIDACION_2_4_0.md) incluye el caso de 235 referencias y 64 pendientes y la actualización desde un wheel 2.3.1 auténtico.
+
+La versión 2.5 reduce la transferencia y el trabajo repetido del navegador: consulta sólo los datos de la vista abierta, usa resúmenes para las listas y conserva la explicación completa bajo demanda. El seguimiento muestra las fases y tareas, el tiempo transcurrido y las estimaciones disponibles a partir de muestras reales; las esperas de una fuente se muestran por separado. También mejora la legibilidad, las acciones de cada paso y la presentación en móvil. La [validación de rendimiento y usabilidad 2.5.0](docs/VALIDACION_2_5_0.md) documenta las mediciones y sus límites.
 
 El historial y la explicación de evaluaciones se conservan. La comparación de ramas y el tratamiento de los notebooks originales están en [CONSOLIDACION.md](docs/CONSOLIDACION.md); las comprobaciones anteriores permanecen en [VALIDACION_2_2_1.md](docs/VALIDACION_2_2_1.md).
 

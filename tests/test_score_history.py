@@ -241,6 +241,59 @@ class ScoreHistoryTests(unittest.TestCase):
             self.assertEqual(len(self.store.score_history('fixture')), 5)
             self.assertEqual(check.call_count, 1)
 
+    def test_result_bundle_checks_chain_and_decodes_each_historical_run_once(self):
+        for index in range(5):
+            self.save(provenance={'synthetic_revision': index})
+        expected = self.store.score_history('fixture')
+        with patch.object(self.store, '_assert_audit_chain', wraps=self.store._assert_audit_chain) as chain, \
+             patch.object(self.store, '_decode_score_run', wraps=self.store._decode_score_run) as decode:
+            bundle = self.store.score_run_bundle('fixture')
+        self.assertEqual(bundle['history'], expected)
+        self.assertEqual(bundle['run']['id'], next(item['id'] for item in expected if item['current']))
+        self.assertEqual(chain.call_count, 1)
+        self.assertEqual(decode.call_count, 5)
+
+    def test_result_and_history_share_one_snapshot_during_a_concurrent_new_score(self):
+        old_id, _ = self.save()
+        original = self.store._load_score_run
+        written = []
+        def load_then_write(*args, **kwargs):
+            run = original(*args, **kwargs)
+            if not written:
+                written.append(self.save('2026-10-16')[0])
+            return run
+        with patch.object(self.store, '_load_score_run', side_effect=load_then_write):
+            bundle = self.store.score_run_bundle('fixture')
+        self.assertEqual(bundle['run']['id'], old_id)
+        self.assertEqual([entry['id'] for entry in bundle['history']], [old_id])
+        self.assertTrue(bundle['history'][0]['current'])
+        self.assertEqual(self.store.score_run_bundle('fixture')['run']['id'], written[0])
+
+    def test_bundle_does_not_cache_integrity_across_read_connections(self):
+        run_id, _ = self.save()
+        self.assertEqual(self.store.score_run_bundle('fixture')['run']['id'], run_id)
+        with self.store.connection() as con:
+            con.execute("UPDATE documents SET text='Altered original' WHERE id=?", (self.document_id,))
+        with self.assertRaisesRegex(ValueError, 'cuerpo'):
+            self.store.score_run_bundle('fixture')
+
+    def test_summary_entity_listing_keeps_scores_without_loading_full_result_in_python(self):
+        _, result = self.save()
+        detailed = self.store.list_entities()[0]
+        with patch('peps.store.json.loads', wraps=json.loads) as decode:
+            summary = self.store.list_entities(summary=True)[0]
+        self.assertEqual(summary['score'], {'score': result['score'], 'status': result['status']})
+        self.assertTrue(summary['score_available'])
+        self.assertEqual(set(summary), {'id', 'name', 'kind', 'score', 'score_available'})
+        for key in ('id', 'name', 'kind'):
+            self.assertEqual(summary[key], detailed[key])
+        self.assertNotIn('result', summary)
+        self.assertLess(len(canonical(summary)), len(canonical(detailed)))
+        if self.store._audit_json:
+            self.assertEqual(decode.call_count, 0)
+        self.store._audit_json = False
+        self.assertEqual(self.store.list_entities(summary=True)[0], summary)
+
     def test_chain_validation_is_not_cached_across_transactions(self):
         run_id, _ = self.save()
         self.assertEqual(self.store.get_score_run(run_id)['id'], run_id)

@@ -5,6 +5,7 @@ import json
 import tempfile
 import unittest
 from urllib.parse import parse_qs, urlsplit
+from unittest.mock import patch
 
 from peps.engine import Engine
 from peps.news import NewsAcquirer
@@ -22,6 +23,12 @@ GDELT = {'id': 'index', 'kind': 'gdelt', 'base_url': 'https://api.gdeltproject.o
 
 
 class SearchPlanTests(unittest.TestCase):
+    def test_shared_name_queries_keep_all_distinct_identities_in_input_order(self):
+        entities = [dict(ENTITY, id=str(index)) for index in range(10000)]
+        plan = build_search_plan(entities, [WP], {'start': '2020-01-01', 'end': '2020-12-31',
+                                                'include_aliases': False, 'use_context': False}, now=NOW)
+        self.assertEqual(plan['query_count'], 12)
+        self.assertEqual(plan['queries'][0]['entity_ids'], [str(index) for index in range(10000)])
     def test_names_aliases_and_context_remain_literal_and_presets_never_become_keyword_only(self):
         for preset in ('identity', 'public_role', 'adverse'):
             config = normalize_search_config({'preset': preset}, NOW)
@@ -132,6 +139,38 @@ class SearchQueueIntegrationTests(unittest.TestCase):
 
     def configure(self, sources):
         self.news.config_path.write_text(json.dumps({'sources': sources, 'search': {'strategy': 'targeted'}}), encoding='utf-8')
+
+    def test_preview_cache_avoids_rereading_the_bank_and_invalidates_on_edits(self):
+        self.configure([WP])
+        with patch.object(self.engine.store, 'iter_entities', wraps=self.engine.store.iter_entities) as reads:
+            first = self.news.search_plan()
+            first['queries'].clear()
+            self.assertTrue(self.news.search_plan()['queries'])
+            self.assertEqual(reads.call_count, 1)
+            self.engine.store.import_entities([dict(ENTITY, id='new', name='Otra Persona Sintética')])
+            self.assertEqual(self.news.search_plan()['entities_total'], 2)
+            self.assertEqual(reads.call_count, 2)
+            self.configure([dict(WP, search_url='https://changed.invalid/')])
+            self.news.search_plan()
+            self.assertEqual(reads.call_count, 3)
+
+    def test_saturation_children_have_correct_urls_and_reserved_intervals_without_duplicate_jobs(self):
+        self.configure([WP])
+        self.news.set_search_config({'start': '2020-01-01', 'end': '2020-12-31', 'window': 'year',
+                                    'include_aliases': False, 'use_context': False})
+        self.news.queue('split-reservations')
+        parent = self.engine.store.claim(kind_prefix='news_')
+        self.assertTrue(self.news._split_saturated(parent, WP))
+        with self.engine.store.connection() as con:
+            children = [(row['id'], json.loads(row['payload']), row['due']) for row in con.execute(
+                "SELECT * FROM jobs WHERE id!=? ORDER BY due", (parent['id'],))]
+        self.assertEqual(len(children), 12)
+        for _, payload, _ in children:
+            self.assertEqual(payload['url'], query_url(WP, payload))
+        self.assertTrue(all(second[2] - first[2] >= 5 for first, second in zip(children, children[1:])))
+        self.news._split_saturated(parent, WP)
+        with self.engine.store.connection() as con:
+            self.assertEqual(con.execute('SELECT count(*) FROM jobs').fetchone()[0], 13)
 
     def test_search_settings_persist_and_emit_the_revision_event(self):
         self.configure([WP])

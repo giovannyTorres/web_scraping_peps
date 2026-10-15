@@ -14,13 +14,15 @@ from contextlib import contextmanager, closing, nullcontext
 from datetime import datetime, timezone
 from pathlib import Path
 
+_CANONICAL_ENCODER = json.JSONEncoder(ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+
 
 def now():
     return datetime.now(timezone.utc).isoformat()
 
 
 def canonical(value):
-    return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    return _CANONICAL_ENCODER.encode(value)
 
 
 def digest(value):
@@ -285,12 +287,35 @@ class Store:
                 yield self.entity(row)
             last = rows[-1]['id']
 
-    def list_entities(self, search='', limit=100, offset=0):
+    def list_entities(self, search='', limit=100, offset=0, summary=False):
         with self.connection() as con:
-            rows = con.execute('SELECT e.*,s.result FROM entities e LEFT JOIN scores s ON s.entity_id=e.id '
+            if summary and self._audit_json:
+                rows = con.execute('SELECT e.id,e.name,e.kind,json_extract(s.result,\'$.score\') AS summary_score,'
+                                   'json_extract(s.result,\'$.status\') AS summary_status,'
+                                   's.result IS NOT NULL AS score_available FROM entities e '
+                                   'LEFT JOIN scores s ON s.entity_id=e.id WHERE e.name LIKE ? '
+                                   'ORDER BY e.name LIMIT ? OFFSET ?',
+                                   ('%' + search + '%', min(max(int(limit), 1), 500), max(int(offset), 0))).fetchall()
+                result = []
+                for row in rows:
+                    value = dict(row)
+                    score, status = value.pop('summary_score'), value.pop('summary_status')
+                    value['score_available'] = bool(value['score_available'])
+                    value['score'] = {'score': score, 'status': status} if value['score_available'] else None
+                    result.append(value)
+                return result
+            columns = 'e.id,e.name,e.kind,s.result' if summary else 'e.*,s.result'
+            rows = con.execute('SELECT ' + columns + ' FROM entities e LEFT JOIN scores s ON s.entity_id=e.id '
                                'WHERE e.name LIKE ? ORDER BY e.name LIMIT ? OFFSET ?',
                                ('%' + search + '%', min(max(int(limit), 1), 500), max(int(offset), 0))).fetchall()
-            return [dict(self.entity(r), score=json.loads(r['result']) if r['result'] else None) for r in rows]
+            result = [dict(dict(r) if summary else self.entity(r), score=json.loads(r['result']) if r['result'] else None) for r in rows]
+            if summary:
+                for value in result:
+                    value.pop('result', None)
+                    value['score_available'] = value['score'] is not None
+                    if value['score_available']:
+                        value['score'] = {key: value['score'].get(key) for key in ('score', 'status')}
+            return result
 
     def add_document(self, doc, entity_ids, analyzer, connection=None, entity_lookup=None):
         text = str(doc.get('text') or '')
@@ -441,10 +466,12 @@ class Store:
 
     @staticmethod
     def _check_run_announcement(run, event):
+        result_hash = digest(canonical(run['result']))
         if (event.get('run_hash') != run['id'] or event.get('id') != run['entity_id']
                 or event.get('created_at') != run['created_at']
-                or event.get('result_hash') != digest(canonical(run['result']))):
+                or event.get('result_hash') != result_hash):
             raise ValueError('La evaluación no coincide con su evento de auditoría')
+        return result_hash
 
     @staticmethod
     def _assert_audit_chain(con):
@@ -474,10 +501,12 @@ class Store:
             if actual is None or actual != item['document_record_hash']:
                 raise ValueError('Documento histórico ausente o metadatos/cuerpo alterados')
 
-    def _load_score_run(self, con, run_id, entity_id=None, validate_documents=True, verify_chain=True):
+    def _load_score_run(self, con, run_id, entity_id=None, validate_documents=True, verify_chain=True,
+                        row=None, result_hashes=None):
         if verify_chain:
             self._assert_audit_chain(con)
-        row = con.execute('SELECT * FROM score_runs WHERE id=?', (run_id,)).fetchone()
+        if row is None:
+            row = con.execute('SELECT * FROM score_runs WHERE id=?', (run_id,)).fetchone()
         if row is None or (entity_id is not None and row['entity_id'] != entity_id):
             return None
         run = self._decode_score_run(row)
@@ -503,7 +532,9 @@ class Store:
                                          audit_row['payload'], audit_row['previous_hash']]))
             if expected != audit_row['event_hash']:
                 raise ValueError('Evento de auditoría de la evaluación alterado')
-            self._check_run_announcement(run, event)
+            result_hash = self._check_run_announcement(run, event)
+            if result_hashes is not None:
+                result_hashes[run_id] = result_hash
             announcement = event
             break
         if announcement is None:
@@ -604,15 +635,46 @@ class Store:
 
     def latest_score_run(self, entity_id):
         """Return only the current run, never silently revive invalidated history."""
+        return self.score_run_bundle(entity_id, history_limit=0)['run']
+
+    def _score_history(self, con, entity_id, limit, current_id, loaded=None):
+        """The caller already verified this transaction's complete audit chain."""
+        loaded = loaded or {}
+        history = []
+        for row in con.execute('SELECT * FROM score_runs WHERE entity_id=? ORDER BY created_at DESC,id LIMIT ?',
+                               (entity_id, min(max(int(limit), 1), 200))):
+            run = loaded.get(row['id'])
+            if run is None:
+                run = self._load_score_run(con, row['id'], entity_id, validate_documents=False,
+                                           verify_chain=False, row=row)
+            result = run['result']
+            history.append(dict(id=run['id'], entity_id=entity_id, created_at=run['created_at'],
+                score=result.get('score'), label=result.get('label'), as_of=result.get('as_of'),
+                model_version=result.get('model_version'), current=run['id'] == current_id))
+        return history
+
+    def score_run_bundle(self, entity_id, run_id=None, history_limit=50):
+        """Open result and history in one verified SQLite read snapshot.
+
+        The selected run is decoded once, including when listed in history.
+        No integrity decision escapes this connection or survives its closure.
+        A zero history limit returns only the selected run.
+        """
         with self.connection() as con:
             con.execute('BEGIN')
-            row = con.execute('SELECT run_id,result FROM scores WHERE entity_id=?', (entity_id,)).fetchone()
-            if row is None or row['run_id'] is None:
-                return None
-            run = self._load_score_run(con, row['run_id'], entity_id)
-            if run is None or canonical(run['result']) != row['result']:
-                raise ValueError('Puntero de evaluación actual inválido')
-            return run
+            self._assert_audit_chain(con)
+            entity_exists = con.execute('SELECT 1 FROM entities WHERE id=?', (entity_id,)).fetchone() is not None
+            current = con.execute('SELECT run_id,result FROM scores WHERE entity_id=?', (entity_id,)).fetchone()
+            current_id = current['run_id'] if current else None
+            selected_id = run_id or current_id
+            hashes, run = {}, None
+            if selected_id is not None:
+                run = self._load_score_run(con, selected_id, entity_id, verify_chain=False, result_hashes=hashes)
+                if run_id is None and (run is None or digest(current['result']) != hashes[selected_id]):
+                    raise ValueError('Puntero de evaluación actual inválido')
+            history = self._score_history(con, entity_id, history_limit, current_id,
+                                          {run['id']: run} if run else {}) if history_limit else []
+            return {'run': run, 'history': history, 'entity_exists': entity_exists}
 
     def score_history(self, entity_id, limit=50):
         """Bounded summaries; full document validation occurs on opening a run."""
@@ -622,16 +684,7 @@ class Store:
             self._assert_audit_chain(con)
             current = con.execute('SELECT run_id FROM scores WHERE entity_id=?', (entity_id,)).fetchone()
             current_id = current['run_id'] if current else None
-            rows = con.execute('SELECT * FROM score_runs WHERE entity_id=? ORDER BY created_at DESC,id LIMIT ?',
-                               (entity_id, min(max(int(limit), 1), 200)))
-            history = []
-            for row in rows:
-                run = self._load_score_run(con, row['id'], entity_id, validate_documents=False, verify_chain=False)
-                result = run['result']
-                history.append(dict(id=run['id'], entity_id=entity_id, created_at=run['created_at'],
-                    score=result.get('score'), label=result.get('label'), as_of=result.get('as_of'),
-                    model_version=result.get('model_version'), current=run['id'] == current_id))
-            return history
+            return self._score_history(con, entity_id, limit, current_id)
 
     def get_score_run(self, run_id, entity_id=None):
         with self.connection() as con:
@@ -647,18 +700,27 @@ class Store:
         """
         if not isinstance(run, dict) or not isinstance(run.get('id'), str):
             raise ValueError('Se requiere una evaluación histórica identificada')
+        stored, evidence = self.score_run_evidence(run['id'], run.get('entity_id'))
+        if stored is None:
+            raise ValueError('Evaluación histórica inexistente')
+        return evidence
+
+    def score_run_evidence(self, run_id, entity_id=None):
+        """Return validated run and original inputs from the same snapshot."""
         with self.connection() as con:
             con.execute('BEGIN')
-            stored = self._load_score_run(con, run['id'], run.get('entity_id'))
+            stored = self._load_score_run(con, run_id, entity_id, validate_documents=False)
             if stored is None:
-                raise ValueError('Evaluación histórica inexistente')
+                return None, []
             result = []
             for item in sorted(stored['evidence_manifest'], key=lambda entry: entry['input_index']):
-                row = con.execute('SELECT text FROM documents WHERE id=?', (item['document_id'],)).fetchone()
+                row = con.execute('SELECT * FROM documents WHERE id=?', (item['document_id'],)).fetchone()
+                if row is None or self._document_record_hash(row) != item.get('document_record_hash'):
+                    raise ValueError('Documento histórico ausente o metadatos/cuerpo alterados')
                 value = {key: item[key] for key in _SCORE_INPUT_FIELDS if key in item}
                 value.update(text=row['text'], document_id=item['document_id'])
                 result.append(value)
-            return result
+            return stored, result
 
     def run_evidence(self, run_id, evidence_id):
         """Target one historical evidence regardless of current UI page limits."""
@@ -670,8 +732,9 @@ class Store:
             item = next((entry for entry in run['evidence_manifest'] if entry['id'] == evidence_id), None)
             if item is None:
                 return None
-            self._check_run_documents(dict(run, evidence_manifest=[item]), connection=con)
             row = con.execute('SELECT * FROM documents WHERE id=?', (item['document_id'],)).fetchone()
+            if row is None or self._document_record_hash(row) != item.get('document_record_hash'):
+                raise ValueError('Documento histórico ausente o metadatos/cuerpo alterados')
             value = {key: item[key] for key in _SCORE_INPUT_FIELDS if key in item}
             value.update(text=row['text'], document_id=item['document_id'], url=row['url'],
                          source_id=row['source_id'], run_id=run_id, entity_id=run['entity_id'])
