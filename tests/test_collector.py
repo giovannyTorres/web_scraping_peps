@@ -170,6 +170,9 @@ class SafeFetcherTests(unittest.TestCase):
     def test_parallel_fetchers_share_one_host_reservation(self):
         def reserve(_):
             fetcher = SafeFetcher({}, Path(self.directory.name))
+            # Cleanups run after the ThreadPoolExecutor has joined its workers,
+            # before TemporaryDirectory cleanup closes the shared Windows files.
+            self.addCleanup(fetcher.close)
             fetcher._clock = lambda: self.now[0]
             return fetcher._reserve("news.example", 10)[0]
         with ThreadPoolExecutor(max_workers=8) as pool:
@@ -215,6 +218,7 @@ class SafeFetcherTests(unittest.TestCase):
         expected = datetime.fromtimestamp(self.now[0] + 120, timezone.utc).isoformat()
         self.assertEqual(result["retry_at"], expected)
         other = SafeFetcher({}, Path(self.directory.name))
+        self.addCleanup(other.close)
         other._clock, other._dns, other._transport = self.fetcher._clock, self.fetcher._dns, transport
         self.assertEqual(other.fetch(self.url, self.source)["status"], "deferred")
         self.assertEqual(len(transport.calls), 1)
