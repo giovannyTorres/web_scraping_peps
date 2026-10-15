@@ -294,7 +294,8 @@ class Engine:
             return False
         if status in ('deferred', 'error', 'not_modified'):
             self.store.finish(job, 'deferred', result.get('error') or status,
-                              self._retry_epoch(result.get('retry_at')), consume_attempt=result.get('request_attempted', True))
+                              self._retry_epoch(result.get('retry_at')),
+                              consume_attempt=result.get('error_code') not in ('host_interval', 'robots_pending'))
         else:
             self.store.finish(job, 'blocked', result.get('error') or status)
         return True
@@ -355,12 +356,17 @@ class Engine:
             result = fetcher.fetch(record['url'], source)
             if self._handle_fetch_failure(result, job):
                 return
-            extracted = parse_results(result, source)
+            document_kind = source.get('document_kind') or (
+                'news' if source.get('kind') in ('rss', 'atom', 'gdelt') else source.get('kind', 'news'))
+            # A discovery transport describes the index/feed, not the fetched HTML.
+            page_source = dict(source, kind=document_kind)
+            extracted = parse_results(result, page_source)
             page = extracted[0] if extracted else {}
-            record.update(url=result.get('url') or record['url'], text=extract_text(result.get('body', '')),
+            record.update(url=result.get('final_url') or result.get('url') or record['url'],
+                          text=extract_text(result.get('body', '')),
                           title=page.get('title') or record.get('title', ''),
                           published_at=page.get('published_at') or record.get('published_at'),
-                          source_kind=source.get('kind', 'news'), source_id=source['id'],
+                          source_kind=document_kind, source_id=source['id'],
                           retrieved_at=result.get('retrieved_at') or now(),
                           metadata={'fetch_hash': result.get('sha256'), 'content_type': result.get('content_type')})
             self.import_documents([dict(record, entity_ids=payload['entity_ids'])])

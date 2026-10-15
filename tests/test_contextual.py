@@ -170,6 +170,15 @@ assert get_method_info()['available']
         self.assertEqual(result["excluded_mixed_identity_clauses"], 1)
         self.assertEqual(result["findings"], [])
 
+    def test_empty_human_selection_does_not_restore_a_supported_single_mention(self):
+        text = "José Peña Villaluz fue acusado de fraude por la fiscalía."
+        item = confirm(identity_evidence(text), [])
+        with patch("peps.contextual._run_method", side_effect=AssertionError("An empty selection must not infer")):
+            result = contextual.analyze_evidence(ENTITY, item)["analysis"]
+        self.assertTrue(result["abstained"])
+        self.assertFalse(result["inference_attempted"])
+        self.assertEqual(result["identity_status"], "unresolved")
+
     def test_stale_identity_and_review_cannot_restore_attribution(self):
         text = "José Peña Villaluz fue acusado de fraude por la fiscalía."
         for field, value in (("content_hash", "stale"), ("entity_signature", "stale"), ("model_version", "stale"), ("bank_revision", 4)):

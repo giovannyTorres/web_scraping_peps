@@ -156,7 +156,7 @@ class SafeFetcher:
             if "last_at" not in {row[1] for row in db.execute("PRAGMA table_info(hosts)")}:
                 db.execute("ALTER TABLE hosts ADD COLUMN last_at REAL NOT NULL DEFAULT 0")
             cache_columns = {row[1] for row in db.execute("PRAGMA table_info(http_cache)")}
-            for column in ("cache_control", "cache_expires"):
+            for column in ("cache_control", "cache_expires", "final_url"):
                 if column not in cache_columns:
                     db.execute(f"ALTER TABLE http_cache ADD COLUMN {column} TEXT NOT NULL DEFAULT ''")
 
@@ -701,9 +701,11 @@ class SafeFetcher:
         now = self._clock()
         with self._db() as db:
             cached = db.execute("SELECT * FROM http_cache WHERE url=?", (normalized,)).fetchone()
-        if cached and cached["expires_at"] > now:
+        # Older cache rows have no response URL; revalidate before resolving
+        # relative links against a base that may have redirected elsewhere.
+        if cached and cached["expires_at"] > now and cached["final_url"]:
             self._record_event(normalized, "content", network_requests=0, outcome="cache_hit", cache_status="fresh")
-            return self._result(normalized, "not_modified", body=cached["body"], content_type=cached["content_type"], retrieved_at=cached["retrieved_at"], sha256=cached["sha256"], etag=cached["etag"], last_modified=cached["last_modified"], from_cache=True, cache_status="fresh", cache_valid_until=_iso(cached["expires_at"]))
+            return self._result(normalized, "not_modified", body=cached["body"], content_type=cached["content_type"], retrieved_at=cached["retrieved_at"], sha256=cached["sha256"], etag=cached["etag"], last_modified=cached["last_modified"], final_url=cached["final_url"] or normalized, from_cache=True, cache_status="fresh", cache_valid_until=_iso(cached["expires_at"]))
         headers = {}
         if cached:
             if cached["etag"]:
@@ -724,11 +726,11 @@ class SafeFetcher:
                 return self._result(normalized, "error", http_status=304, error="304 without a cached representation")
             with self._db() as db:
                 if store_cache:
-                    db.execute("UPDATE http_cache SET fetched_at=?,expires_at=? WHERE url=?", (now, now + ttl, normalized))
+                    db.execute("UPDATE http_cache SET fetched_at=?,expires_at=?,final_url=? WHERE url=?", (now, now + ttl, final_url, normalized))
                 else:
                     db.execute("DELETE FROM http_cache WHERE url=?", (normalized,))
             self._record_event(normalized, "content", network_requests=0, outcome="cache_revalidated", cache_status="revalidated")
-            return self._result(normalized, "not_modified", http_status=304, body=cached["body"], content_type=cached["content_type"], retrieved_at=cached["retrieved_at"], sha256=cached["sha256"], etag=cached["etag"], last_modified=cached["last_modified"], validated_at=_iso(now), from_cache=True, cache_status="revalidated", cache_valid_until=_iso(now + ttl), original_retrieved_at=cached["retrieved_at"])
+            return self._result(normalized, "not_modified", http_status=304, body=cached["body"], content_type=cached["content_type"], retrieved_at=cached["retrieved_at"], sha256=cached["sha256"], etag=cached["etag"], last_modified=cached["last_modified"], final_url=final_url, validated_at=_iso(now), from_cache=True, cache_status="revalidated", cache_valid_until=_iso(now + ttl), original_retrieved_at=cached["retrieved_at"])
         if status != 200:
             return self._result(normalized, "error", http_status=status, error="Unexpected HTTP status")
         content_type = response_headers.get("content-type", "text/plain")
@@ -752,7 +754,7 @@ class SafeFetcher:
         etag, modified = response_headers.get("etag"), response_headers.get("last-modified")
         with self._db() as db:
             if store_cache:
-                db.execute("INSERT OR REPLACE INTO http_cache(url,body,content_type,etag,last_modified,sha256,retrieved_at,fetched_at,expires_at,cache_control,cache_expires) VALUES (?,?,?,?,?,?,?,?,?,?,?)", (normalized, body, content_type, etag, modified, digest, retrieved, now, now + ttl, response_headers.get("cache-control", ""), response_headers.get("expires", "")))
+                db.execute("INSERT OR REPLACE INTO http_cache(url,body,content_type,etag,last_modified,sha256,retrieved_at,fetched_at,expires_at,cache_control,cache_expires,final_url) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)", (normalized, body, content_type, etag, modified, digest, retrieved, now, now + ttl, response_headers.get("cache-control", ""), response_headers.get("expires", ""), final_url))
             else:
                 db.execute("DELETE FROM http_cache WHERE url=?", (normalized,))
         return self._result(normalized, "ok", http_status=status, body=body, content_type=content_type, retrieved_at=retrieved, sha256=digest, etag=etag, last_modified=modified, final_url=final_url, cache_status="refreshed" if cached else "miss")

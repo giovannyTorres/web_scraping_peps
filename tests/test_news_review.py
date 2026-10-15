@@ -13,7 +13,7 @@ from unittest.mock import patch
 
 from peps.engine import Engine
 from peps.identity import IdentityResolver
-from peps.news import NewsAcquirer, canonical_url, news_fingerprint
+from peps.news import NewsAcquirer, article_text, canonical_url, news_fingerprint
 from peps.store import digest, now
 
 
@@ -77,6 +77,15 @@ class NewsIntegrationReview(unittest.TestCase):
         # Query values and repeated-key ordering can carry meaning.
         self.assertNotEqual(canonical_url('https://one.example/n?a=1&a=2'),
                             canonical_url('https://one.example/n?a=2&a=1'))
+
+    def test_article_fallback_excludes_hidden_metadata_and_templates(self):
+        html = ('<html><head><title>Acusación solo en el título</title>'
+                '<script type="application/ld+json">acusación estructurada</script></head>'
+                '<body><template>acusación de una plantilla inactiva</template>'
+                '<p>Contenido visible del documento.</p></body></html>')
+        self.assertEqual(article_text(html), 'Contenido visible del documento.')
+        omitted_head_end = '<html><head><title>Metadatos</title><body><p>Texto visible.</p></body></html>'
+        self.assertEqual(article_text(omitted_head_end), 'Texto visible.')
 
     def test_same_publisher_duplicate_body_reuses_document_and_keeps_observations(self):
         fetcher = FixtureFetcher(self.html())

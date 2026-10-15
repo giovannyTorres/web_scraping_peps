@@ -1,9 +1,9 @@
 """Browser validation of individual names and reviewed CSV import, entirely local.
 
 Developer dependency: playwright==1.62.0 with Chromium installed separately.
-Run: python scripts/test_import_ui.py [--browser-path /path/to/chromium]
+Run: python scripts/test_import_ui.py [--browser-path /path/to/chromium] [--output report.json]
 Only fictional names are used. Screenshots go to ignored runtime/import-ui-validation.
-The tracked JSON reports measured UI checks and timings, not NLP quality.
+The runtime JSON reports measured UI checks and timings, not NLP quality.
 """
 import argparse
 from datetime import datetime, timezone
@@ -27,6 +27,7 @@ from peps.engine import Engine
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--browser-path', default=shutil.which('chromium') or shutil.which('chromium-browser'))
+    parser.add_argument('--output', type=Path, help='Optional report destination; defaults to runtime/import-ui-validation/validation.json')
     args = parser.parse_args()
     artifacts = ROOT / 'runtime' / 'import-ui-validation'
     artifacts.mkdir(parents=True, exist_ok=True)
@@ -278,7 +279,9 @@ def main():
             thread.join()
     report['passed'] = all(report['checks'].values())
     rendered = json.dumps(report, ensure_ascii=False, indent=2) + '\n'
-    (ROOT / 'docs' / 'benchmarks' / 'import_ui_validation.json').write_text(rendered, encoding='utf-8')
+    output = args.output or artifacts / 'validation.json'
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(rendered, encoding='utf-8')
     print(rendered)
 
 

@@ -27,6 +27,13 @@ def digest(value):
     return hashlib.sha256(value.encode("utf-8")).hexdigest()
 
 
+def _document_id(url, content_hash, source_kind, metadata):
+    """Keep archival rows distinct from accepted evidence and from each other."""
+    if source_kind == 'legacy' and isinstance(metadata.get('legacy_record'), dict):
+        return digest(canonical(['legacy-row-v1', url, content_hash, metadata['legacy_record']]))
+    return digest(url + '\n' + content_hash)
+
+
 SCORE_RUN_SCHEMA_VERSION = 1
 _SCORE_INPUT_FIELDS = (
     'id', 'title', 'source_url', 'source_kind', 'published_at', 'retrieved_at',
@@ -239,7 +246,7 @@ class Store:
                                 context.setdefault('import_hint_conflicts', {})[alias] = row[alias]
                 if len(canonical(context)) > 64000:
                     raise ValueError('Contexto y pistas opcionales exceden 64 mil caracteres')
-                entity_id = str(row.get('id') or digest(canonical([name.casefold(), kind, context]))[:24])
+                entity_id = str(row.get('id') or row.get('seed_id') or digest(canonical([name.casefold(), kind, context]))[:24])
                 if len(entity_id) > 150:
                     raise ValueError('ID demasiado largo')
                 previous = con.execute('SELECT name,kind,aliases,context FROM entities WHERE id=?', (entity_id,)).fetchone()
@@ -296,7 +303,7 @@ class Store:
         if doc.get('event_id'):
             metadata['event_id'] = str(doc['event_id'])
         content_hash = digest(text)
-        document_id = digest(url + '\n' + content_hash)
+        document_id = _document_id(url, content_hash, doc.get('source_kind', 'news'), metadata)
         stamp = doc.get('retrieved_at') or now()
         analyses = []
         for entity_id in dict.fromkeys(entity_ids):
@@ -343,7 +350,8 @@ class Store:
             return rows
 
     def review(self, evidence_id, status, actor, reason, event_id=None, identity_spans=None, expected_run_id=None):
-        if status not in ('pending', 'confirmed', 'rejected') or not actor.strip() or not reason.strip():
+        if (status not in ('pending', 'confirmed', 'rejected') or not isinstance(actor, str)
+                or not isinstance(reason, str) or not actor.strip() or not reason.strip()):
             raise ValueError('Revisión requiere estado, revisor y motivo')
         value = {'status': status, 'actor': actor.strip(), 'reason': reason.strip(), 'at': now()}
         if event_id:
@@ -381,7 +389,7 @@ class Store:
                     raise ValueError('identity_spans requiere una lista de hasta 100 menciones')
                 selected = []
                 for span in identity_spans:
-                    if not isinstance(span, dict) or not isinstance(span.get('start'), int) or not isinstance(span.get('end'), int):
+                    if not isinstance(span, dict) or type(span.get('start')) is not int or type(span.get('end')) is not int:
                         raise ValueError('Cada mención requiere offsets start/end enteros')
                     if not 0 <= span['start'] < span['end'] <= len(row['text']):
                         raise ValueError('Mención fuera del cuerpo original')
@@ -397,10 +405,15 @@ class Store:
         """Hash immutable source fields without storing another copy of text."""
         if digest(row['text']) != row['content_hash']:
             raise ValueError('El cuerpo del documento no coincide con su hash')
-        if digest(row['url'] + '\n' + row['content_hash']) != row['id']:
+        metadata = json.loads(row['metadata'])
+        expected = _document_id(row['url'], row['content_hash'], row['source_kind'], metadata)
+        # Previous releases stored legacy documents under the ordinary URL /
+        # body key. Keep that history verifiable without rewriting its IDs.
+        previous_id = digest(row['url'] + '\n' + row['content_hash'])
+        if row['id'] not in (expected, previous_id):
             raise ValueError('La URL o identidad del documento fue alterada')
         value = {key: row[key] for key in _DOCUMENT_FIELDS}
-        value['metadata'] = json.loads(value['metadata'])
+        value['metadata'] = metadata
         return digest(canonical(value))
 
     @staticmethod
@@ -502,40 +515,64 @@ class Store:
     def _evidence_manifest(self, con, entity_id, evidence):
         manifest = []
         ids = set()
+        revision = int(con.execute("SELECT value FROM meta WHERE key='news_identity_revision'").fetchone()[0])
         for index, item in enumerate(evidence):
             if not isinstance(item, dict) or not isinstance(item.get('id'), str) or item['id'] in ids:
                 raise ValueError('Cada evidencia histórica requiere un ID único')
             ids.add(item['id'])
-            link = con.execute('SELECT document_id FROM evidence WHERE id=? AND entity_id=?',
+            link = con.execute('SELECT document_id,review FROM evidence WHERE id=? AND entity_id=?',
                                (item['id'], entity_id)).fetchone()
             if link is None or (item.get('document_id') is not None and item['document_id'] != link['document_id']):
                 raise ValueError('La evidencia no pertenece a la entidad/documento evaluados')
             row = con.execute('SELECT * FROM documents WHERE id=?', (link['document_id'],)).fetchone()
             if row is None or item.get('text') != row['text']:
                 raise ValueError('El texto evaluado debe coincidir con el documento original')
+            resolution = con.execute('SELECT resolution FROM news_identity_links WHERE document_id=? AND entity_id=?',
+                                     (link['document_id'], entity_id)).fetchone()
+            metadata, review = json.loads(row['metadata']), json.loads(link['review'])
+            current = {key: row[key] for key in ('title', 'source_kind', 'published_at', 'retrieved_at', 'content_hash')}
+            current.update(source_url=row['url'], metadata=metadata, review=review,
+                           identity_resolution=json.loads(resolution['resolution']) if resolution else None,
+                           identity_bank_revision=revision,
+                           event_id=review.get('event_id') or metadata.get('event_id'), event_date=None)
+            if any(item.get(key) != value for key, value in current.items()):
+                raise ValueError('Los datos de la evidencia cambiaron; recalcule antes de guardar la evaluación')
             entry = {key: item[key] for key in _SCORE_INPUT_FIELDS if key in item}
             entry.update(document_id=link['document_id'], input_index=index,
                          document_record_hash=self._document_record_hash(row))
             manifest.append(entry)
+        current_ids = {row['id'] for row in con.execute('SELECT id FROM evidence WHERE entity_id=?', (entity_id,))}
+        if ids != current_ids:
+            raise ValueError('El conjunto de evidencias cambió; recalcule antes de guardar la evaluación')
         return sorted(manifest, key=lambda item: item['id'])
 
     def save_score(self, entity_id, result, connection=None, entity_snapshot=None, evidence_snapshot=None):
         """Save an immutable run and current pointer in the same transaction.
 
         Snapshots should be the exact inputs evaluated by the caller. The
-        compatible fallback reads current inputs from this transaction; it
-        cannot recover inputs of a result computed earlier against other data.
+        compatible fallback reads current inputs from this transaction and
+        checks the scoring trace before linking that result to those inputs.
         """
         with (nullcontext(connection) if connection is not None else self.connection()) as con:
             if not con.in_transaction:
                 con.execute('BEGIN IMMEDIATE')
+            uses_fallback = entity_snapshot is None or evidence_snapshot is None
+            row = con.execute('SELECT * FROM entities WHERE id=?', (entity_id,)).fetchone()
+            current_entity = self.entity(row) if row else None
             if entity_snapshot is None:
-                row = con.execute('SELECT * FROM entities WHERE id=?', (entity_id,)).fetchone()
-                entity_snapshot = self.entity(row) if row else None
+                entity_snapshot = current_entity
             if not isinstance(entity_snapshot, dict) or entity_snapshot.get('id') != entity_id or not isinstance(result, dict):
                 raise ValueError('La evaluación requiere entidad y resultado válidos')
+            from .identity import entity_signature
+            if current_entity is None or entity_signature(entity_snapshot) != entity_signature(current_entity):
+                raise ValueError('La entidad cambió; recalcule antes de guardar la evaluación')
             if evidence_snapshot is None:
                 evidence_snapshot = self.evidence(entity_id, connection=con)
+            if uses_fallback:
+                from .scoring import score_entity
+                current_result = score_entity(entity_snapshot, evidence_snapshot, result.get('as_of'))
+                if any(result.get(key) != value for key, value in current_result.items()):
+                    raise ValueError('El resultado no corresponde a los datos actuales; recalcule antes de guardar la evaluación')
             payload = {'schema_version': SCORE_RUN_SCHEMA_VERSION, 'entity_snapshot': entity_snapshot,
                        'evidence_manifest': self._evidence_manifest(con, entity_id, evidence_snapshot), 'result': result}
             encoded, result_encoded = canonical(payload), canonical(result)
@@ -739,8 +776,9 @@ class Store:
 
     def backup(self, target):
         target = Path(target).resolve()
-        if target == self.path:
-            raise ValueError('El respaldo requiere una ruta distinta')
+        protected = [self.path, *(Path(str(self.path) + suffix) for suffix in ('-wal', '-shm', '-journal'))]
+        if any(target == path or (target.exists() and path.exists() and target.samefile(path)) for path in protected):
+            raise ValueError('El respaldo requiere una ruta distinta del banco y sus archivos auxiliares')
         target.parent.mkdir(parents=True, exist_ok=True)
         with self.connection() as con, closing(sqlite3.connect(str(target))) as dest:
             con.backup(dest)

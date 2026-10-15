@@ -177,11 +177,11 @@ def _identity_scope(entity: dict[str, Any], item: dict[str, Any], text: str, dig
         return entity, None, [], "invalid", "Presupuesto o formato de menciones de identidad inválido."
     mentions = [deepcopy(mention) for mention in raw_mentions if _valid_span(mention, text)]
     selected = [mention for mention in mentions if mention.get("identity_supported") is True]
-    confirmed = (review.get("status") == "confirmed" and bool(str(review.get("actor") or "").strip())
-        and bool(str(review.get("reason") or "").strip()) and review.get("content_hash") == digest
+    confirmed = (review.get("status") == "confirmed" and isinstance(review.get("actor"), str) and bool(review["actor"].strip())
+        and isinstance(review.get("reason"), str) and bool(review["reason"].strip()) and review.get("content_hash") == digest
         and review.get("entity_signature") == signature and review.get("identity_rules_hash") == identity.RULES_HASH
         and (item.get("identity_bank_revision") is None or review.get("bank_revision") == item["identity_bank_revision"]))
-    if confirmed and review.get("identity_spans"):
+    if confirmed and "identity_spans" in review:
         spans = review["identity_spans"]
         if not isinstance(spans, list) or len(spans) > CONFIG["max_identity_mentions"]:
             return entity, None, [], "invalid", "Selección humana de menciones inválida."

@@ -13,6 +13,13 @@ from .engine import capacity
 from .store import read_entities, now, canonical, digest
 
 
+def _boolean(value, field):
+    """Keep consent flags explicit: JSON strings such as "false" are not consent."""
+    if not isinstance(value, bool):
+        raise ValueError(field + ' debe ser booleano')
+    return value
+
+
 def create_server(engine, port=0):
     from .news import NewsAcquirer
     news = NewsAcquirer(engine)
@@ -24,10 +31,12 @@ def create_server(engine, port=0):
     import_operations = {}
     import_ttl = 30 * 60
 
-    def background(fn):
+    def background(fn, online=False):
         with lock:
             if state['busy']:
                 raise ValueError('Ya hay una operación en curso')
+            if online:
+                engine.online = True
             state.update(busy=True, error=None, last_result=None, operation_id=None)
         def execute():
             try:
@@ -150,7 +159,8 @@ def create_server(engine, port=0):
             if origin and origin != 'http://' + expected:
                 self.reply({'error': 'Origen no permitido'}, 403)
                 return False
-            if api and not secrets.compare_digest(self.headers.get('X-PEPS-Token', ''), token):
+            supplied_token = self.headers.get('X-PEPS-Token', '')
+            if api and not (supplied_token.isascii() and secrets.compare_digest(supplied_token, token)):
                 self.reply({'error': 'Sesión inválida'}, 403)
                 return False
             return True
@@ -251,19 +261,19 @@ def create_server(engine, port=0):
                 elif self.path == '/api/score':
                     background(lambda: {'scored': engine.rescore()})
                 elif self.path == '/api/collect':
-                    engine.online = bool(data.get('online'))
-                    if not engine.online:
+                    if not _boolean(data.get('online', False), 'online'):
                         raise ValueError('Active red autorizada para recolectar')
                     def collect():
                         queued = engine.queue_discovery()
                         return {'queued': queued, **engine.run(workers=4, max_jobs=1000, seconds=120)}
-                    background(collect)
+                    background(collect, online=True)
                 elif self.path == '/api/stop':
                     engine.stop_event.set()
                 elif self.path == '/api/retry':
                     engine.store.retry_failed()
                 elif self.path == '/api/source':
-                    engine.set_source(data['id'], data['enabled'], data['terms_approved'])
+                    engine.set_source(data['id'], _boolean(data['enabled'], 'enabled'),
+                                      _boolean(data['terms_approved'], 'terms_approved'))
                 elif self.path == '/api/review':
                     if not data.get('expected_run_id'):
                         raise ValueError('Abra la evaluación actual antes de registrar una revisión')
@@ -273,15 +283,17 @@ def create_server(engine, port=0):
                     self.reply(engine.replay_score(str(data['run_id'])))
                     return
                 elif self.path == '/api/news-acquire':
-                    engine.online = bool(data.get('online'))
-                    if not engine.online:
+                    if not _boolean(data.get('online', False), 'online'):
                         raise ValueError('Active la conexión autorizada para descargar noticias')
-                    background(lambda: news.acquire(workers=4, seconds=120, max_articles=1000))
+                    background(lambda: news.acquire(workers=4, seconds=120, max_articles=1000), online=True)
                 elif self.path == '/api/news-attribute':
-                    background(lambda: news.attribute(limit=1000, force=bool(data.get('force'))))
+                    force = _boolean(data.get('force', False), 'force')
+                    background(lambda: news.attribute(limit=1000, force=force))
                 elif self.path == '/api/news-source':
-                    news.set_source(data['id'], data['enabled'], data['terms_approved'], data.get('download_articles', False),
-                                    data.get('article_terms_approved', False))
+                    news.set_source(data['id'], _boolean(data['enabled'], 'enabled'),
+                                    _boolean(data['terms_approved'], 'terms_approved'),
+                                    _boolean(data.get('download_articles', False), 'download_articles'),
+                                    _boolean(data.get('article_terms_approved', False), 'article_terms_approved'))
                 elif self.path == '/api/backup':
                     from .store import now
                     destination = engine.data_dir / 'backups' / ('peps-' + now().replace(':', '-').replace('+', '_') + '.sqlite3')

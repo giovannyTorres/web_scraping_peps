@@ -360,6 +360,57 @@ class ScoreHistoryTests(unittest.TestCase):
         self.assertEqual(self.count('score_runs'), 0)
         self.assertEqual(self.count('scores'), 0)
 
+    def test_snapshot_cannot_substitute_source_metadata_or_human_review(self):
+        evidence = self.store.evidence('fixture')
+        result = score_entity(self.entity, evidence, AS_OF)
+        changes = [('source_kind', 'news'), ('published_at', AS_OF),
+                   ('source_url', 'https://fixture.invalid/substituted'),
+                   ('metadata', {'publisher_id': 'invented'}),
+                   ('review', {'status': 'confirmed', 'actor': 'invented', 'reason': 'invented'})]
+        for field, value in changes:
+            with self.subTest(field=field):
+                altered = copy.deepcopy(evidence)
+                altered[0][field] = value
+                with self.assertRaisesRegex(ValueError, 'Los datos de la evidencia cambiaron'):
+                    self.store.save_score('fixture', result, entity_snapshot=self.entity, evidence_snapshot=altered)
+        self.assertEqual(self.count('score_runs'), 0)
+        self.assertEqual(self.count('scores'), 0)
+
+    def test_stale_review_snapshot_cannot_restore_invalidated_current_score(self):
+        evidence = self.store.evidence('fixture')
+        result = score_entity(self.entity, evidence, AS_OF)
+        self.store.review(evidence[0]['id'], 'rejected', 'Synthetic reviewer', 'A homonym was found')
+        with self.assertRaisesRegex(ValueError, 'Los datos de la evidencia cambiaron'):
+            self.store.save_score('fixture', result, entity_snapshot=self.entity, evidence_snapshot=evidence)
+        self.assertIsNone(self.store.get_score('fixture'))
+        self.assertEqual(self.count('score_runs'), 0)
+
+    def test_compatible_fallback_cannot_attach_old_result_to_new_review(self):
+        evidence = self.store.evidence('fixture')
+        result = score_entity(self.entity, evidence, AS_OF)
+        self.store.review(evidence[0]['id'], 'rejected', 'Synthetic reviewer', 'A homonym was found')
+        with self.assertRaisesRegex(ValueError, 'El resultado no corresponde a los datos actuales'):
+            self.store.save_score('fixture', result)
+        self.assertIsNone(self.store.get_score('fixture'))
+        self.assertEqual(self.count('score_runs'), 0)
+
+    def test_stale_entity_snapshot_cannot_restore_invalidated_current_score(self):
+        evidence = self.store.evidence('fixture')
+        result = score_entity(self.entity, evidence, AS_OF)
+        self.store.import_entities([dict(self.entity, context={'state': 'Sonora'})])
+        with self.assertRaisesRegex(ValueError, 'La entidad cambió'):
+            self.store.save_score('fixture', result, entity_snapshot=self.entity, evidence_snapshot=evidence)
+        self.assertIsNone(self.store.get_score('fixture'))
+
+    def test_new_evidence_requires_recomputing_the_complete_current_set(self):
+        evidence = self.store.evidence('fixture')
+        result = score_entity(self.entity, evidence, AS_OF)
+        self.store.add_document(dict(url='https://fixture.invalid/new-evidence',
+            text='José Peña Villaluz fue absuelto de fraude.', source_kind='official'), ['fixture'], analyze)
+        with self.assertRaisesRegex(ValueError, 'El conjunto de evidencias cambió'):
+            self.store.save_score('fixture', result, entity_snapshot=self.entity, evidence_snapshot=evidence)
+        self.assertIsNone(self.store.get_score('fixture'))
+
     def test_tampered_analysis_cannot_become_a_historical_score_factor(self):
         evidence = self.store.evidence('fixture')
         evidence[0]['analysis']['findings'][0]['stage'] = 'conviction'

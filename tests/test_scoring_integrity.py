@@ -5,6 +5,7 @@ from itertools import permutations
 import unittest
 
 from peps.nlp import analyze
+from peps.identity import MODEL_VERSION as IDENTITY_VERSION, RULES_HASH as IDENTITY_RULES_HASH, entity_signature
 from peps.scoring import score_entity
 
 
@@ -22,6 +23,53 @@ def evidence(text="José Peña Villaluz fue detenido por fraude.", **changes):
 
 
 class ScoringIntegrityTests(unittest.TestCase):
+    def test_explicitly_empty_human_selection_cannot_restore_automatic_identity(self):
+        row = evidence(metadata={'news_module': True}, identity_bank_revision=7)
+        signature = entity_signature(ENTITY)
+        row['identity_resolution'] = {'status': 'matched', 'entity_id': ENTITY['id'],
+            'entity_signature': signature, 'content_hash': row['content_hash'],
+            'model_version': IDENTITY_VERSION, 'features': {'rules_hash': IDENTITY_RULES_HASH},
+            'bank_revision': 7, 'confidence': .9,
+            'mentions': [{'start': 0, 'end': len(ENTITY['name']), 'text': ENTITY['name'], 'identity_supported': True}]}
+        row['review'] = {'status': 'confirmed', 'actor': 'Synthetic reviewer', 'reason': 'Identity reviewed',
+            'content_hash': row['content_hash'], 'entity_signature': signature,
+            'identity_rules_hash': IDENTITY_RULES_HASH, 'bank_revision': 7}
+        self.assertGreater(score_entity(ENTITY, [row], AS_OF)['validated_score'], 0)
+        row['review']['identity_spans'] = []
+        result = score_entity(ENTITY, [row], AS_OF)
+        self.assertEqual(result['score'], 0)
+        self.assertIn('identity_ambiguous_or_requires_selected_spans', result['evidence_audit'][0]['exclusions'])
+
+    def test_non_news_review_cannot_validate_an_updated_entity_or_body(self):
+        row = evidence(source_kind="official")
+        review = {"status": "confirmed", "actor": "Synthetic reviewer", "reason": "Identity and source checked",
+                  "content_hash": row["content_hash"], "entity_signature": entity_signature(ENTITY)}
+        current = score_entity(ENTITY, [dict(row, review=review)], AS_OF)
+        self.assertGreater(current["validated_score"], 0)
+        changed_entity = dict(ENTITY, context={"state": "Oaxaca"})
+        changed_body = evidence("José Peña Villaluz fue condenado por fraude.", source_kind="official")
+        for entity, item in [(changed_entity, row), (ENTITY, changed_body)]:
+            with self.subTest(entity=entity, body=item["text"]):
+                result = score_entity(entity, [dict(item, review=review)], AS_OF)
+                self.assertGreater(result["provisional_score"], 0)
+                self.assertEqual(result["validated_score"], 0)
+                self.assertIn("human_identity_review_stale_or_incomplete", result["evidence_audit"][0]["exclusions"])
+
+    def test_confirmed_review_requires_text_actor_and_reason(self):
+        for field in ("actor", "reason"):
+            for value in (None, [], {}, 17, True):
+                with self.subTest(field=field, value=value):
+                    review = {"status": "confirmed", "actor": "Synthetic reviewer", "reason": "Checked", field: value}
+                    result = score_entity(ENTITY, [evidence(review=review)], AS_OF)
+                    self.assertEqual(result["validated_score"], 0)
+                    self.assertEqual(result["status"], "provisional")
+
+    def test_malformed_review_is_excluded_without_crashing_scoring(self):
+        for review in (["confirmed"], "confirmed", 17):
+            result = score_entity(ENTITY, [evidence(review=review)], AS_OF)
+            self.assertEqual(result["score"], 0)
+            self.assertIn("invalid_evidence_review", result["evidence_audit"][0]["exclusions"])
+
     def test_current_metadata_cannot_authorize_invented_decisions(self):
         text = "José Peña Villaluz inauguró una biblioteca."
         cached = analyze(text, ENTITY)

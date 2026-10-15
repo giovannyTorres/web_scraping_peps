@@ -2,7 +2,7 @@
 
 Optional developer dependency: playwright==1.62.0; no model or browser download
 occurs here. Install Chromium separately or pass --browser-path. Run from any
-folder: python scripts/test_explainability_ui.py [--browser-path /path/to/chromium]
+folder: python scripts/test_explainability_ui.py [--browser-path /path/to/chromium] [--output report.json]
 Screenshots are written under ignored runtime/ui-validation. The JSON report
 measures UI behavior and one local render latency; it is not model-quality evidence.
 """
@@ -24,20 +24,22 @@ from peps.app import create_server
 
 parser=argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--browser-path',default=shutil.which('chromium') or shutil.which('chromium-browser'))
+parser.add_argument('--output',type=Path,help='Optional report destination; defaults to runtime/ui-validation/validation.json')
 args=parser.parse_args()
 artifacts=root/'runtime'/'ui-validation'
 artifacts.mkdir(parents=True,exist_ok=True)
-results={'kind':'synthetic_offline_browser_validation','processed_at':datetime.now(timezone.utc).isoformat(),'browser':'Chromium','playwright_version':importlib.metadata.version('playwright'),'fixtures':'210 synthetic documents, 3 synthetic entities; no real notes','checks':{},'screenshots':[]}
+results={'kind':'synthetic_offline_browser_validation','processed_at':datetime.now(timezone.utc).isoformat(),'browser':'Chromium','playwright_version':importlib.metadata.version('playwright'),'fixtures':'211 synthetic documents, 4 synthetic entities; no real notes','checks':{},'screenshots':[]}
 with tempfile.TemporaryDirectory() as tmp:
     engine=Engine(tmp)
-    engine.store.import_entities([{'id':'aurora','name':'Entidad Sintética Aurora','kind':'company'}, {'id':'low','name':'Empresa Sintética Serena','kind':'company'}, {'id':'emoji','name':'Empresa Sintética Águila','kind':'company'}])
+    engine.store.import_entities([{'id':'aurora','name':'Entidad Sintética Aurora','kind':'company'}, {'id':'low','name':'Empresa Sintética Serena','kind':'company'}, {'id':'emoji','name':'Empresa Sintética Águila','kind':'company'}, {'id':'identity','name':'Empresa Sintética Identidad','kind':'company'}])
     now=time.strftime('%Y-%m-%d',time.gmtime())
     engine.import_documents([
         {'url':'https://fixture.invalid/a','title':'<img src=x onerror="window.injected=1"> · Documento sintético','source_kind':'official','entity_ids':['aurora'],'text':'🦅 Boletín sintético de prueba. '+'Información introductoria. '*100+'Entidad Sintética Aurora fue condenada por fraude.','published_at':now},
         {'url':'https://fixture.invalid/b','title':'Condena sintética de prueba','source_kind':'official','entity_ids':['aurora'],'text':'Entidad Sintética Aurora fue condenada por corrupción.','published_at':now},
         {'url':'https://fixture.invalid/c','title':'Documento sintético de prueba','source_kind':'official','entity_ids':['aurora'],'text':'Entidad Sintética Aurora fue condenada por lavado de dinero.','published_at':now},
         {'url':'https://fixture.invalid/low','title':'Boletín sin señales','source_kind':'official','entity_ids':['low'],'text':'Empresa Sintética Serena abrió una sucursal en Puebla.','published_at':now},
-        {'url':'https://fixture.invalid/emoji','title':'Texto Unicode','source_kind':'official','entity_ids':['emoji'],'text':'🦅 Empresa Sintética Águila fue acusada de fraude.','published_at':now}
+        {'url':'https://fixture.invalid/emoji','title':'Texto Unicode','source_kind':'official','entity_ids':['emoji'],'text':'🦅 Empresa Sintética Águila fue acusada de fraude.','published_at':now},
+        {'url':'https://fixture.invalid/identity','title':'Selección de identidad sintética','source_kind':'news','entity_ids':['identity'],'text':'Empresa Sintética Identidad fue acusada de fraude.','published_at':now}
     ])
     engine.import_documents([{'url':f'https://fixture.invalid/bulk-{i}','title':f'Nota incidental sintética {i}','source_kind':'official','entity_ids':['aurora'],'text':f'Comunicado sintético número {i}, sin mención nominal de la entidad.','published_at':now} for i in range(205)])
     engine.rescore()
@@ -136,6 +138,27 @@ with tempfile.TemporaryDirectory() as tmp:
         assert page.locator('.note[open] .note-body').inner_text().startswith('🦅')
         assert page.locator('.note[open] .note-body mark').first.inner_text()==page.locator('.score-factor blockquote').first.inner_text()
         results['checks']['unicode_astral_offsets']=True
+        page.get_by_role('row',name='Consultar Empresa Sintética Identidad').click()
+        page.get_by_role('heading',name='¿Por qué obtuvo este score?').wait_for()
+        page.locator('.note>summary').first.click()
+        identity_note=page.locator('.note[open]').first
+        checkbox=identity_note.locator('.identity-span').first
+        checkbox.wait_for()
+        assert checkbox.is_checked()
+        checkbox.uncheck()
+        identity_note.get_by_label('Estado de revisión',exact=True).select_option('confirmed')
+        identity_note.get_by_label('Revisor',exact=True).fill('revisor-identidad-sintético')
+        identity_note.get_by_label('Motivo y comprobación de identidad',exact=True).fill('Sin menciones confirmadas para esta entidad sintética.')
+        identity_note.get_by_role('button',name='Guardar revisión',exact=True).click()
+        page.get_by_text('Revisión guardada. Se creó una evaluación',exact=False).wait_for()
+        page.get_by_role('heading',name='¿Por qué obtuvo este score?').wait_for()
+        page.locator('.note>summary').first.click()
+        restored_checkbox=page.locator('.note[open] .identity-span').first
+        restored_checkbox.wait_for()
+        assert not restored_checkbox.is_checked()
+        assert engine.store.evidence('identity')[0]['review']['identity_spans']==[]
+        assert page.locator('.score-number strong').inner_text()=='0'
+        results['checks']['explicit_empty_identity_selection_stays_unchecked_after_save']=True
         original_explanation=engine.explanation
         def delayed_explanation(entity_id,run_id=None):
             if entity_id=='low':time.sleep(.25)
@@ -162,4 +185,6 @@ with tempfile.TemporaryDirectory() as tmp:
       server.shutdown();server.server_close();thread.join()
 results['passed']=all(results['checks'].values())
 print(json.dumps(results,ensure_ascii=False,indent=2))
-(root/'docs'/'benchmarks'/'ui_validation.json').write_text(json.dumps(results,ensure_ascii=False,indent=2)+'\n')
+output=args.output or artifacts/'validation.json'
+output.parent.mkdir(parents=True,exist_ok=True)
+output.write_text(json.dumps(results,ensure_ascii=False,indent=2)+'\n')

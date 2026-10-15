@@ -1,5 +1,6 @@
 import concurrent.futures
 import json
+import os
 import tempfile
 import time
 import unittest
@@ -23,6 +24,12 @@ class StorageTests(unittest.TestCase):
         rows = read_entities('nombre_persona_input,estado_input,alias_input\nJosé Pérez,Sonora,Pepe\nJosé Pérez,Sinaloa,JP')
         self.assertEqual(2, self.store.import_entities(rows))
         self.assertEqual(3, self.store.stats()['entities'])
+
+    def test_seed_id_preserves_entity_identity_when_normalized_context_changes(self):
+        self.store.import_entities([dict(seed_id='stable-normalized-id', name='Persona Sintética', context={'state': 'Oaxaca'})])
+        self.store.import_entities([dict(seed_id='stable-normalized-id', name='Persona Sintética', context={'state': 'Sonora'})])
+        self.assertEqual(2, self.store.stats()['entities'])
+        self.assertEqual(self.store.get_entity('stable-normalized-id')['context']['state'], 'Sonora')
 
     def test_entity_import_rollback_on_invalid_row(self):
         with self.assertRaises(ValueError):
@@ -104,6 +111,25 @@ class StorageTests(unittest.TestCase):
         self.store.finish(job)
         self.assertEqual(1, self.store.stats()['jobs']['done'])
 
+    def test_fetch_failures_only_preserve_attempts_for_courtesy_deferrals(self):
+        cases = [
+            ({'status': 'error', 'request_attempted': False,
+              'error': 'Host is not in the source allowlist'}, 1),
+            ({'status': 'deferred', 'request_attempted': False,
+              'error_code': 'host_interval'}, 0),
+            ({'status': 'deferred', 'request_attempted': False,
+              'error_code': 'robots_pending'}, 0),
+        ]
+        for index, (result, expected) in enumerate(cases):
+            with self.subTest(result=result):
+                job_id = self.store.enqueue('test', {}, key='failure-test:' + str(index))
+                job = self.store.claim()
+                self.assertEqual(job['id'], job_id)
+                self.assertTrue(self.engine._handle_fetch_failure(result, job))
+                with self.store.connection() as con:
+                    attempts = con.execute('SELECT attempts FROM jobs WHERE id=?', (job_id,)).fetchone()[0]
+                self.assertEqual(attempts, expected)
+
     def test_audit_tamper_detected(self):
         with self.store.connection() as con:
             con.execute("UPDATE audit SET payload='{}' WHERE seq=1")
@@ -134,6 +160,34 @@ class StorageTests(unittest.TestCase):
         backup = Store(target)
         self.assertEqual(backup.stats()['entities'], self.store.stats()['entities'])
         self.assertEqual(backup.verify_audit(), self.store.verify_audit())
+
+    def test_backup_rejects_database_aliases_and_sqlite_auxiliary_files(self):
+        alias = Path(self.temp.name) / 'hardlinked-bank.db'
+        os.link(self.store.path, alias)
+        targets = [self.store.path, alias, *(Path(str(self.store.path) + suffix) for suffix in ('-wal', '-shm', '-journal'))]
+        for target in targets:
+            with self.subTest(target=target), self.assertRaisesRegex(ValueError, 'ruta distinta'):
+                self.store.backup(target)
+        self.assertEqual(self.store.stats()['entities'], 1)
+        self.assertTrue(self.store.verify_audit()['ok'])
+
+    def test_legacy_document_keeps_its_own_provenance_when_url_and_body_collide(self):
+        doc = {'url': 'https://example.org/shared', 'text': 'Arturo Pérez Montes fue condenado por corrupción.',
+               'source_kind': 'official'}
+        official_id = self.store.add_document(doc, ['e1'], analyze)
+        legacy = dict(doc, source_kind='legacy', metadata={'requires_source_revalidation': True,
+                      'legacy_record': {'seed_id': 'e1', 'old_row': 'one'}})
+        first_id = self.store.add_document(legacy, ['e1'], analyze)
+        second_id = self.store.add_document(dict(legacy, metadata={'requires_source_revalidation': True,
+            'legacy_record': {'seed_id': 'e1', 'old_row': 'two'}}), ['e1'], analyze)
+        self.assertEqual(len({official_id, first_id, second_id}), 3)
+        self.assertEqual(self.store.add_document(legacy, ['e1'], analyze), first_id)
+        self.engine.rescore('e1')
+        self.assertTrue(self.store.verify_audit()['ok'])
+        sources = {item['document_id']: item for item in self.store.evidence('e1')}
+        self.assertEqual(sources[official_id]['source_kind'], 'official')
+        self.assertEqual(sources[first_id]['source_kind'], 'legacy')
+        self.assertEqual(sources[second_id]['metadata']['legacy_record']['old_row'], 'two')
 
     def test_offline_never_creates_network_jobs(self):
         self.assertEqual({'status': 'offline', 'processed': 0}, self.engine.run())

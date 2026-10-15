@@ -30,6 +30,10 @@ EXCLUSIONS = {'human_rejected': 'Documento rechazado por revisión humana',
     'cached_analysis_content_mismatch': 'Análisis almacenado alterado o inconsistente',
     'finding_outside_corroborated_identity_span': 'Hallazgo fuera de la mención de identidad corroborada',
     'stale_or_invalid_identity_resolution': 'Resolución de identidad obsoleta o inválida',
+    'human_identity_review_stale_or_incomplete': 'Revisión humana de identidad obsoleta o incompleta; requiere nueva validación',
+    'invalid_evidence_review': 'Metadatos de revisión inválidos',
+    'invalid_identity_mentions': 'Formato de menciones de identidad inválido',
+    'invalid_human_identity_selection': 'Selección humana de menciones inválida',
     'content_hash_mismatch': 'El cuerpo no corresponde a su hash'}
 
 

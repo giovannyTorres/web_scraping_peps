@@ -1,0 +1,459 @@
+{
+  "version": "2.2.1",
+  "date": "2026-10-15",
+  "environment": {
+    "platform": "Linux",
+    "python": "3.12.14"
+  },
+  "unit": {
+    "discovered": 364,
+    "passed": 357,
+    "skipped_optional_spacy": 7,
+    "seconds": 21.031
+  },
+  "browser": {
+    "import_checks": {
+      "empty_bank_has_name_and_csv_entry_points": true,
+      "individual_type_is_required_without_silent_person_default": true,
+      "single_identity_hints_and_aliases_persist": true,
+      "individual_save_opens_real_auditable_explanation": true,
+      "windows1252_upload_decodes_accents": true,
+      "late_preview_cannot_restore_source_edited_during_request": true,
+      "utf16_upload_and_tab_detection_preserve_unicode": true,
+      "duplicate_and_blank_headers_get_distinct_mapping_controls": true,
+      "mapping_requires_user_review": true,
+      "uploaded_cells_render_as_text_without_html_execution": true,
+      "unknown_type_values_explicitly_prompt_for_user_identification": true,
+      "invalid_row_blocks_confirmation": true,
+      "preview_exposes_names_kinds_and_invalid_row": true,
+      "changing_column_mapping_invalidates_confirmation": true,
+      "csv_custom_kind_values_and_optional_identity_hints_saved": true,
+      "invalid_row_omitted_only_after_explicit_choice": true,
+      "ignored_column_is_not_persisted": true,
+      "receipt_bank_button_reveals_imported_list_without_previous_filter": true,
+      "imported_list_links_to_existing_score_audit": true,
+      "double_confirmation_click_submits_one_operation": true,
+      "mobile_import_has_no_horizontal_page_overflow": true,
+      "clear_import_releases_file_and_preview_after_receipt": true,
+      "headerless_split_names_compose_full_name_from_user_mapping": true,
+      "missing_receipt_unlocks_inputs_with_honest_uncertainty": true,
+      "missing_receipt_invalidates_previous_csv_confirmation": true,
+      "missing_receipt_never_auto_reimports_or_retries_tracking": true,
+      "missing_receipt_bank_action_can_verify_saved_entities": true,
+      "no_external_requests": true,
+      "no_browser_errors": true,
+      "import_preserves_audit_chain": true
+    },
+    "explanation_checks": {
+      "actual_score_and_scale": true,
+      "real_factors_and_nonadditive_delta": true,
+      "unicode_exact_citation_after_1800_chars": true,
+      "citation_loads_evidence_beyond_200_notes": true,
+      "xss_rendered_as_plain_text": true,
+      "auxiliary_separate_from_factors": true,
+      "replay_matches": true,
+      "desktop_explanation_heading_visible": true,
+      "current_review_creates_new_evaluation": true,
+      "historical_notes_readonly": true,
+      "return_to_current": true,
+      "stale_review_rejected_without_overwriting": true,
+      "zero_is_insufficient_not_risk_absence": true,
+      "unicode_astral_offsets": true,
+      "explicit_empty_identity_selection_stays_unchecked_after_save": true,
+      "entity_selection_race_does_not_replace_latest": true,
+      "mobile_no_horizontal_page_overflow": true,
+      "no_external_requests": true,
+      "no_browser_errors": true
+    },
+    "page_errors": []
+  },
+  "historical_migration": {
+    "entities": 10,
+    "evidence_rows": 38,
+    "links": 38,
+    "skipped": 0,
+    "all_legacy_scores_zero": true,
+    "audit_ok": true
+  },
+  "scoring_load": {
+    "scope": "synthetic_local_end_to_end_not_web_coverage",
+    "entities": 1000,
+    "timings_seconds": {
+      "import_entities": 0.025355,
+      "indexed_linkage": 0.014947,
+      "persist_analyze_documents": 0.849181,
+      "score_entities": 4.473391,
+      "four_process_queue_1000": 3.227479,
+      "verify_audit": 0.879965
+    },
+    "model_version": "review-priority-1.2.1",
+    "parameters_hash": "08502964876648ea5fecb48e691bf8e85dcc702c4d3e80f42b0942b74657540a",
+    "scoring_fixture": {
+      "expected_positives": 100,
+      "observed_positives": 100,
+      "mismatches": [],
+      "validated_without_review": 0
+    },
+    "queue_unique_done": 1000,
+    "audit": {
+      "ok": true,
+      "checked": 4001,
+      "head_hash": "d457e366d45c21fe4360e979af6df2e28c404eb6de83f85f56dadcc4e27bc0db",
+      "score_runs_checked": 1000,
+      "scope": "event_chain_document_content_current_scores_and_historical_score_runs_with_document_metadata",
+      "limitation": "Una reescritura completa requiere detectar con un hash o respaldo externo."
+    },
+    "pass": true
+  },
+  "import_load": [
+    {
+      "rows": 1000,
+      "summary": {
+        "repetitions": 1,
+        "preview": {
+          "wall_ms": {
+            "n": 1,
+            "median": 33.821,
+            "min": 33.821,
+            "max": 33.821
+          },
+          "cpu_ms": {
+            "n": 1,
+            "median": 33.835,
+            "min": 33.835,
+            "max": 33.835
+          }
+        },
+        "commit": {
+          "wall_ms": {
+            "n": 1,
+            "median": 54.136,
+            "min": 54.136,
+            "max": 54.136
+          },
+          "cpu_ms": {
+            "n": 1,
+            "median": 54.115,
+            "min": 54.115,
+            "max": 54.115
+          }
+        },
+        "peak_process_rss_mb": {
+          "n": 1,
+          "median": 18.773,
+          "min": 18.773,
+          "max": 18.773
+        },
+        "storage_after_total_bytes": {
+          "n": 1,
+          "median": 434176,
+          "min": 434176,
+          "max": 434176
+        },
+        "storage_growth_bytes": {
+          "n": 1,
+          "median": 307200,
+          "min": 307200,
+          "max": 307200
+        }
+      }
+    },
+    {
+      "rows": 10000,
+      "summary": {
+        "repetitions": 1,
+        "preview": {
+          "wall_ms": {
+            "n": 1,
+            "median": 351.196,
+            "min": 351.196,
+            "max": 351.196
+          },
+          "cpu_ms": {
+            "n": 1,
+            "median": 351.221,
+            "min": 351.221,
+            "max": 351.221
+          }
+        },
+        "commit": {
+          "wall_ms": {
+            "n": 1,
+            "median": 555.132,
+            "min": 555.132,
+            "max": 555.132
+          },
+          "cpu_ms": {
+            "n": 1,
+            "median": 555.126,
+            "min": 555.126,
+            "max": 555.126
+          }
+        },
+        "peak_process_rss_mb": {
+          "n": 1,
+          "median": 44.195,
+          "min": 44.195,
+          "max": 44.195
+        },
+        "storage_after_total_bytes": {
+          "n": 1,
+          "median": 3198976,
+          "min": 3198976,
+          "max": 3198976
+        },
+        "storage_growth_bytes": {
+          "n": 1,
+          "median": 3072000,
+          "min": 3072000,
+          "max": 3072000
+        }
+      }
+    }
+  ],
+  "acquisition_load": {
+    "scope": "local_pipeline_with_simulated_http_not_real_web",
+    "network_access": false,
+    "cases": [
+      {
+        "urls": 1000,
+        "entity_bank": 40000,
+        "workers": 4,
+        "bank_import_seconds": 0.775395,
+        "cold": {
+          "wall_seconds": 12.859238,
+          "processed_jobs": 1004,
+          "unique_articles_per_local_second": 77.765,
+          "simulated_http_requests": 1006,
+          "article_requests": 1000,
+          "wire_bytes": 208425,
+          "decoded_bytes": 989545
+        },
+        "warm": {
+          "wall_seconds": 4.441719,
+          "processed_jobs": 4,
+          "unique_articles_per_local_second": 225.138,
+          "simulated_http_requests": 0,
+          "article_requests": 0,
+          "wire_bytes": 0,
+          "decoded_bytes": 0
+        },
+        "bank": {
+          "articles": 1000,
+          "observations": 1100,
+          "identity_links": 0,
+          "status": {
+            "fetched": 1000
+          },
+          "scopes": {
+            "full_article": 1000
+          },
+          "identity_status": {},
+          "publishers": 2,
+          "content_clusters": 100,
+          "query_windows": {},
+          "truncated_feed_runs": 0
+        },
+        "documents": 200,
+        "expected_documents": 200,
+        "expected_content_clusters": 100,
+        "virtual_clock_elapsed_seconds": 202.401,
+        "minimum_virtual_request_spacing_seconds": 0.20000100135803223,
+        "metrics": {
+          "network_requests": 1006,
+          "wire_bytes": 208425,
+          "decoded_bytes": 989545,
+          "elapsed_seconds": 0.4463430949990652,
+          "cache_hits": 1014,
+          "reused_connections": 996,
+          "by_kind": {
+            "content": {
+              "network_requests": 1004,
+              "wire_bytes": 208339,
+              "decoded_bytes": 989499,
+              "elapsed_seconds": 0.44539297499903796,
+              "cache_hits": 4,
+              "reused_connections": 996
+            },
+            "robots": {
+              "network_requests": 2,
+              "wire_bytes": 86,
+              "decoded_bytes": 46,
+              "elapsed_seconds": 0.0009501200000272547,
+              "cache_hits": 1010,
+              "reused_connections": 0
+            }
+          },
+          "status_counts": {
+            "200": 1006
+          },
+          "wire_bytes_definition": "HTTP body bytes, excluding headers and TLS framing"
+        },
+        "checks": {
+          "all_distinct_urls_retained": true,
+          "all_full_articles_fetched": true,
+          "same_publisher_content_deduplicated": true,
+          "cross_publisher_documents_preserved": true,
+          "shared_content_clusters": true,
+          "warm_downloads_zero": true,
+          "no_failed_jobs": true,
+          "virtual_host_rate_respected": true,
+          "request_metrics_match_fixture": true,
+          "wire_metrics_match_fixture": true,
+          "decoded_metrics_match_fixture": true,
+          "audit_chain_valid": true
+        },
+        "passed": true,
+        "database_bytes": 12464128,
+        "snapshot_files": 100
+      }
+    ],
+    "all_passed": true
+  },
+  "explanation_pipeline": {
+    "scope": "invented_local_default_pipeline_and_actual_loopback_UI_API_not_browser_rendering",
+    "fixture": {
+      "entities": 21,
+      "small_entities": 20,
+      "notes_per_small_entity": 8,
+      "heavy_notes": 205,
+      "total_documents": 365,
+      "all_synthetic": true
+    },
+    "checks": {
+      "faithfulness": {
+        "literal_scoring_citations_checked": 4,
+        "source_document_removal_counterfactuals_checked": 4
+      },
+      "warm_replay_successes": 20,
+      "http_small_response_bytes": {
+        "min": 73870,
+        "max": 73870
+      },
+      "note_beyond_page": {
+        "total_notes": 205,
+        "visible_notes": 200,
+        "api_page_limit": 200,
+        "target_outside_visible_page": true,
+        "target_exact_original_text": true,
+        "target_response_bytes": 2203,
+        "explanation_response_bytes": 1222989
+      },
+      "repeat_identical_rescore": {
+        "documents_before": 365,
+        "documents_after": 365,
+        "runs_before": 21,
+        "runs_after": 21,
+        "original_bodies_not_reinserted": true,
+        "identical_snapshot_reused": true
+      },
+      "audit": {
+        "ok": true,
+        "checked": 410,
+        "head_hash": "a852789439c98335c93751a84b7897ad221dff77451489d84f157109d9678750",
+        "score_runs_checked": 21,
+        "scope": "event_chain_document_content_current_scores_and_historical_score_runs_with_document_metadata",
+        "limitation": "Una reescritura completa requiere detectar con un hash o respaldo externo."
+      }
+    },
+    "network_guard": {
+      "python_socket_guard": true,
+      "allowed_loopback_create_connection": 23,
+      "allowed_loopback_getaddrinfo": 23,
+      "allowed_loopback_connect": 23,
+      "scope": "Blocks off-loopback Python DNS/connect operations; not packet capture of native libraries."
+    },
+    "pass": true
+  },
+  "production_sha256": {
+    "peps/__init__.py": "bcd7d76955c73cf787ae6533bb139c897cb73689f9e4228df294694eaee8c89a",
+    "peps/__main__.py": "3129adff95e0f38b87ab34cddfc27082c7892bcaec267ff5d40f160fdf55b44a",
+    "peps/advanced_nlp.py": "1ac3b13daeaef6b76da4f553bfe367604790c04d670d0f4a6418d0f2fbb547cc",
+    "peps/app.py": "bb8455fa9507a4ac56439ffb2d9e8a98a55e222cab1ada29776147b0e7171904",
+    "peps/cli.py": "9d441e9b58a6b076711b7261963c43d9774ed9f34262f826c1999d007b8b3e64",
+    "peps/collector.py": "65053cfa545eb618ef8272c9fcc082e1373402844bae27dd6576aabd5aa4e0dd",
+    "peps/context_model.py": "ada181d47cc0bd45c4bb3124db9920ee52fdb4e7115643a582c05f56de30a59b",
+    "peps/contextual.py": "7713ec854c309e1f4ca807fb31f2b464af5495fbd05e4f77ca42865e4baa40d8",
+    "peps/engine.py": "9654338b7dd0065deb4c988a6baea0fb98ca9cf520cce8c3c4f8b165f08901d5",
+    "peps/explainability.py": "79228231f1d1e10506adfe20be0aa96a978877cf73756e5cb85479592ce6bcfb",
+    "peps/identity.py": "f05524947d5b1d765803da6faa145f3b422a61a10971a1caca3c6983f3436d2f",
+    "peps/importing.py": "54fc447531cecb986c3e4be4570d0d3f2280a4f86d5dd50e60c0109bf008e310",
+    "peps/news.py": "a2a998f846982fe31dbc8d75c3cfd57ef2fb15bec2ec0e34e8c1fc28718047a0",
+    "peps/nlp.py": "f7e5ed8cbcf844139314a294932c511a4049802caadec64a4e14e70ea24daadf",
+    "peps/official.py": "c864c512d84b06a1caf3b458c1cadf5820b805a2be7dc6f1c4c59cae0cfb66cf",
+    "peps/scoring.py": "ff4e9e9f19cb0c781f02c06b68c2e2eaa00ee08f22dd8f71219fa5042879fe7e",
+    "peps/sources.py": "05875aa5ff4a42ff97f32de0dd8bc33921c6a0c6f056beb72beae1d384bc7f1a",
+    "peps/store.py": "09d7ce438fd52313c6b8c4c69bb0cabec9bedc9bb623fc9856f79431c019dba8",
+    "peps/web/app.js": "d65aff273772d60808d2b362a31e67a5663653c3001132c0891032303483003e",
+    "peps/web/import.js": "399d112145b3ef5645b2971f2af669d7155c1d60d8054aa08e69ea712c4552ff",
+    "peps/web/index.html": "2278b3806699bc1300e0067fc2aa6c0f8e004170efdaeb7ca0be4074a0ea2341",
+    "peps/web/style.css": "c767f6858bf80cd90750b29f5c07af01b2e96969ce6154b183a85183139d0e8b"
+  },
+  "limitations": [
+    "Synthetic acquisition HTTP; no live coverage or web throughput claim.",
+    "Single local import repetition per size; times are not a service guarantee.",
+    "Optional spaCy model not installed in local base environment.",
+    "Existing historical article bodies are not automatically rewritten by extraction version 2."
+  ],
+  "installed_wheel": {
+    "version": "2.2.1",
+    "sha256": "e270129c50197ba6866b7b5fb0bb3b2ca5f3049ad66ca37e6aa954e91ebf8cb3",
+    "ok": true,
+    "kind": "wheel",
+    "commands": [
+      "--help",
+      "import-entities",
+      "import-documents",
+      "score",
+      "explain",
+      "replay",
+      "score-history",
+      "audit",
+      "stats",
+      "export",
+      "backup",
+      "news-stats",
+      "ui --no-browser"
+    ],
+    "resources": {
+      "defaults/sources.json": {
+        "bytes": 3763,
+        "sha256": "d687b2ed74a193ceaf80aeccc9c3ebaf25701302d3de50313650195b24320e8a"
+      },
+      "defaults/news_sources.json": {
+        "bytes": 9345,
+        "sha256": "9e0821bf6aee80ae04ed3c4067ac44d8a783a3095ce05cab00c58763af5b4899"
+      },
+      "models/context-role-es-v1.json": {
+        "bytes": 1432196,
+        "sha256": "ba227bc782936a1e19901f8a1464618e160a5e525593c71affd1705f45a8f563"
+      },
+      "licenses/CONTEXT_MODEL_CODE.txt": {
+        "bytes": 1357,
+        "sha256": "a16813d6a62abd0dc9287c55e432283deaac308e9896c24a8a8bf61dbb16ec85"
+      },
+      "licenses/CONTEXT_MODEL_DATA.txt": {
+        "bytes": 7446,
+        "sha256": "1ad99d1281f8ea7ea0964d348b82245382979a8d3cf2d9a2dc70bac49dbc9ed4"
+      },
+      "web/index.html": {
+        "bytes": 17488,
+        "sha256": "2278b3806699bc1300e0067fc2aa6c0f8e004170efdaeb7ca0be4074a0ea2341"
+      },
+      "web/app.js": {
+        "bytes": 32215,
+        "sha256": "d65aff273772d60808d2b362a31e67a5663653c3001132c0891032303483003e"
+      },
+      "web/import.js": {
+        "bytes": 31698,
+        "sha256": "399d112145b3ef5645b2971f2af669d7155c1d60d8054aa08e69ea712c4552ff"
+      },
+      "web/style.css": {
+        "bytes": 20556,
+        "sha256": "c767f6858bf80cd90750b29f5c07af01b2e96969ce6154b183a85183139d0e8b"
+      }
+    },
+    "runtime_dependencies": [],
+    "checkout_files_compared": 27
+  }
+}

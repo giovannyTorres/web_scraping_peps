@@ -1,6 +1,8 @@
-# PEPS MX 2.2
+# PEPS MX 2.2.1
 
 Banco local de noticias y documentos públicos sobre personas, empresas y organizaciones mexicanas. Separa la adquisición de fuentes autorizadas de la atribución local de identidad, conserva procedencia y versiones, y ordena la revisión documental con una puntuación explicable.
+
+La versión consolidada integra la importación guiada, el historial y la explicación de evaluaciones, con correcciones de recolección, vigencia de revisiones y exportación. La comparación de las siete ramas y el tratamiento de los notebooks originales están en [CONSOLIDACION.md](docs/CONSOLIDACION.md), y las comprobaciones de esta versión en [VALIDACION_2_2_1.md](docs/VALIDACION_2_2_1.md).
 
 La condición PEP, un parentesco, un cargo o un contrato público no son conductas adversas por sí mismos. Los resultados son candidatos de revisión: no acreditan identidad, culpabilidad ni ausencia de riesgos. El sistema no debe decidir automáticamente la contratación, la admisión bancaria ni el acceso a servicios.
 
@@ -89,10 +91,12 @@ Los notebooks originales y sus salidas se conservan como material histórico. Su
 PyInstaller es una dependencia de construcción, no de ejecución. Instálelo en un entorno de desarrollo permitido, o use un wheelhouse aprobado para una construcción sin internet.
 
 ```powershell
-python -m pip install pyinstaller
+python -m pip install -r requirements-build.lock.txt
 .\scripts\build_windows.ps1 -Python python -Destination dist
 ```
 
-El script ejecuta las pruebas y construye las variantes gráfica y de consola, colocando `PEPS-CLI.exe` junto a `PEPS-MX.exe` para compartir `_internal`. Distribuya `dist\PEPS-MX` completo. El entorno de destino debe permitir ejecución de aplicaciones locales, apertura de navegador y escritura en el directorio de datos; políticas corporativas pueden impedirlo.
+El script ejecuta las pruebas y construye las variantes gráfica y de consola, colocando `PEPS-CLI.exe` junto a `PEPS-MX.exe` para compartir `_internal`. Comprueba los recursos compartidos y prueba el paquete final desde una carpeta ajena al repositorio: importación, cálculo, explicación, historial, replay, auditoría, exportación, respaldo y servidor local. Distribuya `dist\PEPS-MX` completo. El entorno de destino debe permitir ejecución de aplicaciones locales, apertura de navegador y escritura en el directorio de datos; políticas corporativas pueden impedirlo.
+
+La CI verifica además el wheel instalado en un entorno limpio, sin dependencias de ejecución, en Windows/Linux con Python 3.10/3.12. `scripts/validate_distribution.py` admite `--output` para guardar el comprobante y `--executable` para probar la CLI de un paquete portable.
 
 Para finalidad, retención, rectificación, restricciones de acceso y fuentes primarias consulte [PRIVACIDAD_Y_FUENTES.md](docs/PRIVACIDAD_Y_FUENTES.md). El software incorpora controles técnicos; su uso legal depende de la finalidad, organización, fuentes y régimen aplicable.
