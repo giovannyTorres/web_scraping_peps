@@ -240,6 +240,32 @@ class ReviewedImportAPITests(unittest.TestCase):
         self.assertEqual('Empresa Sintética Corregida', self.engine.store.get_entity('known')['name'])
         self.assertEqual('Toluca', self.engine.store.get_entity('known')['context']['city'])
 
+    def test_skipped_existing_preview_is_saved_identity_and_receipt_prioritizes_accepted_entities(self):
+        self.engine.store.import_entities([{'id': 'known', 'name': 'Empresa Sintética Original', 'kind': 'company',
+                                           'city': 'Puebla', 'aliases': ['Alias original']}])
+        payload, preview = self.preview(
+            text='ID;Nombre;Clase;Ciudad\nknown;Empresa Sintética Propuesta;person;Toluca\nnew;Empresa Sintética Nueva;company;Mérida\n',
+            mapping=['id', 'name', 'kind', 'city'], kind_values={})
+        self.assertTrue(preview['ready'], preview)
+        skipped = preview['rows'][0]
+        self.assertEqual('skipped', skipped['status'])
+        self.assertEqual('Empresa Sintética Original', skipped['entity']['name'])
+        self.assertEqual('company', skipped['entity']['kind'])
+        self.assertEqual('Puebla', skipped['entity']['context']['city'])
+        self.assertEqual(['Alias original'], skipped['entity']['aliases'])
+        self.assertEqual('Empresa Sintética Propuesta', skipped['values'][1])
+        self.assertEqual('new', preview['sample_entities'][0]['id'])
+        receipt = self.wait_result(self.confirm(payload, preview))
+        self.assertEqual('completed', receipt['status'], receipt)
+        self.assertEqual(['new'], receipt['result']['accepted_ids'])
+        samples = receipt['result']['sample_entities']
+        self.assertEqual('new', samples[0]['id'])
+        saved_sample = next(entity for entity in samples if entity['id'] == 'known')
+        self.assertEqual('Empresa Sintética Original', saved_sample['name'])
+        self.assertEqual('company', saved_sample['kind'])
+        self.assertEqual('Puebla', self.engine.store.get_entity('known')['context']['city'])
+        self.assertEqual(2, self.engine.store.stats()['entities'])
+
 
 if __name__ == '__main__':
     unittest.main()

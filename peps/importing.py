@@ -426,11 +426,17 @@ def _preview(store, payload, connection=None):
                 result['entity'] = entity
                 values = (entity['name'], entity['kind'], canonical(entity['aliases']), canonical(entity['context']))
                 entity_id = entity['id']
+                if old is not None and options['existing_policy'] == 'skip' and old != values:
+                    # Keep proposed values above for duplicate/conflict checks;
+                    # the entity shown to the user must be what remains stored.
+                    result['entity'] = dict(id=entity_id, name=old[0], kind=old[1],
+                                            aliases=json.loads(old[2]), context=json.loads(old[3]))
+                    result['warnings'].append('Los datos propuestos se omiten para este ID existente; se muestran el nombre, tipo y contexto que permanecen en el banco. Seleccione actualizar para incorporar sus pistas no vacías.')
                 if entity_id in seen:
                     if seen[entity_id] == values:
                         result['status'] = 'duplicate'
                         counts['duplicates'] += 1
-                        result['warnings'].append('Registro idéntico repetido; se importará una sola vez. Un nombre por sí solo no acredita identidad.')
+                        result['warnings'].append('Registro idéntico repetido; se procesa una sola vez según la política seleccionada. Un nombre por sí solo no acredita identidad.')
                     else:
                         result['status'] = 'conflict'
                         counts['conflicting_ids'] += 1
@@ -446,17 +452,17 @@ def _preview(store, payload, connection=None):
                         result['status'] = 'skipped'
                         counts['skipped'] += 1
                         existing_ids.append(entity_id)
-                        result['warnings'].append('ID existente con otros datos; omitido para evitar sobrescribir. Seleccione actualizar para incorporar sus pistas no vacías.')
                     else:
                         result['status'] = 'update' if old is not None else 'new'
                         counts[result['status']] += 1
                         candidates.append(entity)
-                    homonyms = names.get(entity['name'].casefold(), set()) - {entity_id}
+                    displayed = result['entity']
+                    homonyms = names.get(displayed['name'].casefold(), set()) - {entity_id}
                     if homonyms:
                         result['warnings'].append('Nombre compartido con otras entidades; se conservan por ID, sin fusionar homónimos.')
-                    names.setdefault(entity['name'].casefold(), set()).add(entity_id)
+                    names.setdefault(displayed['name'].casefold(), set()).add(entity_id)
                 counts['valid'] += 1
-                if not entity['context']:
+                if not result['entity']['context']:
                     result['warnings'].append('Sólo nombre y tipo: evidencia insuficiente para resolver homónimos.')
             except (ValueError, TypeError) as exc:
                 if result['status'] != 'conflict':
@@ -495,6 +501,30 @@ def _preview(store, payload, connection=None):
         if truncated:
             row['warnings'] = row['warnings'] + ['La vista previa recorta celdas largas a 500 caracteres; la validación utiliza los valores completos.']
         sample.append(row)
+    # Receipts lead with actual accepted entities, including those beyond the
+    # first twenty input rows. Existing entities are added with persisted labels;
+    # repeated source rows never consume multiple slots for the same ID.
+    entity_samples, sampled_ids = [], set()
+    for candidate in candidates:
+        entity_id = candidate['id']
+        if entity_id not in sampled_ids:
+            entity_samples.append(dict(id=entity_id, name=candidate['name'], kind=candidate['kind'],
+                                       status='update' if entity_id in bank else 'new'))
+            sampled_ids.add(entity_id)
+        if len(entity_samples) == 20:
+            break
+    if len(entity_samples) < 20:
+        for row in all_rows:
+            entity = row['entity']
+            if entity is None or row['status'] not in ('skipped', 'unchanged', 'duplicate'):
+                continue
+            entity_id = entity['id']
+            if entity_id in bank and entity_id not in sampled_ids:
+                old = bank[entity_id]
+                entity_samples.append(dict(id=entity_id, name=old[0], kind=old[1], status=row['status']))
+                sampled_ids.add(entity_id)
+            if len(entity_samples) == 20:
+                break
     response = dict(version=IMPORT_VERSION, columns=columns, suggested_mapping=suggestions,
                     mapping=mapping, delimiter=delimiter, rows=sample, counts=counts,
                     errors=errors, warnings=warnings, kind_values=visible_kinds,
@@ -502,8 +532,7 @@ def _preview(store, payload, connection=None):
                                       for value in visible_kinds},
                     ready=bool(ready), preview_hash=fingerprint, bank_revision=revision,
                     existing_ids=list(dict.fromkeys(existing_ids))[:100],
-                    sample_entities=[dict(id=row['entity']['id'], name=row['entity']['name'], kind=row['entity']['kind'], status=row['status'])
-                                     for row in all_rows if row['entity'] is not None][:20],
+                    sample_entities=entity_samples,
                     rows_truncated=max(0, len(all_rows) - 20), errors_truncated=max(0, counts['invalid'] - len(errors)))
     return response, candidates, dict(source_hash=source_hash, options=options, mapping=mapping)
 

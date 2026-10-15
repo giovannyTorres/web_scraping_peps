@@ -336,6 +336,16 @@ window.pepsImport = (() => {
         }
         showStatus(channel, data.phase === 'scoring' ? 'Nombres guardados. Preparando el score y sus explicaciones locales…' : data.status === 'queued' ? 'Importación en espera. Puedes seguir consultando el banco.' : 'Guardando las entidades y su trazabilidad…');
       } catch (error) {
+        if (error.status === 404) {
+          unlockOperation(); state.preview = null;
+          $('csv-confirm-reviewed').checked = false;
+          $('csv-confirmation').hidden = true; $('csv-confirm').disabled = true;
+          const text = 'El comprobante ya no está disponible. Revisa el banco antes de volver a importar: los datos podrían haberse guardado.';
+          const box = showStatus(channel, text, true);
+          const bank = node('button', 'Ir al banco'); bank.type = 'button';
+          bank.onclick = async () => { try { await (hooks.openBank ? hooks.openBank() : hooks.switchTab('bank')); } catch (failure) { inform(failure.message, true); } };
+          box.append(bank); inform(text, true); return;
+        }
         errors++;
         if (errors >= 3) {
           const box = showStatus(channel, 'Se perdió la conexión con la aplicación local. La operación puede seguir en curso; consulta su estado antes de volver a importar.', true);

@@ -1,7 +1,7 @@
 {
   "benchmark": "guided_csv_import",
   "schema_version": 1,
-  "created_at_utc": "2026-10-15T15:15:47.246057+00:00",
+  "created_at_utc": "2026-10-15T15:20:31.873588+00:00",
   "environment": {
     "python": "3.12.14",
     "implementation": "CPython",
@@ -74,7 +74,7 @@
   },
   "source_sha256": {
     "scripts/benchmark_import.py": "d00f3c867bf791c16243cae786a8db2e28720f0c98f8fc368de3f27b571d7f09",
-    "peps/importing.py": "2bb95f1f8c1372270dff2eb2826153ca5071c0ef08c358f8860847a2101fa86c",
+    "peps/importing.py": "ad4c0deada03449e7b3fe90ee0e121ae5352af79b1df2dc64c11279def8e3739",
     "peps/store.py": "4aac502c12f4b38159cae1556e7a1141f27f59b992d48a82f815138ec5bd6f0f"
   },
   "cases": [
@@ -85,14 +85,14 @@
           "rows": 1000,
           "csv_utf8_bytes": 188796,
           "preview": {
-            "wall_ms": 27.863,
-            "cpu_ms": 27.829
+            "wall_ms": 66.031,
+            "cpu_ms": 66.028
           },
           "commit": {
-            "wall_ms": 42.107,
-            "cpu_ms": 42.115
+            "wall_ms": 93.198,
+            "cpu_ms": 93.189
           },
-          "peak_process_rss_mb": 19.012,
+          "peak_process_rss_mb": 18.762,
           "storage_before": {
             "sqlite_bytes": 126976,
             "wal_bytes": 0,
@@ -118,14 +118,14 @@
           "rows": 1000,
           "csv_utf8_bytes": 188796,
           "preview": {
-            "wall_ms": 28.009,
-            "cpu_ms": 28.022
+            "wall_ms": 66.518,
+            "cpu_ms": 66.537
           },
           "commit": {
-            "wall_ms": 40.757,
-            "cpu_ms": 40.765
+            "wall_ms": 88.818,
+            "cpu_ms": 88.829
           },
-          "peak_process_rss_mb": 19.012,
+          "peak_process_rss_mb": 18.762,
           "storage_before": {
             "sqlite_bytes": 126976,
             "wal_bytes": 0,
@@ -151,14 +151,14 @@
           "rows": 1000,
           "csv_utf8_bytes": 188796,
           "preview": {
-            "wall_ms": 49.196,
-            "cpu_ms": 49.213
+            "wall_ms": 88.354,
+            "cpu_ms": 88.366
           },
           "commit": {
-            "wall_ms": 67.289,
-            "cpu_ms": 67.3
+            "wall_ms": 102.638,
+            "cpu_ms": 102.626
           },
-          "peak_process_rss_mb": 19.012,
+          "peak_process_rss_mb": 18.766,
           "storage_before": {
             "sqlite_bytes": 126976,
             "wal_bytes": 0,
@@ -186,36 +186,36 @@
         "preview": {
           "wall_ms": {
             "n": 3,
-            "median": 28.009,
-            "min": 27.863,
-            "max": 49.196
+            "median": 66.518,
+            "min": 66.031,
+            "max": 88.354
           },
           "cpu_ms": {
             "n": 3,
-            "median": 28.022,
-            "min": 27.829,
-            "max": 49.213
+            "median": 66.537,
+            "min": 66.028,
+            "max": 88.366
           }
         },
         "commit": {
           "wall_ms": {
             "n": 3,
-            "median": 42.107,
-            "min": 40.757,
-            "max": 67.289
+            "median": 93.198,
+            "min": 88.818,
+            "max": 102.638
           },
           "cpu_ms": {
             "n": 3,
-            "median": 42.115,
-            "min": 40.765,
-            "max": 67.3
+            "median": 93.189,
+            "min": 88.829,
+            "max": 102.626
           }
         },
         "peak_process_rss_mb": {
           "n": 3,
-          "median": 19.012,
-          "min": 19.012,
-          "max": 19.012
+          "median": 18.762,
+          "min": 18.762,
+          "max": 18.766
         },
         "storage_after_total_bytes": {
           "n": 3,
@@ -238,14 +238,14 @@
           "rows": 10000,
           "csv_utf8_bytes": 1887396,
           "preview": {
-            "wall_ms": 294.815,
-            "cpu_ms": 294.421
+            "wall_ms": 293.494,
+            "cpu_ms": 289.483
           },
           "commit": {
-            "wall_ms": 436.78,
-            "cpu_ms": 436.266
+            "wall_ms": 582.319,
+            "cpu_ms": 578.917
           },
-          "peak_process_rss_mb": 46.074,
+          "peak_process_rss_mb": 44.074,
           "storage_before": {
             "sqlite_bytes": 126976,
             "wal_bytes": 0,
@@ -271,14 +271,14 @@
           "rows": 10000,
           "csv_utf8_bytes": 1887396,
           "preview": {
-            "wall_ms": 530.816,
-            "cpu_ms": 530.862
+            "wall_ms": 570.756,
+            "cpu_ms": 570.386
           },
           "commit": {
-            "wall_ms": 760.473,
-            "cpu_ms": 760.512
+            "wall_ms": 972.863,
+            "cpu_ms": 972.592
           },
-          "peak_process_rss_mb": 46.062,
+          "peak_process_rss_mb": 44.195,
           "storage_before": {
             "sqlite_bytes": 126976,
             "wal_bytes": 0,
@@ -304,14 +304,14 @@
           "rows": 10000,
           "csv_utf8_bytes": 1887396,
           "preview": {
-            "wall_ms": 288.534,
-            "cpu_ms": 288.459
+            "wall_ms": 308.374,
+            "cpu_ms": 308.344
           },
           "commit": {
-            "wall_ms": 479.222,
-            "cpu_ms": 479.025
+            "wall_ms": 680.793,
+            "cpu_ms": 680.732
           },
-          "peak_process_rss_mb": 46.074,
+          "peak_process_rss_mb": 44.195,
           "storage_before": {
             "sqlite_bytes": 126976,
             "wal_bytes": 0,
@@ -339,36 +339,36 @@
         "preview": {
           "wall_ms": {
             "n": 3,
-            "median": 294.815,
-            "min": 288.534,
-            "max": 530.816
+            "median": 308.374,
+            "min": 293.494,
+            "max": 570.756
           },
           "cpu_ms": {
             "n": 3,
-            "median": 294.421,
-            "min": 288.459,
-            "max": 530.862
+            "median": 308.344,
+            "min": 289.483,
+            "max": 570.386
           }
         },
         "commit": {
           "wall_ms": {
             "n": 3,
-            "median": 479.222,
-            "min": 436.78,
-            "max": 760.473
+            "median": 680.793,
+            "min": 582.319,
+            "max": 972.863
           },
           "cpu_ms": {
             "n": 3,
-            "median": 479.025,
-            "min": 436.266,
-            "max": 760.512
+            "median": 680.732,
+            "min": 578.917,
+            "max": 972.592
           }
         },
         "peak_process_rss_mb": {
           "n": 3,
-          "median": 46.074,
-          "min": 46.062,
-          "max": 46.074
+          "median": 44.195,
+          "min": 44.074,
+          "max": 44.195
         },
         "storage_after_total_bytes": {
           "n": 3,

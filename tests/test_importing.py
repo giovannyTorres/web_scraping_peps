@@ -192,6 +192,69 @@ class GuidedImportTests(unittest.TestCase):
         self.assertEqual(expected, {key: actual[key] for key in expected})
         self.assertIs(False, actual['context']['verified'])
 
+    def test_skipped_preview_and_receipt_show_persisted_data_not_discarded_proposal(self):
+        self.store.import_entities([{'id': 'old', 'name': 'Original', 'kind': 'person',
+                                    'aliases': ['Histórico'], 'context': {'city': 'Puebla'}}])
+        payload = {'text': 'id,n,t,c,a\nold,Propuesta,empresa,Toluca,Propuesto\nnew,Alta,persona,León,Nuevo\n',
+                   'mapping': ['id', 'name', 'kind', 'city', 'aliases']}
+        preview = preview_import(self.store, payload)
+        row = preview['rows'][0]
+        self.assertEqual('skipped', row['status'])
+        self.assertEqual('Propuesta', row['values'][1])
+        self.assertEqual({'id': 'old', 'name': 'Original', 'kind': 'person',
+                          'aliases': ['Histórico'], 'context': {'city': 'Puebla'}}, row['entity'])
+        self.assertTrue(any('datos propuestos se omiten' in message for message in row['warnings']))
+        self.assertEqual([{'id': 'new', 'name': 'Alta', 'kind': 'person', 'status': 'new'},
+                          {'id': 'old', 'name': 'Original', 'kind': 'person', 'status': 'skipped'}], preview['sample_entities'])
+        receipt = self.commit(payload)
+        self.assertEqual(preview['sample_entities'], receipt['sample_entities'])
+        self.assertEqual(['new'], receipt['accepted_ids'])
+        old = self.store.get_entity('old')
+        self.assertEqual('Original', old['name'])
+        self.assertEqual('Puebla', old['context']['city'])
+        self.assertEqual(['Histórico'], old['aliases'])
+
+    def test_receipt_prioritizes_accepted_entity_after_twenty_skipped_rows(self):
+        self.store.import_entities([{'id': 'old-%02d' % index, 'name': 'Original %02d' % index,
+                                    'kind': 'person', 'context': {'city': 'Puebla'}} for index in range(20)])
+        rows = ['old-%02d,Propuesta %02d,persona,Toluca' % (index, index) for index in range(20)]
+        rows += ['new,Alta final,persona,León', 'new,Alta final,persona,León']
+        payload = {'text': 'id,n,t,c\n' + '\n'.join(rows), 'mapping': ['id', 'name', 'kind', 'city']}
+        preview = preview_import(self.store, payload)
+        self.assertEqual(20, preview['counts']['skipped'])
+        self.assertEqual(1, preview['counts']['new'])
+        self.assertEqual(1, preview['counts']['duplicates'])
+        self.assertEqual(20, len(preview['rows']))
+        self.assertEqual('new', preview['sample_entities'][0]['id'])
+        self.assertEqual('Alta final', preview['sample_entities'][0]['name'])
+        self.assertEqual(20, len(preview['sample_entities']))
+        self.assertEqual(20, len({entity['id'] for entity in preview['sample_entities']}))
+        self.assertTrue(all(entity['name'].startswith('Original') for entity in preview['sample_entities'][1:]))
+        receipt = self.commit(payload)
+        self.assertEqual(['new'], receipt['accepted_ids'])
+        self.assertEqual(preview['sample_entities'], receipt['sample_entities'])
+        self.assertEqual('Alta final', self.store.get_entity('new')['name'])
+        self.assertTrue(all(self.store.get_entity('old-%02d' % index)['context']['city'] == 'Puebla'
+                            for index in range(20)))
+
+    def test_duplicate_samples_are_unique_and_skipped_conflicts_compare_proposed_values(self):
+        payload = {'text': 'id,n,t\na,Ana,persona\na,Ana,persona\nb,Sol,persona\nb,Sol,persona\n',
+                   'mapping': ['id', 'name', 'kind']}
+        preview = preview_import(self.store, payload)
+        self.assertEqual(['a', 'b'], [entity['id'] for entity in preview['sample_entities']])
+        self.assertEqual(preview['sample_entities'], self.commit(payload)['sample_entities'])
+        self.store.import_entities([{'id': 'old', 'name': 'Original', 'kind': 'person', 'context': {'city': 'Puebla'}}])
+        payload = {'text': 'id,n,t,c\nold,Propuesta,persona,Toluca\nold,Distinta,persona,Oaxaca\n',
+                   'mapping': ['id', 'name', 'kind', 'city'], 'skip_invalid': True}
+        preview = preview_import(self.store, payload)
+        self.assertFalse(preview['ready'])
+        self.assertEqual(1, preview['counts']['conflicting_ids'])
+        self.assertEqual('Original', preview['rows'][0]['entity']['name'])
+        self.assertEqual('Original', preview['rows'][1]['entity']['name'])
+        with self.assertRaises(ValueError):
+            commit_import(self.store, dict(payload, preview_hash=preview['preview_hash']))
+        self.assertEqual('Original', self.store.get_entity('old')['name'])
+
     def test_changed_verified_fields_do_not_inherit_reviewed_identity_anchors(self):
         for shape in ('dict', 'list_dict', 'list_names'):
             with self.subTest(shape=shape):

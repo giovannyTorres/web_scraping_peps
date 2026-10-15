@@ -232,6 +232,41 @@ def main():
                 page.locator('#csv-validate').click()
                 expect(page.locator('#csv-preview')).to_contain_text('Persona Sintética Luna Prueba')
                 checked('headerless_split_names_compose_full_name_from_user_mapping')
+                page.locator('#csv-confirm-reviewed').check()
+                expect(page.locator('#csv-confirm')).to_be_enabled()
+
+                # A missing receipt is terminal tracking loss, not a broken connection.
+                # Simulate the documented TTL/receipt eviction response without waiting 30 minutes.
+                def missing_receipt(route):
+                    route.fulfill(status=404, content_type='application/json', body=json.dumps({
+                        'error': 'Seguimiento no disponible. Consulte el banco para comprobar si los datos ya se guardaron.'}))
+                page.route('**/api/import-status?id=*', missing_receipt)
+                page.locator('#import-single-tab').click()
+                page.locator('#single-name').fill('Persona Sintética Comprobante')
+                page.locator('#single-kind').select_option('person')
+                confirmations_before = len([url for url in network if url.endswith('/api/import-confirm')])
+                tracking_before = len([url for url in network if '/api/import-status?' in url])
+                page.locator('#single-save').click()
+                expect(page.locator('#single-status')).to_contain_text('El comprobante ya no está disponible.')
+                checked('missing_receipt_unlocks_inputs_with_honest_uncertainty',
+                        page.locator('#single-name').is_enabled() and page.locator('#single-save').is_enabled() and
+                        'los datos podrían haberse guardado' in page.locator('#single-status').inner_text())
+                checked('missing_receipt_invalidates_previous_csv_confirmation',
+                        page.locator('#csv-confirm').is_disabled() and page.locator('#csv-confirmation').is_hidden() and
+                        not page.locator('#csv-confirm-reviewed').is_checked())
+                page.wait_for_timeout(100)
+                checked('missing_receipt_never_auto_reimports_or_retries_tracking',
+                        len([url for url in network if url.endswith('/api/import-confirm')]) == confirmations_before + 1 and
+                        len([url for url in network if '/api/import-status?' in url]) == tracking_before + 1 and
+                        page.get_by_role('button', name='Consultar estado de la importación', exact=True).count() == 0)
+                deadline = time.monotonic() + 10
+                while engine.store.stats()['entities'] != 4 and time.monotonic() < deadline:
+                    page.wait_for_timeout(10)
+                assert engine.store.stats()['entities'] == 4
+                page.locator('#single-status').get_by_role('button', name='Ir al banco', exact=True).click()
+                page.get_by_role('row', name='Consultar Persona Sintética Comprobante', exact=True).wait_for()
+                checked('missing_receipt_bank_action_can_verify_saved_entities', page.locator('#search').input_value() == '')
+                page.unroute('**/api/import-status?id=*', missing_receipt)
                 checked('no_external_requests', not [url for url in network if not url.startswith(address)])
                 checked('no_browser_errors', not page_errors)
                 checked('import_preserves_audit_chain', engine.store.verify_audit()['ok'])

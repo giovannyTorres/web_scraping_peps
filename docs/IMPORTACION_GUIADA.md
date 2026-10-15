@@ -68,7 +68,7 @@ La aplicación bloquea envíos simultáneos desde el asistente y muestra el prog
 
 ## Consultar el score y su evidencia
 
-El comprobante ofrece **Ir al banco**, **Consultar primera entidad** y accesos a una muestra de hasta 20 entidades de la carga. El alta individual abre su expediente automáticamente. También puede buscar cualquier entidad en el banco.
+El comprobante prioriza las entidades nuevas o actualizadas y muestra los nombres realmente guardados. Ofrece **Ir al banco**, **Consultar primera entidad** y accesos a una muestra de hasta 20 entidades de la carga. El alta individual abre su expediente automáticamente. También puede buscar cualquier entidad en el banco.
 
 **«¿Por qué obtuvo este score?»** conserva el cálculo real, sus factores y enlaces a las notas y fragmentos de evidencia existentes. La importación de nombres no activa búsquedas web, no descarga noticias y no inventa documentos. Si aún no hay evidencia admisible, el score puede ser cero: eso indica ausencia de factores activados en la información disponible, sin acreditar ausencia de riesgo. Para agregar notas locales use **Avanzado → Documentos sin conexión**; para adquirir fuentes autorizadas consulte [NOTICIAS.md](NOTICIAS.md).
 
@@ -94,7 +94,7 @@ El navegador lee el archivo y envía el contenido a la API en `127.0.0.1`; el as
 
 La previsualización no escribe entidades ni auditoría. La confirmación guarda los campos seleccionados normalizados y una entrada `guided_entities_imported` con versión del importador, hash del contenido, posiciones y campos del mapeo, opciones y conteos. La bitácora no conserva el CSV original, sus títulos ni las celdas ignoradas. Los registros de entidad sí contienen los datos personales seleccionados; un hash del archivo no los anonimiza. Proteja SQLite, exportaciones y respaldos conforme a [PRIVACIDAD_Y_FUENTES.md](PRIVACIDAD_Y_FUENTES.md).
 
-El contenido cargado permanece en el formulario del navegador hasta limpiarlo o cerrar la página. **Limpiar lista** elimina ese contenido del formulario; no elimina entidades ya guardadas. La aplicación conserva temporalmente comprobantes de operaciones en memoria, hasta 30 minutos y con un máximo de 32; se pierden al cerrar el proceso. La auditoría persistente y las entidades permiten comprobar qué se incorporó después.
+El contenido cargado permanece en el formulario del navegador hasta limpiarlo o cerrar la página. **Limpiar lista** elimina ese contenido del formulario; no elimina entidades ya guardadas. La aplicación conserva temporalmente comprobantes de operaciones en memoria, hasta 30 minutos y con un máximo de 32; se pierden al cerrar el proceso. Si un comprobante ya no está disponible, el formulario se desbloquea y ofrece comprobar el banco; no repite automáticamente la importación. La auditoría persistente y las entidades permiten comprobar qué se incorporó después.
 
 El asistente usa biblioteca estándar en el backend y JavaScript local en el frontend, sin dependencias de ejecución nuevas. El formato técnico CSV/JSONL y los documentos JSONL permanecen disponibles en **Avanzado** y en la CLI; conservan su contrato anterior y no incorporan el mapeo guiado.
 
@@ -130,14 +130,14 @@ Las pruebas de regresión están en `tests/test_importing.py` y `tests/test_impo
 
 ## Validación y rendimiento medidos
 
-La suite local ejecutó 329 pruebas correctamente, con 7 opcionales de NLP omitidas. El navegador pasó 26 comprobaciones de importación y 18 de regresión de explicabilidad: incluyen identificación de columnas, nombres separados, codificaciones, móvil, doble clic, respuestas obsoletas y ausencia de peticiones externas. Un wheel se construyó e instaló sin red ni dependencias nuevas en un entorno vacío; alta, recursos web, scoring y auditoría funcionaron desde ese paquete.
+La validación cubre 333 pruebas, con 7 opcionales de NLP omitidas en el entorno base. El navegador pasó 30 comprobaciones de importación y 18 de regresión de explicabilidad: incluyen identificación de columnas, nombres separados, codificaciones, móvil, doble clic, respuestas obsoletas y ausencia de peticiones externas. Un wheel se construyó e instaló sin red ni dependencias nuevas en un entorno vacío; alta, recursos web, scoring y auditoría funcionaron desde ese paquete.
 
 El [benchmark reproducible](benchmarks/import_performance.json) usa CSV ficticios con celdas entrecomilladas, notas multilínea y filas irregulares. Cada tamaño se ejecutó tres veces, en procesos y bancos vacíos independientes:
 
 | Filas | Vista previa, mediana | Confirmación y guardado, mediana | Pico de memoria del proceso |
 |---|---:|---:|---:|
-| 1,000 | 28 ms | 42 ms | 19 MiB |
-| 10,000 | 295 ms | 479 ms | 46 MiB |
+| 1,000 | 67 ms | 93 ms | 19 MiB |
+| 10,000 | 308 ms | 681 ms | 44 MiB |
 
 Estos tiempos miden validación y persistencia SQLite en el entorno Linux documentado. Excluyen scoring, interfaz, modelos y adquisición de noticias; no predicen el rendimiento de un banco poblado. El reporte conserva muestras individuales, rangos, tiempo de CPU y almacenamiento. La CI repite las pruebas y ambas cargas en Windows y Linux.
 

@@ -1,6 +1,6 @@
 {
   "kind": "synthetic_offline_import_browser_validation",
-  "processed_at": "2026-10-15T15:13:57.167209+00:00",
+  "processed_at": "2026-10-15T15:21:34.533154+00:00",
   "playwright_version": "1.62.0",
   "fixtures": "Fictional single name, CSV with duplicate/blank headings, custom entity kinds, invalid row, CP1252 and UTF-16 files",
   "checks": {
@@ -27,14 +27,18 @@
     "mobile_import_has_no_horizontal_page_overflow": true,
     "clear_import_releases_file_and_preview_after_receipt": true,
     "headerless_split_names_compose_full_name_from_user_mapping": true,
+    "missing_receipt_unlocks_inputs_with_honest_uncertainty": true,
+    "missing_receipt_invalidates_previous_csv_confirmation": true,
+    "missing_receipt_never_auto_reimports_or_retries_tracking": true,
+    "missing_receipt_bank_action_can_verify_saved_entities": true,
     "no_external_requests": true,
     "no_browser_errors": true,
     "import_preserves_audit_chain": true
   },
   "timings_ms": {
-    "single_save_to_explanation": 842.8466080004,
-    "csv_parse_to_mapping": 81.25191599901882,
-    "csv_confirmation_to_persisted_entities": 68.95376499960548
+    "single_save_to_explanation": 859.2630640014249,
+    "csv_parse_to_mapping": 86.03403999950388,
+    "csv_confirmation_to_persisted_entities": 27.983473999483977
   },
   "screenshots": [
     "runtime/import-ui-validation/desktop-preview.png",
