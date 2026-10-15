@@ -14,10 +14,13 @@ jobs:
           python-version: ${{ matrix.python }}
       - run: python -m unittest discover -s tests -v
       - run: python scripts/benchmark.py --data-dir runtime/ci --size 1000 --output runtime/ci-benchmark.json
+      - run: python scripts/benchmark_import.py --repetitions 1 --output runtime/ci-import-benchmark.json
       - uses: actions/upload-artifact@v4
         with:
           name: benchmark-${{ matrix.os }}-${{ matrix.python }}
-          path: runtime/ci-benchmark.json
+          path: |
+            runtime/ci-benchmark.json
+            runtime/ci-import-benchmark.json
   nlp-optional:
     runs-on: ubuntu-latest
     steps:

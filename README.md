@@ -20,6 +20,8 @@ Ejecute los comandos desde la raíz del proyecto. En el bundle sustituya `python
 
 ## Flujo de trabajo
 
+En la interfaz, **Agregar nombre** permite dar de alta una persona, empresa u organización y abrir su expediente. **Importar CSV** acepta columnas en cualquier orden, títulos repetidos o vacíos y tablas pegadas: muestra ejemplos y pide identificar el contenido de cada columna antes de guardar. Puede separar nombres y apellidos, indicar tipos propios, omitir columnas y revisar errores, duplicados y posibles actualizaciones. Consulte [la guía de importación](docs/IMPORTACION_GUIADA.md), con ejemplos ficticios listos para cargar. Estas altas usan la evidencia ya disponible; no activan por sí solas búsquedas en internet.
+
 1. Importe entidades con IDs estables, nombres, tipo, alias y contexto. Los homónimos conservan IDs distintos; los atributos son pistas hasta verificarse con procedencia.
 2. Adquiera noticias: un trabajo por RSS y ventana, consultas por lotes cuando la fuente lo permita, URLs deduplicadas y cuerpos sólo con permiso separado.
 3. Atribuya localmente las menciones con el padrón. Un nombre exacto no resuelve identidad; los candidatos ambiguos conservan su estado.
@@ -47,7 +49,7 @@ python -m peps --data-dir .\runtime replay ID_EVALUACION
 
 Las fuentes comienzan desactivadas en `runtime/news_sources.json`. `enabled` y `terms_approved` habilitan acceso; `download_articles` y `article_terms_approved` autorizan por separado guardar cuerpos. Un RSS gratuito no concede permiso de uso comercial. El catálogo documenta restricciones y mantiene todos esos permisos desactivados. Lea [NOTICIAS.md](docs/NOTICIAS.md) y [FUENTES_NOTICIAS.md](docs/FUENTES_NOTICIAS.md) antes de configurar fuentes.
 
-Las entidades admiten `kind=person`, `company` u `organization`; los alias se separan con `|` en CSV y `context` contiene JSON. La importación manual autorizada sigue disponible con `import-documents documentos.jsonl`. Para cargas grandes utilice la CLI: la interfaz limita cada petición de importación a 16 MB. Los formatos y el modo cerrado están en [OPERACION.md](docs/OPERACION.md).
+El formato técnico de entidades, disponible en la CLI y en las opciones avanzadas de la interfaz, admite `kind=person`, `company` u `organization`; los alias se separan con `|` en CSV y `context` contiene JSON. El asistente visual permite mapear otros encabezados a estos datos sin editar el archivo. La importación manual autorizada sigue disponible con `import-documents documentos.jsonl`. Para cargas grandes utilice la CLI con el formato técnico: la interfaz limita cada petición de importación a 16 MB. Los formatos y el modo cerrado están en [OPERACION.md](docs/OPERACION.md).
 
 ## Implementación y alcance
 

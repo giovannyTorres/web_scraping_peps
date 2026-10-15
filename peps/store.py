@@ -195,10 +195,11 @@ class Store:
                 'scope': 'event_chain_document_content_current_scores_and_historical_score_runs_with_document_metadata',
                 'limitation': 'Una reescritura completa requiere detectar con un hash o respaldo externo.'}
 
-    def import_entities(self, rows):
+    def import_entities(self, rows, connection=None):
         count, ids, changed = 0, [], 0
-        with self.connection() as con:
-            con.execute('BEGIN IMMEDIATE')
+        with (nullcontext(connection) if connection is not None else self.connection()) as con:
+            if not con.in_transaction:
+                con.execute('BEGIN IMMEDIATE')
             for row in rows:
                 if not isinstance(row, dict):
                     raise ValueError('Cada entidad debe ser un objeto')

@@ -1,6 +1,6 @@
 {
   "kind": "synthetic_offline_browser_validation",
-  "processed_at": "2026-10-15T08:56:53.639727+00:00",
+  "processed_at": "2026-10-15T15:13:57.066192+00:00",
   "browser": "Chromium",
   "playwright_version": "1.62.0",
   "fixtures": "210 synthetic documents, 3 synthetic entities; no real notes",
@@ -30,7 +30,7 @@
     "runtime/ui-validation/mobile.png"
   ],
   "browser_version": "154.0.8037.57",
-  "entity_open_latency_ms": 283.79673199970057,
+  "entity_open_latency_ms": 389.61188699977356,
   "page_errors": [],
   "passed": true
 }

@@ -1,0 +1,46 @@
+{
+  "kind": "synthetic_offline_import_browser_validation",
+  "processed_at": "2026-10-15T15:13:57.167209+00:00",
+  "playwright_version": "1.62.0",
+  "fixtures": "Fictional single name, CSV with duplicate/blank headings, custom entity kinds, invalid row, CP1252 and UTF-16 files",
+  "checks": {
+    "empty_bank_has_name_and_csv_entry_points": true,
+    "individual_type_is_required_without_silent_person_default": true,
+    "single_identity_hints_and_aliases_persist": true,
+    "individual_save_opens_real_auditable_explanation": true,
+    "windows1252_upload_decodes_accents": true,
+    "late_preview_cannot_restore_source_edited_during_request": true,
+    "utf16_upload_and_tab_detection_preserve_unicode": true,
+    "duplicate_and_blank_headers_get_distinct_mapping_controls": true,
+    "mapping_requires_user_review": true,
+    "uploaded_cells_render_as_text_without_html_execution": true,
+    "unknown_type_values_explicitly_prompt_for_user_identification": true,
+    "invalid_row_blocks_confirmation": true,
+    "preview_exposes_names_kinds_and_invalid_row": true,
+    "changing_column_mapping_invalidates_confirmation": true,
+    "csv_custom_kind_values_and_optional_identity_hints_saved": true,
+    "invalid_row_omitted_only_after_explicit_choice": true,
+    "ignored_column_is_not_persisted": true,
+    "receipt_bank_button_reveals_imported_list_without_previous_filter": true,
+    "imported_list_links_to_existing_score_audit": true,
+    "double_confirmation_click_submits_one_operation": true,
+    "mobile_import_has_no_horizontal_page_overflow": true,
+    "clear_import_releases_file_and_preview_after_receipt": true,
+    "headerless_split_names_compose_full_name_from_user_mapping": true,
+    "no_external_requests": true,
+    "no_browser_errors": true,
+    "import_preserves_audit_chain": true
+  },
+  "timings_ms": {
+    "single_save_to_explanation": 842.8466080004,
+    "csv_parse_to_mapping": 81.25191599901882,
+    "csv_confirmation_to_persisted_entities": 68.95376499960548
+  },
+  "screenshots": [
+    "runtime/import-ui-validation/desktop-preview.png",
+    "runtime/import-ui-validation/mobile-mapping.png"
+  ],
+  "browser_version": "154.0.8037.57",
+  "page_errors": [],
+  "passed": true
+}
