@@ -13,6 +13,8 @@ from .store import read_entities
 
 
 def create_server(engine, port=0):
+    from .news import NewsAcquirer
+    news = NewsAcquirer(engine)
     token = secrets.token_urlsafe(32)
     web = Path(__file__).parent / 'web'
     state = {'busy': False, 'last_result': None, 'error': None}
@@ -99,6 +101,8 @@ def create_server(engine, port=0):
                     self.reply(engine.sources())
                 elif path == '/api/audit':
                     self.reply(engine.store.verify_audit())
+                elif path == '/api/news':
+                    self.reply({'stats': news.stats(), 'articles': news.articles(), 'sources': news.sources(), 'plan': news.plan()})
                 elif path == '/api/export':
                     # Exportación completa y streaming: memoria acotada para bancos grandes.
                     self.send_response(200)
@@ -146,8 +150,18 @@ def create_server(engine, port=0):
                 elif self.path == '/api/source':
                     engine.set_source(data['id'], data['enabled'], data['terms_approved'])
                 elif self.path == '/api/review':
-                    entity_id = engine.store.review(data['id'], data['status'], data['actor'], data['reason'], data.get('event_id'))
+                    entity_id = engine.store.review(data['id'], data['status'], data['actor'], data['reason'], data.get('event_id'), data.get('identity_spans'))
                     engine.rescore(entity_id)
+                elif self.path == '/api/news-acquire':
+                    engine.online = bool(data.get('online'))
+                    if not engine.online:
+                        raise ValueError('Active la conexión autorizada para descargar noticias')
+                    background(lambda: news.acquire(workers=4, seconds=120, max_articles=1000))
+                elif self.path == '/api/news-attribute':
+                    background(lambda: news.attribute(limit=1000, force=bool(data.get('force'))))
+                elif self.path == '/api/news-source':
+                    news.set_source(data['id'], data['enabled'], data['terms_approved'], data.get('download_articles', False),
+                                    data.get('article_terms_approved', False))
                 elif self.path == '/api/backup':
                     from .store import now
                     destination = engine.data_dir / 'backups' / ('peps-' + now().replace(':', '-').replace('+', '_') + '.sqlite3')

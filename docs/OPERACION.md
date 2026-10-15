@@ -22,7 +22,7 @@ Cada línea de documentos JSONL contiene un objeto:
 {"entity_name":"Entidad de Prueba MX","url":"https://example.org/documento-publico","title":"Documento de prueba","text":"Entidad de Prueba MX publica una memoria de actividades.","source_kind":"news","source_id":"fuente_demo","published_at":"2026-10-01","metadata":{"test_only":true,"full_text_archived":false}}
 ```
 
-`example.org` es ilustrativo y no acredita una fuente real. `entity_ids` puede señalar explícitamente IDs existentes; `entity_name` exige una coincidencia inequívoca con el banco. Si no se especifican, el índice intenta encontrar nombres y alias en el documento. La aplicación no descarga automáticamente las URLs al importar JSONL: el operador debe garantizar que el texto y la procedencia sean auténticos.
+`example.org` es ilustrativo y no acredita una fuente real. `entity_ids` puede señalar explícitamente IDs existentes; `entity_name` exige una coincidencia inequívoca con el banco. La importación local de noticias usa el mismo `IdentityResolver` y conserva resoluciones y metadatos de identidad; especificar un ID no confirma la identidad ni autoriza scoring por sí mismo. Los documentos oficiales y `legacy` mantienen sus adaptadores separados. La aplicación no descarga automáticamente las URLs al importar JSONL: el operador debe garantizar que el texto y la procedencia sean auténticos.
 
 Utilice `metadata` para procedencia adicional, identificador de expediente, alcance del extracto, tipo de paráfrasis, fecha de actualización y limitaciones. Los campos personalizados al nivel raíz no se conservan como metadatos. Una fecha vacía debe permanecer desconocida; no sustituya la fecha de publicación por la de descarga o por el año cubierto por un informe.
 
@@ -37,7 +37,7 @@ python -m peps --data-dir .\runtime reanalyze
 python -m peps --data-dir .\runtime ui
 ```
 
-Sin `--online`, el worker no realiza recolección. La UI y el análisis funcionan con los documentos locales. Para actualizar un entorno sin salida a internet, transfiera paquetes de documentos y un manifiesto con URLs, fechas, hashes y alcance mediante el procedimiento aprobado de la organización. El sistema no puede obtener noticias nuevas de internet desde una red completamente aislada.
+Sin `--online`, el worker no realiza recolección. La UI y el análisis funcionan con los documentos locales. El módulo de noticias separa `news-acquire` (red autorizada) de `news-attribute` (atribución local sin red). Para actualizar un entorno sin salida a internet, transfiera paquetes de documentos y un manifiesto con URLs, fechas, hashes y alcance mediante el procedimiento aprobado de la organización. El sistema no puede obtener noticias nuevas de internet desde una red completamente aislada.
 
 `reanalyze` ejecuta el motor actual sobre el banco y recalcula resultados. Conserve un respaldo y una exportación antes de una actualización de reglas, para poder contrastar versiones.
 
@@ -82,17 +82,22 @@ Use la URL real del recurso importado y conserve el SHA-256 del archivo original
 
 ## Fuentes y recolección autorizada
 
-En el primer inicio se crea `sources.json` dentro de `--data-dir`. Se toma como base `peps/defaults/sources.json`. Edite ese archivo o pase `--config` con una configuración explícita. Un cambio posterior a los defaults del programa no reemplaza automáticamente la configuración guardada del operador.
+El módulo 2.1 usa `news_sources.json` dentro de `--data-dir`, creado desde `peps/defaults/news_sources.json`. Edite esa copia o use `--news-config` después de un subcomando `news-*`. La configuración anterior `sources.json` y `--config` continúa disponible para adaptadores previos; no sustituye a la de noticias. Un cambio posterior en los defaults no reemplaza automáticamente la configuración guardada del operador.
 
-Antes de habilitar una fuente, registre términos, finalidad, dominio exacto, tipo documental, intervalo, límite de tamaño y contacto identificable en el User-Agent. Las fuentes necesitan `enabled=true` y `terms_approved=true`. El flag documenta una decisión del operador; no verifica por sí mismo la licencia ni constituye autorización del editor.
+Antes de habilitar una fuente, registre términos, finalidad, dominio exacto, tipo documental, intervalo, límite de tamaño y contacto identificable en el User-Agent. La lectura requiere `enabled=true` y `terms_approved=true`; guardar cuerpos editoriales exige además `download_articles=true` y `article_terms_approved=true`. Estos flags documentan decisiones del operador; no verifican por sí mismos la licencia ni constituyen autorización del editor. Los permisos RSS no autorizan automáticamente un archivo comercial. El catálogo mantiene ambas autorizaciones desactivadas y documenta restricciones en [FUENTES_NOTICIAS.md](FUENTES_NOTICIAS.md).
 
-GDELT y RSS localizan URLs. Cada editor necesita una fuente habilitada cuya lista `allowed_hosts` incluya exactamente su host; de otro modo se conserva sólo un resultado de descubrimiento. `gob.mx` o DOF, configurados como fuentes directas, no recorren por sí solos todo su sitio. El extractor actual procesa HTML/RSS/JSON; para PDF use un extractor local revisado y luego JSONL.
+RSS se obtiene una vez por feed y ventana. GDELT agrupa nombres y alias en consultas OR y conserva los IDs de homónimos. Cada editor necesita permiso de cuerpo y una lista `allowed_hosts` con su host exacto; de otro modo se conserva sólo descubrimiento sin scoring. `source_country=mexico` filtra medios mexicanos, no personas mexicanas: use un valor vacío cuando el objetivo incluya prensa extranjera en español sobre estas entidades. El prefiltro por título/resumen puede omitir artículos sin nombres; `--all-articles` lo omite sólo para fuentes con permiso de cuerpo. `gob.mx` o DOF, configurados como fuentes directas, no recorren por sí solos todo su sitio. Para PDF use un extractor local revisado y luego JSONL.
 
 ```powershell
-python -m peps --data-dir .\runtime --online queue
-python -m peps --data-dir .\runtime --online worker --workers 4 --seconds 240 --max-jobs 1000
-python -m peps --data-dir .\runtime stats
+python -m peps --data-dir .\runtime news-queue
+python -m peps --data-dir .\runtime --online news-acquire --workers 4 --seconds 240 --max-tasks 1000 --no-queue
+python -m peps --data-dir .\runtime news-attribute --limit 1000
+python -m peps --data-dir .\runtime news-stats
 ```
+
+Repita atribución para continuar el banco; `--force` permite reanalizarlo. Cambiar el padrón invalida resoluciones y revisiones anteriores para scoring: reatribuir actualiza la resolución, pero una revisión humana anterior debe renovarse. Cambiar las reglas también provoca reatribución por su hash. `candidate`, `ambiguous` y `rejected` no puntúan automáticamente. Cuando un documento contiene varias menciones homónimas, la revisión humana debe seleccionar los offsets `identity_spans` correctos; confirmar todo el texto no identifica todas sus menciones. Véase el flujo completo en [NOTICIAS.md](NOTICIAS.md).
+
+Las ventanas de GDELT saturadas se subdividen y los límites no resueltos quedan truncados. Los feeds pueden limitar registros; el banco informa esos cortes en sus estadísticas. Ni una tarea terminada ni una ventana vacía demuestran cobertura histórica de una persona. Los comandos anteriores `queue`/`worker` conservan compatibilidad con la cola de adaptadores previos.
 
 Las peticiones usan HTTPS y direcciones IP públicas previamente validadas, con verificación de certificado y SNI del host original. Se admite `ca_bundle` para una CA aprobada. El transporte actual no implementa proxies HTTP CONNECT ni utiliza proxies obligatorios del entorno: una red que exija ese mecanismo necesita una adaptación administrada o transferencia offline. No desactive TLS para resolverlo.
 
@@ -102,15 +107,15 @@ Las peticiones usan HTTPS y direcciones IP públicas previamente validadas, con 
 python -m peps --data-dir .\runtime --online worker --daemon --daily --workers 4 --seconds 240 --max-jobs 1000
 ```
 
-`--daemon` mantiene ciclos de trabajo; `--daily` encola una ventana UTC diaria. La deduplicación de claves impide crear repetidamente el mismo trabajo para entidad, fuente y ventana. Cierre con Ctrl+C o con los controles de la aplicación. La UI, un worker o varios procesos deben compartir exactamente el mismo directorio de datos para compartir cola y control por dominio.
+`--daemon` mantiene ciclos; `--daily` encola una ventana UTC diaria mediante el módulo de noticias. Después de procesar el lote, ese modo ejecuta atribución local de las noticias disponibles. El worker también puede drenar trabajos de adaptadores previos que ya existan. La deduplicación de claves impide repetir la misma tarea de feed o consulta y ventana. Cierre con Ctrl+C o con los controles de la aplicación. La UI, un worker o varios procesos deben compartir exactamente el mismo directorio de datos para compartir cola y límites por dominio. Para el modo continuo mantenga las fuentes revisadas en `runtime/news_sources.json`; una ruta `--news-config` usada en otro comando no cambia por sí sola esa configuración persistida.
 
-El script de ejemplo registra una ejecución periódica que procesa la cola existente:
+El script de ejemplo registra una ejecución cada cinco minutos con `worker --daily`: encola noticias por ventana UTC, procesa la cola y atribuye después del lote:
 
 ```powershell
 .\scripts\register_worker.ps1 -Executable .\dist\PEPS-MX\PEPS-CLI.exe -DataDirectory .\runtime -Name PEPS-MX-Worker
 ```
 
-El directorio de datos debe existir. Este script **no encola nuevas búsquedas diarias**: drena trabajos ya creados y evita instancias superpuestas de esa tarea. Para generación diaria use el modo continuo anterior o una tarea separada, autorizada por el operador, que ejecute `--online queue`. No deje simultáneamente servicios duplicados sin una razón operativa. Registrar la tarea altera el Programador de tareas de Windows y debe hacerse al decidir activar la automatización.
+El directorio de datos debe existir y contener `news_sources.json` revisado. El script evita instancias superpuestas; las claves persistidas impiden duplicar la misma tarea de feed o consulta y ventana al reiniciar cada proceso. Use el Programador de tareas o el modo continuo, según su operación. Un worker manual sin `--daily` sólo drena la cola y necesita `news-attribute` por separado. Registrar la tarea altera el Programador de tareas de Windows y debe hacerse al decidir activar la automatización.
 
 ## Bloqueos y recuperación
 
@@ -134,6 +139,6 @@ python -m peps --data-dir .\runtime audit
 python -m peps capacity --entities 40000
 ```
 
-La API de respaldo SQLite produce una copia consistente del banco y cierra las conexiones al terminar. Una restauración debe realizarse con la aplicación y workers detenidos, en un directorio nuevo y con los archivos originales preservados. El respaldo de la base no incluye automáticamente configuración ni estado HTTP; consérvelos por separado conforme a su procedimiento. `audit` verifica la cadena de eventos, los hashes del cuerpo documental y las puntuaciones actuales; mantenga un hash o respaldo externo para detectar una eventual reescritura completa del banco.
+La API de respaldo SQLite produce una copia consistente del banco y cierra las conexiones al terminar. Una restauración debe realizarse con la aplicación y workers detenidos, en un directorio nuevo y con los archivos originales preservados. El respaldo de la base no incluye automáticamente configuración, estado HTTP ni `news_snapshots/`; consérvelos por separado. No borre el estado HTTP para eludir circuitos o mejorar un benchmark. `audit` verifica la cadena de eventos, los hashes del cuerpo documental y las puntuaciones actuales; mantenga un hash o respaldo externo para detectar una eventual reescritura completa del banco.
 
-SQLite admite múltiples lectores y un escritor a la vez; los índices y lotes ayudan, pero la aplicación no ofrece cómputo distribuido horizontal. El modelo de capacidad CLI permite estimar peticiones y días bajo supuestos; faltan latencias reales, saturación, bloqueos, descarga histórica y revisión humana. Valide el plazo requerido con una muestra representativa y cuotas verificadas de cada fuente antes de comprometer un SLA.
+SQLite admite múltiples lectores y un escritor a la vez; los índices y lotes ayudan, pero la aplicación no ofrece cómputo distribuido horizontal. `news-plan` estima peticiones y días bajo distribución equilibrada entre fuentes autorizadas. Su resultado es optimista: faltan latencias sostenidas, consultas adicionales por saturación, bloqueos, descarga histórica y revisión humana. Una proyección dentro de siete días no constituye SLA ni demuestra noticias atribuidas a las 40 mil identidades.

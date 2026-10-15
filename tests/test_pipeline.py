@@ -36,7 +36,9 @@ class PipelineTests(unittest.TestCase):
             self.assertEqual({'done': 2}, engine.store.stats()['jobs'])
             evidence = engine.store.evidence('target')[0]
             self.assertEqual('2026-10-01', evidence['published_at'][:10])
-            self.assertGreater(engine.store.list_entities()[0]['score']['score'], 0)
+            # A name-only article stays a candidate until identity is checked.
+            self.assertEqual(engine.store.list_entities()[0]['score']['score'], 0)
+            self.assertEqual(evidence['identity_resolution']['status'], 'candidate')
             self.assertTrue(engine.store.verify_audit()['ok'])
 
 

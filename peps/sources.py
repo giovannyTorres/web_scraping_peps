@@ -138,11 +138,14 @@ def parse_results(fetch_result: dict, source: dict) -> list[dict]:
     """
     if fetch_result.get("status") not in {"ok", "not_modified"}:
         return []
-    body = str(fetch_result.get("body") or "")[:5_000_000]
+    body = str(fetch_result.get("body") or "")
+    if len(body) > min(20_000_000, int(source.get('parse_max_chars', 5_000_000))):
+        raise ValueError('Response exceeds parser size limit; no silent truncation')
     base = fetch_result.get("final_url") or fetch_result.get("url") or source.get("base_url", "")
     kind, source_id = source.get("kind", "news"), source.get("id", "unknown")
     candidates = []
-    limit = max(1, min(int(source.get("max_records", 250)), 1000))
+    limit = max(1, min(int(source.get('max_items', source.get('max_records', 250))), 100000))
+    fetch_result['parse_metadata'] = {'observed_entries': 0, 'truncated': False}
     if source_id == "gdelt" or kind == "gdelt":
         try:
             payload = json.loads(body)
@@ -156,6 +159,7 @@ def parse_results(fetch_result: dict, source: dict) -> list[dict]:
         articles = payload.get("articles")
         if not isinstance(articles, list):
             raise ValueError("GDELT response is missing a valid articles array")
+        fetch_result['parse_metadata'] = {'observed_entries': len(articles), 'truncated': len(articles) > limit}
         for article in articles[:limit]:
             if not isinstance(article, dict) or not isinstance(article.get("url"), str) or not article["url"].strip():
                 raise ValueError("GDELT returned a malformed article record")
@@ -176,6 +180,10 @@ def parse_results(fetch_result: dict, source: dict) -> list[dict]:
         for entry in root.iter():
             if entry.tag.rsplit("}", 1)[-1] not in {"item", "entry"}:
                 continue
+            fetch_result['parse_metadata']['observed_entries'] += 1
+            if len(candidates) >= limit:
+                fetch_result['parse_metadata']['truncated'] = True
+                continue
             fields, link = {}, ""
             for element in entry:
                 tag = element.tag.rsplit("}", 1)[-1]
@@ -184,8 +192,6 @@ def parse_results(fetch_result: dict, source: dict) -> list[dict]:
                 if tag == "link" and element.attrib.get("rel", "alternate") == "alternate":
                     link = element.attrib.get("href") or value
             candidates.append(dict(url=link or fields.get("link", ""), title=fields.get("title", ""), text=fields.get("description") or fields.get("summary") or fields.get("encoded") or fields.get("content", ""), published_at=_date(fields.get("pubDate") or fields.get("published") or fields.get("date")), updated_at=_date(fields.get("updated")), source_kind=source.get("document_kind", "news"), source_id=source_id))
-            if len(candidates) >= limit:
-                break
     else:
         parser = _TextExtractor()
         parser.feed(body)

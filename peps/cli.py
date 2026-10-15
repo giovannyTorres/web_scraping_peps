@@ -39,7 +39,7 @@ def main():
     worker.add_argument('--max-jobs', type=int, default=1000)
     worker.add_argument('--seconds', type=int, default=300)
     worker.add_argument('--daemon', action='store_true')
-    worker.add_argument('--daily', action='store_true', help='En daemon encola cada ventana UTC diaria')
+    worker.add_argument('--daily', action='store_true', help='Encola noticias por ventana UTC diaria y atribuye localmente después de la descarga')
     sub.add_parser('stats')
     sub.add_parser('audit')
     sub.add_parser('retry')
@@ -47,6 +47,25 @@ def main():
     exp.add_argument('file', type=Path)
     sub.add_parser('backup').add_argument('file', type=Path)
     sub.add_parser('capacity').add_argument('--entities', type=int, default=40000)
+    for name in ('news-queue', 'news-acquire', 'news-attribute', 'news-stats', 'news-plan'):
+        news_parser = sub.add_parser(name, help='Noticias: adquisición e identidad independientes')
+        news_parser.add_argument('--news-config', type=Path)
+        if name in ('news-queue', 'news-acquire'):
+            news_parser.add_argument('--start', help='Ventana UTC YYYYMMDDHHMMSS')
+            news_parser.add_argument('--end', help='Ventana UTC YYYYMMDDHHMMSS')
+        if name == 'news-acquire':
+            news_parser.add_argument('--workers', type=int, default=4)
+            news_parser.add_argument('--seconds', type=int, default=120)
+            news_parser.add_argument('--max-tasks', type=int, default=1000)
+            news_parser.add_argument('--all-articles', action='store_true', help='Descargar cuerpos permitidos sin prefiltrar por banco')
+            news_parser.add_argument('--no-queue', action='store_true')
+        if name == 'news-attribute':
+            news_parser.add_argument('--limit', type=int, default=1000)
+            news_parser.add_argument('--force', action='store_true')
+        if name == 'news-plan':
+            news_parser.add_argument('--articles-per-entity', type=float, default=5)
+            news_parser.add_argument('--unique-url-ratio', type=float, default=.6)
+            news_parser.add_argument('--target-days', type=float, default=7)
     args = parser.parse_args()
     if args.command == 'capacity':
         print(json.dumps(capacity(args.entities), ensure_ascii=False, indent=2))
@@ -56,6 +75,23 @@ def main():
     if command == 'ui':
         from .app import serve
         serve(engine, open_browser=not getattr(args, 'no_browser', False))
+        return
+    if command.startswith('news-'):
+        from .news import NewsAcquirer
+        news = NewsAcquirer(engine, args.news_config)
+        if command == 'news-queue':
+            result = news.queue(start=args.start, end=args.end)
+        elif command == 'news-acquire':
+            result = news.acquire(workers=args.workers, seconds=args.seconds, max_articles=args.max_tasks,
+                                  download_all=args.all_articles, queue=not args.no_queue, start=args.start, end=args.end)
+        elif command == 'news-attribute':
+            result = news.attribute(limit=args.limit, force=args.force)
+        elif command == 'news-stats':
+            result = news.stats()
+        else:
+            result = news.plan(articles_per_entity=args.articles_per_entity, unique_url_ratio=args.unique_url_ratio,
+                               target_days=args.target_days)
+        print(json.dumps(result, ensure_ascii=False, indent=2))
         return
     if command == 'import-entities':
         result = {'imported': engine.store.import_entities(read_entities(args.file.read_text(encoding='utf-8-sig')))}
@@ -126,9 +162,13 @@ def main():
                     from .store import now
                     window = now()[:10]
                     if window != last_window:
-                        engine.queue_discovery(window)
+                        from .news import NewsAcquirer
+                        NewsAcquirer(engine).queue(window=window)
                         last_window = window
                 result = engine.run(args.workers, args.max_jobs, args.seconds)
+                if args.daily:
+                    from .news import NewsAcquirer
+                    result['news_attribution'] = NewsAcquirer(engine).attribute(limit=args.max_jobs)
                 print(json.dumps(result, ensure_ascii=False), flush=True)
                 if not args.daemon:
                     return

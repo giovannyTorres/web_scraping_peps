@@ -1,6 +1,6 @@
-# PEPS MX 2.0
+# PEPS MX 2.1
 
-Banco local de documentos públicos sobre personas, empresas y organizaciones mexicanas. Permite importar entidades, mantener una cola de búsqueda, conservar evidencia, detectar menciones en español y ordenar la revisión documental con una puntuación explicable.
+Banco local de noticias y documentos públicos sobre personas, empresas y organizaciones mexicanas. Separa la adquisición de fuentes autorizadas de la atribución local de identidad, conserva procedencia y versiones, y ordena la revisión documental con una puntuación explicable.
 
 La condición PEP, un parentesco, un cargo o un contrato público no son conductas adversas por sí mismos. Los resultados son candidatos de revisión: no acreditan identidad, culpabilidad ni ausencia de riesgos. El sistema no debe decidir automáticamente la contratación, la admisión bancaria ni el acceso a servicios.
 
@@ -18,27 +18,31 @@ Ejecute los comandos desde la raíz del proyecto. En el bundle sustituya `python
 
 ## Flujo de trabajo
 
-1. Importe el banco de entidades con nombres, tipo, alias y contexto de identidad.
-2. Importe documentos autorizados o habilite fuentes públicas revisadas y procese la cola.
-3. Revise el cuerpo, la URL, la fecha, las citas, los posibles homónimos y el estado procesal.
-4. Confirme o rechace cada evidencia con nombre de revisor y motivo. Conserve exportaciones y respaldos.
+1. Importe entidades con IDs estables, nombres, tipo, alias y contexto. Los homónimos conservan IDs distintos; los atributos son pistas hasta verificarse con procedencia.
+2. Adquiera noticias: un trabajo por RSS y ventana, consultas por lotes cuando la fuente lo permita, URLs deduplicadas y cuerpos sólo con permiso separado.
+3. Atribuya localmente las menciones con el padrón. Un nombre exacto no resuelve identidad; los candidatos ambiguos conservan su estado.
+4. Revise cuerpo, procedencia, citas y estado procesal. Confirme o rechace con revisor y motivo, seleccionando las menciones cuando haya varios homónimos. Conserve exportaciones y respaldos.
 
 ```powershell
 python -m peps --data-dir .\runtime import-entities .\entidades.csv
-python -m peps --data-dir .\runtime import-documents .\documentos.jsonl
-python -m peps --data-dir .\runtime score
+python -m peps --data-dir .\runtime news-plan
+python -m peps --data-dir .\runtime --online news-acquire --workers 4 --seconds 300 --max-tasks 1000
+python -m peps --data-dir .\runtime news-attribute --limit 1000
+python -m peps --data-dir .\runtime news-stats
 python -m peps --data-dir .\runtime audit
 python -m peps --data-dir .\runtime export .\exportaciones\banco.jsonl
 ```
 
-Las entidades admiten `kind=person`, `company` u `organization`; los alias se separan con `|` en CSV y `context` contiene JSON. Para cargas grandes utilice la CLI: la interfaz limita cada petición de importación a 16 MB. Los formatos y el modo cerrado están en [OPERACION.md](docs/OPERACION.md).
+Las fuentes comienzan desactivadas en `runtime/news_sources.json`. `enabled` y `terms_approved` habilitan acceso; `download_articles` y `article_terms_approved` autorizan por separado guardar cuerpos. Un RSS gratuito no concede permiso de uso comercial. El catálogo documenta restricciones y mantiene todos esos permisos desactivados. Lea [NOTICIAS.md](docs/NOTICIAS.md) y [FUENTES_NOTICIAS.md](docs/FUENTES_NOTICIAS.md) antes de configurar fuentes.
+
+Las entidades admiten `kind=person`, `company` u `organization`; los alias se separan con `|` en CSV y `context` contiene JSON. La importación manual autorizada sigue disponible con `import-documents documentos.jsonl`. Para cargas grandes utilice la CLI: la interfaz limita cada petición de importación a 16 MB. Los formatos y el modo cerrado están en [OPERACION.md](docs/OPERACION.md).
 
 ## Implementación y alcance
 
 - SQLite en modo WAL almacena entidades, documentos, menciones, puntuaciones, trabajos y una bitácora encadenada SHA-256. La cola tiene leases, reintentos acotados y estados de bloqueo. La verificación comprueba cadena, contenido documental y hashes de las puntuaciones actuales; no reemplaza una firma externa ni un control de acceso al disco.
-- Un índice de nombres y alias evita cotejar cada texto contra todos los nombres. La extracción utiliza reglas, un gazetteer y offsets verificables. Es un motor conservador en español; no es NER estadístico general y no resuelve todas las correferencias, ironías, negaciones ni ambigüedades.
+- Un índice de tokens evita cotejar cada texto contra todos los nombres. La identidad conserva competidores, anclas verificadas con procedencia, offsets, firma de padrón y hash del cuerpo. Nombres, RFC o alias ingresados sin verificación son pistas. Las reglas en español no resuelven todas las correferencias, ironías ni variantes desconocidas.
 - El scoring mantiene contribuciones, exclusiones y parámetros versionados. Sus pesos son heurísticos y no tienen validación predictiva de conducta futura. Una prioridad cero significa que la evidencia disponible no activó una regla admisible; no significa que una persona esté libre de información adversa.
-- La recolección aplica dominios permitidos, TLS, robots, límites de tamaño, caché, pausas por dominio y detención ante restricciones. Los extractos de buscadores se conservan como descubrimiento, no como contenido editorial verificado.
+- La recolección aplica dominios permitidos, TLS, robots, límites de tamaño, gzip/deflate acotados, caché condicional, conexiones verificadas reutilizables, pausas por dominio y circuitos persistentes ante restricciones. Los extractos de buscadores se conservan como descubrimiento y no puntúan. Una misma URL se conserva una vez; notas de distintos medios permanecen separadas, con grupos de contenido para no confundir sindicación con corroboración independiente.
 - Los adaptadores locales de `peps.official` leen XML clásico OFAC, XML ONU y CSV SAT 69-B. Conservan naturaleza administrativa, fecha de la copia y estados fiscales. No leen todos los formatos de todas las autoridades ni convierten una sanción en condena penal.
 
 `import-official` valida una copia local completa antes de incorporarla; admite `--source ofac`, `un` o `sat69b`, y exige una URL oficial de procedencia. Los ejemplos están en [OPERACION.md](docs/OPERACION.md).
@@ -47,7 +51,7 @@ La arquitectura es de una estación local. Use disco local para SQLite; no coloq
 
 ## Automatización y capacidad
 
-Las fuentes están deshabilitadas inicialmente. Una vez revisadas y configuradas, el modo continuo genera una ventana UTC diaria de descubrimiento y procesa la cola:
+Las fuentes están deshabilitadas inicialmente. Una vez revisadas y configuradas en el directorio de datos, el modo continuo genera una ventana UTC diaria, encola adquisición de noticias, procesa la cola y ejecuta atribución local después del lote:
 
 ```powershell
 python -m peps --data-dir .\runtime --online worker --daemon --daily --workers 4 --seconds 240 --max-jobs 1000
@@ -56,11 +60,13 @@ python -m peps --data-dir .\runtime --online worker --daemon --daily --workers 4
 Los workers comparten límites persistidos por dominio; más hilos no autorizan más peticiones a una fuente. Consulte [OPERACION.md](docs/OPERACION.md) antes de activar el Programador de tareas.
 
 ```powershell
-python -m peps capacity --entities 40000
+python -m peps --data-dir .\runtime news-plan --articles-per-entity 20 --unique-url-ratio 0.6 --target-days 7
 python -m unittest discover -s tests
 ```
 
-`capacity` muestra un modelo con supuestos, no una medición web ni una promesa de procesar 40 mil personas en una semana. Los benchmarks locales y las pruebas web deben evaluarse por separado; los bloqueos, límites, cobertura e inspección humana pueden dominar el plazo.
+`news-plan` muestra un escenario optimista con supuestos, no una medición web ni una promesa de procesar 40 mil personas en una semana. `capacity` conserva el modelo anterior para comparación. RSS cubre su ventana disponible y GDELT puede truncar resultados o aplazar consultas. El filtro `source_country=mexico` selecciona país del medio: para investigar entidades mexicanas en prensa extranjera, quite ese filtro según el alcance autorizado.
+
+La medición real verificó seis RSS en seis hosts: 224 URLs en el lote principal y 40 en el suplemento; sólo se obtuvieron dos cuerpos de una ONG. El lote principal tomó 16.813 s con caché de respuestas fría y 0.266 s en caliente sin HTTP. GDELT devolvió 429 y dos accesos editoriales, 403; se conservaron las restricciones. La identidad superó 120 casos sintéticos principales y 20 independientes tras corregir ocho fallos; esto no estima precisión sobre prensa real. Los detalles y la separación entre red real, carga simulada e identidad local están en [VALIDACION.md](docs/VALIDACION.md).
 
 Los notebooks originales y sus salidas se conservan como material histórico. Sus XML locales tienen fechas de enero y mayo de 2026; no representan listas actualizadas al momento de ejecución. Importe las salidas antiguas con `import-legacy` para mantener esa distinción.
 

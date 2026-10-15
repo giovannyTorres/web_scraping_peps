@@ -1,0 +1,120 @@
+{"id": "name_only", "bank": "one", "text": "Juan Pérez presentó un informe.", "expected": {"p1": "candidate"}}
+{"id": "name_only_upper", "bank": "one", "text": "JUAN PÉREZ PRESENTÓ UN INFORME.", "expected": {"p1": "candidate"}}
+{"id": "name_only_nfd", "bank": "one", "text": "Juan Pérez presentó un informe.", "expected": {"p1": "candidate"}}
+{"id": "long_full_name_only", "bank": "long", "text": "José Peña Villaluz presentó un informe.", "expected": {"p1": "candidate"}}
+{"id": "long_full_name_only_upper", "bank": "long", "text": "JOSÉ PEÑA VILLALUZ PRESENTÓ UN INFORME.", "expected": {"p1": "candidate"}}
+{"id": "long_full_name_only_nfd", "bank": "long", "text": "José Peña Villaluz presentó un informe.", "expected": {"p1": "candidate"}}
+{"id": "hints_are_not_verification", "bank": "hints", "text": "Juan Pérez, alcalde de Oaxaca, presentó un informe.", "expected": {"p1": "candidate"}}
+{"id": "hints_are_not_verification_upper", "bank": "hints", "text": "JUAN PÉREZ, ALCALDE DE OAXACA, PRESENTÓ UN INFORME.", "expected": {"p1": "candidate"}}
+{"id": "hints_are_not_verification_nfd", "bank": "hints", "text": "Juan Pérez, alcalde de Oaxaca, presentó un informe.", "expected": {"p1": "candidate"}}
+{"id": "homonyms_no_context", "bank": "homonyms", "text": "Juan Pérez presentó un informe.", "expected": {"p1": "ambiguous", "p2": "ambiguous"}}
+{"id": "homonyms_no_context_upper", "bank": "homonyms", "text": "JUAN PÉREZ PRESENTÓ UN INFORME.", "expected": {"p1": "ambiguous", "p2": "ambiguous"}}
+{"id": "homonyms_no_context_nfd", "bank": "homonyms", "text": "Juan Pérez presentó un informe.", "expected": {"p1": "ambiguous", "p2": "ambiguous"}}
+{"id": "homonyms_hints_only", "bank": "homonyms", "text": "Juan Pérez, alcalde de Oaxaca, presentó un informe.", "expected": {"p1": "ambiguous", "p2": "ambiguous"}}
+{"id": "homonyms_hints_only_upper", "bank": "homonyms", "text": "JUAN PÉREZ, ALCALDE DE OAXACA, PRESENTÓ UN INFORME.", "expected": {"p1": "ambiguous", "p2": "ambiguous"}}
+{"id": "homonyms_hints_only_nfd", "bank": "homonyms", "text": "Juan Pérez, alcalde de Oaxaca, presentó un informe.", "expected": {"p1": "ambiguous", "p2": "ambiguous"}}
+{"id": "verified_local", "bank": "verified", "text": "Juan Pérez, alcalde de Oaxaca, presentó un informe.", "expected": {"p1": "matched", "p2": "ambiguous"}}
+{"id": "verified_local_upper", "bank": "verified", "text": "JUAN PÉREZ, ALCALDE DE OAXACA, PRESENTÓ UN INFORME.", "expected": {"p1": "matched", "p2": "ambiguous"}}
+{"id": "verified_local_nfd", "bank": "verified", "text": "Juan Pérez, alcalde de Oaxaca, presentó un informe.", "expected": {"p1": "matched", "p2": "ambiguous"}}
+{"id": "verified_other_local", "bank": "verified", "text": "Juan Pérez, médico de Chiapas, presentó un informe.", "expected": {"p1": "ambiguous", "p2": "matched"}}
+{"id": "verified_other_local_upper", "bank": "verified", "text": "JUAN PÉREZ, MÉDICO DE CHIAPAS, PRESENTÓ UN INFORME.", "expected": {"p1": "ambiguous", "p2": "matched"}}
+{"id": "verified_other_local_nfd", "bank": "verified", "text": "Juan Pérez, médico de Chiapas, presentó un informe.", "expected": {"p1": "ambiguous", "p2": "matched"}}
+{"id": "verified_two_mentions", "bank": "verified", "text": "Juan Pérez, alcalde de Oaxaca, participa; Juan Pérez, médico de Chiapas, también.", "expected": {"p1": "matched", "p2": "matched"}}
+{"id": "verified_two_mentions_upper", "bank": "verified", "text": "JUAN PÉREZ, ALCALDE DE OAXACA, PARTICIPA; JUAN PÉREZ, MÉDICO DE CHIAPAS, TAMBIÉN.", "expected": {"p1": "matched", "p2": "matched"}}
+{"id": "verified_two_mentions_nfd", "bank": "verified", "text": "Juan Pérez, alcalde de Oaxaca, participa; Juan Pérez, médico de Chiapas, también.", "expected": {"p1": "matched", "p2": "matched"}}
+{"id": "geography_alone", "bank": "verified", "text": "Juan Pérez habló en Oaxaca.", "expected": {"p1": "ambiguous", "p2": "ambiguous"}}
+{"id": "geography_alone_upper", "bank": "verified", "text": "JUAN PÉREZ HABLÓ EN OAXACA.", "expected": {"p1": "ambiguous", "p2": "ambiguous"}}
+{"id": "geography_alone_nfd", "bank": "verified", "text": "Juan Pérez habló en Oaxaca.", "expected": {"p1": "ambiguous", "p2": "ambiguous"}}
+{"id": "role_alone", "bank": "verified", "text": "El alcalde Juan Pérez presentó un informe.", "expected": {"p1": "ambiguous", "p2": "ambiguous"}}
+{"id": "role_alone_upper", "bank": "verified", "text": "EL ALCALDE JUAN PÉREZ PRESENTÓ UN INFORME.", "expected": {"p1": "ambiguous", "p2": "ambiguous"}}
+{"id": "role_alone_nfd", "bank": "verified", "text": "El alcalde Juan Pérez presentó un informe.", "expected": {"p1": "ambiguous", "p2": "ambiguous"}}
+{"id": "unrelated_next_sentence", "bank": "verified", "text": "Juan Pérez presentó un informe. El alcalde de Oaxaca habló después.", "expected": {"p1": "ambiguous", "p2": "ambiguous"}}
+{"id": "unrelated_next_sentence_upper", "bank": "verified", "text": "JUAN PÉREZ PRESENTÓ UN INFORME. EL ALCALDE DE OAXACA HABLÓ DESPUÉS.", "expected": {"p1": "ambiguous", "p2": "ambiguous"}}
+{"id": "unrelated_next_sentence_nfd", "bank": "verified", "text": "Juan Pérez presentó un informe. El alcalde de Oaxaca habló después.", "expected": {"p1": "ambiguous", "p2": "ambiguous"}}
+{"id": "reported_context", "bank": "verified", "text": "Juan Pérez informó que el alcalde de Oaxaca participó.", "expected": {"p1": "ambiguous", "p2": "ambiguous"}}
+{"id": "reported_context_upper", "bank": "verified", "text": "JUAN PÉREZ INFORMÓ QUE EL ALCALDE DE OAXACA PARTICIPÓ.", "expected": {"p1": "ambiguous", "p2": "ambiguous"}}
+{"id": "reported_context_nfd", "bank": "verified", "text": "Juan Pérez informó que el alcalde de Oaxaca participó.", "expected": {"p1": "ambiguous", "p2": "ambiguous"}}
+{"id": "travel_context", "bank": "verified", "text": "Juan Pérez, alcalde, viajó a Oaxaca.", "expected": {"p1": "ambiguous", "p2": "ambiguous"}}
+{"id": "travel_context_upper", "bank": "verified", "text": "JUAN PÉREZ, ALCALDE, VIAJÓ A OAXACA.", "expected": {"p1": "ambiguous", "p2": "ambiguous"}}
+{"id": "travel_context_nfd", "bank": "verified", "text": "Juan Pérez, alcalde, viajó a Oaxaca.", "expected": {"p1": "ambiguous", "p2": "ambiguous"}}
+{"id": "title_only_no_body", "bank": "verified", "text": "", "expected": {"p1": "ambiguous", "p2": "ambiguous"}, "title": "Juan Pérez, alcalde de Oaxaca, presentó un informe."}
+{"id": "rfc_hint_only", "bank": "rfc_hint", "text": "Juan Pérez, RFC PEJJ800101AB1, presentó un informe.", "expected": {"p1": "candidate"}}
+{"id": "rfc_hint_only_upper", "bank": "rfc_hint", "text": "JUAN PÉREZ, RFC PEJJ800101AB1, PRESENTÓ UN INFORME.", "expected": {"p1": "candidate"}}
+{"id": "rfc_hint_only_nfd", "bank": "rfc_hint", "text": "Juan Pérez, RFC PEJJ800101AB1, presentó un informe.", "expected": {"p1": "candidate"}}
+{"id": "rfc_verified", "bank": "rfc_verified", "text": "Juan Pérez, RFC PEJJ800101AB1, presentó un informe.", "expected": {"p1": "matched"}}
+{"id": "rfc_verified_upper", "bank": "rfc_verified", "text": "JUAN PÉREZ, RFC PEJJ800101AB1, PRESENTÓ UN INFORME.", "expected": {"p1": "matched"}}
+{"id": "rfc_verified_nfd", "bank": "rfc_verified", "text": "Juan Pérez, RFC PEJJ800101AB1, presentó un informe.", "expected": {"p1": "matched"}}
+{"id": "wrong_unverified_rfc", "bank": "rfc_hint", "text": "Juan Pérez, RFC PEJJ800101AB2, presentó un informe.", "expected": {"p1": "candidate"}}
+{"id": "wrong_unverified_rfc_upper", "bank": "rfc_hint", "text": "JUAN PÉREZ, RFC PEJJ800101AB2, PRESENTÓ UN INFORME.", "expected": {"p1": "candidate"}}
+{"id": "wrong_unverified_rfc_nfd", "bank": "rfc_hint", "text": "Juan Pérez, RFC PEJJ800101AB2, presentó un informe.", "expected": {"p1": "candidate"}}
+{"id": "wrong_verified_rfc", "bank": "rfc_verified", "text": "Juan Pérez, RFC PEJJ800101AB2, presentó un informe.", "expected": {"p1": "rejected"}}
+{"id": "wrong_verified_rfc_upper", "bank": "rfc_verified", "text": "JUAN PÉREZ, RFC PEJJ800101AB2, PRESENTÓ UN INFORME.", "expected": {"p1": "rejected"}}
+{"id": "wrong_verified_rfc_nfd", "bank": "rfc_verified", "text": "Juan Pérez, RFC PEJJ800101AB2, presentó un informe.", "expected": {"p1": "rejected"}}
+{"id": "rfc_alone", "bank": "rfc_verified", "text": "La solicitud registra RFC PEJJ800101AB1.", "expected": {"p1": "candidate"}}
+{"id": "rfc_alone_upper", "bank": "rfc_verified", "text": "LA SOLICITUD REGISTRA RFC PEJJ800101AB1.", "expected": {"p1": "candidate"}}
+{"id": "rfc_alone_nfd", "bank": "rfc_verified", "text": "La solicitud registra RFC PEJJ800101AB1.", "expected": {"p1": "candidate"}}
+{"id": "company_suffix", "bank": "company", "text": "Luz de Nogal SA de CV presentó un informe.", "expected": {"c1": "candidate"}}
+{"id": "company_suffix_upper", "bank": "company", "text": "LUZ DE NOGAL SA DE CV PRESENTÓ UN INFORME.", "expected": {"c1": "candidate"}}
+{"id": "company_suffix_nfd", "bank": "company", "text": "Luz de Nogal SA de CV presentó un informe.", "expected": {"c1": "candidate"}}
+{"id": "company_core", "bank": "company", "text": "Luz de Nogal presentó un informe.", "expected": {"c1": "candidate"}}
+{"id": "company_core_upper", "bank": "company", "text": "LUZ DE NOGAL PRESENTÓ UN INFORME.", "expected": {"c1": "candidate"}}
+{"id": "company_core_nfd", "bank": "company", "text": "Luz de Nogal presentó un informe.", "expected": {"c1": "candidate"}}
+{"id": "company_dotted_suffix", "bank": "company", "text": "Luz de Nogal, S. A. de C. V., presentó un informe.", "expected": {"c1": "candidate"}}
+{"id": "company_dotted_suffix_upper", "bank": "company", "text": "LUZ DE NOGAL, S. A. DE C. V., PRESENTÓ UN INFORME.", "expected": {"c1": "candidate"}}
+{"id": "company_dotted_suffix_nfd", "bank": "company", "text": "Luz de Nogal, S. A. de C. V., presentó un informe.", "expected": {"c1": "candidate"}}
+{"id": "commercial_hint", "bank": "company", "text": "LuzNogal presentó un informe.", "expected": {"c1": "candidate"}}
+{"id": "commercial_hint_upper", "bank": "company", "text": "LUZNOGAL PRESENTÓ UN INFORME.", "expected": {"c1": "candidate"}}
+{"id": "commercial_hint_nfd", "bank": "company", "text": "LuzNogal presentó un informe.", "expected": {"c1": "candidate"}}
+{"id": "acronym_hint", "bank": "company", "text": "LN presentó un informe.", "expected": {"c1": "candidate"}}
+{"id": "acronym_hint_upper", "bank": "company", "text": "LN PRESENTÓ UN INFORME.", "expected": {"c1": "candidate"}}
+{"id": "acronym_hint_nfd", "bank": "company", "text": "LN presentó un informe.", "expected": {"c1": "candidate"}}
+{"id": "same_corporate_core", "bank": "companies", "text": "Luz de Nogal presentó un informe.", "expected": {"c1": "ambiguous", "c2": "ambiguous"}}
+{"id": "same_corporate_core_upper", "bank": "companies", "text": "LUZ DE NOGAL PRESENTÓ UN INFORME.", "expected": {"c1": "ambiguous", "c2": "ambiguous"}}
+{"id": "same_corporate_core_nfd", "bank": "companies", "text": "Luz de Nogal presentó un informe.", "expected": {"c1": "ambiguous", "c2": "ambiguous"}}
+{"id": "same_corporate_core_hint_rfc", "bank": "companies", "text": "Luz de Nogal, RFC LNO010101AB1, presentó un informe.", "expected": {"c1": "ambiguous", "c2": "ambiguous"}}
+{"id": "same_corporate_core_hint_rfc_upper", "bank": "companies", "text": "LUZ DE NOGAL, RFC LNO010101AB1, PRESENTÓ UN INFORME.", "expected": {"c1": "ambiguous", "c2": "ambiguous"}}
+{"id": "same_corporate_core_hint_rfc_nfd", "bank": "companies", "text": "Luz de Nogal, RFC LNO010101AB1, presentó un informe.", "expected": {"c1": "ambiguous", "c2": "ambiguous"}}
+{"id": "same_corporate_core_verified_rfc", "bank": "companies_verified", "text": "Luz de Nogal, RFC LNO010101AB1, presentó un informe.", "expected": {"c1": "matched", "c2": "rejected"}}
+{"id": "same_corporate_core_verified_rfc_upper", "bank": "companies_verified", "text": "LUZ DE NOGAL, RFC LNO010101AB1, PRESENTÓ UN INFORME.", "expected": {"c1": "matched", "c2": "rejected"}}
+{"id": "same_corporate_core_verified_rfc_nfd", "bank": "companies_verified", "text": "Luz de Nogal, RFC LNO010101AB1, presentó un informe.", "expected": {"c1": "matched", "c2": "rejected"}}
+{"id": "verified_trade_rfc", "bank": "verified_trade", "text": "LuzNogal, RFC LNO010101AB1, presentó un informe.", "expected": {"c1": "matched"}}
+{"id": "verified_trade_rfc_upper", "bank": "verified_trade", "text": "LUZNOGAL, RFC LNO010101AB1, PRESENTÓ UN INFORME.", "expected": {"c1": "matched"}}
+{"id": "verified_trade_rfc_nfd", "bank": "verified_trade", "text": "LuzNogal, RFC LNO010101AB1, presentó un informe.", "expected": {"c1": "matched"}}
+{"id": "verified_trade_alone", "bank": "verified_trade", "text": "LuzNogal presentó un informe.", "expected": {"c1": "candidate"}}
+{"id": "verified_trade_alone_upper", "bank": "verified_trade", "text": "LUZNOGAL PRESENTÓ UN INFORME.", "expected": {"c1": "candidate"}}
+{"id": "verified_trade_alone_nfd", "bank": "verified_trade", "text": "LuzNogal presentó un informe.", "expected": {"c1": "candidate"}}
+{"id": "verified_acronym_rfc", "bank": "verified_trade", "text": "LN, RFC LNO010101AB1, presentó un informe.", "expected": {"c1": "matched"}}
+{"id": "verified_acronym_rfc_upper", "bank": "verified_trade", "text": "LN, RFC LNO010101AB1, PRESENTÓ UN INFORME.", "expected": {"c1": "matched"}}
+{"id": "verified_acronym_rfc_nfd", "bank": "verified_trade", "text": "LN, RFC LNO010101AB1, presentó un informe.", "expected": {"c1": "matched"}}
+{"id": "rejected_alias", "bank": "unvalidated", "text": "LuzNogal, RFC LNO010101AB1, presentó un informe.", "expected": {"c1": "candidate"}}
+{"id": "rejected_alias_upper", "bank": "unvalidated", "text": "LUZNOGAL, RFC LNO010101AB1, PRESENTÓ UN INFORME.", "expected": {"c1": "candidate"}}
+{"id": "rejected_alias_nfd", "bank": "unvalidated", "text": "LuzNogal, RFC LNO010101AB1, presentó un informe.", "expected": {"c1": "candidate"}}
+{"id": "partial_not_in_bank", "bank": "long", "text": "José Peña presentó un informe.", "expected": {}}
+{"id": "partial_not_in_bank_upper", "bank": "long", "text": "JOSÉ PEÑA PRESENTÓ UN INFORME.", "expected": {}}
+{"id": "partial_not_in_bank_nfd", "bank": "long", "text": "José Peña presentó un informe.", "expected": {}}
+{"id": "typo_no_fuzzy", "bank": "one", "text": "Juan Péres presentó un informe.", "expected": {}}
+{"id": "typo_no_fuzzy_upper", "bank": "one", "text": "JUAN PÉRES PRESENTÓ UN INFORME.", "expected": {}}
+{"id": "typo_no_fuzzy_nfd", "bank": "one", "text": "Juan Péres presentó un informe.", "expected": {}}
+{"id": "word_boundary", "bank": "one", "text": "Juan Pérezoso presentó un informe.", "expected": {}}
+{"id": "word_boundary_upper", "bank": "one", "text": "JUAN PÉREZOSO PRESENTÓ UN INFORME.", "expected": {}}
+{"id": "word_boundary_nfd", "bank": "one", "text": "Juan Pérezoso presentó un informe.", "expected": {}}
+{"id": "partial_curated_hint", "bank": "partial", "text": "Juan Pérez presentó un informe.", "expected": {"p1": "candidate"}}
+{"id": "partial_curated_hint_upper", "bank": "partial", "text": "JUAN PÉREZ PRESENTÓ UN INFORME.", "expected": {"p1": "candidate"}}
+{"id": "partial_curated_hint_nfd", "bank": "partial", "text": "Juan Pérez presentó un informe.", "expected": {"p1": "candidate"}}
+{"id": "partial_acronym", "bank": "partial", "text": "JPM presentó un informe.", "expected": {"p1": "candidate"}}
+{"id": "partial_acronym_upper", "bank": "partial", "text": "JPM PRESENTÓ UN INFORME.", "expected": {"p1": "candidate"}}
+{"id": "partial_acronym_nfd", "bank": "partial", "text": "JPM presentó un informe.", "expected": {"p1": "candidate"}}
+{"id": "context_only_not_name", "bank": "verified", "text": "El alcalde de Oaxaca presentó un informe.", "expected": {}}
+{"id": "context_only_not_name_upper", "bank": "verified", "text": "EL ALCALDE DE OAXACA PRESENTÓ UN INFORME.", "expected": {}}
+{"id": "context_only_not_name_nfd", "bank": "verified", "text": "El alcalde de Oaxaca presentó un informe.", "expected": {}}
+{"id": "no_name_query_not_evidence", "bank": "one", "text": "Una persona presentó un informe.", "expected": {}, "metadata": {"query": "Juan Pérez", "entity_id": "p1", "rfc": "PEJJ800101AB1"}}
+{"id": "no_name_query_not_evidence_upper", "bank": "one", "text": "UNA PERSONA PRESENTÓ UN INFORME.", "expected": {}, "metadata": {"query": "Juan Pérez", "entity_id": "p1", "rfc": "PEJJ800101AB1"}}
+{"id": "no_name_query_not_evidence_nfd", "bank": "one", "text": "Una persona presentó un informe.", "expected": {}, "metadata": {"query": "Juan Pérez", "entity_id": "p1", "rfc": "PEJJ800101AB1"}}
+{"id": "line_boundary", "bank": "one", "text": "Juan\n\nPérez presentó un informe.", "expected": {}}
+{"id": "sentence_boundary", "bank": "one", "text": "Juan. Pérez presentó un informe.", "expected": {}}
+{"id": "verified_organization_geography", "bank": "verified", "text": "Juan Pérez del Instituto de Servicios Locales de Oaxaca presentó un informe.", "expected": {"p1": "matched", "p2": "ambiguous"}}
+{"id": "verified_organization_geography_upper", "bank": "verified", "text": "JUAN PÉREZ DEL INSTITUTO DE SERVICIOS LOCALES DE OAXACA PRESENTÓ UN INFORME.", "expected": {"p1": "matched", "p2": "ambiguous"}}
+{"id": "verified_organization_geography_nfd", "bank": "verified", "text": "Juan Pérez del Instituto de Servicios Locales de Oaxaca presentó un informe.", "expected": {"p1": "matched", "p2": "ambiguous"}}
+{"id": "metadata_cannot_corrob", "bank": "one", "text": "Juan Pérez presentó un informe.", "expected": {"p1": "candidate"}, "metadata": {"role": "alcalde", "state": "Oaxaca", "identifiers": {"rfc": "PEJJ800101AB1"}}}
+{"id": "metadata_cannot_corrob_upper", "bank": "one", "text": "JUAN PÉREZ PRESENTÓ UN INFORME.", "expected": {"p1": "candidate"}, "metadata": {"role": "alcalde", "state": "Oaxaca", "identifiers": {"rfc": "PEJJ800101AB1"}}}
+{"id": "metadata_cannot_corrob_nfd", "bank": "one", "text": "Juan Pérez presentó un informe.", "expected": {"p1": "candidate"}, "metadata": {"role": "alcalde", "state": "Oaxaca", "identifiers": {"rfc": "PEJJ800101AB1"}}}

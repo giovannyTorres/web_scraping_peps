@@ -77,7 +77,15 @@ class Engine:
 
     def import_documents(self, rows):
         from .nlp import analyze
-        index = EntityIndex(self.store.iter_entities())
+        from .identity import IdentityResolver, entity_for_analysis
+        from .news import NewsAcquirer, canonical_url
+        NewsAcquirer(self)  # Imported articles use the same attribution queue.
+        with self.store.connection() as con:
+            con.execute('BEGIN')
+            revision = int(con.execute("SELECT value FROM meta WHERE key='news_identity_revision'").fetchone()[0])
+            snapshot = [self.store.entity(row) for row in con.execute('SELECT * FROM entities ORDER BY id')]
+        index = EntityIndex(snapshot)
+        resolver = None
         count, links, unmatched = 0, 0, 0
         by_name = {}
         for e in index.entities.values():
@@ -87,14 +95,47 @@ class Engine:
             with self.store.connection() as con:
                 con.execute('BEGIN IMMEDIATE')
                 for row in batch:
+                    row = dict(row)
+                    news_import = row.get('source_kind', 'news') not in ('official', 'discovery', 'legacy')
+                    resolutions = []
+                    if news_import:
+                        resolver = resolver or IdentityResolver(snapshot)
+                        resolutions = resolver.resolve(str(row.get('text', '')), title=str(row.get('title', '')),
+                                                       metadata={'published_at': row.get('published_at')})
+                        row['metadata'] = dict(row.get('metadata') or {}, news_module=True, identity_origin='local_article_import',
+                                               publisher_id=urlsplit(str(row.get('url', ''))).hostname or 'local_import')
                     entity_ids = row.get('entity_ids')
                     if not entity_ids and row.get('entity_name'):
                         entity_ids = by_name.get(normalized(row['entity_name']), [])
-                        if len(entity_ids) > 1:
+                        if len(entity_ids) > 1 and not news_import:
                             raise ValueError('Nombre homónimo: especifique entity_ids para ' + row['entity_name'])
                     if entity_ids is None:
                         entity_ids = index.match(str(row.get('title', '')) + '\n' + str(row.get('text', '')))
-                    self.store.add_document(row, entity_ids, analyze, connection=con, entity_lookup=index.entities)
+                    if news_import:
+                        entity_ids = list(dict.fromkeys([*entity_ids, *(r['entity_id'] for r in resolutions)]))
+                    doc_id = self.store.add_document(row, entity_ids, analyze, connection=con, entity_lookup=index.entities)
+                    if news_import:
+                        for resolution in resolutions:
+                            resolution['bank_revision'] = revision
+                            entity = index.entities[resolution['entity_id']]
+                            analysis = analyze(str(row.get('text', '')), entity_for_analysis(entity, resolution), 'news')
+                            con.execute('UPDATE evidence SET analysis=? WHERE document_id=? AND entity_id=?',
+                                        (canonical(analysis), doc_id, entity['id']))
+                            con.execute('INSERT INTO news_identity_links VALUES(?,?,?) ON CONFLICT(document_id,entity_id) '
+                                        'DO UPDATE SET resolution=excluded.resolution', (doc_id, entity['id'], canonical(resolution)))
+                            self.store._audit(con, 'news_identity_resolved', {'entity_id': entity['id'], 'document_id': doc_id,
+                                              'status': resolution['status'], 'resolution_hash': digest(canonical(resolution))})
+                        try:
+                            url = canonical_url(row.get('url', ''))
+                        except ValueError:
+                            url = None
+                        if url:
+                            con.execute('INSERT INTO news_articles(id,canonical_url,publisher_id,source_id,title,summary,published_at,'
+                                        'discovered_at,retrieved_at,document_id,scope,status) VALUES(?,?,?,?,?,?,?,?,?,?,?,?) '
+                                        'ON CONFLICT(canonical_url) DO UPDATE SET document_id=excluded.document_id,attributed_signature=NULL',
+                                        (digest(url), url, row['metadata']['publisher_id'], row.get('source_id', 'manual'),
+                                         row.get('title', ''), '', row.get('published_at'), now(), row.get('retrieved_at') or now(),
+                                         doc_id, 'full_article', 'imported'))
                     count += 1
                     links += len(entity_ids)
                     unmatched += not bool(entity_ids)
@@ -104,7 +145,11 @@ class Engine:
         from .nlp import analyze
         from .scoring import score_entity
         count = 0
-        entities = [self.store.get_entity(entity_id)] if entity_id else self.store.iter_entities()
+        if entity_id and not isinstance(entity_id, str):
+            requested = set(entity_id)
+            entities = (e for e in self.store.iter_entities() if e['id'] in requested)
+        else:
+            entities = [self.store.get_entity(entity_id)] if entity_id else self.store.iter_entities()
         iterator = iter(entities)
         while batch := list(islice(iterator, 250)):
             with self.store.connection() as con:
@@ -112,12 +157,19 @@ class Engine:
                 for entity in batch:
                     if entity is None:
                         raise ValueError('Entidad inexistente')
+                    # The bank may change after iter_entities filled this batch.
+                    # Score the entity and evidence from the same write snapshot.
+                    entity = self.store.entity(con.execute('SELECT * FROM entities WHERE id=?', (entity['id'],)).fetchone())
                     evidence = self.store.evidence(entity['id'], connection=con)
                     for item in evidence:
                         if item['source_kind'] == 'discovery' or item['metadata'].get('discovery_only'):
                             item['analysis'] = {'mentions': [], 'findings': [], 'identity_confidence': 0, 'review_required': True}
                         else:
-                            item['analysis'] = analyze(item['text'], entity, item['source_kind'])
+                            analysis_entity = entity
+                            if item.get('identity_resolution'):
+                                from .identity import entity_for_analysis
+                                analysis_entity = entity_for_analysis(entity, item['identity_resolution'])
+                            item['analysis'] = analyze(item['text'], analysis_entity, item['source_kind'])
                         con.execute('UPDATE evidence SET analysis=? WHERE id=?', (canonical(item['analysis']), item['id']))
                     result = score_entity(entity, evidence)
                     self.store.save_score(entity['id'], result, connection=con)
@@ -183,6 +235,14 @@ class Engine:
         return True
 
     def _execute(self, job, fetcher):
+        if job['kind'].startswith('news_'):
+            from .news import NewsAcquirer
+            from .identity import IdentityResolver
+            news = getattr(self, '_news_acquirer', None) or NewsAcquirer(self)
+            resolver = getattr(self, '_news_resolver', None) or IdentityResolver(self.store.iter_entities())
+            self._news_acquirer, self._news_resolver = news, resolver
+            news.execute(job, fetcher, resolver)
+            return
         from .sources import build_search_url, parse_results, extract_text
         from .nlp import analyze
         payload = job['payload']
@@ -238,7 +298,7 @@ class Engine:
                           source_kind=source.get('kind', 'news'), source_id=source['id'],
                           retrieved_at=result.get('retrieved_at') or now(),
                           metadata={'fetch_hash': result.get('sha256'), 'content_type': result.get('content_type')})
-            self.store.add_document(record, payload['entity_ids'], analyze)
+            self.import_documents([dict(record, entity_ids=payload['entity_ids'])])
             for entity_id in payload['entity_ids']:
                 self.rescore(entity_id)
             self.store.finish(job)
@@ -253,6 +313,14 @@ class Engine:
         workers = min(max(int(workers), 1), 32)
         deadline, counter, lock = time.monotonic() + seconds, [0], threading.Lock()
         fetcher = SafeFetcher(self.config(), self.data_dir, offline=False)
+        self._news_acquirer, self._news_resolver = None, None
+        with self.store.connection() as con:
+            has_news = con.execute("SELECT 1 FROM jobs WHERE kind LIKE 'news_%' AND status IN ('queued','deferred','running') LIMIT 1").fetchone()
+        if has_news:
+            from .news import NewsAcquirer
+            from .identity import IdentityResolver
+            self._news_acquirer = NewsAcquirer(self)
+            self._news_resolver = IdentityResolver(self.store.iter_entities())
 
         def work():
             while not self.stop_event.is_set() and time.monotonic() < deadline:
@@ -268,13 +336,29 @@ class Engine:
                         return
                     self.stop_event.wait(min(1, max(.05, next_due - time.time())))
                     continue
+                lease_stop = threading.Event()
+                def renew():
+                    while not lease_stop.wait(30):
+                        if not self.store.renew(job):
+                            return
+                heartbeat = threading.Thread(target=renew, daemon=True)
+                heartbeat.start()
                 try:
                     self._execute(job, fetcher)
                 except Exception as exc:
                     self.store.finish(job, 'deferred', f'{type(exc).__name__}: {exc}',
                                       time.time() + min(3600, 30 * 2 ** job['attempts']))
-        with ThreadPoolExecutor(max_workers=workers) as pool:
-            list(pool.map(lambda _: work(), range(workers)))
+                finally:
+                    lease_stop.set()
+                    heartbeat.join(timeout=1)
+        try:
+            with self.store.connection() as anchor:
+                anchor.execute('SELECT value FROM meta LIMIT 1').fetchone()
+                with ThreadPoolExecutor(max_workers=workers) as pool:
+                    list(pool.map(lambda _: work(), range(workers)))
+        finally:
+            if hasattr(fetcher, 'close'):
+                fetcher.close()
         return {'status': 'ok', 'processed': counter[0], 'jobs': self.store.stats()['jobs']}
 
 

@@ -36,6 +36,7 @@ class Store:
               PRAGMA journal_mode=WAL;
               CREATE TABLE IF NOT EXISTS meta(key TEXT PRIMARY KEY,value TEXT);
               INSERT OR IGNORE INTO meta VALUES('schema_version','1');
+              INSERT OR IGNORE INTO meta VALUES('news_identity_revision','0');
               CREATE TABLE IF NOT EXISTS entities(id TEXT PRIMARY KEY,name TEXT NOT NULL,kind TEXT NOT NULL,
                 aliases TEXT NOT NULL,context TEXT NOT NULL,updated_at TEXT NOT NULL);
               CREATE INDEX IF NOT EXISTS entity_name ON entities(name);
@@ -47,6 +48,12 @@ class Store:
                 document_id TEXT NOT NULL REFERENCES documents(id),analysis TEXT NOT NULL,
                 review TEXT NOT NULL DEFAULT '{}',UNIQUE(entity_id,document_id));
               CREATE INDEX IF NOT EXISTS evidence_entity ON evidence(entity_id);
+              CREATE TABLE IF NOT EXISTS news_identity_links(document_id TEXT NOT NULL REFERENCES documents(id),
+                entity_id TEXT NOT NULL REFERENCES entities(id),resolution TEXT NOT NULL,
+                PRIMARY KEY(document_id,entity_id));
+              CREATE TABLE IF NOT EXISTS news_identity_history(id TEXT PRIMARY KEY,document_id TEXT NOT NULL,
+                entity_id TEXT NOT NULL,resolution TEXT NOT NULL,analysis TEXT NOT NULL,review TEXT NOT NULL,
+                retired_at TEXT NOT NULL,reason TEXT NOT NULL);
               CREATE TABLE IF NOT EXISTS scores(entity_id TEXT PRIMARY KEY REFERENCES entities(id),
                 result TEXT NOT NULL,computed_at TEXT NOT NULL);
               CREATE TABLE IF NOT EXISTS jobs(id TEXT PRIMARY KEY,kind TEXT NOT NULL,payload TEXT NOT NULL,
@@ -92,6 +99,7 @@ class Store:
     def verify_audit(self):
         previous, count = '0' * 64, 0
         last_scores = {}
+        last_identities = {}
         with self.connection() as con:
             for row in con.execute('SELECT * FROM audit ORDER BY seq'):
                 expected = digest(canonical([row['at'], row['actor'], row['action'], row['payload'], previous]))
@@ -101,18 +109,24 @@ class Store:
                 if row['action'] == 'entity_scored':
                     event = json.loads(row['payload'])
                     last_scores[event['id']] = event['result_hash']
+                elif row['action'] == 'news_identity_resolved':
+                    event = json.loads(row['payload'])
+                    last_identities[(event['document_id'], event['entity_id'])] = event['resolution_hash']
             for row in con.execute('SELECT id,text,content_hash FROM documents'):
                 if digest(row['text']) != row['content_hash']:
                     return {'ok': False, 'failed_document': row['id'], 'checked': count}
             for row in con.execute('SELECT entity_id,result FROM scores'):
                 if last_scores.get(row['entity_id']) != digest(row['result']):
                     return {'ok': False, 'failed_score': row['entity_id'], 'checked': count}
+            for row in con.execute('SELECT document_id,entity_id,resolution FROM news_identity_links'):
+                if last_identities.get((row['document_id'], row['entity_id'])) != digest(row['resolution']):
+                    return {'ok': False, 'failed_identity_link': row['entity_id'], 'document_id': row['document_id'], 'checked': count}
         return {'ok': True, 'checked': count, 'head_hash': previous,
                 'scope': 'event_chain_document_content_and_latest_score_hashes',
                 'limitation': 'Una reescritura completa requiere detectar con un hash o respaldo externo.'}
 
     def import_entities(self, rows):
-        count, ids = 0, []
+        count, ids, changed = 0, [], 0
         with self.connection() as con:
             con.execute('BEGIN IMMEDIATE')
             for row in rows:
@@ -135,16 +149,42 @@ class Store:
                     context = json.loads(context or '{}')
                 if not isinstance(context, dict) or len(canonical(context)) > 64000:
                     raise ValueError('context debe ser un objeto JSON de máximo 64 mil caracteres')
+                context = dict(context)
+                optional_fields = {
+                    'role': ('cargo', 'position', 'role', 'cargo_input'),
+                    'state': ('estado', 'state', 'estado_input'),
+                    'municipality': ('municipio', 'municipality', 'municipio_input'),
+                    'city': ('city', 'ciudad'), 'rfc': ('RFC', 'rfc', 'rfc_input'),
+                    'age': ('edad', 'age'),
+                    'birth_date': ('birth_date', 'date_of_birth', 'fecha_nacimiento', 'fecha_de_nacimiento'),
+                    'legal_name': ('razon_social',), 'trade_names': ('nombre_comercial', 'trade_names'),
+                    'abbreviations': ('siglas',)}
+                for field, alternatives in optional_fields.items():
+                    for alias in alternatives:
+                        if row.get(alias) not in (None, ''):
+                            if field not in context:
+                                context[field] = row[alias]
+                            elif context[field] != row[alias]:
+                                context.setdefault('import_hint_conflicts', {})[alias] = row[alias]
+                if len(canonical(context)) > 64000:
+                    raise ValueError('Contexto y pistas opcionales exceden 64 mil caracteres')
                 entity_id = str(row.get('id') or digest(canonical([name.casefold(), kind, context]))[:24])
                 if len(entity_id) > 150:
                     raise ValueError('ID demasiado largo')
-                con.execute('INSERT INTO entities VALUES(?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET '
-                            'name=excluded.name,kind=excluded.kind,aliases=excluded.aliases,context=excluded.context,updated_at=excluded.updated_at',
-                            (entity_id, name, kind, canonical(aliases), canonical(context), now()))
-                con.execute('DELETE FROM scores WHERE entity_id=?', (entity_id,))
+                previous = con.execute('SELECT name,kind,aliases,context FROM entities WHERE id=?', (entity_id,)).fetchone()
+                values = (name, kind, canonical(aliases), canonical(context))
+                if previous is None or tuple(previous) != values:
+                    con.execute('INSERT INTO entities VALUES(?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET '
+                                'name=excluded.name,kind=excluded.kind,aliases=excluded.aliases,context=excluded.context,updated_at=excluded.updated_at',
+                                (entity_id, *values, now()))
+                    con.execute('DELETE FROM scores WHERE entity_id=?', (entity_id,))
+                    changed += 1
                 count += 1
                 ids.append(entity_id)
-            self._audit(con, 'entities_imported', {'count': count, 'ids_hash': digest(canonical(ids))})
+            if changed:
+                con.execute("UPDATE meta SET value=CAST(value AS INTEGER)+1 WHERE key='news_identity_revision'")
+                con.execute('DELETE FROM scores WHERE entity_id IN (SELECT entity_id FROM news_identity_links)')
+            self._audit(con, 'entities_imported', {'count': count, 'changed': changed, 'ids_hash': digest(canonical(ids))})
         return count
 
     @staticmethod
@@ -212,22 +252,26 @@ class Store:
         return document_id
 
     def evidence(self, entity_id, limit=None, connection=None):
-        sql = ('SELECT d.*,e.id AS evidence_id,e.analysis,e.review FROM evidence e JOIN documents d '
-               'ON e.document_id=d.id WHERE e.entity_id=? ORDER BY d.retrieved_at DESC')
+        sql = ('SELECT d.*,e.id AS evidence_id,e.analysis,e.review,n.resolution AS identity_resolution FROM evidence e JOIN documents d '
+               'ON e.document_id=d.id LEFT JOIN news_identity_links n ON n.document_id=d.id AND n.entity_id=e.entity_id '
+               'WHERE e.entity_id=? ORDER BY d.retrieved_at DESC')
         args = [entity_id]
         if limit is not None:
             sql += ' LIMIT ?'
             args.append(int(limit))
         with (nullcontext(connection) if connection is not None else self.connection()) as con:
+            revision = int(con.execute("SELECT value FROM meta WHERE key='news_identity_revision'").fetchone()[0])
             rows = []
             for r in con.execute(sql, args):
                 metadata, review = json.loads(r['metadata']), json.loads(r['review'])
                 rows.append(dict(r, id=r['evidence_id'], analysis=json.loads(r['analysis']), review=review,
                             source_url=r['url'], metadata=metadata,
+                            identity_resolution=json.loads(r['identity_resolution']) if r['identity_resolution'] else None,
+                            identity_bank_revision=revision,
                             event_id=review.get('event_id') or metadata.get('event_id')))
             return rows
 
-    def review(self, evidence_id, status, actor, reason, event_id=None):
+    def review(self, evidence_id, status, actor, reason, event_id=None, identity_spans=None):
         if status not in ('pending', 'confirmed', 'rejected') or not actor.strip() or not reason.strip():
             raise ValueError('Revisión requiere estado, revisor y motivo')
         value = {'status': status, 'actor': actor.strip(), 'reason': reason.strip(), 'at': now()}
@@ -235,9 +279,26 @@ class Store:
             value['event_id'] = str(event_id).strip()[:300]
         with self.connection() as con:
             con.execute('BEGIN IMMEDIATE')
-            row = con.execute('SELECT entity_id FROM evidence WHERE id=?', (evidence_id,)).fetchone()
+            row = con.execute('SELECT e.entity_id,d.text,d.content_hash FROM evidence e JOIN documents d '
+                              'ON d.id=e.document_id WHERE e.id=?', (evidence_id,)).fetchone()
             if not row:
                 raise ValueError('Evidencia inexistente')
+            from .identity import entity_signature, RULES_HASH
+            entity_row = con.execute('SELECT * FROM entities WHERE id=?', (row['entity_id'],)).fetchone()
+            revision = int(con.execute("SELECT value FROM meta WHERE key='news_identity_revision'").fetchone()[0])
+            value.update(entity_signature=entity_signature(self.entity(entity_row)), content_hash=row['content_hash'], bank_revision=revision,
+                         identity_rules_hash=RULES_HASH)
+            if identity_spans is not None:
+                if not isinstance(identity_spans, list) or len(identity_spans) > 100:
+                    raise ValueError('identity_spans requiere una lista de hasta 100 menciones')
+                selected = []
+                for span in identity_spans:
+                    if not isinstance(span, dict) or not isinstance(span.get('start'), int) or not isinstance(span.get('end'), int):
+                        raise ValueError('Cada mención requiere offsets start/end enteros')
+                    if not 0 <= span['start'] < span['end'] <= len(row['text']):
+                        raise ValueError('Mención fuera del cuerpo original')
+                    selected.append(dict(start=span['start'], end=span['end'], text=row['text'][span['start']:span['end']]))
+                value['identity_spans'] = selected
             con.execute('UPDATE evidence SET review=? WHERE id=?', (canonical(value), evidence_id))
             con.execute('DELETE FROM scores WHERE entity_id=?', (row['entity_id'],))
             self._audit(con, 'evidence_review', {'id': evidence_id, **value}, actor)
@@ -258,7 +319,7 @@ class Store:
                         (job_id, kind, canonical(payload), due if due is not None else time.time(), now(), now()))
         return job_id
 
-    def claim(self, owner=None, lease_seconds=120):
+    def claim(self, owner=None, lease_seconds=120, kind_prefix=None):
         owner = owner or uuid.uuid4().hex
         current = time.time()
         with self.connection() as con:
@@ -266,9 +327,9 @@ class Store:
             # Cinco intentos, incluidos procesos que murieron con un lease, van a dead letter.
             con.execute("UPDATE jobs SET status='dead',error='Lease expirado; límite de intentos' "
                         "WHERE status='running' AND lease_until<? AND attempts>=5", (current,))
-            row = con.execute("SELECT * FROM jobs WHERE attempts<5 AND due<=? AND "
+            row = con.execute("SELECT * FROM jobs WHERE attempts<5 AND due<=? AND (? IS NULL OR kind LIKE ?) AND "
                               "(status IN ('queued','deferred') OR (status='running' AND lease_until<?)) "
-                              "ORDER BY due,id LIMIT 1", (current, current)).fetchone()
+                              "ORDER BY due,id LIMIT 1", (current, kind_prefix, (kind_prefix or '') + '%', current)).fetchone()
             if not row:
                 return None
             con.execute("UPDATE jobs SET status='running',owner=?,lease_until=?,attempts=attempts+1,updated_at=? WHERE id=?",
@@ -290,9 +351,15 @@ class Store:
                 self._audit(con, 'job_finished', {'id': job['id'], 'status': status, 'error': error[:500]})
             return bool(changed)
 
-    def next_due(self):
+    def renew(self, job, lease_seconds=300):
         with self.connection() as con:
-            row = con.execute("SELECT min(due) FROM jobs WHERE status IN ('queued','deferred') AND attempts<5").fetchone()
+            return bool(con.execute("UPDATE jobs SET lease_until=? WHERE id=? AND owner=? AND status='running'",
+                                    (time.time() + lease_seconds, job['id'], job['owner'])).rowcount)
+
+    def next_due(self, kind_prefix=None):
+        with self.connection() as con:
+            row = con.execute("SELECT min(due) FROM jobs WHERE status IN ('queued','deferred') AND attempts<5 "
+                              "AND (? IS NULL OR kind LIKE ?)", (kind_prefix, (kind_prefix or '') + '%')).fetchone()
             return row[0]
 
     def retry_failed(self):
@@ -325,6 +392,17 @@ class Store:
                 yield dict(row, record_type='document', metadata=json.loads(row['metadata']))
             for row in con.execute('SELECT * FROM evidence ORDER BY id'):
                 yield dict(row, record_type='evidence', analysis=json.loads(row['analysis']), review=json.loads(row['review']))
+            for row in con.execute('SELECT * FROM news_identity_links ORDER BY document_id,entity_id'):
+                yield dict(row, record_type='identity_resolution', resolution=json.loads(row['resolution']))
+            for row in con.execute('SELECT * FROM news_identity_history ORDER BY id'):
+                yield dict(row, record_type='retired_identity', resolution=json.loads(row['resolution']),
+                           analysis=json.loads(row['analysis']), review=json.loads(row['review']))
+            available = {row[0] for row in con.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+            for table, record_type in [('news_articles', 'news_article'), ('news_observations', 'news_observation'),
+                                       ('news_discovery_runs', 'news_discovery_run'), ('news_query_windows', 'news_query_window')]:
+                if table in available:
+                    for row in con.execute('SELECT * FROM ' + table):
+                        yield dict(row, record_type=record_type)
 
     def backup(self, target):
         target = Path(target).resolve()

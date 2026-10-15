@@ -1,18 +1,21 @@
 """Network tests use fake DNS and fake HTTPS; no external request is made."""
 import hashlib
+import gzip
 import http.client
 import io
 import json
 import socket
 import ssl
 import tempfile
+import threading
 import unittest
+import zlib
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from pathlib import Path
 from unittest.mock import Mock, patch
 
-from peps.collector import SafeFetcher, _PinnedHTTPSConnection, _DeadlineReader
+from peps.collector import CollectionError, SafeFetcher, _PinnedHTTPSConnection, _DeadlineReader
 from peps.sources import build_search_url, extract_text, parse_results
 
 
@@ -40,6 +43,7 @@ class SafeFetcherTests(unittest.TestCase):
         self.addCleanup(self.directory.cleanup)
         self.now = [1_800_000_000.0]
         self.fetcher = SafeFetcher({"cache_ttl_seconds": 0}, Path(self.directory.name))
+        self.addCleanup(self.fetcher.close)
         self.fetcher._clock = lambda: self.now[0]
         self.fetcher._dns = lambda *args, **kwargs: PUBLIC_DNS
         self.source = dict(id="test", kind="news", allowed_hosts=["news.example"], enabled=True,
@@ -316,6 +320,254 @@ class SafeFetcherTests(unittest.TestCase):
     def test_unsupported_binary_type(self):
         self.transport({self.url: [(200, {"content-type": "application/pdf"}, b"%PDF")]})
         self.assertEqual(self.fetcher.fetch(self.url, self.source)["status"], "error")
+
+    @staticmethod
+    def wire_connection(data, encoding="identity", length=True, peer="93.184.216.34"):
+        response, connection = Mock(), Mock()
+        response.status, response.will_close = 200, False
+        response.getheaders.return_value = [("Content-Type", "text/plain; charset=utf-8"),
+                                            ("Content-Encoding", encoding)]
+        if length:
+            response.getheaders.return_value.append(("Content-Length", str(len(data))))
+        stream = io.BytesIO(data)
+        response.read1.side_effect = stream.read
+        connection.getresponse.return_value = response
+        connection._peer_address = peer
+        return connection, response, stream
+
+    def test_compressed_responses_are_bounded_and_report_actual_wire_bytes(self):
+        body = "Información mexicana. ".encode() * 100
+        raw_deflate = zlib.compressobj(wbits=-15)
+        raw = raw_deflate.compress(body) + raw_deflate.flush()
+        for encoding, wire in (("gzip", gzip.compress(body)), ("deflate", zlib.compress(body)), ("deflate", raw)):
+            with self.subTest(encoding=encoding, length=len(wire)):
+                connection, _, _ = self.wire_connection(wire, encoding)
+                with patch("peps.collector._PinnedHTTPSConnection", return_value=connection):
+                    result = self.fetcher.fetch(self.url + "?n=" + str(len(wire)), self.source)
+                self.assertEqual(result["body"], body.decode())
+                self.assertEqual(result["wire_bytes"], len(wire))
+                self.assertEqual(result["decoded_bytes"], len(body))
+                self.assertEqual(result["network_requests"], 1)
+                self.assertTrue(result["request_attempted"])
+                self.fetcher._discard_connection(connection)
+                self.fetcher._local.pool.clear()
+
+    def test_decompression_bomb_reads_only_bounded_decoded_output(self):
+        wire = gzip.compress(b"x" * 1_000_000)
+        connection, _, _ = self.wire_connection(wire, "gzip")
+        with patch("peps.collector._PinnedHTTPSConnection", return_value=connection):
+            result = self.fetcher.fetch(self.url, dict(self.source, max_bytes=2000))
+        self.assertEqual(result["status"], "error")
+        self.assertIn("decoded limit", result["error"])
+        self.assertEqual(result["decoded_bytes"], 2001)
+        self.assertLess(result["wire_bytes"], 2000)
+        self.assertEqual(result["network_requests"], 1)
+        connection.close.assert_called_once()
+
+    def test_corrupt_and_truncated_compression_rejected(self):
+        good = gzip.compress(b"contenido " * 10)
+        for wire in (good[:-3], good[:-1] + bytes([good[-1] ^ 255]), good + b"trailing"):
+            with self.subTest(wire=wire):
+                connection, _, _ = self.wire_connection(wire, "gzip")
+                with patch("peps.collector._PinnedHTTPSConnection", return_value=connection):
+                    result = self.fetcher.fetch(self.url, self.source)
+                self.assertEqual(result["status"], "error")
+                self.assertEqual(result["network_requests"], 1)
+                self.assertEqual(result["body"], "")
+                connection.close.assert_called_once()
+
+    def test_wire_limit_independent_from_decoded_limit(self):
+        connection, _, stream = self.wire_connection(b"a" * 500, length=False)
+        with patch("peps.collector._PinnedHTTPSConnection", return_value=connection):
+            result = self.fetcher.fetch(self.url, dict(self.source, max_bytes=1000, max_wire_bytes=100))
+        self.assertEqual(result["status"], "error")
+        self.assertIn("wire limit", result["error"])
+        self.assertEqual(result["wire_bytes"], 101)
+        self.assertEqual(stream.tell(), 101)
+
+    def test_keepalive_reuses_connection_after_fresh_dns_validation(self):
+        connection, response, _ = self.wire_connection(b"one")
+        second_connection, second_response, _ = self.wire_connection(b"two")
+        connection.getresponse.side_effect = [response, second_response]
+        self.fetcher._dns = Mock(return_value=PUBLIC_DNS)
+        with patch("peps.collector._PinnedHTTPSConnection", return_value=connection) as factory:
+            first = self.fetcher.fetch(self.url, self.source)
+            second = self.fetcher.fetch(self.url + "2", self.source)
+        self.assertEqual((first["body"], second["body"]), ("one", "two"))
+        self.assertEqual(factory.call_count, 1)
+        self.assertEqual(self.fetcher._dns.call_count, 4)
+        connection.close.assert_not_called()
+        self.assertEqual(self.fetcher.metrics_snapshot()["reused_connections"], 1)
+        self.fetcher.close()
+        connection.close.assert_called_once()
+
+    def test_keepalive_rebinding_to_private_dns_is_denied(self):
+        connection, _, _ = self.wire_connection(b"one")
+        with patch("peps.collector._PinnedHTTPSConnection", return_value=connection):
+            self.assertEqual(self.fetcher.fetch(self.url, self.source)["status"], "ok")
+            private = [(socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_TCP, "", ("127.0.0.1", 443))]
+            self.fetcher._dns = Mock(side_effect=[PUBLIC_DNS, private])
+            result = self.fetcher.fetch(self.url + "2", self.source)
+        self.assertEqual(result["status"], "error")
+        self.assertEqual(result["network_requests"], 0)
+        self.assertEqual(connection.request.call_count, 1)
+        self.assertEqual(self.fetcher._dns.call_count, 2)
+
+    def test_real_http_parser_keeps_one_socket_for_two_responses(self):
+        class KeepaliveWire:
+            def __init__(self):
+                self.stream = io.BytesIO()
+                self.requests = 0
+                self.closed = False
+            def settimeout(self, _):
+                pass
+            def recv_into(self, buffer):
+                value = self.stream.read(len(buffer))
+                buffer[:len(value)] = value
+                return len(value)
+            def sendall(self, data):
+                self.requests += 1
+                self.stream = io.BytesIO(b"HTTP/1.1 200 OK\r\nContent-Length: 5\r\nContent-Type: text/plain\r\n\r\nhello")
+            def close(self):
+                self.closed = True
+        wire = KeepaliveWire()
+        connection = http.client.HTTPSConnection("news.example")
+        connection.sock, connection._peer_address = wire, "93.184.216.34"
+        with patch("peps.collector._PinnedHTTPSConnection", return_value=connection) as factory:
+            first = self.fetcher.fetch(self.url, self.source)
+            second = self.fetcher.fetch(self.url + "2", self.source)
+        self.assertEqual((first["body"], second["body"]), ("hello", "hello"))
+        self.assertEqual(wire.requests, 2)
+        self.assertEqual(factory.call_count, 1)
+        self.assertFalse(wire.closed)
+        self.assertEqual(self.fetcher.metrics_snapshot()["reused_connections"], 1)
+        self.fetcher.close()
+        self.assertTrue(wire.closed)
+
+    def test_keepalive_changed_public_dns_closes_old_socket(self):
+        first, _, _ = self.wire_connection(b"one")
+        second, _, _ = self.wire_connection(b"two", peer="93.184.216.35")
+        with patch("peps.collector._PinnedHTTPSConnection", side_effect=[first, second]) as factory:
+            self.fetcher.fetch(self.url, self.source)
+            self.fetcher._dns = lambda *_, **__: [(socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_TCP, "", ("93.184.216.35", 443))]
+            result = self.fetcher.fetch(self.url + "2", self.source)
+        self.assertEqual(result["body"], "two")
+        self.assertEqual(factory.call_count, 2)
+        first.close.assert_called_once()
+        self.assertEqual(self.fetcher.metrics_snapshot()["reused_connections"], 0)
+
+    def test_warm_cache_counts_zero_http_and_persisted_metrics_survive_restart(self):
+        transport = self.transport({self.url: [(200, {}, b"cached")]})
+        source = dict(self.source, cache_ttl_seconds=10)
+        first = self.fetcher.fetch(self.url, source)
+        warm = self.fetcher.fetch(self.url, source)
+        self.assertEqual((first["network_requests"], warm["network_requests"]), (1, 0))
+        self.assertEqual((warm["wire_bytes"], warm["decoded_bytes"]), (0, 0))
+        self.assertFalse(warm["request_attempted"])
+        self.assertEqual(warm["cache_status"], "fresh")
+        other = SafeFetcher({}, Path(self.directory.name))
+        self.addCleanup(other.close)
+        metrics = other.metrics_snapshot()
+        self.assertEqual(metrics["network_requests"], len(transport.calls))
+        self.assertEqual(metrics["wire_bytes"], 6)
+        self.assertEqual(metrics["cache_hits"], 1)
+        self.assertEqual(metrics["status_counts"], {"200": 1})
+
+    def test_robots_and_courtesy_deferrals_have_distinct_request_counts(self):
+        self.source.update(robots_required=True, min_interval_seconds=5)
+        transport = self.transport({"https://news.example/robots.txt": [(404, {}, b"")], self.url: [(200, {}, b"body")]})
+        deferred = self.fetcher.fetch(self.url, self.source)
+        self.assertEqual(deferred["status"], "deferred")
+        self.assertEqual(deferred["network_requests"], 1)
+        again = self.fetcher.fetch(self.url, self.source)
+        self.assertEqual(again["network_requests"], 0)
+        self.now[0] += 5
+        self.assertEqual(self.fetcher.fetch(self.url, self.source)["network_requests"], 1)
+        metrics = self.fetcher.metrics_snapshot()
+        self.assertEqual(metrics["network_requests"], 2)
+        self.assertEqual(metrics["by_kind"]["robots"]["network_requests"], 1)
+        self.assertEqual(metrics["by_kind"]["content"]["network_requests"], 1)
+        self.assertEqual(metrics["status_counts"], {"200": 1, "404": 1})
+        self.assertEqual(len(transport.calls), 2)
+
+    def test_robots_refresh_is_coalesced_across_fetchers(self):
+        self.source["robots_required"] = True
+        entered, release = threading.Event(), threading.Event()
+        calls = []
+        def transport(url, *_):
+            calls.append(url)
+            if url.endswith("robots.txt"):
+                entered.set()
+                self.assertTrue(release.wait(3))
+                return 200, {}, b"User-agent: *\nDisallow: /article\n"
+            raise AssertionError("Article was forbidden")
+        self.fetcher._transport = transport
+        other = SafeFetcher({}, Path(self.directory.name))
+        self.addCleanup(other.close)
+        other._clock, other._dns, other._transport = self.fetcher._clock, self.fetcher._dns, transport
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            pending = pool.submit(self.fetcher.fetch, self.url, self.source)
+            self.assertTrue(entered.wait(3))
+            concurrent = other.fetch(self.url, self.source)
+            release.set()
+            first = pending.result()
+        self.assertEqual(concurrent["error_code"], "robots_pending")
+        self.assertEqual(concurrent["network_requests"], 0)
+        self.assertEqual(first["status"], "robots_denied")
+        self.assertEqual(len(calls), 1)
+
+    def test_cache_directives_prevent_false_freshness(self):
+        source = dict(self.source, cache_ttl_seconds=100)
+        self.transport({self.url: [(200, {"cache-control": "max-age=8", "age": "5", "etag": '"v1"'}, b"old"),
+                                   (304, {}, b""), (200, {"cache-control": "no-store"}, b"new"),
+                                   (200, {}, b"newer")]})
+        self.fetcher.fetch(self.url, source)
+        self.now[0] += 2
+        self.assertEqual(self.fetcher.fetch(self.url, source)["cache_status"], "fresh")
+        self.now[0] += 2
+        self.assertEqual(self.fetcher.fetch(self.url, source)["cache_status"], "revalidated")
+        self.now[0] += 9
+        self.assertEqual(self.fetcher.fetch(self.url, source)["body"], "new")
+        self.assertEqual(self.fetcher.fetch(self.url, source)["body"], "newer")
+
+    def test_no_cache_directive_survives_304(self):
+        source = dict(self.source, cache_ttl_seconds=100)
+        transport = self.transport({self.url: [(200, {"cache-control": "no-cache", "etag": '"v1"'}, b"old"), (304, {}, b""), (304, {}, b"")]})
+        for _ in range(3):
+            self.fetcher.fetch(self.url, source)
+        self.assertEqual(len(transport.calls), 3)
+
+    def test_closed_fetcher_performs_no_request(self):
+        self.fetcher.close()
+        transport = self.transport({})
+        result = self.fetcher.fetch(self.url, self.source)
+        self.assertEqual(result["status"], "error")
+        self.assertFalse(result["request_attempted"])
+        self.assertEqual(transport.calls, [])
+
+    def test_transport_budget_rejection_before_http_does_not_invent_download(self):
+        self.fetcher._transport = Mock(side_effect=CollectionError("Fixture request cap reached"))
+        result = self.fetcher.fetch(self.url, self.source)
+        self.assertEqual(result["status"], "error")
+        self.assertEqual(result["network_requests"], 0)
+        self.assertFalse(result["request_attempted"])
+        self.assertEqual(self.fetcher.metrics_snapshot()["network_requests"], 0)
+
+    def test_sqlite_connections_are_reused_per_thread_and_closed_explicitly(self):
+        with self.fetcher._db() as first:
+            first_id = id(first)
+        with self.fetcher._db() as second:
+            self.assertEqual(first_id, id(second))
+        def in_worker():
+            with self.fetcher._db() as worker:
+                return id(worker)
+        with ThreadPoolExecutor(1) as pool:
+            worker_id = pool.submit(in_worker).result()
+        self.assertNotEqual(first_id, worker_id)
+        self.fetcher.close()
+        with self.assertRaises(Exception):
+            first.execute('SELECT 1')
+        self.assertEqual(self.fetcher.metrics_snapshot()["network_requests"], 0)
 
 
 class SourceAdapterTests(unittest.TestCase):
