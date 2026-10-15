@@ -5,6 +5,7 @@ import tempfile
 import threading
 import time
 import unittest
+from unittest.mock import patch
 
 from peps.app import create_server
 from peps.engine import Engine
@@ -99,7 +100,7 @@ class ReviewedImportAPITests(unittest.TestCase):
             self.assertEqual(400, self.request(path, ['not', 'an', 'object'])[0])
         self.assertEqual(404, self.request('/api/import-status?id=missing')[0])
 
-    def test_csv_requires_reviewed_mapping_then_imports_and_opens_real_explanation(self):
+    def test_csv_requires_reviewed_mapping_then_saves_without_implicit_analysis(self):
         _, initial = self.preview(mapping=None)
         self.assertFalse(initial['ready'])
         self.assertEqual(3, len(initial['columns']))
@@ -111,18 +112,21 @@ class ReviewedImportAPITests(unittest.TestCase):
         operation_id = self.confirm(payload, preview)
         result = self.wait_result(operation_id)
         self.assertEqual('completed', result['status'], result)
+        self.assertEqual('not_started', result['result']['scoring_status'])
         self.assertEqual(2, self.engine.store.stats()['entities'])
+        self.assertEqual(0, self.engine.store.stats()['scores'])
         saved = {e['name']: e for e in self.engine.store.iter_entities()}
         self.assertEqual('company', saved['Empresa Sintética Aurora']['kind'])
         self.assertEqual('Puebla', saved['Empresa Sintética Aurora']['context']['city'])
         entity_id = saved['Persona Sintética Luna']['id']
-        code, explanation, _ = self.request('/api/explanation?id=' + entity_id)
-        self.assertEqual(200, code, explanation)
-        self.assertEqual(0, explanation['result']['score'])
-        self.assertEqual([], explanation['explanation']['factors'])
+        with patch.object(self.engine, 'rescore') as scorer:
+            code, explanation, _ = self.request('/api/explanation?id=' + entity_id)
+            self.assertEqual(409, code, explanation)
+            scorer.assert_not_called()
+        self.assertEqual(0, self.engine.store.stats()['scores'])
         self.assertTrue(self.engine.store.verify_audit()['ok'])
 
-    def test_single_name_requires_explicit_kind_and_gets_auditable_score(self):
+    def test_single_name_requires_explicit_kind_and_waits_for_explicit_analysis(self):
         code, value, _ = self.request('/api/import-preview', {'mode': 'single', 'entity': {'name': 'Persona Sintética Cielo'}})
         self.assertIn(code, (200, 400), value)
         if code == 200:
@@ -134,31 +138,72 @@ class ReviewedImportAPITests(unittest.TestCase):
         self.assertTrue(preview['ready'], preview)
         result = self.wait_result(self.confirm(payload, preview))
         self.assertEqual('completed', result['status'], result)
+        self.assertEqual('not_started', result['result']['scoring_status'])
         entity = next(self.engine.store.iter_entities())
         self.assertEqual('Persona Sintética Cielo', entity['name'])
         self.assertEqual(['Cielo de prueba'], entity['aliases'])
         self.assertEqual('Toluca', entity['context']['city'])
         self.assertEqual('Docente', entity['context']['role'])
-        self.assertEqual(200, self.request('/api/explanation?id=' + entity['id'])[0])
+        self.assertEqual(409, self.request('/api/explanation?id=' + entity['id'])[0])
+        self.assertEqual(0, self.engine.store.stats()['scores'])
 
-    def test_scoring_error_reports_saved_entities_and_allows_local_retry(self):
+    def test_import_defers_analysis_without_invoking_the_scorer(self):
         payload, preview = self.preview()
-        real_rescore = self.engine.rescore
-        def unavailable_scoring(*_):
-            raise ValueError('Synthetic scorer failure')
-        self.engine.rescore = unavailable_scoring
-        try:
+        with patch.object(self.engine, 'rescore', side_effect=AssertionError('Import must not calculate scores')) as scorer:
             receipt = self.wait_result(self.confirm(payload, preview))
-        finally:
-            self.engine.rescore = real_rescore
+            scorer.assert_not_called()
         self.assertEqual('completed', receipt['status'], receipt)
-        self.assertEqual('pending', receipt['result']['scoring_status'])
+        self.assertEqual('not_started', receipt['result']['scoring_status'])
+        self.assertNotIn('scoring_error', receipt['result'])
         self.assertEqual(2, self.engine.store.stats()['entities'])
-        self.assertIn('guardaron', receipt['result']['scoring_error'])
+        self.assertEqual(0, self.engine.store.stats()['scores'])
+        for entity in self.engine.store.iter_entities():
+            self.assertEqual([], self.engine.store.score_history(entity['id']))
+
+    def test_saved_bank_unlocks_results_only_after_explicit_local_analysis(self):
+        payload, preview = self.preview()
+        receipt = self.wait_result(self.confirm(payload, preview))
+        self.assertEqual('completed', receipt['status'], receipt)
+        self.assertEqual('not_started', receipt['result']['scoring_status'])
+        code, workflow, _ = self.request('/api/workflow')
+        self.assertEqual(200, code, workflow)
+        self.assertEqual('sources', workflow['recommended_step'])
+        self.assertFalse(workflow['analysis_current'])
+        self.assertFalse(workflow['actions']['view_results']['enabled'])
+        self.assertFalse(workflow['actions']['export']['enabled'])
+        self.assertEqual(0, self.engine.store.stats()['scores'])
+
+        code, workflow, _ = self.request('/api/workflow-mode', {'mode': 'local'})
+        self.assertEqual(200, code, workflow)
+        self.assertFalse(workflow['actions']['analyze']['enabled'])
+        code, workflow, _ = self.request('/api/workflow-confirm-sources', {})
+        self.assertEqual(200, code, workflow)
+        self.assertEqual('analysis', workflow['recommended_step'])
+        code, started, _ = self.request('/api/workflow-analyze', {})
+        self.assertEqual(200, code, started)
+        self.assertTrue(started['operation_id'])
+        deadline = time.monotonic() + 10
+        while time.monotonic() < deadline:
+            code, status, _ = self.request('/api/stats')
+            self.assertEqual(200, code, status)
+            if not status['operation']['busy']:
+                break
+            threading.Event().wait(.01)
+        else:
+            self.fail('El análisis local no terminó dentro de 10 segundos')
+        self.assertEqual('completed', status['operation']['status'], status)
+        self.assertEqual(2, status['scores'])
+        self.assertTrue(status['workflow']['analysis_current'])
+        self.assertTrue(status['workflow']['actions']['view_results']['enabled'])
+        self.assertTrue(status['workflow']['actions']['export']['enabled'])
+        self.assertTrue(status['workflow']['coverage']['insufficient_documents'])
+        self.assertFalse(self.engine.online)
         for entity in self.engine.store.iter_entities():
             code, explanation, _ = self.request('/api/explanation?id=' + entity['id'])
             self.assertEqual(200, code, explanation)
             self.assertEqual(0, explanation['result']['score'])
+            self.assertEqual([], explanation['explanation']['factors'])
+        self.assertTrue(self.engine.store.verify_audit()['ok'])
 
     def test_confirmation_without_preview_or_with_modified_content_is_rejected(self):
         payload, preview = self.preview()
@@ -178,14 +223,15 @@ class ReviewedImportAPITests(unittest.TestCase):
         operation_id = self.confirm(payload, preview)
         first = self.wait_result(operation_id)
         self.assertEqual('completed', first['status'], first)
-        before = {e['id']: self.engine.explanation(e['id'])['run']['id'] for e in self.engine.store.iter_entities()}
+        before = {e['id']: self.engine.store.score_history(e['id']) for e in self.engine.store.iter_entities()}
+        self.assertTrue(all(history == [] for history in before.values()))
         code, second, _ = self.request('/api/import-confirm', dict(payload, preview_hash=preview['preview_hash']))
         self.assertIn(code, (200, 202, 409), second)
         if code in (200, 202):
             self.assertEqual(operation_id, second['operation_id'])
             self.wait_result(second['operation_id'])
         self.assertEqual(2, self.engine.store.stats()['entities'])
-        after = {e['id']: self.engine.explanation(e['id'])['run']['id'] for e in self.engine.store.iter_entities()}
+        after = {e['id']: self.engine.store.score_history(e['id']) for e in self.engine.store.iter_entities()}
         self.assertEqual(before, after)
 
     def test_irregular_duplicate_blank_columns_quoted_lines_and_user_type_values(self):

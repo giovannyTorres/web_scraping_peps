@@ -66,6 +66,7 @@ window.pepsImport = (() => {
     if (!state.operation) $('csv-status').hidden = true;
   }
   function updateButtons() {
+    if(window.pepsWorkflow?.busy()){for(const id of ['csv-read','csv-validate','csv-confirm','single-save'])$(id).disabled=true;return;}
     $('csv-read').disabled = state.reading || state.singleBusy || !!state.operation;
     $('csv-validate').disabled = state.reading || state.singleBusy || !!state.operation || !state.columns || !$('csv-mapping-reviewed').checked;
     $('csv-confirm').disabled = state.singleBusy || !!state.operation || !state.preview?.ready || !state.preview?.preview_hash || !$('csv-confirm-reviewed').checked || Number(state.preview.counts?.accepted || 0) < 1;
@@ -293,32 +294,15 @@ window.pepsImport = (() => {
     const box = showStatus(channel, imported ? `${imported === 1 ? 'Se guardó 1 entidad' : `Se guardaron ${imported.toLocaleString('es-MX')} entidades`} en tu banco.` : 'La revisión terminó. Las entidades existentes se conservaron sin cambios.');
     box.classList.add('import-success');
     if (counts.skipped || counts.duplicates || counts.unchanged || counts.invalid) box.append(node('p', `Conservadas sin cambios: ${counts.unchanged || 0} · Duplicadas: ${counts.duplicates || 0} · Filas con errores: ${counts.invalid || 0}${counts.invalid_skipped ? ' (omitidas)' : ''} · Omitidas por ID existente: ${counts.skipped || 0}.`, 'muted'));
-    box.append(node('p', result.scoring_status === 'pending' ? `Las entidades están guardadas. El score sigue pendiente${result.scoring_error ? ': ' + result.scoring_error : '; puedes actualizarlo desde el banco'}.` : 'El expediente permite consultar el score, su evidencia y «¿Por qué obtuvo este score?».', 'muted'));
+    box.append(node('p', 'La información está guardada. Ahora prepara las fuentes; el análisis y el score se calculan después.', 'muted'));
     const actions = node('div', undefined, 'actions');
-    const bank = node('button', 'Ir al banco'); bank.type = 'button'; bank.onclick = async () => { try { await (hooks.openBank ? hooks.openBank() : hooks.switchTab('bank')); } catch (error) { inform(error.message, true); } }; actions.append(bank);
-    const samples = result.sample_entities || [];
-    const first = samples[0];
-    if (first) {
-      const consult = node('button', channel === 'single' ? 'Consultar expediente' : 'Consultar primera entidad', 'primary'); consult.type = 'button';
-      consult.onclick = () => openEntity(first); actions.append(consult);
-    }
-    box.append(actions);
-    if (samples.length > 1) {
-      const details = node('details'); details.append(node('summary', 'Consultar entidades de esta importación'));
-      const links = node('div', undefined, 'import-entity-links');
-      for (const entity of samples) {
-        const button = node('button', entity.name, 'text-button'); button.type = 'button';
-        button.onclick = () => openEntity(entity); links.append(button);
-      }
-      details.append(links); box.append(details);
-    }
+    const next = node('button', 'Continuar con las fuentes', 'primary'); next.type = 'button';
+    next.onclick = async () => { try { await hooks.onImported(); } catch (error) { inform(error.message, true); } };
+    actions.append(next); box.append(actions);
     box.append(node('p', `Comprobante local · Operación ${data.id || data.operation_id || 'completada'}`, 'muted'));
-    try { await hooks.refresh(); } catch { inform('La importación terminó. Actualiza el banco para cargar sus resultados.', true); }
-    inform(imported ? `Importación terminada: ${imported === 1 ? '1 entidad guardada' : `${imported} entidades guardadas`}.` : 'Importación terminada: se conservaron las coincidencias existentes.');
-    if (channel === 'single' && first) {
-      $('single-form').reset(); state.singleRevision++;
-      await openEntity(first);
-    }
+    inform(imported ? `Información guardada: ${imported === 1 ? '1 entidad' : `${imported} entidades`}. Continúa con las fuentes.` : 'Se conservaron las coincidencias existentes. Continúa con las fuentes.');
+    if (channel === 'single') { $('single-form').reset(); state.singleRevision++; }
+    try { await hooks.onImported(); } catch { inform('La información está guardada. Abre el paso «Preparar fuentes» para continuar.', true); }
   }
   async function watchOperation(id, channel) {
     let errors = 0;
@@ -334,7 +318,7 @@ window.pepsImport = (() => {
           if (data.retry_preview) box.append(node('p', 'El banco o la lista cambiaron. No se guardó una importación con una vista previa vencida; vuelve a validar los datos.', 'muted'));
           inform(data.error || 'La importación no se completó.', true); return;
         }
-        showStatus(channel, data.phase === 'scoring' ? 'Nombres guardados. Preparando el score y sus explicaciones locales…' : data.status === 'queued' ? 'Importación en espera. Puedes seguir consultando el banco.' : 'Guardando las entidades y su trazabilidad…');
+        showStatus(channel, data.phase === 'scoring' ? 'Información guardada. Preparando los siguientes pasos…' : data.status === 'queued' ? 'Importación en espera. Puedes seguir consultando el banco.' : 'Guardando las entidades y su trazabilidad…');
       } catch (error) {
         if (error.status === 404) {
           unlockOperation(); state.preview = null;
@@ -383,15 +367,14 @@ window.pepsImport = (() => {
     showStatus('single', 'Revisando el nombre y los datos de identidad…');
     try {
       const data = await hooks.api('import-preview', payload);
-      if (revision !== state.singleRevision) { showStatus('single', 'El formulario cambió mientras se revisaba. Comprueba tus datos y pulsa «Guardar y consultar» de nuevo.'); return; }
+      if (revision !== state.singleRevision) { showStatus('single', 'El formulario cambió mientras se revisaba. Comprueba tus datos y pulsa «Guardar y continuar» de nuevo.'); return; }
       if (!data.ready) {
         const box = showStatus('single', 'Revisa los datos antes de guardar.', true);
         box.append(warningList(data.errors?.map(error => error.message || error) || data.warnings || ['El nombre o su tipo requieren revisión.'])); return;
       }
       if (!Number(data.counts?.accepted || 0)) {
         const box = showStatus('single', 'Esta entidad ya existe. Sus datos se conservaron sin cambios.');
-        const existing = data.rows?.find(row => row.entity)?.entity;
-        if (existing) { const button = node('button', 'Consultar entidad existente', 'primary'); button.type = 'button'; button.onclick = () => openEntity(existing); box.append(button); }
+        const button = node('button', 'Continuar con las fuentes', 'primary'); button.type = 'button'; button.onclick = () => hooks.onImported().catch(error => inform(error.message, true)); box.append(button);
         return;
       }
       await commit({...payload, preview_hash: data.preview_hash}, 'single');
@@ -423,5 +406,5 @@ window.pepsImport = (() => {
     };
     setStep(1); updateButtons();
   }
-  return {init, open};
+  return {init, open, syncButtons:updateButtons};
 })();

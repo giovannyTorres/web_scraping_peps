@@ -21,6 +21,8 @@ root=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(root))
 from peps.engine import Engine
 from peps.app import create_server
+from peps.news import NewsAcquirer
+from peps.workflow import GuidedWorkflow
 
 parser=argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--browser-path',default=shutil.which('chromium') or shutil.which('chromium-browser'))
@@ -43,6 +45,10 @@ with tempfile.TemporaryDirectory() as tmp:
     ])
     engine.import_documents([{'url':f'https://fixture.invalid/bulk-{i}','title':f'Nota incidental sintética {i}','source_kind':'official','entity_ids':['aurora'],'text':f'Comunicado sintético número {i}, sin mención nominal de la entidad.','published_at':now} for i in range(205)])
     engine.rescore()
+    workflow=GuidedWorkflow(engine.store,sources_provider=NewsAcquirer(engine).sources)
+    workflow.set_mode('local')
+    workflow.confirm_sources()
+    workflow.mark_analysis()
     server,token=create_server(engine)
     thread=threading.Thread(target=server.serve_forever,daemon=True);thread.start()
     address=f'http://127.0.0.1:{server.server_port}'
@@ -116,6 +122,7 @@ with tempfile.TemporaryDirectory() as tmp:
         stale_id=stale_note.get_attribute('data-evidence-id')
         engine.store.review(stale_id,'pending','other-session','Cambio sintético desde otra sesión.')
         engine.explanation('aurora')
+        workflow.mark_analysis()
         stale_note.get_by_label('Estado de revisión',exact=True).select_option('rejected')
         stale_note.get_by_label('Revisor',exact=True).fill('stale-ui-reviewer')
         stale_note.get_by_label('Motivo y comprobación de identidad',exact=True).fill('Esta revisión obsoleta no debe persistirse.')
@@ -159,15 +166,15 @@ with tempfile.TemporaryDirectory() as tmp:
         assert engine.store.evidence('identity')[0]['review']['identity_spans']==[]
         assert page.locator('.score-number strong').inner_text()=='0'
         results['checks']['explicit_empty_identity_selection_stays_unchecked_after_save']=True
-        original_explanation=engine.explanation
-        def delayed_explanation(entity_id,run_id=None):
+        original_latest_score_run=engine.store.latest_score_run
+        def delayed_latest_score_run(entity_id):
             if entity_id=='low':time.sleep(.25)
-            return original_explanation(entity_id,run_id)
-        engine.explanation=delayed_explanation
+            return original_latest_score_run(entity_id)
+        engine.store.latest_score_run=delayed_latest_score_run
         page.evaluate("Promise.all([showDetail({id:'low',name:'Serena'}),showDetail({id:'emoji',name:'Águila'})])")
         assert page.locator('#detail>h2').inner_text()=='Empresa Sintética Águila'
         results['checks']['entity_selection_race_does_not_replace_latest']=True
-        engine.explanation=original_explanation
+        engine.store.latest_score_run=original_latest_score_run
         page.get_by_role('row',name='Consultar Entidad Sintética Aurora').click()
         page.get_by_role('heading',name='¿Por qué obtuvo este score?').wait_for()
         page.set_viewport_size({'width':390,'height':844})

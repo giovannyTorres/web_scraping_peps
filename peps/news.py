@@ -500,9 +500,23 @@ class NewsAcquirer:
         self.store.finish(job)
 
     def acquire(self, workers=4, seconds=120, max_articles=1000, download_all=False, queue=True,
-                window=None, start=None, end=None):
+                window=None, start=None, end=None, *, progress=None, reset_stop=True):
+        from .engine import _emit_progress, _job_progress
         if not self.engine.online:
+            _emit_progress(progress, 'download', 0, None, 'tareas', 'Comprobando el modo de descarga.', event='start')
+            _emit_progress(progress, 'download', 0, None, 'tareas', 'La descarga está desactivada.',
+                           event='finish', offline=True)
             return {'status': 'offline', 'processed': 0}
+        if reset_stop:
+            self.engine.stop_event.clear()
+        if self.engine.stop_event.is_set():
+            summary = _job_progress(self.store, 'news_')
+            _emit_progress(progress, 'download', 0, None, 'tareas', 'Iniciando el lote de noticias.',
+                           event='start', processed=0, **summary)
+            _emit_progress(progress, 'download', 0, None, 'tareas', 'Lote detenido antes de iniciar.',
+                           event='finish', processed=0, cancelled=True, **summary)
+            return dict(status='ok', processed=0, completed=0, cancelled=True, queued=None,
+                        elapsed_seconds=0.0, network_before={}, network_after={}, bank=self.stats(), **summary)
         from .collector import SafeFetcher
         from .identity import IdentityResolver
         resolver = IdentityResolver(self.store.iter_entities())
@@ -510,8 +524,16 @@ class NewsAcquirer:
         config = dict(self.engine.config(), **{k: v for k, v in self.config().items() if k != 'sources'})
         fetcher = SafeFetcher(config, self.engine.data_dir, offline=False)
         before = fetcher.metrics_snapshot() if hasattr(fetcher, 'metrics_snapshot') else {}
-        self.engine.stop_event.clear()
-        deadline, counter, lock = time.monotonic() + seconds, [0], threading.Lock()
+        deadline, counter, completed, lock = time.monotonic() + seconds, [0], [0], threading.Lock()
+        in_flight = set()
+        def download_total(summary):
+            # Feed/query results can still create work. Backoff includes mandatory
+            # waiting time that a throughput-only ETA cannot represent honestly.
+            if summary['discovery_pending'] or summary['deferred']:
+                return None
+            return completed[0] + summary['pending'] + summary['failed'] + summary['unreported_completed']
+        _emit_progress(progress, 'download', 0, None, 'tareas', 'Iniciando el lote de noticias.',
+                       event='start', processed=0, **_job_progress(self.store, 'news_'))
         def work():
             while not self.engine.stop_event.is_set() and time.monotonic() < deadline:
                 with lock:
@@ -520,6 +542,7 @@ class NewsAcquirer:
                     job = self.store.claim(lease_seconds=300, kind_prefix='news_')
                     if job:
                         counter[0] += 1
+                        in_flight.add(job['id'])
                 if not job:
                     due = self.store.next_due(kind_prefix='news_')
                     if due is None or due > time.time() + max(0, deadline - time.monotonic()):
@@ -540,6 +563,18 @@ class NewsAcquirer:
                 finally:
                     lease_stop.set()
                     heartbeat.join(timeout=1)
+                with self.store.connection() as con:
+                    state = con.execute('SELECT status,owner FROM jobs WHERE id=?', (job['id'],)).fetchone()
+                with lock:
+                    if state and state['status'] == 'done' and state['owner'] == job['owner']:
+                        completed[0] += 1
+                    in_flight.discard(job['id'])
+                    if progress is not None:
+                        summary = _job_progress(self.store, 'news_', unreported_ids=in_flight)
+                        _emit_progress(progress, 'download', completed[0], download_total(summary), 'tareas',
+                                       f"Tarea {state['status'] if state else 'desconocida'}; {completed[0]} completadas.",
+                                       processed=counter[0], job_id=job['id'], job_status=state['status'] if state else None,
+                                       **summary)
         started = time.monotonic()
         try:
             # Keep one idle reader connection open during the batch. Otherwise
@@ -552,11 +587,19 @@ class NewsAcquirer:
         finally:
             if hasattr(fetcher, 'close'):
                 fetcher.close()
-        return {'status': 'ok', 'processed': counter[0], 'queued': queued,
+        summary = _job_progress(self.store, 'news_')
+        cancelled = self.engine.stop_event.is_set()
+        total = download_total(summary)
+        _emit_progress(progress, 'download', completed[0], total, 'tareas',
+                       f"Lote {'detenido' if cancelled else 'finalizado'}; {summary['pending']} tareas pendientes.",
+                       event='finish', processed=counter[0], cancelled=cancelled, **summary)
+        return {'status': 'ok', 'processed': counter[0], 'completed': completed[0], 'total': total, 'cancelled': cancelled,
+                **summary, 'queued': queued,
                 'elapsed_seconds': round(time.monotonic() - started, 4),
                 'network_before': before, 'network_after': after, 'bank': self.stats()}
 
-    def attribute(self, limit=1000, force=False):
+    def attribute(self, limit=1000, force=False, *, progress=None, rescore=True, cancelable=False):
+        from .engine import _emit_progress
         from .identity import IdentityResolver, entity_for_analysis, MODEL_VERSION, RULES_HASH
         from .nlp import analyze
         with self.store.connection() as con:
@@ -568,8 +611,15 @@ class NewsAcquirer:
         resolver = IdentityResolver(entities)
         by_id = {e['id']: e for e in entities}
         bank_signature = digest(canonical([entities, MODEL_VERSION, RULES_HASH]))
+        with self.store.connection() as con:
+            available = con.execute('SELECT count(*) FROM news_articles WHERE '
+                                    '(? OR attributed_signature IS NULL OR attributed_signature!=?)',
+                                    (int(force), bank_signature)).fetchone()[0]
+        total = available if limit is None else min(available, max(1, int(limit)))
+        _emit_progress(progress, 'attribution', 0, total, 'artículos', 'Iniciando la atribución de identidad.',
+                       event='start', pending=available)
         def pending_rows():
-            last_id, remaining = '', max(1, int(limit))
+            last_id, remaining = '', total
             while remaining > 0:
                 with self.store.connection() as con:
                     rows = con.execute('SELECT n.*,d.text,d.content_hash FROM news_articles n LEFT JOIN documents d ON d.id=n.document_id '
@@ -582,16 +632,23 @@ class NewsAcquirer:
                 last_id = rows[-1]['id']
         counts, affected, seen_docs, processed = Counter(), set(), set(), 0
         for row in pending_rows():
-            processed += 1
+            if cancelable and self.engine.stop_event.is_set():
+                break
             if row['document_id'] in seen_docs:
                 with self.store.connection() as con:
                     con.execute('UPDATE news_articles SET attributed_signature=? WHERE id=?', (bank_signature, row['id']))
+                processed += 1
+                _emit_progress(progress, 'attribution', processed, total, 'artículos',
+                               f'{processed} de {total} artículos atribuidos.', article_id=row['id'])
                 continue
             text = row['text'] if row['document_id'] else (row['title'] + '\n' + row['summary']).strip()
             if not text:
                 with self.store.connection() as con:
                     con.execute('UPDATE news_articles SET attributed_signature=? WHERE id=?', (bank_signature, row['id']))
                 counts['empty_text'] += 1
+                processed += 1
+                _emit_progress(progress, 'attribution', processed, total, 'artículos',
+                               f'{processed} de {total} artículos atribuidos.', article_id=row['id'])
                 continue
             resolutions = resolver.resolve(text, title=row['title'], metadata={'published_at': row['published_at']})
             doc_id = row['document_id']
@@ -638,9 +695,22 @@ class NewsAcquirer:
                     affected.add(entity['id'])
                 con.execute('UPDATE news_articles SET document_id=?,attributed_signature=? WHERE id=?', (doc_id, bank_signature, row['id']))
                 seen_docs.add(doc_id)
-        if affected:
-            self.engine.rescore(affected)
-        return {'articles_processed': processed, 'identity_links': dict(counts), 'entities_scored': len(affected),
+            processed += 1
+            _emit_progress(progress, 'attribution', processed, total, 'artículos',
+                           f'{processed} de {total} artículos atribuidos.', article_id=row['id'])
+        with self.store.connection() as con:
+            pending = (max(0, available - processed) if force else
+                       con.execute('SELECT count(*) FROM news_articles WHERE attributed_signature IS NULL OR attributed_signature!=?',
+                                   (bank_signature,)).fetchone()[0])
+        cancelled = bool(cancelable and self.engine.stop_event.is_set() and processed < total)
+        _emit_progress(progress, 'attribution', processed, total, 'artículos',
+                       'Atribución detenida.' if cancelled else f'Lote de atribución finalizado; {pending} artículos pendientes.',
+                       event='finish', pending=pending, cancelled=cancelled)
+        scored = 0
+        if affected and rescore and not (cancelable and self.engine.stop_event.is_set()):
+            scored = self.engine.rescore(affected, progress=progress, cancelable=cancelable)
+        return {'articles_processed': processed, 'identity_links': dict(counts), 'entities_scored': scored,
+                'entities_affected': len(affected), 'pending': pending, 'cancelled': cancelled,
                 'identity_module': MODEL_VERSION,
                 'name_only_is_not_unique_identity': True}
 
