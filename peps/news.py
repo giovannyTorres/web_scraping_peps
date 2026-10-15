@@ -9,6 +9,7 @@ from __future__ import annotations
 import gzip
 import hashlib
 import json
+import math
 import re
 import threading
 import time
@@ -17,6 +18,7 @@ import tempfile
 import unicodedata
 from collections import Counter
 from contextlib import nullcontext
+from copy import deepcopy
 from itertools import islice
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone, timedelta
@@ -175,6 +177,22 @@ class NewsAcquirer:
             default = Path(__file__).parent / 'defaults' / 'news_sources.json'
             config = json.loads(default.read_text(encoding='utf-8')) if default.exists() else {'sources': []}
             self.config_path.write_text(json.dumps(config, ensure_ascii=False, indent=2), encoding='utf-8')
+        else:
+            from .news_search import merge_source_defaults
+            default = Path(__file__).parent / 'defaults' / 'news_sources.json'
+            existing = json.loads(self.config_path.read_text(encoding='utf-8'))
+            merged = merge_source_defaults(existing, json.loads(default.read_text(encoding='utf-8')))
+            if merged != existing:
+                with tempfile.NamedTemporaryFile(mode='w', encoding='utf-8', dir=self.config_path.parent, delete=False) as output:
+                    temporary = Path(output.name)
+                    json.dump(merged, output, ensure_ascii=False, indent=2)
+                try:
+                    # Rebind before replacing the file: an interrupted replace
+                    # can be retried from the original catalogue on next start.
+                    self._migrate_disabled_catalogue(existing, merged)
+                    os.replace(temporary, self.config_path)
+                finally:
+                    temporary.unlink(missing_ok=True)
         with self.store.connection() as con:
             con.executescript('''
               CREATE TABLE IF NOT EXISTS news_articles(
@@ -203,6 +221,21 @@ class NewsAcquirer:
                 content_hash TEXT,retrieved_at TEXT NOT NULL);
             ''')
 
+    def _migrate_disabled_catalogue(self, previous, current):
+        """Preserve recorded scope only when the upgrade adds disabled sources."""
+        old_other = {key: value for key, value in previous.items() if key != 'sources'}
+        new_other = {key: value for key, value in current.items() if key != 'sources'}
+        if 'search' not in old_other:
+            new_other.pop('search', None)  # A future default is not a recorded historical period.
+        if old_other != new_other:
+            return False
+        with self.store.connection() as con:
+            if not con.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='workflow_state'").fetchone():
+                return False
+        from .workflow import GuidedWorkflow
+        workflow = GuidedWorkflow(self.store, lambda: deepcopy(current['sources']))
+        return workflow.migrate_disabled_catalogue(previous['sources'], current['sources'])
+
     def config(self):
         value = json.loads(self.config_path.read_text(encoding='utf-8'))
         if not isinstance(value, dict) or not isinstance(value.get('sources'), list):
@@ -211,6 +244,33 @@ class NewsAcquirer:
 
     def sources(self):
         return self.config()['sources']
+
+    def search_config(self):
+        from .news_search import normalize_search_config
+        return normalize_search_config(self.config().get('search'))
+
+    def set_search_config(self, settings):
+        from .news_search import normalize_search_config
+        if not isinstance(settings, dict):
+            raise ValueError('La búsqueda requiere un objeto de configuración')
+        config = self.config()
+        current = self.search_config()
+        config['search'] = normalize_search_config({**current, **settings})
+        if config['search'] == current:
+            return current
+        with tempfile.NamedTemporaryFile(mode='w', encoding='utf-8', dir=self.config_path.parent, delete=False) as output:
+            temporary = Path(output.name)
+            json.dump(config, output, ensure_ascii=False, indent=2)
+        try:
+            os.replace(temporary, self.config_path)
+        finally:
+            temporary.unlink(missing_ok=True)
+        self.store.audit('news_search_configured', {'config_hash': digest(canonical(config['search']))})
+        return config['search']
+
+    def search_plan(self):
+        from .news_search import build_search_plan, summarize_plan
+        return summarize_plan(build_search_plan(self.store.iter_entities(), self.sources(), self.search_config()))
 
     def set_source(self, source_id, enabled, terms_approved, download_articles=False, body_terms_approved=False):
         config = self.config()
@@ -223,54 +283,38 @@ class NewsAcquirer:
         self.store.audit('news_source_configured', {'id': source_id, 'config_hash': digest(canonical(source))})
 
     def queue(self, window=None, start=None, end=None):
+        from .news_search import build_search_plan, summarize_plan
         window = window or now()[:10]
-        queued, query_count = 0, 0
-        for source in self.sources():
-            if not source.get('enabled') or not source.get('terms_approved'):
-                continue
-            kind = source.get('kind')
-            if kind in ('rss', 'atom'):
-                urls = source.get('urls') or [source.get('url') or source.get('base_url')]
-                for url in urls:
-                    if not url:
-                        continue
-                    self.store.enqueue('news_feed', {'source_id': source['id'], 'url': url, 'window': window},
-                                       key='news_feed:' + source['id'] + ':' + str(url) + ':' + window)
-                    queued += 1
-            elif kind == 'gdelt':
-                query_start, query_end = start, end
-                if not query_start and not query_end:
-                    anchor_key = 'news_window:' + source['id'] + ':' + window
-                    with self.store.connection() as con:
-                        previous = con.execute('SELECT value FROM meta WHERE key=?', (anchor_key,)).fetchone()
-                        if previous:
-                            query_start, query_end = json.loads(previous[0])
-                        else:
-                            current = datetime.now(timezone.utc).replace(microsecond=0)
-                            span = re.fullmatch(r'(\d+)([dhw])', source.get('timespan', '7d'))
-                            days = int(span[1]) * (7 if span[2] == 'w' else 1 / 24 if span[2] == 'h' else 1) if span else 7
-                            query_start, query_end = [(current - timedelta(days=min(90, days))).strftime('%Y%m%d%H%M%S'), current.strftime('%Y%m%d%H%M%S')]
-                            con.execute('INSERT INTO meta VALUES(?,?)', (anchor_key, canonical([query_start, query_end])))
-                batches = batch_queries(self.store.iter_entities(), int(source.get('batch_names', source.get('batch_size', 6))),
-                                        int(source.get('max_query_chars', 500)), source.get('language', source.get('source_lang', 'SPANISH')),
-                                        source.get('source_country'))
-                anchor = time.time()
-                with self.store.connection() as con:
-                    con.execute('BEGIN IMMEDIATE')
-                    for i, batch in enumerate(batches):
-                        payload = dict(batch, source_id=source['id'], window=window, start=query_start, end=query_end)
-                        key = 'news_query:' + source['id'] + ':' + digest(canonical([batch['query'], query_start, query_end, window]))
-                        job_id = self.store.enqueue('news_query', payload, key=key,
-                                                   due=anchor + i * max(1, float(source.get('min_interval_seconds', 5))), connection=con)
-                        con.execute('INSERT OR IGNORE INTO news_query_windows VALUES(?,?,?,?,?,?,?,?,?,?,?)',
-                                    (job_id, source['id'], canonical(batch['entity_ids']), batch['query'], query_start, query_end,
-                                     'unqueryable' if batch.get('unqueryable') else 'queued', 0, 0, None, batch.get('error', '')))
-                        if batch.get('unqueryable'):
-                            con.execute("UPDATE jobs SET status='blocked',error=? WHERE id=?", (batch['error'], job_id))
-                        queued += 1
-                        query_count += 1
-        self.store.audit('news_acquisition_queued', {'window': window, 'tasks': queued, 'batched_queries': query_count})
-        return {'tasks': queued, 'batched_queries': query_count}
+        settings = self.search_config()
+        anchor_key = 'news_search_anchor:' + digest(canonical([window, settings, start, end]))
+        with self.store.connection() as con:
+            con.execute('BEGIN IMMEDIATE')
+            con.execute('INSERT OR IGNORE INTO meta VALUES(?,?)', (anchor_key, now()))
+            anchor = datetime.fromisoformat(con.execute('SELECT value FROM meta WHERE key=?', (anchor_key,)).fetchone()[0])
+        plan = build_search_plan(self.store.iter_entities(), self.sources(), settings, start=start, end=end, now=anchor)
+        queued, query_count, anchor_due = 0, 0, time.time()
+        due_by_host = {}
+        sources = {source['id']: source for source in self.sources()}
+        with self.store.connection() as con:
+            con.execute('BEGIN IMMEDIATE')
+            for item in plan['queries']:
+                payload = dict(item, window=window)
+                kind = payload.pop('kind')
+                key = kind + ':' + digest(canonical([window, payload]))
+                host = urlsplit(item['url']).hostname or item['source_id']
+                due = due_by_host.get(host, anchor_due)
+                job_id = self.store.enqueue(kind, payload, key=key, due=due, connection=con)
+                due_by_host[host] = due + max(1, float(sources[item['source_id']].get('min_interval_seconds', 5)))
+                queued += 1
+                if kind == 'news_query':
+                    query_count += 1
+                    con.execute('INSERT OR IGNORE INTO news_query_windows VALUES(?,?,?,?,?,?,?,?,?,?,?)',
+                                (job_id, item['source_id'], canonical(item['entity_ids']), item['query'],
+                                 item['start'], item['end'], 'queued', 0, 0, None, ''))
+            self.store._audit(con, 'news_acquisition_queued', {'window': window, 'tasks': queued,
+                              'batched_queries': query_count, 'strategy': settings['strategy'],
+                              'planning_truncated': plan['truncated']})
+        return {'tasks': queued, 'batched_queries': query_count, 'search_plan': summarize_plan(plan, 3)}
 
     @staticmethod
     def _epoch(value):
@@ -286,9 +330,14 @@ class NewsAcquirer:
             return False
         deferred = result.get('status') in ('deferred', 'error', 'not_modified')
         state = 'deferred' if deferred else 'blocked'
-        self.store.finish(job, state, result.get('error') or result.get('status', 'error'),
-                          self._epoch(result.get('retry_at')), consume_attempt=result.get('error_code') not in ('host_interval', 'robots_pending'))
+        changed = self.store.finish(job, state, result.get('error') or result.get('status', 'error'),
+                                    self._epoch(result.get('retry_at')),
+                                    consume_attempt=result.get('error_code') not in (
+                                        'host_interval', 'robots_pending', 'session_limit', 'session_cancelled'))
+        if not changed:
+            return True
         with self.store.connection() as con:
+            state = con.execute('SELECT status FROM jobs WHERE id=?', (job['id'],)).fetchone()[0]
             if job['kind'] == 'news_query':
                 con.execute('UPDATE news_query_windows SET status=?,error=? WHERE job_id=?',
                             (state, result.get('error') or result.get('status'), job['id']))
@@ -342,13 +391,8 @@ class NewsAcquirer:
         return {'status': 'cached' if fresh else 'metadata_only', 'id': article_id, 'candidates': len(candidates)}
 
     def _query_url(self, source, payload):
-        args = {'query': payload['query'], 'mode': 'ArtList', 'format': 'json', 'sort': 'DateDesc',
-                'maxrecords': min(250, max(1, int(source.get('max_records', 250))))}
-        if payload.get('start') and payload.get('end'):
-            args.update(startdatetime=payload['start'], enddatetime=payload['end'])
-        else:
-            args['timespan'] = source.get('timespan', '7d')
-        return source.get('base_url', 'https://api.gdeltproject.org/api/v2/doc/doc') + '?' + urlencode(args)
+        from .news_search import query_url
+        return query_url(source, payload)
 
     def _split_saturated(self, job, source):
         payload = job['payload']
@@ -361,8 +405,15 @@ class NewsAcquirer:
             return False
         if (end - start).total_seconds() <= max(900, int(source.get('min_window_seconds', 900))):
             return False
-        middle = datetime.fromtimestamp((start.timestamp() + end.timestamp()) / 2, timezone.utc).strftime(fmt)
-        for a, b in ((payload['start'], middle), (middle, payload['end'])):
+        if source.get('search_kind') == 'wordpress_rss':
+            from .news_search import split_query_windows
+            windows = split_query_windows(source, payload)
+            if not windows:
+                return False
+        else:
+            middle = datetime.fromtimestamp((start.timestamp() + end.timestamp()) / 2, timezone.utc).strftime(fmt)
+            windows = ((payload['start'], middle), (middle, payload['end']))
+        for a, b in windows:
             child = dict(payload, start=a, end=b)
             key = 'news_query_split:' + source['id'] + ':' + digest(canonical(child))
             job_id = self.store.enqueue('news_query', child, key=key)
@@ -424,7 +475,8 @@ class NewsAcquirer:
                     for record in batch:
                         statuses[self._observe(record, source, url, result, resolver, download_all, connection=con, all_sources=sources)['status']] += 1
             parse_info = result.get('parse_metadata') or {}
-            saturated = job['kind'] == 'news_query' and (parse_info.get('observed_entries', len(records)) >= min(250, int(source.get('max_records', 250))) or parse_info.get('truncated'))
+            result_limit = max(1, min(250, int(payload.get('result_limit', source.get('max_records', 250)))))
+            saturated = job['kind'] == 'news_query' and (parse_info.get('observed_entries', len(records)) >= result_limit or parse_info.get('truncated'))
             split = self._split_saturated(job, source) if saturated else False
             with self.store.connection() as con:
                 con.execute('INSERT OR REPLACE INTO news_discovery_runs VALUES(?,?,?,?,?,?,?,?)',
@@ -499,18 +551,41 @@ class NewsAcquirer:
                               'topic_candidate': topic, 'canonical_response_url': url})
         self.store.finish(job)
 
+    def _runtime_queue(self, active_tasks=0, unreported_ids=()):
+        from .engine import _job_progress
+        summary = _job_progress(self.store, 'news_', unreported_ids=unreported_ids)
+        schedule = self.store.queue_readiness('news_')
+        due = schedule['next_due'] if not schedule['ready'] else None
+        retry = None
+        if due is not None:
+            try:
+                retry = datetime.fromtimestamp(due, timezone.utc).isoformat()
+            except (ValueError, OverflowError, OSError):
+                pass
+        wait_seconds = max(0., due - time.time()) if due is not None else None
+        waiting = bool(summary['pending'] and not active_tasks and not schedule['ready'])
+        reason = ('external_lease' if schedule['active_running'] > active_tasks else
+                  'backoff' if summary['deferred'] else 'scheduled') if waiting else None
+        return dict(summary, ready=schedule['ready'], active_running=schedule['active_running'],
+                    active_tasks=active_tasks, waiting=waiting, stop_reason=reason,
+                    next_retry=retry, next_retry_at=due, wait_seconds=wait_seconds)
+
     def acquire(self, workers=4, seconds=120, max_articles=1000, download_all=False, queue=True,
                 window=None, start=None, end=None, *, progress=None, reset_stop=True):
-        from .engine import _emit_progress, _job_progress
+        from .engine import _emit_progress
         if not self.engine.online:
             _emit_progress(progress, 'download', 0, None, 'tareas', 'Comprobando el modo de descarga.', event='start')
             _emit_progress(progress, 'download', 0, None, 'tareas', 'La descarga está desactivada.',
                            event='finish', offline=True)
             return {'status': 'offline', 'processed': 0}
+        seconds, max_articles = float(seconds), int(max_articles)
+        if not math.isfinite(seconds) or seconds < 0 or max_articles < 0:
+            raise ValueError('La duración y el límite de tareas deben ser finitos y no negativos')
         if reset_stop:
             self.engine.stop_event.clear()
         if self.engine.stop_event.is_set():
-            summary = _job_progress(self.store, 'news_')
+            summary = self._runtime_queue()
+            summary['stop_reason'] = 'cancelled'
             _emit_progress(progress, 'download', 0, None, 'tareas', 'Iniciando el lote de noticias.',
                            event='start', processed=0, **summary)
             _emit_progress(progress, 'download', 0, None, 'tareas', 'Lote detenido antes de iniciar.',
@@ -519,36 +594,66 @@ class NewsAcquirer:
                         elapsed_seconds=0.0, network_before={}, network_after={}, bank=self.stats(), **summary)
         from .collector import SafeFetcher
         from .identity import IdentityResolver
+        started = time.monotonic()
+        self.store.reconcile_jobs('news_')
+        _emit_progress(progress, 'download', 0, None, 'tareas', 'Preparando la reanudación y las fuentes autorizadas.',
+                       event='start', processed=0, **self._runtime_queue())
         resolver = IdentityResolver(self.store.iter_entities())
         queued = self.queue(window, start, end) if queue else None
         config = dict(self.engine.config(), **{k: v for k, v in self.config().items() if k != 'sources'})
         fetcher = SafeFetcher(config, self.engine.data_dir, offline=False)
         before = fetcher.metrics_snapshot() if hasattr(fetcher, 'metrics_snapshot') else {}
-        deadline, counter, completed, lock = time.monotonic() + seconds, [0], [0], threading.Lock()
+        deadline, counter, completed = started + seconds, [0], [0]
+        condition = threading.Condition()
         in_flight = set()
+        last_activity = [0.]
         def download_total(summary):
             # Feed/query results can still create work. Backoff includes mandatory
             # waiting time that a throughput-only ETA cannot represent honestly.
             if summary['discovery_pending'] or summary['deferred']:
                 return None
             return completed[0] + summary['pending'] + summary['failed'] + summary['unreported_completed']
-        _emit_progress(progress, 'download', 0, None, 'tareas', 'Iniciando el lote de noticias.',
-                       event='start', processed=0, **_job_progress(self.store, 'news_'))
+        class SessionFetcher:
+            def fetch(_, url, source):
+                cancelled = self.engine.stop_event.is_set()
+                if cancelled or time.monotonic() >= deadline:
+                    return dict(status='deferred', body='', request_attempted=False, network_requests=0,
+                                retry_at=time.time(), error_code='session_cancelled' if cancelled else 'session_limit',
+                                error='Sesión detenida antes de solicitar el documento; puede reanudarlo.')
+                return fetcher.fetch(url, source)
+        session_fetcher = SessionFetcher()
+
+        def report_activity(summary, message, **details):
+            if progress is not None:
+                _emit_progress(progress, 'download', completed[0], download_total(summary), 'tareas', message,
+                               event='activity', processed=counter[0], **summary, **details)
+
         def work():
             while not self.engine.stop_event.is_set() and time.monotonic() < deadline:
-                with lock:
+                with condition:
                     if counter[0] >= max_articles:
                         return
                     job = self.store.claim(lease_seconds=300, kind_prefix='news_')
                     if job:
                         counter[0] += 1
                         in_flight.add(job['id'])
-                if not job:
-                    due = self.store.next_due(kind_prefix='news_')
-                    if due is None or due > time.time() + max(0, deadline - time.monotonic()):
-                        return
-                    self.engine.stop_event.wait(min(1, max(.05, due - time.time())))
-                    continue
+                        if progress is not None:
+                            report_activity(self._runtime_queue(len(in_flight), in_flight),
+                                            f"Consultando {job['payload'].get('source_id', 'fuente')} · {len(in_flight)} tareas en curso.",
+                                            current_source=job['payload'].get('source_id'), job_kind=job['kind'])
+                    else:
+                        # Idle workers remain available while a feed/query can
+                        # enqueue articles. Previously they exited at this point.
+                        if not in_flight:
+                            summary = self._runtime_queue()
+                            due = summary['next_retry_at']
+                            if (due is None or due > time.time() + max(0., deadline - time.monotonic())):
+                                return
+                            if time.monotonic() - last_activity[0] >= 1:
+                                last_activity[0] = time.monotonic()
+                                report_activity(summary, f"Esperando el reintento programado hasta {summary['next_retry'] or 'la fecha permitida'}.")
+                        condition.wait(timeout=min(.25, max(0., deadline - time.monotonic())))
+                        continue
                 lease_stop = threading.Event()
                 def renew():
                     while not lease_stop.wait(30):
@@ -557,25 +662,35 @@ class NewsAcquirer:
                 heartbeat = threading.Thread(target=renew, daemon=True)
                 heartbeat.start()
                 try:
-                    self.execute(job, fetcher, resolver, download_all)
+                    self.execute(job, session_fetcher, resolver, download_all)
                 except Exception as exc:
                     self.store.finish(job, 'deferred', f'{type(exc).__name__}: {exc}', time.time() + min(3600, 30 * 2 ** job['attempts']))
                 finally:
                     lease_stop.set()
                     heartbeat.join(timeout=1)
                 with self.store.connection() as con:
-                    state = con.execute('SELECT status,owner FROM jobs WHERE id=?', (job['id'],)).fetchone()
-                with lock:
+                    state = con.execute('SELECT status,owner,error FROM jobs WHERE id=?', (job['id'],)).fetchone()
+                    if state and state['owner'] == job['owner'] and state['status'] in ('deferred', 'blocked', 'dead'):
+                        if job['kind'] == 'news_article':
+                            con.execute('UPDATE news_articles SET status=?,error=? WHERE id=?',
+                                        (state['status'], state['error'] or '', job['payload'].get('article_id')))
+                        elif job['kind'] == 'news_query':
+                            con.execute('UPDATE news_query_windows SET status=?,error=? WHERE job_id=?',
+                                        (state['status'], state['error'] or '', job['id']))
+                with condition:
                     if state and state['status'] == 'done' and state['owner'] == job['owner']:
                         completed[0] += 1
                     in_flight.discard(job['id'])
                     if progress is not None:
-                        summary = _job_progress(self.store, 'news_', unreported_ids=in_flight)
+                        summary = self._runtime_queue(len(in_flight), in_flight)
+                        outcome = {'done': 'completada', 'deferred': 'aplazada', 'blocked': 'bloqueada', 'dead': 'agotada'}.get(
+                            state['status'] if state else None, 'sin confirmar')
                         _emit_progress(progress, 'download', completed[0], download_total(summary), 'tareas',
-                                       f"Tarea {state['status'] if state else 'desconocida'}; {completed[0]} completadas.",
+                                       f"Tarea {outcome}; {completed[0]} completadas y {summary['pending']} pendientes.",
                                        processed=counter[0], job_id=job['id'], job_status=state['status'] if state else None,
+                                       last_error=(state['error'] or '')[:500] if state else None,
                                        **summary)
-        started = time.monotonic()
+                    condition.notify_all()
         try:
             # Keep one idle reader connection open during the batch. Otherwise
             # SQLite checkpoints WAL on every final connection close per job.
@@ -587,14 +702,30 @@ class NewsAcquirer:
         finally:
             if hasattr(fetcher, 'close'):
                 fetcher.close()
-        summary = _job_progress(self.store, 'news_')
+        summary = self._runtime_queue()
         cancelled = self.engine.stop_event.is_set()
+        stop_reason = ('cancelled' if cancelled else 'completed' if not summary['pending'] else
+                       'job_limit' if counter[0] >= max_articles else 'time_limit' if time.monotonic() >= deadline else
+                       summary['stop_reason'] or 'scheduled')
+        summary['stop_reason'] = stop_reason
+        messages = {
+            'completed': 'El lote terminó; no quedan tareas pendientes de descarga.',
+            'cancelled': 'Pausa solicitada. Las tareas pendientes se conservan para reanudar.',
+            'job_limit': 'Se alcanzó el límite de tareas del lote. Puede reanudar sin repetir la búsqueda.',
+            'time_limit': 'Se alcanzó el tiempo del lote; las solicitudes en curso terminaron con su timeout de transporte. Puede reanudar.',
+            'backoff': 'La fuente exige esperar antes de reintentar; no se omitió su pausa.',
+            'scheduled': 'Quedan tareas con ejecución programada para más adelante.',
+            'external_lease': 'Otro proceso conserva tareas activas; se reanudarán al finalizar o vencer su reserva.',
+        }
+        message = messages[stop_reason]
+        if summary['waiting'] and summary['next_retry']:
+            message += f" Próximo intento permitido: {summary['next_retry']}."
         total = download_total(summary)
         _emit_progress(progress, 'download', completed[0], total, 'tareas',
-                       f"Lote {'detenido' if cancelled else 'finalizado'}; {summary['pending']} tareas pendientes.",
+                       message,
                        event='finish', processed=counter[0], cancelled=cancelled, **summary)
         return {'status': 'ok', 'processed': counter[0], 'completed': completed[0], 'total': total, 'cancelled': cancelled,
-                **summary, 'queued': queued,
+                **summary, 'message': message, 'queued': queued,
                 'elapsed_seconds': round(time.monotonic() - started, 4),
                 'network_before': before, 'network_after': after, 'bank': self.stats()}
 

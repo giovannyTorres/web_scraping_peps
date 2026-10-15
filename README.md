@@ -1,10 +1,12 @@
-# WebScope 2.3.1
+# WebScope 2.4.0
 
 Banco local de noticias y documentos públicos sobre personas, empresas y organizaciones mexicanas. Separa la adquisición de fuentes autorizadas de la atribución local de identidad, conserva procedencia y versiones, y ordena la revisión documental con una puntuación explicable.
 
 **WebScope** es el nuevo nombre de la herramienta de web scraping y análisis documental antes llamada PEPS MX. La interfaz combina azules marino y principal con acentos aqua, Lato para texto y controles y Source Serif 4 para títulos. Las fuentes se distribuyen con sus licencias y se cargan desde el propio paquete, sin servicios de tipografía externos. Tras instalar el wheel puede usar `webscope` o el comando compatible `peps`; el módulo Python y las rutas de datos existentes se conservan.
 
 La interfaz organiza el trabajo en cinco pasos: **cargar lista → preparar fuentes → descargar noticias → analizar y calcular → revisar resultados**. Cada paso muestra su estado, el avance disponible y el motivo de cualquier bloqueo. Importar datos ya no ejecuta scoring; el cálculo se inicia explícitamente después de terminar la adquisición. Consulte [FLUJO_GUIADO.md](docs/FLUJO_GUIADO.md) para recorrerlo y [VALIDACION_2_3_0.md](docs/VALIDACION_2_3_0.md) para sus comprobaciones.
+
+La versión 2.4 corrige las descargas que quedaban en pausa sin una salida: distingue tareas listas, aplazadas y agotadas, muestra el próximo intento permitido y reanuda sin crear nuevas consultas. También permite **cerrar la descarga con cobertura parcial** cuando ya no hay ningún trabajador activo. Conserva las noticias y la cola pendiente; la evaluación guarda esa limitación. La [guía de recuperación y búsqueda histórica](docs/RECUPERACION_DESCARGA.md) explica cómo retomar un banco existente y preparar consultas dirigidas por nombre y fechas. La [validación 2.4.0](docs/VALIDACION_2_4_0.md) incluye el caso de 235 referencias y 64 pendientes y la actualización desde un wheel 2.3.1 auténtico.
 
 El historial y la explicación de evaluaciones se conservan. La comparación de ramas y el tratamiento de los notebooks originales están en [CONSOLIDACION.md](docs/CONSOLIDACION.md); las comprobaciones anteriores permanecen en [VALIDACION_2_2_1.md](docs/VALIDACION_2_2_1.md).
 
@@ -28,7 +30,7 @@ Ejecute los comandos desde la raíz del proyecto. En el bundle sustituya `python
 
 En la interfaz, **Guardar y continuar** da de alta una persona, empresa u organización y conduce a la preparación de fuentes. **Importar CSV** acepta columnas en cualquier orden, títulos repetidos o vacíos y tablas pegadas: muestra ejemplos y pide identificar el contenido de cada columna antes de guardar. Puede separar nombres y apellidos, indicar tipos propios, omitir columnas y revisar errores, duplicados y posibles actualizaciones. Consulte [la guía de importación](docs/IMPORTACION_GUIADA.md), con ejemplos ficticios listos para cargar. Estas altas no activan búsquedas ni calculan scores.
 
-En el paso 2 elija fuentes autorizadas o el modo de **documentos locales**, y confirme la selección. El paso 3 conserva el progreso de adquisición; las descargas pendientes impiden calcular resultados. El paso 4 atribuye las noticias y calcula el banco completo con barras de avance. El paso 5 permite consultar las explicaciones, registrar revisiones y exportar. La pausa espera a que termine el trabajo en curso antes de habilitar otra operación. El servidor aplica los mismos controles que los botones.
+En el paso 2 elija fuentes autorizadas y configure el período y el enfoque de búsqueda, o seleccione **documentos locales**; después confirme la selección. El paso 3 muestra la actividad real y los trabajos pendientes. Puede reanudar la cola o cerrar explícitamente la adquisición con la información disponible. Mientras exista una descarga activa no se puede calcular ni cerrar cobertura. El paso 4 atribuye las noticias y calcula el banco completo con barras de avance. El paso 5 permite consultar las explicaciones, registrar revisiones y exportar. El servidor aplica los mismos controles que los botones.
 
 1. Importe entidades con IDs estables, nombres, tipo, alias y contexto. Los homónimos conservan IDs distintos; los atributos son pistas hasta verificarse con procedencia.
 2. Adquiera noticias: un trabajo por RSS y ventana, consultas por lotes cuando la fuente lo permita, URLs deduplicadas y cuerpos sólo con permiso separado.

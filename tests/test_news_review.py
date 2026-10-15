@@ -49,7 +49,8 @@ class NewsIntegrationReview(unittest.TestCase):
                 'refresh_seconds': 86400, 'min_interval_seconds': 5}
 
     def configure(self, *sources):
-        self.news.config_path.write_text(json.dumps({'sources': list(sources)}), encoding='utf-8')
+        strategy = 'targeted' if any(source.get('kind') == 'gdelt' for source in sources) else 'feeds'
+        self.news.config_path.write_text(json.dumps({'sources': list(sources), 'search': {'strategy': strategy}}), encoding='utf-8')
 
     @staticmethod
     def html(body=None, title='Informe municipal público durante sesión ordinaria'):

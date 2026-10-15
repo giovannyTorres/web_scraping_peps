@@ -1,6 +1,6 @@
 # De la lista al scoring
 
-La interfaz de WebScope 2.3.1 guía el trabajo en cinco pasos. La barra lateral indica
+La interfaz de WebScope 2.4.0 guía el trabajo en cinco pasos. La barra lateral indica
 qué terminó, qué está activo y qué falta. Los botones muestran el motivo cuando
 una acción todavía no está disponible.
 
@@ -31,6 +31,12 @@ Cambiar los permisos, las fuentes o el modo requiere confirmar nuevamente la
 selección. Las fuentes empiezan deshabilitadas; elegir el modo online no las
 autoriza por sí solo.
 
+En **Búsqueda dirigida e histórica**, elija el período, el enfoque y el presupuesto
+de consultas. El plan se prepara localmente: no conecta con las fuentes ni calcula
+scores. Revise sus avisos antes de confirmarlo. El período solicitado puede ser
+mayor que el historial accesible de una fuente. Consulte la
+[guía de búsqueda y recuperación](RECUPERACION_DESCARGA.md).
+
 ## 3. Descargar noticias
 
 Autorice la conexión de la sesión e inicie la descarga. El sistema muestra las
@@ -43,10 +49,16 @@ necesitar terminar antes de que el estado cambie a **En pausa**. Hasta entonces
 se mantienen los bloqueos. **Reanudar** trabaja sobre la cola conservada.
 
 Un límite de tiempo, un aplazamiento o un error no convierten la adquisición en
-completa. Si quedan tareas pendientes, reanude la descarga. Cuando la adquisición
-terminó y sólo conserva cobertura parcial, la interfaz permite aceptarla de forma
-explícita antes de analizar. Esa aceptación no oculta errores ni convierte
-metadatos de un feed en el cuerpo de una noticia.
+completa. El panel distingue tareas listas, aplazadas, activas y fallidas; muestra
+la causa de la pausa y el próximo intento permitido cuando se conoce.
+
+Si quedan tareas pendientes y ya no hay trabajadores activos, elija entre
+**Reanudar descarga** y **Usar noticias disponibles y continuar**. La segunda opción
+habilita el análisis parcial mediante una decisión explícita. No borra noticias,
+no elimina la cola y no marca esos trabajos como terminados. La evaluación guarda
+cuántas tareas quedaron pendientes y qué información estaba disponible. Reanudar
+después invalida el resultado vigente hasta volver a analizar. Los metadatos de un
+feed o buscador siguen sin ser el cuerpo de una noticia ni evidencia puntuable.
 
 En el recorrido local este paso explica que no se solicita una descarga y permite
 continuar con el alcance confirmado.
@@ -74,8 +86,10 @@ de los datos vigentes está completo.
 
 Agregar entidades, modificar fuentes, incorporar documentos o cambiar revisiones
 puede invalidar los resultados del proceso anterior. El sistema conserva los
-históricos y exige completar nuevamente los pasos afectados. Un trabajo externo
-con descargas pendientes también impide presentar un resultado como vigente.
+históricos y exige completar nuevamente los pasos afectados. Un trabajador externo
+activo también impide analizar o cerrar cobertura. Una cola inactiva puede quedar
+fuera del análisis sólo mediante el cierre parcial explícito; en modo local no
+impide analizar los documentos locales confirmados.
 
 ## Estados y tiempo restante
 

@@ -54,7 +54,7 @@ def main():
         page.locator('#workflow-mode-local').click()
         page.locator('#workflow-sources-next').click()
         page.locator('[data-panel="news"]').wait_for()
-        page.locator('#workflow-download-next').click()
+        page.locator('#news-acquire').click()
         page.locator('[data-panel="analysis"]').wait_for()
         page.locator('#workflow-analyze').click()
         page.locator('[data-panel="bank"]').wait_for()

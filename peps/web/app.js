@@ -62,9 +62,27 @@ function renderExplanation(card,state){
   }
   section.append(el('p','El cambio al retirar un evento usa el cálculo real. Estos cambios no se suman: el score combina eventos, redondea y tiene un límite.','muted'));
   const coverage=explanation.coverage||{};section.append(el('h4','Cobertura y límites'),el('p',`${coverage.documents??0} notas · ${coverage.event_groups??0} grupos de eventos · ${coverage.reviewed_documents??0} notas revisadas · ${coverage.excluded_documents??0} notas con exclusiones.`,'muted'));
+  renderAcquisitionCoverage(section,result.provenance?.acquisition);
   if(explanation.warnings?.length){const warnings=el('div',undefined,'explanation-warnings');warnings.append(el('h4','Advertencias para la revisión'),list(explanation.warnings));section.append(warnings);}
   if(explanation.exclusions?.length){const excluded=el('details');excluded.append(el('summary','Señales y documentos excluidos del cálculo'),list(explanation.exclusions.map(item=>`${item.label}: ${item.count}`)));section.append(excluded);}
   const limitations=el('details');limitations.append(el('summary','Limitaciones de la interpretación'),list(explanation.limitations));section.append(limitations);card.append(section);
+}
+function renderAcquisitionCoverage(section,coverage){
+  if(!coverage)return;
+  const block=el('div',undefined,coverage.partial?'notice acquisition-coverage':'acquisition-coverage');
+  block.append(el('h4','Cobertura de la descarga usada en esta evaluación'));
+  if(coverage.mode==='local')block.append(el('p','Evaluación de los documentos locales disponibles. No se realizó una búsqueda web para este análisis.'));
+  else{
+    if(coverage.accepted_partial)block.append(el('p',`Descarga cerrada con cobertura parcial: ${coverage.pending_tasks??0} tareas quedaron pendientes y ${coverage.failed_tasks??0} terminaron con error. Los resultados corresponden a la información disponible al cerrar.`));
+    const search=coverage.search||{};
+    if(search.start&&search.end)block.append(el('p',`Periodo solicitado: ${search.start} a ${search.end}. Es un rango de búsqueda; no acredita cobertura completa de todos esos años.`,'muted'));
+    else block.append(el('p','El período de las descargas anteriores no quedó registrado. No se les atribuye el rango de búsqueda configurado después.','muted'));
+    block.append(el('p',`${coverage.articles??0} noticias en el banco: ${coverage.full_articles??0} con cuerpo conservado y ${coverage.metadata_only_articles??0} sólo con metadatos. Los resultados de búsqueda sin cuerpo no puntúan como evidencia del artículo.`,'muted'));
+  }
+  const limits=Array.isArray(coverage.limitations)?coverage.limitations.filter(item=>typeof item==='string'):[];
+  const warnings=Array.isArray(coverage.planning_warnings)?coverage.planning_warnings.filter(item=>typeof item==='string'):[];
+  if(limits.length||warnings.length)block.append(list([...new Set([...limits,...warnings])]));
+  section.append(block);
 }
 // Auxiliary hypotheses stay outside the numerical scoring explanation.
 function renderAuxiliary(card,state){

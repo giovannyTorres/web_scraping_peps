@@ -684,16 +684,30 @@ class Store:
                         (job_id, kind, canonical(payload), due if due is not None else time.time(), now(), now()))
         return job_id
 
+    def _reconcile_jobs(self, con, current, kind_prefix=None):
+        """Retire exhausted persisted jobs; preserve every live worker lease."""
+        changed = con.execute("UPDATE jobs SET status='dead',lease_until=NULL,updated_at=?,"
+                              "error='Límite de cinco intentos; reintento manual disponible' "
+                              "WHERE attempts>=5 AND (? IS NULL OR kind LIKE ?) AND "
+                              "(status IN ('queued','deferred') OR (status='running' AND COALESCE(lease_until,0)<=?))",
+                              (now(), kind_prefix, (kind_prefix or '') + '%', current)).rowcount
+        if changed:
+            self._audit(con, 'jobs_exhausted', {'count': changed, 'kind_prefix': kind_prefix})
+        return changed
+
+    def reconcile_jobs(self, kind_prefix=None):
+        with self.connection() as con:
+            con.execute('BEGIN IMMEDIATE')
+            return self._reconcile_jobs(con, time.time(), kind_prefix)
+
     def claim(self, owner=None, lease_seconds=120, kind_prefix=None):
         owner = owner or uuid.uuid4().hex
         current = time.time()
         with self.connection() as con:
             con.execute('BEGIN IMMEDIATE')
-            # Cinco intentos, incluidos procesos que murieron con un lease, van a dead letter.
-            con.execute("UPDATE jobs SET status='dead',error='Lease expirado; límite de intentos' "
-                        "WHERE status='running' AND lease_until<? AND attempts>=5", (current,))
+            self._reconcile_jobs(con, current, kind_prefix)
             row = con.execute("SELECT * FROM jobs WHERE attempts<5 AND due<=? AND (? IS NULL OR kind LIKE ?) AND "
-                              "(status IN ('queued','deferred') OR (status='running' AND lease_until<?)) "
+                              "(status IN ('queued','deferred') OR (status='running' AND COALESCE(lease_until,0)<=?)) "
                               "ORDER BY due,id LIMIT 1", (current, kind_prefix, (kind_prefix or '') + '%', current)).fetchone()
             if not row:
                 return None
@@ -723,9 +737,24 @@ class Store:
 
     def next_due(self, kind_prefix=None):
         with self.connection() as con:
-            row = con.execute("SELECT min(due) FROM jobs WHERE status IN ('queued','deferred') AND attempts<5 "
+            row = con.execute("SELECT min(CASE WHEN status='running' THEN max(due,COALESCE(lease_until,0)) ELSE due END) "
+                              "FROM jobs WHERE status IN ('queued','deferred','running') AND (attempts<5 OR status='running') "
                               "AND (? IS NULL OR kind LIKE ?)", (kind_prefix, (kind_prefix or '') + '%')).fetchone()
             return row[0]
+
+    def queue_readiness(self, kind_prefix=None):
+        """Schedule diagnostics without claiming work or overriding server backoff."""
+        current = time.time()
+        with self.connection() as con:
+            row = con.execute("SELECT "
+                "COALESCE(sum(attempts<5 AND due<=? AND (status IN ('queued','deferred') OR "
+                "(status='running' AND COALESCE(lease_until,0)<=?))),0) AS ready,"
+                "COALESCE(sum(status='running' AND lease_until>?),0) AS active_running,"
+                "min(CASE WHEN attempts<5 AND status IN ('queued','deferred') THEN due "
+                "WHEN status='running' THEN max(due,COALESCE(lease_until,0)) END) AS next_due "
+                "FROM jobs WHERE (? IS NULL OR kind LIKE ?)",
+                (current, current, current, kind_prefix, (kind_prefix or '') + '%')).fetchone()
+        return dict(row)
 
     def retry_failed(self):
         with self.connection() as con:

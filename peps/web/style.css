@@ -78,3 +78,55 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 @media(max-width:720px){h1{font-size:31px;line-height:1.2;letter-spacing:-.4px}.brand{font-size:28px}.brand-label{display:none}.panel-heading h2,.import-heading h2{font-size:24px}.workflow-overview h2{font-size:22px}.sidebar-bottom #shutdown.quiet{color:#D4EDFC}}
 .app-sidebar button:focus-visible,.app-sidebar a:focus-visible,.app-sidebar select:focus-visible{outline-color:#2DCCCD}
 .mobile-step-select{color:#D4EDFC}
+/* Acquisition recovery: one main action, inspectable work and an explicit partial exit. */
+.download-main-actions{align-items:center;gap:12px;margin-bottom:10px}
+.download-main-actions #news-acquire{min-width:225px}
+.download-main-actions #stop{font-weight:400}
+.download-activity{margin-bottom:23px}
+.download-activity .card-heading{align-items:center;margin-bottom:14px}
+.download-activity h3{margin:7px 0 0;font-size:21px}
+.download-activity .current-activity{margin:0 0 20px;border-left:3px solid #1464A5;border-radius:5px;padding:13px 16px;background:#D4EDFC55;color:#004481;font-size:12px;line-height:1.8}
+.download-task-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;margin:0 0 19px}
+.download-task-grid>div{padding:15px 13px;background:#F4F4F4;border:1px solid #D4EDFC;border-radius:8px;min-width:0}
+.download-task-grid dt{font-size:10px;color:#626262;line-height:1.5;min-height:30px}
+.download-task-grid dd{font-size:25px;line-height:1.2;color:#004481;font-weight:700;margin:9px 0 0;letter-spacing:-.5px;overflow-wrap:anywhere}
+.download-task-grid>div:last-child{background:#D4EDFC55}
+.download-wait{font-size:12px;color:#004481;line-height:1.8;margin:7px 0}
+.download-issues{font-size:11px;color:#626262;line-height:1.9;padding-left:18px;margin:12px 0}
+.task-count-note{border-top:1px solid #D4EDFC;padding-top:13px;font-size:10px;color:#626262;margin:17px 0 0;line-height:1.8}
+.partial-warning #workflow-accept-partial{background:#FFFFFF;font-weight:700;min-height:44px}
+.partial-warning .action-reason{font-size:10px;margin-top:10px;color:#765c32}
+.search-setup{border-top:1px solid #D4EDFC;border-bottom:1px solid #D4EDFC;margin:20px 0 24px;padding:23px 0}
+.search-setup .card-heading{margin-bottom:16px}
+.search-setup h3{font-size:21px}
+.search-setup .card-heading p{margin-bottom:0}
+.search-options-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 20px}
+.search-options-grid .import-field{margin-bottom:18px}
+.search-advanced{border:1px solid #D4EDFC;background:#D4EDFC22;padding:13px 15px;border-radius:8px;margin:0 0 18px}
+.search-advanced summary{font-size:11px;color:#004481;cursor:pointer;font-weight:700;line-height:1.7}
+.search-advanced[open] summary{margin-bottom:18px}
+.search-checks{display:flex;gap:22px;flex-wrap:wrap}
+.search-checks .check{font-size:11px;margin:0 0 5px;gap:8px}
+.search-save-row{display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+.search-save-row button{font-size:11px;min-height:42px;white-space:nowrap}
+.search-save-row .action-reason{flex:1;margin:0;font-size:11px;min-width:200px}
+.search-plan{margin:17px 0 0}
+.search-plan:empty{display:none}
+.search-plan-summary{font-size:11px;color:#004481;font-weight:700;margin:0 0 7px}
+.search-plan ul{padding-left:18px;font-size:11px;color:#765c32;line-height:1.8;margin:8px 0}
+.search-source-limit{font-size:10px;color:#626262;border-left:2px solid #D4EDFC;padding-left:12px;line-height:1.8;margin:16px 0 0}
+.source-permissions-heading{font-size:21px;margin:6px 0}
+@media(max-width:1100px){.download-task-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.download-task-grid dt{min-height:0}.download-task-grid>div{padding:13px}}
+@media(max-width:720px){.download-main-actions #news-acquire{min-width:0}.download-activity .card-heading{align-items:flex-start;gap:12px}.download-activity h3{font-size:20px}.download-activity .current-activity{font-size:11px;padding:12px;margin-bottom:17px}.download-task-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.download-task-grid>div{padding:12px}.download-task-grid dt{font-size:9px;min-height:0}.download-task-grid dd{font-size:23px;margin-top:7px}.download-wait{font-size:11px}.download-issues{font-size:10px}.task-count-note{font-size:9px}.search-setup{margin-top:16px;padding-top:19px}.search-setup h3,.source-permissions-heading{font-size:20px}.search-options-grid{grid-template-columns:1fr;gap:0}.search-checks{gap:14px}.search-save-row{gap:12px}.search-save-row button{width:100%}.search-save-row .action-reason{font-size:10px;min-width:0}.search-plan-summary,.search-plan ul{font-size:10px}.search-source-limit{font-size:9px}.search-advanced{padding:12px}.search-advanced summary{font-size:10px}.search-checks .check{font-size:10px}}
+
+.download-summary{align-self:start}
+
+.search-plan-estimate{font-size:10px;color:#626262;margin:8px 0;line-height:1.8}
+.search-plan .search-effective-ranges{color:#626262;font-size:10px;margin:10px 0 15px}
+.search-query-examples{margin:14px 0;border:1px solid #D4EDFC;border-radius:8px;padding:12px 14px;background:#F4F4F4}
+.search-query-examples>summary{font-size:11px;color:#004481;font-weight:700;cursor:pointer;line-height:1.7}
+.search-query-examples ol{padding-left:18px;margin:13px 0 0}
+.search-query-examples li{padding:8px 0;border-top:1px solid #D4EDFC}
+.query-example-source{font-size:10px;color:#626262;font-weight:700;margin:0 0 5px;line-height:1.7}
+.query-example-text{font-size:11px;color:#004481;margin:0;line-height:1.8;white-space:pre-wrap;overflow-wrap:anywhere}
+@media(max-width:720px){.search-plan-estimate,.search-plan .search-effective-ranges,.query-example-source{font-size:9px}.search-query-examples>summary,.query-example-text{font-size:10px}}

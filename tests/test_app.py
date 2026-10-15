@@ -35,14 +35,14 @@ class LocalAppTests(unittest.TestCase):
         conn.close()
         return code, body, result_headers
 
-    def wait_operation(self):
+    def wait_operation(self, expected_status='completed'):
         deadline = time.monotonic() + 10
         while time.monotonic() < deadline:
             code, body, _ = self.request('/api/stats')
             self.assertEqual(200, code, body)
             operation = json.loads(body)['operation']
             if not operation['busy']:
-                self.assertEqual('completed', operation['status'], operation)
+                self.assertEqual(expected_status, operation['status'], operation)
                 return operation
             threading.Event().wait(.01)
         self.fail('La operación local no terminó dentro de 10 segundos')
@@ -59,9 +59,12 @@ class LocalAppTests(unittest.TestCase):
     def authorize_news_source(self):
         code, body, _ = self.request('/api/news')
         self.assertEqual(200, code, body)
-        source = {'id': json.loads(body)['sources'][0]['id'], 'enabled': True, 'terms_approved': True,
+        feed = next(item for item in json.loads(body)['sources'] if item['kind'] == 'rss' and not item.get('search_kind'))
+        source = {'id': feed['id'], 'enabled': True, 'terms_approved': True,
                   'download_articles': False, 'article_terms_approved': False}
         code, body, _ = self.request('/api/news-source', 'POST', source)
+        self.assertEqual(200, code, body)
+        code, body, _ = self.request('/api/news-search', 'POST', {'strategy': 'feeds'})
         self.assertEqual(200, code, body)
         code, body, _ = self.request('/api/workflow-confirm-sources', 'POST', {})
         self.assertEqual(200, code, body)
@@ -86,6 +89,9 @@ class LocalAppTests(unittest.TestCase):
             ('/api/workflow-confirm-sources', 'POST', {}),
             ('/api/workflow-analyze', 'POST', {}),
             ('/api/news-acquire', 'POST', {'online': True}),
+            ('/api/news-search', 'GET', None),
+            ('/api/news-search', 'POST', {}),
+            ('/api/workflow-finish-download', 'POST', {}),
         ):
             with self.subTest(path=path):
                 self.assertEqual(403, self.request(path, method, data, token=False)[0])
@@ -112,6 +118,80 @@ class LocalAppTests(unittest.TestCase):
                         self.assertEqual(400, code, body)
                         self.assertFalse(self.engine.online)
             queue.assert_not_called()
+
+    def test_resume_requires_boolean_and_does_not_enqueue_new_searches(self):
+        from peps.news import NewsAcquirer
+        from peps.workflow import GuidedWorkflow
+        self.engine.store.import_entities([{'id': 'resume', 'name': 'Persona Sintética Reanudable'}])
+        self.authorize_news_source()
+        news = NewsAcquirer(self.engine)
+        workflow = GuidedWorkflow(self.engine.store, news.sources)
+        workflow.mark_download(status='running')
+        self.engine.store.enqueue('news_fixture', {'source_id': 'synthetic'})
+        workflow.mark_download(status='paused')
+        with patch('peps.news.NewsAcquirer.acquire', return_value={'processed': 0, 'pending': 1}) as acquire:
+            for value in ('true', 'false', 1, None):
+                code, body, _ = self.request('/api/news-acquire', 'POST', {'online': True, 'resume': value})
+                self.assertEqual(400, code, body)
+                self.assertFalse(self.engine.online)
+            acquire.assert_not_called()
+            code, body, _ = self.request('/api/news-acquire', 'POST', {'online': True, 'resume': True})
+            self.assertEqual(200, code, body)
+            self.wait_operation('paused')
+            self.assertFalse(acquire.call_args.kwargs['queue'])
+            self.assertGreater(acquire.call_args.kwargs['seconds'], 120)
+            settings = json.loads(self.request('/api/news-search')[1])['config']
+            settings['preset'] = 'public_role'
+            self.assertEqual(200, self.request('/api/news-search', 'POST', settings)[0])
+            self.assertEqual(200, self.request('/api/workflow-confirm-sources', 'POST', {})[0])
+            self.assertEqual(409, self.request('/api/news-acquire', 'POST', {'online': True, 'resume': True})[0])
+            self.assertEqual(acquire.call_count, 1)
+            self.assertEqual(200, self.request('/api/news-acquire', 'POST', {'online': True, 'resume': False})[0])
+            self.wait_operation('paused')
+            self.assertTrue(acquire.call_args.kwargs['queue'])
+
+    def test_search_settings_are_local_validated_and_require_reconfirmation(self):
+        self.engine.store.import_entities([{'id': 'search', 'name': 'Persona Sintética Investigada'}])
+        self.authorize_news_source()
+        with patch('peps.news.NewsAcquirer.acquire') as acquire:
+            code, body, _ = self.request('/api/news-search')
+            self.assertEqual(200, code, body)
+            initial = json.loads(body)
+            self.assertIn('plan', initial)
+            config = dict(initial['config'], start='2020-01-01', end='2026-10-15',
+                          strategy='targeted', preset='identity')
+            code, body, _ = self.request('/api/news-search', 'POST', dict(config, start='2030-01-01'))
+            self.assertEqual(400, code, body)
+            self.assertEqual(initial['config'], json.loads(self.request('/api/news-search')[1])['config'])
+            code, body, _ = self.request('/api/news-search', 'POST', config)
+            self.assertEqual(200, code, body)
+            self.assertEqual('2020-01-01', json.loads(body)['config']['start'])
+            self.assertFalse(json.loads(self.request('/api/workflow')[1])['sources_confirmed'])
+            self.assertFalse(self.engine.online)
+            acquire.assert_not_called()
+
+    def test_empty_targeted_plan_is_rejected_before_enabling_network(self):
+        self.engine.store.import_entities([{'id': 'empty-plan', 'name': 'Persona Sintética Sin Fuente'}])
+        self.authorize_news_source()
+        self.assertEqual(200, self.request('/api/news-search', 'POST', {'strategy': 'targeted'})[0])
+        self.assertEqual(200, self.request('/api/workflow-confirm-sources', 'POST', {})[0])
+        with patch('peps.news.NewsAcquirer.acquire') as acquire:
+            code, body, _ = self.request('/api/news-acquire', 'POST', {'online': True})
+            self.assertEqual(409, code, body)
+            self.assertIn('Preparar fuentes', json.loads(body)['error'])
+            self.assertFalse(self.engine.online)
+            acquire.assert_not_called()
+
+    def test_evaluation_archives_its_acquisition_limits_without_changing_replay(self):
+        self.engine.store.import_entities([{'id': 'coverage', 'name': 'Persona Sintética Histórica'}])
+        self.analyze_local()
+        code, body, _ = self.request('/api/explanation?id=coverage')
+        self.assertEqual(200, code, body)
+        evaluation = json.loads(body)
+        acquisition = evaluation['result']['provenance']['acquisition']
+        self.assertEqual('local', acquisition['mode'])
+        self.assertEqual(0, acquisition['articles'])
+        self.assertTrue(self.engine.replay_score(evaluation['run']['id'])['matched'])
 
     def test_rejected_busy_collection_cannot_enable_network_mode(self):
         self.engine.store.import_entities([{'id': 'busy', 'name': 'Entidad Sintética Ocupada'}])
@@ -265,6 +345,8 @@ class LocalAppTests(unittest.TestCase):
                         ('/api/score', {}),
                         ('/api/workflow-analyze', {}),
                         ('/api/workflow-mode', {'mode': 'local'}),
+                        ('/api/news-search', {}),
+                        ('/api/workflow-finish-download', {}),
                         ('/api/export-ticket', {}),
                         ('/api/source', {'id': self.engine.sources()[0]['id'], 'enabled': False, 'terms_approved': False}),
                         ('/api/news-source', dict(source, enabled=False, terms_approved=False)),

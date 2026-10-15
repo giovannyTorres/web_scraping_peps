@@ -166,7 +166,7 @@ def run_case(size, workers, bank_size=40000, feed_size=400, seconds=1800):
         engine = Engine(directory, online=True)
         news = NewsAcquirer(engine)
         sources = make_sources(size, feed_size)
-        news.config_path.write_text(json.dumps({'sources': sources, 'user_agent': 'PEPS synthetic fixture',
+        news.config_path.write_text(json.dumps({'sources': sources, 'search': {'strategy': 'feeds'}, 'user_agent': 'PEPS synthetic fixture',
                                                 'cache_ttl_seconds': 86400}), encoding='utf-8')
         bank_started = time.perf_counter()
         engine.store.import_entities({'id': f'synthetic-{i:05d}', 'name': f'Persona Sintética {i:05d}'}
