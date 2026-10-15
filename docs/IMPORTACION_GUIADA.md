@@ -136,8 +136,8 @@ El [benchmark reproducible](benchmarks/import_performance.json) usa CSV ficticio
 
 | Filas | Vista previa, mediana | Confirmación y guardado, mediana | Pico de memoria del proceso |
 |---|---:|---:|---:|
-| 1,000 | 67 ms | 93 ms | 19 MiB |
-| 10,000 | 308 ms | 681 ms | 44 MiB |
+| 1,000 | 32 ms | 49 ms | 19 MiB |
+| 10,000 | 593 ms | 1142 ms | 44 MiB |
 
 Estos tiempos miden validación y persistencia SQLite en el entorno Linux documentado. Excluyen scoring, interfaz, modelos y adquisición de noticias; no predicen el rendimiento de un banco poblado. El reporte conserva muestras individuales, rangos, tiempo de CPU y almacenamiento. La CI repite las pruebas y ambas cargas en Windows y Linux.
 

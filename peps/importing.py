@@ -204,8 +204,12 @@ def _normalize(fields, options):
         name = re.sub(r'\s+', ' ', name)
     if not name or len(name) > 300:
         raise ValueError('Nombre obligatorio de hasta 300 caracteres')
-    raw_kind = _text(fields.get('kind', ''), 'Tipo')
-    kind = options['kind_values'].get(raw_kind) or _KIND_NAMES.get(_fold(raw_kind))
+    source_kind = fields.get('kind', '')
+    raw_kind = _text(source_kind, 'Tipo')
+    # Equivalences chosen in the UI use the exact displayed CSV cell. Also
+    # accept a trimmed key supplied by a local integration.
+    kind = (options['kind_values'].get(source_kind) or options['kind_values'].get(raw_kind)
+            or _KIND_NAMES.get(_fold(raw_kind)))
     if not raw_kind:
         kind = options['default_kind']
     if kind not in KINDS:

@@ -110,6 +110,13 @@ class GuidedImportTests(unittest.TestCase):
         payload['kind_values'] = {}
         payload['default_kind'] = 'person'
         self.assertFalse(preview_import(self.store, payload)['ready'])
+        for equivalence_key in (' P.F. ', 'P.F.'):
+            with self.subTest(equivalence_key=equivalence_key):
+                padded = dict(payload, text='n,t\nAna, P.F. \n',
+                              kind_values={equivalence_key: 'person'})
+                result = preview_import(self.store, padded)
+                self.assertTrue(result['ready'], result['errors'])
+                self.assertEqual('person', result['rows'][0]['entity']['kind'])
 
     def test_rfc_date_age_normalization_and_invalid_dates(self):
         payload = {'text': 'n,t,r,f,e\nAna,persona,aaaa010101aaa,31/12/2000,25\n',
