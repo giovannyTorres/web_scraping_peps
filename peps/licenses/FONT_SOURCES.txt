@@ -1,0 +1,34 @@
+WebScope bundled fonts
+
+Fonts from the public Google Fonts repository, pinned at 1d0e46c7933245c8180fe83e47917961c913bbdb.
+Converted from original TrueType to WOFF2 with fontTools 4.61.1 and Brotli 1.1.0.
+Glyphs and font names are unchanged; original copyright and OFL notices are included.
+
+Lato-Regular.ttf
+https://raw.githubusercontent.com/google/fonts/1d0e46c7933245c8180fe83e47917961c913bbdb/ofl/lato/Lato-Regular.ttf
+SHA-256 d636e4683231f931eda222d588e944d082bfd3bdba02f928bee461c0f185b251
+
+Lato-Bold.ttf
+https://raw.githubusercontent.com/google/fonts/1d0e46c7933245c8180fe83e47917961c913bbdb/ofl/lato/Lato-Bold.ttf
+SHA-256 8a0aace75d33794eece4b28187bfc1df0bbd2888b5d8a56e01788c8d65d16be1
+
+Lato-OFL.txt
+https://raw.githubusercontent.com/google/fonts/1d0e46c7933245c8180fe83e47917961c913bbdb/ofl/lato/OFL.txt
+SHA-256 74ba064d03f1f1c4a952da936c3eb71866c34404916734de3cae73b34357e59e
+
+SourceSerif4-Roman.ttf
+https://raw.githubusercontent.com/google/fonts/1d0e46c7933245c8180fe83e47917961c913bbdb/ofl/sourceserif4/SourceSerif4%5Bopsz%2Cwght%5D.ttf
+SHA-256 97b2d4da6e3cb494b5a1e66ae176914d852ccabef49e0c02c0df25f3e39aca0b
+
+SourceSerif4-OFL.txt
+https://raw.githubusercontent.com/google/fonts/1d0e46c7933245c8180fe83e47917961c913bbdb/ofl/sourceserif4/OFL.txt
+SHA-256 5f94c3fd3a23131a417ab5a0c8452de57e70c3cfb9f604d88241f7065ebf9fd9
+
+Lato-Regular.woff2
+SHA-256 d414a00ed3e47a8cc7462bd43975f0214a05c10b70b5f22686430beb6057ae2c
+
+Lato-Bold.woff2
+SHA-256 898fe2248312995b4b089601fa76a0da61b47de58b95bb88291230f2a3db764d
+
+SourceSerif4-Roman.woff2
+SHA-256 4453d73855919eb67a8291bf2bad07782ecaf8af0e4e363d58948ff993209d51

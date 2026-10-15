@@ -12,6 +12,7 @@ from datetime import datetime, timezone
 import importlib.metadata
 import json
 from pathlib import Path
+import re
 import shutil
 import sys
 import tempfile
@@ -134,6 +135,60 @@ def capture_failure(page_provider, artifacts, report):
         raise
 
 
+def validate_branding(page, address, font_responses, report, checked):
+    """Exercise the rendered identity and actual local font loading in Chromium."""
+    from playwright.sync_api import expect
+
+    expect(page).to_have_title(re.compile(r'WebScope'))
+    expect(page.locator('.brand')).to_contain_text('WebScope')
+    checked('webscope_title_and_visible_wordmark')
+    fonts = page.evaluate("""async()=>{
+      const normalize=value=>String(value).replace(/[\\s"']/g,'').toLowerCase();
+      const faces=Array.from(document.fonts);
+      const families={lato:faces.find(face=>normalize(face.family)==='lato')?.family,
+        serif:faces.find(face=>normalize(face.family)==='sourceserif4')?.family};
+      const requested=[];
+      for(const [key,weight]of [['lato',400],['lato',700],['serif',700]]){
+        if(!families[key]){requested.push({family:key,weight,loaded:0,checked:false});continue;}
+        const query=weight+' 18px '+JSON.stringify(families[key]);
+        const loaded=await document.fonts.load(query,'WebScope, evidencia pública de México. Águila sintética.');
+        requested.push({family:families[key],weight,loaded:loaded.length,checked:document.fonts.check(query)});
+      }
+      await document.fonts.ready;
+      const style=selector=>{const value=getComputedStyle(document.querySelector(selector));
+        return {fontFamily:value.fontFamily,fontWeight:value.fontWeight,color:value.color,
+          backgroundColor:value.backgroundColor,borderLeftColor:value.borderLeftColor};};
+      return {requested,faces:Array.from(document.fonts).map(face=>({family:face.family,weight:face.weight,status:face.status})),
+        root:style(':root'),body:style('body'),heading:style('h1'),sidebar:style('.app-sidebar'),
+        wordmarkAccent:style('.brand span'),navigation:style('[data-workflow-step="data"]'),
+        primary:style('#workflow-primary')};
+    }""")
+    checked('local_lato_regular_and_bold_and_serif_are_loaded',
+            len(fonts['requested']) == 3 and all(item['loaded'] > 0 and item['checked'] for item in fonts['requested']))
+    normalize_family = lambda family: family.split(',')[0].strip(' \"\'').replace(' ', '').lower()
+    checked('rendered_body_uses_lato', normalize_family(fonts['body']['fontFamily']) == 'lato')
+    checked('rendered_heading_uses_source_serif_4', normalize_family(fonts['heading']['fontFamily']) == 'sourceserif4')
+    checked('heading_font_is_a_loaded_variable_face', any(
+            normalize_family(face['family']) == 'sourceserif4' and face['status'] == 'loaded' and
+            len(face['weight'].split()) == 2 for face in fonts['faces']))
+    checked('font_files_are_served_locally_with_woff2_mime', len({item['url'] for item in font_responses}) >= 3 and all(
+            item['url'].startswith(address + '/') and item['status'] == 200 and
+            item['content_type'].split(';')[0].strip().lower() == 'font/woff2' for item in font_responses))
+    checked('canonical_palette_is_rendered_in_root_sidebar_navigation_and_wordmark',
+            fonts['root']['color'] == 'rgb(7, 33, 70)' and fonts['sidebar']['backgroundColor'] == 'rgb(7, 33, 70)' and
+            fonts['navigation']['backgroundColor'] == 'rgb(0, 68, 129)' and
+            fonts['navigation']['borderLeftColor'] == 'rgb(20, 100, 165)' and
+            fonts['primary']['backgroundColor'] == 'rgb(0, 68, 129)' and
+            fonts['wordmarkAccent']['color'] == 'rgb(45, 204, 205)')
+    page.locator('#workflow-primary').hover()
+    expect(page.locator('#workflow-primary')).to_have_css('background-color', 'rgb(20, 100, 165)')
+    checked('primary_hover_uses_canonical_light_blue')
+    page.mouse.move(0, 0)
+    expect(page.locator('#workflow-primary')).to_have_css('background-color', 'rgb(0, 68, 129)')
+    report['branding'] = fonts
+    report['branding']['font_responses'] = list(font_responses)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--browser-path', default=shutil.which('chromium') or shutil.which('chromium-browser'))
@@ -199,7 +254,7 @@ def run_validation(args):
                       'message': 'Diez fragmentos sintéticos revisados'})
         return original_attribute(acquirer, *args, progress=None, **kwargs)
 
-    errors, network, responses = [], [], []
+    errors, network, responses, font_responses = [], [], [], []
     active_page = None
     try:
         with tempfile.TemporaryDirectory() as tmp:
@@ -230,11 +285,17 @@ def run_validation(args):
                         context.on('page', lambda item: item.on('pageerror', lambda error: errors.append(str(error))))
                         page.on('pageerror', lambda error: errors.append(str(error)))
                         context.on('request', lambda request: network.append(request.url))
-                        context.on('response', lambda response: responses.append((response.url, response.status)))
+                        def observe_response(response):
+                            responses.append((response.url, response.status))
+                            if response.url.split('?', 1)[0].endswith('.woff2'):
+                                font_responses.append({'url': response.url, 'status': response.status,
+                                                       'content_type': response.headers.get('content-type', '')})
+                        context.on('response', observe_response)
                         # Abort any accidental attempt before it can reach the network.
                         context.route('**/*', lambda route: route.continue_() if route.request.url.startswith(address + '/') else route.abort())
                         page.goto(address)
                         page.locator('#workflow-progress').wait_for(state='attached')
+                        validate_branding(page, address, font_responses, report, checked)
                         initial = api(page, 'workflow')['body']
                         checked('five_explicit_steps', [step['id'] for step in initial['steps']] == ['data', 'sources', 'download', 'analysis', 'results'])
                         checked('empty_bank_starts_with_data', initial['recommended_step'] == 'data' and not initial['actions']['analyze']['enabled'])

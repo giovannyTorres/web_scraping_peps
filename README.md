@@ -1,6 +1,8 @@
-# PEPS MX 2.3.0
+# WebScope 2.3.1
 
 Banco local de noticias y documentos públicos sobre personas, empresas y organizaciones mexicanas. Separa la adquisición de fuentes autorizadas de la atribución local de identidad, conserva procedencia y versiones, y ordena la revisión documental con una puntuación explicable.
+
+**WebScope** es el nuevo nombre de la herramienta de web scraping y análisis documental antes llamada PEPS MX. La interfaz combina azules marino y principal con acentos aqua, Lato para texto y controles y Source Serif 4 para títulos. Las fuentes se distribuyen con sus licencias y se cargan desde el propio paquete, sin servicios de tipografía externos. Tras instalar el wheel puede usar `webscope` o el comando compatible `peps`; el módulo Python y las rutas de datos existentes se conservan.
 
 La interfaz organiza el trabajo en cinco pasos: **cargar lista → preparar fuentes → descargar noticias → analizar y calcular → revisar resultados**. Cada paso muestra su estado, el avance disponible y el motivo de cualquier bloqueo. Importar datos ya no ejecuta scoring; el cálculo se inicia explícitamente después de terminar la adquisición. Consulte [FLUJO_GUIADO.md](docs/FLUJO_GUIADO.md) para recorrerlo y [VALIDACION_2_3_0.md](docs/VALIDACION_2_3_0.md) para sus comprobaciones.
 
@@ -10,7 +12,7 @@ La condición PEP, un parentesco, un cargo o un contrato público no son conduct
 
 ## Inicio en Windows
 
-El paquete portable usa la carpeta completa `PEPS-MX`, con `PEPS-MX.exe`, `PEPS-CLI.exe` y la carpeta auxiliar `_internal`. Abra `PEPS-MX.exe` con doble clic: inicia un servidor en `127.0.0.1` y abre el navegador predeterminado sin mostrar una consola. No requiere instalar Python en la máquina de destino. Mantenga juntos ambos ejecutables y `_internal`; distribuir únicamente un `.exe` no funciona. El paquete no es un instalador ni un servicio de Windows.
+El paquete portable usa la carpeta completa `WebScope`, con `WebScope.exe`, `WebScope-CLI.exe` y la carpeta auxiliar `_internal`. Abra `WebScope.exe` con doble clic: inicia un servidor en `127.0.0.1` y abre el navegador predeterminado sin mostrar una consola. No requiere instalar Python en la máquina de destino. Mantenga juntos ambos ejecutables y `_internal`; distribuir únicamente un `.exe` no funciona. El paquete no es un instalador ni un servicio de Windows.
 
 Desde el código fuente se requiere Python 3.10 o posterior. La instalación base utiliza únicamente la biblioteca estándar en ejecución: no necesita Hugging Face, claves de un modelo ni servicios de IA.
 
@@ -20,7 +22,7 @@ La sección **«¿Por qué obtuvo este score?»** conecta cada resultado con sus
 python -m peps --data-dir .\runtime ui
 ```
 
-Ejecute los comandos desde la raíz del proyecto. En el bundle sustituya `python -m peps` por la ruta a `PEPS-CLI.exe`, que conserva salida y errores de consola. Desde la carpeta portable, para diagnóstico de apertura use `.\PEPS-CLI.exe --data-dir .\runtime ui --no-browser`; muestra la URL local. `PEPS-MX.exe` está destinado al doble clic. Para conservar los datos en una ubicación explícita, utilice siempre el mismo `--data-dir`; sin esa opción, Windows usa `%LOCALAPPDATA%\PEPS-MX`.
+Ejecute los comandos desde la raíz del proyecto. En el bundle sustituya `python -m peps` por la ruta a `WebScope-CLI.exe`, que conserva salida y errores de consola. Desde la carpeta portable, para diagnóstico de apertura use `.\WebScope-CLI.exe --data-dir .\runtime ui --no-browser`; muestra la URL local. `WebScope.exe` está destinado al doble clic. Para conservar los datos en una ubicación explícita, utilice siempre el mismo `--data-dir`; sin esa opción, Windows conserva `%LOCALAPPDATA%\PEPS-MX` para abrir el banco existente. El paquete Python `peps-mx` y el módulo `peps` mantienen su nombre por compatibilidad; la instalación también ofrece el comando `webscope`.
 
 ## Flujo de trabajo
 
@@ -99,7 +101,7 @@ python -m pip install -r requirements-build.lock.txt
 .\scripts\build_windows.ps1 -Python python -Destination dist
 ```
 
-El script ejecuta las pruebas y construye las variantes gráfica y de consola, colocando `PEPS-CLI.exe` junto a `PEPS-MX.exe` para compartir `_internal`. Comprueba los recursos compartidos y prueba el paquete final desde una carpeta ajena al repositorio: importación, cálculo, explicación, historial, replay, auditoría, exportación, respaldo y servidor local. Distribuya `dist\PEPS-MX` completo. El entorno de destino debe permitir ejecución de aplicaciones locales, apertura de navegador y escritura en el directorio de datos; políticas corporativas pueden impedirlo.
+El script ejecuta las pruebas y construye las variantes gráfica y de consola, colocando `WebScope-CLI.exe` junto a `WebScope.exe` para compartir `_internal`. Comprueba los recursos compartidos y prueba el paquete final desde una carpeta ajena al repositorio: importación, cálculo, explicación, historial, replay, auditoría, exportación, respaldo y servidor local, incluidas las fuentes tipográficas locales. Distribuya `dist\WebScope` completo. El entorno de destino debe permitir ejecución de aplicaciones locales, apertura de navegador y escritura en el directorio de datos; políticas corporativas pueden impedirlo.
 
 La CI verifica además el wheel instalado en un entorno limpio, sin dependencias de ejecución, en Windows/Linux con Python 3.10/3.12. `scripts/validate_distribution.py` admite `--output` para guardar el comprobante y `--executable` para probar la CLI de un paquete portable.
 

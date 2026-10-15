@@ -1,2 +1,2 @@
-"""PEPS MX: revisión documental local, reproducible y sin dependencias de red."""
-__version__ = "2.3.0"
+"""WebScope: web scraping y revisión documental local reproducible."""
+__version__ = "2.3.1"

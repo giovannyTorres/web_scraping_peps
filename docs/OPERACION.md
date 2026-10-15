@@ -4,7 +4,7 @@
 
 Todos los comandos usan el mismo directorio de datos. Es recomendable una ruta local con permisos de Windows restringidos a los operadores autorizados. Las bases SQLite no están cifradas por esta aplicación; proteja el disco y sus respaldos mediante los controles de la organización.
 
-Los ejemplos desde código fuente usan `python -m peps`. En el paquete portable use `PEPS-CLI.exe` para importaciones, workers, exportación y diagnóstico por consola. Abra `PEPS-MX.exe` con doble clic para la interfaz gráfica. Ambos ejecutables requieren la carpeta `_internal` que se distribuye junto a ellos; no copie un `.exe` aislado. Sin `--data-dir`, ambos usan la misma ubicación predeterminada de Windows.
+Los ejemplos desde código fuente usan el módulo compatible `python -m peps`; tras instalar el wheel también puede usar `webscope`. En el paquete portable use `WebScope-CLI.exe` para importaciones, workers, exportación y diagnóstico por consola. Abra `WebScope.exe` con doble clic para la interfaz gráfica. Ambos ejecutables requieren la carpeta `_internal` que se distribuye junto a ellos; no copie un `.exe` aislado. Sin `--data-dir`, conservan la ubicación anterior `%LOCALAPPDATA%\PEPS-MX` para abrir el banco existente.
 
 Ejemplo de CSV de entidades:
 
@@ -112,7 +112,7 @@ python -m peps --data-dir .\runtime --online worker --daemon --daily --workers 4
 El script de ejemplo registra una ejecución cada cinco minutos con `worker --daily`: encola noticias por ventana UTC, procesa la cola y atribuye después del lote:
 
 ```powershell
-.\scripts\register_worker.ps1 -Executable .\dist\PEPS-MX\PEPS-CLI.exe -DataDirectory .\runtime -Name PEPS-MX-Worker
+.\scripts\register_worker.ps1 -Executable .\dist\WebScope\WebScope-CLI.exe -DataDirectory .\runtime -Name PEPS-MX-Worker
 ```
 
 El directorio de datos debe existir y contener `news_sources.json` revisado. El script evita instancias superpuestas; las claves persistidas impiden duplicar la misma tarea de feed o consulta y ventana al reiniciar cada proceso. Use el Programador de tareas o el modo continuo, según su operación. Un worker manual sin `--daily` sólo drena la cola y necesita `news-attribute` por separado. Registrar la tarea altera el Programador de tareas de Windows y debe hacerse al decidir activar la automatización.
