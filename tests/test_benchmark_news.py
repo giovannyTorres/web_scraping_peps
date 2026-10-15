@@ -60,14 +60,37 @@ class NewsBenchmarkTests(unittest.TestCase):
 
     def test_cold_waits_for_interval_after_robots_network_request(self):
         config = self.config()
-        config["sources"][0]["min_interval_seconds"] = .05
-        with tempfile.TemporaryDirectory() as directory, patch("socket.getaddrinfo", return_value=PUBLIC), patch.object(SafeFetcher, "_transport", self.transport):
+        interval = config["sources"][0]["min_interval_seconds"] = 1
+        clock, sleeps, requests = [1_800_000_000.0], [], []
+
+        def advance(seconds):
+            sleeps.append(seconds)
+            clock[0] += seconds
+
+        def transport(instance, url, headers, timeout, max_bytes, addresses):
+            requests.append((url, clock[0]))
+            return self.transport(instance, url, headers, timeout, max_bytes, addresses)
+
+        # SQLite and runner scheduling must not consume the courtesy interval.
+        # Both retry timestamps and the benchmark deadline use this clock;
+        # only the harness's sleep advances it, without an actual wall-clock wait.
+        with tempfile.TemporaryDirectory() as directory, \
+                patch("socket.getaddrinfo", return_value=PUBLIC), \
+                patch.object(SafeFetcher, "_transport", transport), \
+                patch.object(bench.time, "time", side_effect=lambda: clock[0]), \
+                patch.object(bench.time, "monotonic", side_effect=lambda: clock[0]), \
+                patch.object(bench.time, "sleep", side_effect=advance):
             result = bench.run(config, Path(directory), max_requests=6, seconds=5, workers=1)
         cold = result["probes"][0]
         self.assertEqual(cold["status"], "ok")
         self.assertEqual(cold["decisions"][0]["status"], "deferred")
         self.assertTrue(cold["decisions"][0]["request_attempted"])
+        self.assertEqual([url for url, _ in requests], ["https://news.example/robots.txt", "https://news.example/feed"])
+        self.assertEqual(len(sleeps), 1)
+        self.assertGreaterEqual(sleeps[0], interval)
+        self.assertGreaterEqual(requests[1][1] - requests[0][1], interval)
         self.assertEqual(result["phases"][0]["summary"]["network_requests"], 2)
+        self.assertEqual(result["phases"][1]["summary"]["network_requests"], 0)
 
     def test_reused_state_retains_origin_denials(self):
         with tempfile.TemporaryDirectory() as directory, patch("socket.getaddrinfo", return_value=PUBLIC), patch.object(SafeFetcher, "_transport", self.transport):

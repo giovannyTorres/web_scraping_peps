@@ -46,6 +46,12 @@ garantiza que una fuente tenga documentos de cada entidad. El catálogo usa
 extranjera sobre entidades mexicanas. Deje ese filtro vacío cuando el alcance
 autorizado incluya medios extranjeros en español.
 
+Las consultas también incluyen marcas, razones sociales y abreviaciones declaradas
+en `context.verified_aliases`, `trade_names`, `business_names`, `legal_name`,
+`legal_names` y `abbreviations`. Las marcas compartidas conservan todos los IDs;
+los alias revocados se omiten. Buscar una variante no verifica por sí mismo su
+pertenencia ni la identidad de una mención encontrada.
+
 Para una ventana histórica explícita, las fechas son UTC en
 `YYYYMMDDHHMMSS`, dentro del período que admita la fuente:
 

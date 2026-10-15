@@ -119,7 +119,23 @@ def batch_queries(entities, max_terms=6, max_chars=500, language='SPANISH', coun
     names = {}
     for entity in entities:
         # One nominal query per shared name even when several homonyms exist.
-        for name in [entity['name'], *entity.get('aliases', [])]:
+        variants = [entity['name'], *entity.get('aliases', [])]
+        context = entity.get('context') or {}
+        if isinstance(context, dict):
+            for field in ('verified_aliases', 'trade_names', 'business_names', 'legal_name', 'legal_names', 'abbreviations'):
+                values = context.get(field) or []
+                if field == 'verified_aliases' and isinstance(values, dict):
+                    values = [dict(value, name=name) if isinstance(value, dict) else {'name': name}
+                              for name, value in values.items()]
+                variants.extend(values if isinstance(values, list) else [values])
+        for name in variants:
+            if isinstance(name, dict):
+                if (name.get('validated') is False or name.get('verified') is False
+                        or str(name.get('status', '')).casefold() in ('rejected', 'revoked')):
+                    continue
+                name = name.get('name') or name.get('value') or name.get('alias')
+            if not isinstance(name, str):
+                continue
             name = ' '.join(str(name).replace('"', ' ').split())
             if name:
                 names.setdefault(name.casefold(), {'name': name, 'entity_ids': set()})['entity_ids'].add(entity['id'])

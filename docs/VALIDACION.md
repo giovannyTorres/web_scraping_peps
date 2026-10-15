@@ -29,7 +29,7 @@ Cada caso usó un padrón de 40 mil entidades y dos editores sintéticos. La red
 
 Todos los controles pasaron: conservación de URLs, cuerpos descargados, deduplicación dentro del editor, preservación entre editores, grupos de sindicación, métricas exactas, pausas virtuales, cero descarga caliente y auditoría. El caso de 10 mil URLs conservó mil grupos de contenido; sus 10,028 HTTP fueron 10 mil cuerpos, 26 feeds y dos robots. La adquisición no ejecutó atribución ni scoring en esos casos.
 
-Se repitió la adquisición con el código final y la trazabilidad pública de la política de fuente: 1,000 URLs, cuatro workers y 40 mil entidades en 31.479 s frío y 6.955 s caliente; 1,006 HTTP simulados en frío y cero en caliente, 200 documentos, todos los controles aprobados. El reporte `benchmark_descarga_carga_version_final.json` conserva sus hashes exactos. La suite local final aprobó 194 pruebas; la construcción del ejecutable y CI se verifican por separado.
+Se repitió la adquisición con el código final y la trazabilidad pública de la política de fuente: 1,000 URLs, cuatro workers y 40 mil entidades en 29.397 s frío y 6.515 s caliente; 1,006 HTTP simulados en frío y cero en caliente, 200 documentos, todos los controles aprobados. El reporte `benchmark_descarga_carga_version_final.json` conserva sus hashes exactos. La suite local final aprobó 195 pruebas; la construcción del ejecutable y CI se verifican por separado.
 
 La referencia inicial de 1,000 URLs tardaba 94.474 s con un worker y 100.318 s con cuatro. Las cifras finales muestran mejora local; no acreditan una mejora equivalente en red. Los reportes guardan hashes de módulos al comienzo del proceso. Después del ensayo grande hubo cambios en atribución/exportación/planner; un smoke posterior, 20 URLs y cuatro workers, aprobó todos los controles (0.736 s frío, 0.194 s caliente). No se presenta el ensayo grande como una ejecución integral del último hash de todos los módulos.
 
@@ -39,7 +39,7 @@ La batería principal pasó 120 desafíos sintéticos. Una auditoría independie
 
 Las integraciones comprueban homónimos en un mismo documento, selección humana de una ocurrencia, exclusión de descubrimiento incluso revisado, invalidación al cambiar el padrón y ausencia de contaminación de una mención corroborada por otra adversa sin identidad resuelta. `matched` puede producir prioridad provisional; la validada exige revisión humana vigente.
 
-Una auditoría final de nueve regresiones también pasó: reatribuir después de cambiar el padrón no revive una revisión humana obsoleta; las noticias importadas localmente pasan por el resolver; el hash de reglas invalida resoluciones y revisiones antiguas. Los vínculos retirados conservan su historia para auditoría.
+Una auditoría final de diez regresiones también pasó: reatribuir después de cambiar el padrón no revive una revisión humana obsoleta; las noticias importadas localmente pasan por el resolver; el hash de reglas invalida resoluciones y revisiones antiguas. Los vínculos retirados conservan su historia para auditoría.
 
 El índice local de 40 mil registros y 100 mil variantes se construyó en 11.773 s. Procesó 40 mil textos cortos en 24.285 s, aproximadamente 1,647 por segundo, sin errores del fixture. Mil textos de al menos 1,902 caracteres tardaron 4.344 s. Cinco mil homónimos devolvieron cinco mil candidatos en 0.776 s, con listas de competidores acotadas. No se midió memoria ni precisión sobre noticias reales.
 

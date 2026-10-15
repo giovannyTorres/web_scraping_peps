@@ -4,6 +4,7 @@ import unittest
 from unittest.mock import patch
 
 from peps import identity
+from peps.news import batch_queries
 from peps.scoring import score_entity
 import tests.test_identity_holdout as holdout
 
@@ -131,6 +132,40 @@ class FinalIdentityLifecycleAudit(unittest.TestCase):
             result = self.news.attribute()
             self.assertEqual(result["articles_processed"], 1)
             self.assertEqual(self.engine.store.evidence("h1")[0]["identity_resolution"]["features"]["rules_hash"], "synthetic-upgraded-rules")
+
+    def test_commercial_query_names_are_deduplicated_attributed_and_not_verified_by_search(self):
+        bank = [
+            {"id": "c1", "name": "Operadora Cedro, S.A. de C.V.", "kind": "company",
+             "aliases": [{"name": "Alias Estructurado", "status": "candidate"}],
+             "context": {"trade_names": ["Marca Cedro", {"name": "Marca Aspirante", "status": "pending"}],
+                 "legal_name": "Razón Alfa, S.A. de C.V.", "abbreviations": ["OCC"],
+                 "verified_aliases": [
+                     {"name": "CedroMX", "verified": True, "source": "synthetic:bank-review"},
+                     {"name": "Marca Revocada", "status": "revoked", "source": "synthetic:bank-review"},
+                     {"name": "Marca Rechazada", "status": "rejected"},
+                     {"name": "Marca No Validada", "validated": False}]}},
+            {"id": "c2", "name": "Operadora Cedro, S.A. de C.V.", "kind": "company", "aliases": [],
+             "context": {"trade_names": ["marca cedro"], "business_names": ["Comercial del Cedro"],
+                         "legal_name": {"value": "Razón Beta, S.A. de C.V."}}},
+            {"id": "c3", "name": "Marca Cedro", "kind": "company", "aliases": [], "context": {}},
+        ]
+        batches = list(batch_queries(iter(bank), max_terms=1, max_chars=180))
+        by_name = {batch["names"][0].casefold(): batch for batch in batches}
+        required = {"operadora cedro, s.a. de c.v.", "marca cedro", "marca aspirante", "alias estructurado",
+                    "razón alfa, s.a. de c.v.", "razón beta, s.a. de c.v.", "comercial del cedro", "occ", "cedromx"}
+        self.assertEqual(set(by_name), required)
+        self.assertEqual(len(batches), len(required))
+        self.assertEqual(by_name["operadora cedro, s.a. de c.v."]["entity_ids"], ["c1", "c2"])
+        self.assertEqual(by_name["marca cedro"]["entity_ids"], ["c1", "c2", "c3"])
+        for batch in batches:
+            self.assertIsInstance(batch["names"][0], str)
+            self.assertLessEqual(len(batch["query"]), 180)
+            self.assertNotIn("{", batch["query"])
+            self.assertNotIn("verified", batch["query"])
+            self.assertEqual(batch["query"], '"' + batch["names"][0] + '" sourcelang:SPANISH')
+        resolver = identity.IdentityResolver(bank)
+        self.assertEqual({row["status"] for row in resolver.resolve("Marca Cedro presentó un informe.")}, {"ambiguous"})
+        self.assertEqual(resolver.resolve("CedroMX presentó un informe.")[0]["status"], "candidate")
 
 
 if __name__ == "__main__":
