@@ -53,6 +53,11 @@ explícito y los trabajadores siguen disponibles cuando un feed descubre nuevos
 artículos. La duración máxima de sesión limita nuevas solicitudes; las activas
 terminan conforme al timeout del transporte.
 
+La tarea de portable en CI depende de la matriz unitaria del mismo commit y
+utiliza `-SkipTests` para construir después de esa aprobación. Conserva siempre
+las comprobaciones del ejecutable congelado. La construcción local ejecuta la
+suite por defecto.
+
 ## Comprobación pública del adaptador histórico
 
 La consulta RSS de Desinformémonos por la frase «López Obrador» y el año 2020

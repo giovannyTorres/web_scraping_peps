@@ -1,4 +1,8 @@
-param([string]$Python = 'python', [string]$Destination = 'dist')
+param(
+    [string]$Python = 'python',
+    [string]$Destination = 'dist',
+    [switch]$SkipTests
+)
 $ErrorActionPreference = 'Stop'
 
 function Test-EquivalentBaseLibrary([string]$Source, [string]$Target) {
@@ -56,8 +60,10 @@ $RepoPath = Split-Path -Parent $PSScriptRoot
 Push-Location -LiteralPath $RepoPath
 try {
     $Destination = [IO.Path]::GetFullPath($Destination)
-    & $Python -m unittest discover -s tests
-    if ($LASTEXITCODE -ne 0) { throw 'Pruebas fallidas; no se construye el ejecutable.' }
+    if (-not $SkipTests) {
+        & $Python -m unittest discover -s tests
+        if ($LASTEXITCODE -ne 0) { throw 'Pruebas fallidas; no se construye el ejecutable.' }
+    }
     & $Python -m PyInstaller --noconfirm --clean --onedir --contents-directory _internal --name WebScope --windowed --python-option 'X utf8' --noupx --collect-data peps --collect-submodules peps --distpath $Destination launcher.py
     if ($LASTEXITCODE -ne 0) { throw 'Falló PyInstaller' }
     & $Python -m PyInstaller --noconfirm --onedir --contents-directory _internal --name WebScope-CLI --console --python-option 'X utf8' --noupx --collect-data peps --collect-submodules peps --distpath $Destination launcher.py
