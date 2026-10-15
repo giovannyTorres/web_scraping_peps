@@ -1,0 +1,76 @@
+{"id":"arrest-fraud","text":"José Peña Villaluz fue detenido por fraude.","stage":"arrest","category":"fraud","relationship":"direct","scoreable":true}
+{"id":"accent-fold","text":"Jose Peña Villaluz fue detenido por fraude.","stage":"arrest","category":"fraud","relationship":"direct","scoreable":true}
+{"id":"upper-case","text":"JOSÉ PEÑA VILLALUZ FUE DETENIDO POR FRAUDE.","stage":"arrest","category":"fraud","relationship":"direct","scoreable":true}
+{"id":"investigation","text":"La fiscalía investiga a José Peña Villaluz por corrupción.","stage":"investigation","category":"corruption","relationship":"direct","scoreable":true}
+{"id":"allegation","text":"José Peña Villaluz fue acusado de lavado de dinero.","stage":"allegation","category":"money_laundering","relationship":"direct","scoreable":true}
+{"id":"conviction","text":"José Peña Villaluz fue condenado por secuestro.","stage":"conviction","category":"violence","relationship":"direct","scoreable":true}
+{"id":"wanted","text":"Existe una orden de aprehensión contra José Peña Villaluz por fraude.","stage":"wanted","category":"fraud","relationship":"direct","scoreable":true}
+{"id":"acquittal","text":"José Peña Villaluz fue absuelto de la acusación de fraude.","stage":"acquittal","category":"fraud","relationship":"direct","scoreable":false}
+{"id":"dismissed","text":"El sobreseimiento de la investigación por fraude contra José Peña Villaluz fue confirmado.","stage":"dismissed","category":"fraud","relationship":"direct","scoreable":false}
+{"id":"denial","text":"José Peña Villaluz negó las acusaciones de corrupción.","stage":"denial","category":"corruption","relationship":"direct","scoreable":false}
+{"id":"negated-arrest","text":"José Peña Villaluz no fue detenido por fraude.","stage":"arrest","category":"fraud","relationship":"direct","negated":true,"scoreable":false}
+{"id":"negated-allegation","text":"José Peña Villaluz nunca ha sido acusado de corrupción.","stage":"allegation","category":"corruption","relationship":"direct","negated":true,"scoreable":false}
+{"id":"family-before","text":"El tío de José Peña Villaluz fue detenido por lavado de dinero.","stage":"arrest","category":"money_laundering","relationship":"family","scoreable":false}
+{"id":"family-after","text":"José Peña Villaluz, cuyo primo fue detenido por fraude, visitó Mérida.","stage":"arrest","category":"fraud","relationship":"family","scoreable":false}
+{"id":"family-predicate-before","text":"Fue detenido por fraude el primo de José Peña Villaluz.","stage":"arrest","category":"fraud","relationship":"family","scoreable":false}
+{"id":"family-related","text":"José Peña Villaluz, sobrino de un detenido por fraude, participó en el foro.","stage":"arrest","category":"fraud","relationship":"family","scoreable":false}
+{"id":"joint-subject","text":"José Peña Villaluz y su tío fueron detenidos por fraude.","stage":"arrest","category":"fraud","relationship":"direct","scoreable":true}
+{"id":"association-before","text":"El socio de José Peña Villaluz fue detenido por corrupción.","stage":"arrest","category":"corruption","relationship":"associate","scoreable":false}
+{"id":"reporter-denounces","text":"José Peña Villaluz denunció a Pedro Monteclaro por fraude.","scoreable":false}
+{"id":"reporter-filed","text":"José Peña Villaluz presentó una denuncia contra Pedro Monteclaro por corrupción.","stage":"allegation","relationship":"context","scoreable":false}
+{"id":"reporter-speech","text":"José Peña Villaluz afirmó que Pedro Monteclaro fue detenido por fraude.","stage":"arrest","relationship":"context","scoreable":false}
+{"id":"reporter-visit","text":"José Peña Villaluz visitó a Pedro Monteclaro, investigado por fraude.","stage":"investigation","relationship":"context","scoreable":false}
+{"id":"other-subject","text":"La fiscalía investiga a Pedro Monteclaro por fraude, dijo José Peña Villaluz.","stage":"investigation","relationship":"context","scoreable":false}
+{"id":"unrelated-sentence","text":"José Peña Villaluz inauguró una biblioteca. Pedro Monteclaro fue detenido por fraude.","scoreable":false}
+{"id":"neutral-category","text":"José Peña Villaluz participó en una conferencia sobre corrupción y lavado de dinero.","scoreable":false}
+{"id":"neutral","text":"José Peña Villaluz entregó el informe anual de actividades en Oaxaca.","scoreable":false}
+{"id":"no-mention","text":"Pedro Monteclaro fue detenido por fraude.","mentions":0,"scoreable":false}
+{"id":"enye-distinction","text":"José Pena Villaluz fue detenido por fraude.","mentions":0,"scoreable":false}
+{"id":"token-boundary","text":"SuperJosé Peña Villaluz fue detenido por fraude.","mentions":0,"scoreable":false}
+{"id":"plural-accused","text":"José Peña Villaluz y Pedro Monteclaro fueron acusados de peculado.","stage":"allegation","category":"corruption","relationship":"direct","scoreable":true}
+{"id":"sanction","text":"José Peña Villaluz fue sancionado por contratación irregular.","stage":"sanction","category":"public_procurement","relationship":"direct","scoreable":true}
+{"id":"tax","text":"José Peña Villaluz fue investigado por evasión fiscal.","stage":"investigation","category":"tax","relationship":"direct","scoreable":true}
+{"id":"organized-crime","text":"José Peña Villaluz fue vinculado a proceso por delincuencia organizada.","stage":"investigation","category":"organized_crime","relationship":"direct","scoreable":true}
+{"id":"hedged","text":"José Peña Villaluz habría sido acusado de presunto fraude.","stage":"allegation","category":"fraud","relationship":"direct","uncertain":true,"scoreable":true}
+{"id":"short-identity","entity":{"id":"fixture-1","name":"Pepe","kind":"person","aliases":[],"context":{}},"text":"Pepe fue detenido por fraude.","stage":"arrest","relationship":"direct","scoreable":false}
+{"id":"two-token-identity","entity":{"id":"fixture-1","name":"Julia Villaluz","kind":"person","aliases":[],"context":{}},"text":"Julia Villaluz fue acusada de fraude.","stage":"allegation","relationship":"direct","scoreable":true}
+{"id":"company","entity":{"id":"fixture-1","name":"Servicios Nube Clara","kind":"company","aliases":[],"context":{}},"text":"Servicios Nube Clara fue sancionada por colusión.","stage":"sanction","category":"public_procurement","relationship":"direct","scoreable":true}
+{"id":"company-alias","entity":{"id":"fixture-1","name":"Servicios Nube Clara","kind":"company","aliases":["Nube Clara"],"context":{}},"text":"La empresa Nube Clara fue acusada de fraude.","stage":"allegation","category":"fraud","relationship":"direct","scoreable":true}
+{"id":"short-company","entity":{"id":"fixture-1","name":"SNC","kind":"company","aliases":[],"context":{}},"text":"SNC fue sancionada por corrupción.","stage":"sanction","relationship":"direct","scoreable":false}
+{"id":"generic-conviction","text":"José Peña Villaluz fue sentenciado a tres años de prisión.","stage":"conviction","category":"reputational","relationship":"direct","scoreable":true}
+{"id":"official-offense","text":"José Peña Villaluz fue acusado de enriquecimiento ilícito.","stage":"allegation","category":"corruption","relationship":"direct","scoreable":true}
+{"id":"ngo-violence","text":"José Peña Villaluz fue acusado de desaparición forzada.","stage":"allegation","category":"violence","relationship":"direct","scoreable":true}
+{"id":"named-as-accused","text":"Señalan a José Peña Villaluz como presunto responsable de fraude.","stage":"allegation","category":"fraud","relationship":"direct","uncertain":true,"scoreable":true}
+{"id":"sentence-initial-padding","text":"\n  Según el boletín, José Peña Villaluz fue detenido por fraude.\n","stage":"arrest","category":"fraud","relationship":"direct","scoreable":true}
+{"id":"double-spaces","text":"José   Peña Villaluz fue detenido por fraude.","stage":"arrest","category":"fraud","relationship":"direct","scoreable":true}
+{"id":"decomposed-accents","text":"José Peña Villaluz fue detenido por fraude.","stage":"arrest","category":"fraud","relationship":"direct","scoreable":true}
+{"id":"victim-has-no-adverse-stage","text":"José Peña Villaluz fue víctima de fraude.","scoreable":false}
+{"id":"attorney-no-own-accusation","text":"José Peña Villaluz defendió a Pedro Monteclaro, acusado de fraude.","stage":"allegation","relationship":"context","scoreable":false}
+{"id":"criminal-complaint-target","text":"La denuncia contra José Peña Villaluz por fraude fue presentada ayer.","stage":"allegation","category":"fraud","relationship":"direct","scoreable":true}
+{"id":"negated-conviction","text":"José Peña Villaluz no ha sido condenado por corrupción.","stage":"conviction","category":"corruption","relationship":"direct","negated":true,"scoreable":false}
+{"id":"independent-victim-passive","text":"José Peña Villaluz fue víctima de un fraude denunciado ante la Fiscalía.","relationship":"context","scoreable":false}
+{"id":"independent-victim-active","text":"José Peña Villaluz sufrió una estafa y denunció el hecho ante la Fiscalía.","relationship":"context","scoreable":false}
+{"id":"independent-prosecutor","text":"José Peña Villaluz, fiscal de la unidad anticorrupción, informó que Pedro Robles Tormenta fue acusado de fraude.","stage":"allegation","relationship":"context","scoreable":false}
+{"id":"independent-witness","text":"José Peña Villaluz presenció cómo fue detenido Pedro Robles Tormenta por lavado de dinero.","stage":"arrest","relationship":"context","scoreable":false}
+{"id":"independent-relative-investigation","text":"La investigación por fraude contra el primo de José Peña Villaluz sigue abierta.","stage":"investigation","relationship":"family","scoreable":false}
+{"id":"independent-prevention","text":"José Peña Villaluz presentó un informe para prevenir el presunto fraude contra consumidores.","scoreable":false}
+{"id":"independent-proposal","text":"José Peña Villaluz propuso sanciones contra la corrupción y demandó investigar a las empresas responsables.","scoreable":false}
+{"id":"independent-journalist","text":"José Peña Villaluz, periodista independiente, reportó que Pedro Robles Tormenta fue detenido por fraude.","stage":"arrest","relationship":"context","scoreable":false}
+{"id":"independent-denial-extended","text":"José Peña Villaluz rechazó de manera categórica todas las acusaciones de corrupción.","stage":"allegation","negated":true,"scoreable":false}
+{"id":"independent-debunked","text":"Es falso que José Peña Villaluz haya sido detenido por fraude.","stage":"arrest","negated":true,"scoreable":false}
+{"id":"independent-hypothetical","text":"Si José Peña Villaluz fuera detenido por fraude, el partido tendría que nombrar un reemplazo.","stage":"arrest","scoreable":false}
+{"id":"independent-requested","text":"Un grupo exigió que José Peña Villaluz sea detenido por fraude, sin que exista una orden judicial.","stage":"arrest","scoreable":false}
+{"id":"independent-two-subject-resolution","text":"José Peña Villaluz fue acusado de fraude, mientras Pedro Robles Tormenta fue absuelto de corrupción.","stage":"allegation","category":"fraud","scoreable":true}
+{"id":"independent-two-subject-categories","text":"José Peña Villaluz fue acusado de fraude, mientras Pedro Robles Tormenta fue detenido por narcotráfico.","stage":"allegation","category":"fraud","scoreable":true}
+{"id":"independent-direct-apposition","text":"José Peña Villaluz, alcalde de Puerto Niebla, fue detenido por fraude.","stage":"arrest","relationship":"direct","scoreable":true}
+{"id":"independent-joint-family","text":"José Peña Villaluz y su primo fueron detenidos por fraude.","stage":"arrest","relationship":"direct","scoreable":true}
+{"id":"independent-family-apposition","text":"El primo de José Peña Villaluz, Pedro Robles Tormenta, fue detenido por fraude.","stage":"arrest","relationship":"family","scoreable":false}
+{"id":"independent-denied-arrest","text":"José Peña Villaluz negó haber sido detenido por fraude.","stage":"arrest","negated":true,"scoreable":false}
+{"id":"independent-negation-long","text":"José Peña Villaluz no ha sido, en ningún momento de su trayectoria, investigado por corrupción.","stage":"investigation","negated":true,"scoreable":false}
+{"id":"independent-direct-accusation","text":"La Fiscalía acusó formalmente a José Peña Villaluz por lavado de dinero.","stage":"allegation","relationship":"direct","scoreable":true}
+{"id":"independent-relative-coreference","text":"José Peña Villaluz se reunió con su sobrino, quien fue detenido por fraude.","stage":"arrest","relationship":"family","scoreable":false}
+{"id":"independent-distinct-charge-resolution","text":"José Peña Villaluz fue absuelto de fraude, pero sigue acusado de lavado de dinero.","stage":"allegation","category":"money_laundering","scoreable":true}
+{"id":"independent-not-denied-ambiguous","text":"José Peña Villaluz no negó las acusaciones de fraude.","stage":"allegation","uncertain":true,"scoreable":true}
+{"id":"independent-error-release","text":"José Peña Villaluz fue arrestado por error y liberado sin cargos.","stage":"dismissed","scoreable":false}
+{"id":"holdout-investigation-closed","text":"José Peña Villaluz dejó de ser investigado por fraude tras archivarse la causa.","stage":"dismissed","scoreable":false}
+{"id":"holdout-tribunal-dismissal","text":"José Peña Villaluz fue acusado de fraude, acusación que el tribunal descartó por falta de pruebas.","stage":"dismissed","scoreable":false}

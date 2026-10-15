@@ -1,0 +1,20 @@
+name: Validación PEPS MX
+on: [push, pull_request]
+jobs:
+  unit:
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+        python: ['3.10', '3.12']
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - run: python -m unittest discover -s tests -v
+      - run: python scripts/benchmark.py --data-dir runtime/ci --size 1000 --output runtime/ci-benchmark.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-${{ matrix.os }}-${{ matrix.python }}
+          path: runtime/ci-benchmark.json

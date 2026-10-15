@@ -1,0 +1,4 @@
+﻿notebook,source,step,duration_seconds,records_processed,records_per_second,status,error_message,notes
+03_noticias_adverse_media,DuckDuckGo,query,0.0,0,0.0,disabled,,ENABLE_DUCKDUCKGO=False
+03_noticias_adverse_media,GDELT,query,0.0,0,0.0,disabled,,ENABLE_GDELT=False
+03_noticias_adverse_media,ALL,summary,0.031629,0,0.0,ok,,personas=10; queries=0; resultados=0; resultados_minuto=0.0

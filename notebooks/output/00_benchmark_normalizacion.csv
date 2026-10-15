@@ -1,0 +1,4 @@
+﻿notebook,source,step,duration_seconds,records_processed,records_per_second,status,error_message,notes
+00_input_normalizacion_benchmark,input,normalizacion,0.002472,10,4044.65,ok,,benchmark local de normalizacion
+00_input_normalizacion_benchmark,input,normalizacion,0.162225,1000,6164.26,ok,,benchmark local de normalizacion
+00_input_normalizacion_benchmark,input,normalizacion,1.618812,10000,6177.37,ok,,benchmark local de normalizacion

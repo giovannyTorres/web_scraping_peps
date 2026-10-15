@@ -1,0 +1,8 @@
+﻿notebook,source,step,duration_seconds,records_processed,records_per_second,status,error_message,notes
+01_sanciones_oficiales_ofac_onu,OFAC SDN,download,0.0,0,0.0,cached,,raw reutilizado
+01_sanciones_oficiales_ofac_onu,OFAC SDN,parsing,3.502467,43581,12442.94,ok,,sha256=85030e0207480c7fe8d0abc3f75bbeab1fa217568b7e726ff330d6bc2e1ce40a
+01_sanciones_oficiales_ofac_onu,OFAC Consolidated,download,0.0,0,0.0,cached,,raw reutilizado
+01_sanciones_oficiales_ofac_onu,OFAC Consolidated,parsing,0.087908,1586,18041.61,ok,,sha256=466179521ec7a28f6d588584787a0144bc79e86a439ea26f1ae112013def8c0b
+01_sanciones_oficiales_ofac_onu,UN Consolidated,download,0.0,0,0.0,cached,,raw reutilizado
+01_sanciones_oficiales_ofac_onu,UN Consolidated,parsing,0.165399,3771,22799.47,ok,,sha256=864e6256c9e17f77af600a17a12872af5498208ed608d74e678cb675d688673c
+01_sanciones_oficiales_ofac_onu,OFAC/UN,matching,1.206963,489380,405463.79,ok,,evidence_rows=38

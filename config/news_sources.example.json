@@ -1,0 +1,99 @@
+{
+  "user_agent": "PEPS-MX/2.1 (+https://github.com/giovannyTorres/web_scraping_peps; replace-with-operator-contact)",
+  "cache_ttl_seconds": 900,
+  "robots_ttl_seconds": 86400,
+  "circuit_seconds": 86400,
+  "max_redirects": 4,
+  "sources": [
+    {
+      "id": "jornada_rss", "source_name": "La Jornada", "kind": "rss", "document_kind": "news",
+      "url": "https://www.jornada.com.mx/rss/edicion.xml?v=1", "base_url": "https://www.jornada.com.mx",
+      "allowed_hosts": ["www.jornada.com.mx"], "enabled": false, "terms_approved": false,
+      "discovery": true, "robots_required": true, "download_articles": false, "article_terms_approved": false,
+      "rss_policy_url": "https://www.jornada.com.mx/rss/", "terms_url": "https://www.jornada.com.mx/pagina/aviso-legal",
+      "permission_scope": "pendiente de revisión del operador; RSS no comercial; almacenamiento personal y privado; sin reutilización comercial",
+      "review_note": "El RSS oficial se ofrece sin costo para uso no comercial. El aviso legal limita el almacenamiento al uso personal y privado y prohíbe el uso comercial y la distribución. Un banco PEPS comercial necesita permiso separado; la lectura del benchmark no lo concede.",
+      "min_interval_seconds": 3, "max_bytes": 2000000, "timeout_seconds": 20, "max_records": 250
+    },
+    {
+      "id": "economista_rss", "source_name": "El Economista", "kind": "rss", "document_kind": "news",
+      "url": "https://www.eleconomista.com.mx/rss/ultimas-noticias", "base_url": "https://www.eleconomista.com.mx",
+      "allowed_hosts": ["www.eleconomista.com.mx"], "enabled": false, "terms_approved": false,
+      "discovery": true, "robots_required": true, "download_articles": false, "article_terms_approved": false,
+      "rss_policy_url": "https://www.eleconomista.com.mx/rss.html", "terms_url": "https://www.eleconomista.com.mx/rss.html",
+      "permission_scope": "pendiente de revisión del operador; sólo lectura RSS; reutilización de artículos sin verificar",
+      "review_note": "El directorio RSS oficial describe la sindicación y los lectores RSS. El pie del sitio reserva los derechos; no concede una licencia sobre el contenido de artículos ni su republicación comercial.",
+      "min_interval_seconds": 3, "max_bytes": 2000000, "timeout_seconds": 20, "max_records": 250
+    },
+    {
+      "id": "aristegui_rss", "source_name": "Aristegui Noticias", "kind": "rss", "document_kind": "news",
+      "url": "https://editorial.aristeguinoticias.com/feed/", "base_url": "https://aristeguinoticias.com",
+      "allowed_hosts": ["editorial.aristeguinoticias.com", "aristeguinoticias.com"], "enabled": false, "terms_approved": false,
+      "discovery": true, "robots_required": true, "download_articles": false, "article_terms_approved": false,
+      "terms_url": "https://aristeguinoticias.com/aviso-de-privacidad/",
+      "permission_scope": "pendiente de revisión del operador; RSS público del editor; reutilización sin verificar",
+      "review_note": "Se observó un RSS público del editor. El aviso de privacidad no es una licencia de reutilización. Antes de habilitarlo, el operador debe revisar condiciones y finalidad; la descarga de cuerpos permanece desactivada por separado.",
+      "min_interval_seconds": 3, "max_bytes": 2000000, "timeout_seconds": 20, "max_records": 250
+    },
+    {
+      "id": "contralinea_rss", "source_name": "Contralínea", "kind": "rss", "document_kind": "news",
+      "url": "https://contralinea.com.mx/feed/", "base_url": "https://contralinea.com.mx",
+      "allowed_hosts": ["contralinea.com.mx"], "enabled": false, "terms_approved": false,
+      "discovery": true, "robots_required": true, "download_articles": false, "article_terms_approved": false,
+      "terms_url": "https://contralinea.com.mx/", "permission_scope": "pendiente de revisión del operador; RSS público del editor; reutilización sin verificar",
+      "review_note": "Se observó un RSS del editor. La revisión no estableció un permiso general de reutilización comercial de artículos; manténgalo desactivado hasta registrar la revisión específica de la fuente.",
+      "min_interval_seconds": 3, "max_bytes": 2000000, "timeout_seconds": 20, "max_records": 250
+    },
+    {
+      "id": "forbes_rss", "source_name": "Forbes México", "kind": "rss", "document_kind": "news",
+      "url": "https://forbes.com.mx/feed/", "base_url": "https://forbes.com.mx",
+      "allowed_hosts": ["forbes.com.mx"], "enabled": false, "terms_approved": false,
+      "discovery": true, "robots_required": true, "download_articles": false, "article_terms_approved": false,
+      "terms_url": "https://forbes.com.mx/terminos-y-condiciones/", "permission_scope": "pendiente de revisión del operador; RSS público; copia comercial requiere permiso",
+      "review_note": "RSS del editor. Sus condiciones prohíben copiar o explotar comercialmente los contenidos sin autorización expresa. No se presume permiso para un banco comercial ni un archivo de artículos; requiere revisión antes de habilitarse.",
+      "min_interval_seconds": 3, "max_bytes": 2000000, "timeout_seconds": 20, "max_records": 250
+    },
+    {
+      "id": "sinembargo_rss", "source_name": "SinEmbargo", "kind": "rss", "document_kind": "news",
+      "url": "https://www.sinembargo.mx/feed/", "base_url": "https://www.sinembargo.mx",
+      "allowed_hosts": ["www.sinembargo.mx", "sinembargo.mx"], "enabled": false, "terms_approved": false,
+      "discovery": true, "robots_required": true, "download_articles": false, "article_terms_approved": false,
+      "terms_url": "https://www.sinembargo.mx/", "permission_scope": "pendiente de revisión del operador; RSS candidato; reutilización sin verificar",
+      "review_note": "RSS candidato del editor. Verifique acceso y condiciones de la fuente; este endpoint no permite presumir una licencia de reutilización de sus contenidos.",
+      "min_interval_seconds": 3, "max_bytes": 2000000, "timeout_seconds": 20, "max_records": 250
+    },
+    {
+      "id": "articulo19_rss", "source_name": "ARTICLE 19 México y Centroamérica", "kind": "rss", "document_kind": "ngo",
+      "url": "https://articulo19.org/feed/", "base_url": "https://articulo19.org",
+      "allowed_hosts": ["articulo19.org"], "enabled": false, "terms_approved": false,
+      "discovery": true, "robots_required": true, "download_articles": false, "article_terms_approved": false,
+      "terms_url": "https://articulo19.org/", "article_terms_url": "https://creativecommons.org/licenses/by-nc/2.5/mx/",
+      "permission_scope": "pendiente de revisión del operador; el sitio anuncia CC BY-NC 2.5 México, sólo uso no comercial",
+      "review_note": "El pie del sitio anuncia la licencia Atribución-NoComercial 2.5 México. Revise los derechos de terceros y el alcance de la licencia en cada artículo. El uso en un banco comercial requiere autorización separada.",
+      "min_interval_seconds": 3, "max_bytes": 2000000, "timeout_seconds": 20, "max_records": 250
+    },
+    {
+      "id": "informacion_center_rss", "source_name": "Información Center", "kind": "rss", "document_kind": "news",
+      "url": "https://informacion.center/rss", "base_url": "https://informacion.center",
+      "allowed_hosts": ["informacion.center"], "enabled": false, "terms_approved": false,
+      "discovery": true, "robots_required": true, "download_articles": false, "article_terms_approved": false,
+      "rss_policy_url": "https://informacion.center/rss-services/", "terms_url": "https://informacion.center/rss-services/",
+      "permission_scope": "pendiente de revisión del operador; RSS oficial gratuito con atribución y enlace; reutilización de artículos sin verificar",
+      "review_note": "La página oficial invita a usar el RSS gratuito con crédito a la fuente y enlace original. Confirme el alcance vigente y la finalidad; esto no autoriza automáticamente contenidos de terceros ni archivos de artículos.",
+      "min_interval_seconds": 3, "max_bytes": 2000000, "timeout_seconds": 20, "max_records": 250
+    },
+    {
+      "id": "gdelt_batches", "source_name": "GDELT DOC 2.0 (sólo descubrimiento)", "kind": "gdelt",
+      "base_url": "https://api.gdeltproject.org/api/v2/doc/doc", "allowed_hosts": ["api.gdeltproject.org"],
+      "enabled": false, "terms_approved": false, "robots_required": true, "discovery": true,
+      "download_articles": false, "article_terms_approved": false,
+      "terms_url": "https://www.gdeltproject.org/about.html",
+      "api_docs_url": "https://blog.gdeltproject.org/gdelt-doc-2-0-api-debuts/",
+      "permission_scope": "pendiente de revisión del operador; sólo metadatos de descubrimiento; cada editor enlazado necesita permiso separado",
+      "review_note": "Los lotes de frases OR reducen llamadas, pero ArtList limita la salida a 250. Divida ventanas saturadas y registre los límites pendientes; no se garantiza paginación por cursor ni un historial completo. SourceCountry filtra el país del medio, no la nacionalidad del sujeto. max_query_chars es un límite local conservador, no un máximo verificado de la API.",
+      "batch_size": 6, "max_query_chars": 250, "max_records": 250, "timespan": "7d",
+      "source_country": "mexico", "source_lang": "spanish", "min_window_seconds": 900,
+      "min_interval_seconds": 5, "max_bytes": 2000000, "timeout_seconds": 20
+    }
+  ]
+}

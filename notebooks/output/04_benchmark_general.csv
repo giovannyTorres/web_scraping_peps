@@ -1,0 +1,27 @@
+﻿notebook,source,step,duration_seconds,records_processed,records_per_second,status,error_message,notes,benchmark_file
+00_input_normalizacion_benchmark,input,normalizacion,0.002472,10.0,4044.65,ok,,benchmark local de normalizacion,00_benchmark_normalizacion.csv
+00_input_normalizacion_benchmark,input,normalizacion,0.162225,1000.0,6164.26,ok,,benchmark local de normalizacion,00_benchmark_normalizacion.csv
+00_input_normalizacion_benchmark,input,normalizacion,1.618812,10000.0,6177.37,ok,,benchmark local de normalizacion,00_benchmark_normalizacion.csv
+01_sanciones_oficiales_ofac_onu,OFAC SDN,download,0.0,0.0,0.0,cached,,raw reutilizado,01_benchmark_sanciones.csv
+01_sanciones_oficiales_ofac_onu,OFAC SDN,parsing,3.502467,43581.0,12442.94,ok,,sha256=85030e0207480c7fe8d0abc3f75bbeab1fa217568b7e726ff330d6bc2e1ce40a,01_benchmark_sanciones.csv
+01_sanciones_oficiales_ofac_onu,OFAC Consolidated,download,0.0,0.0,0.0,cached,,raw reutilizado,01_benchmark_sanciones.csv
+01_sanciones_oficiales_ofac_onu,OFAC Consolidated,parsing,0.087908,1586.0,18041.61,ok,,sha256=466179521ec7a28f6d588584787a0144bc79e86a439ea26f1ae112013def8c0b,01_benchmark_sanciones.csv
+01_sanciones_oficiales_ofac_onu,UN Consolidated,download,0.0,0.0,0.0,cached,,raw reutilizado,01_benchmark_sanciones.csv
+01_sanciones_oficiales_ofac_onu,UN Consolidated,parsing,0.165399,3771.0,22799.47,ok,,sha256=864e6256c9e17f77af600a17a12872af5498208ed608d74e678cb675d688673c,01_benchmark_sanciones.csv
+01_sanciones_oficiales_ofac_onu,OFAC/UN,matching,1.206963,489380.0,405463.79,ok,,evidence_rows=38,01_benchmark_sanciones.csv
+02_fuentes_mexico,SAT 69-B,download,0.0,0.0,0.0,manual_only,,Sin URL directa estable configurada; usar C:\Users\Giovanny\Desktop\web_scraping_peps\notebooks\raw\sat_69b,02_benchmark_fuentes_mexico.csv
+02_fuentes_mexico,Servidores publicos sancionados,download,0.0,0.0,0.0,manual_only,,Sin URL directa estable configurada; usar C:\Users\Giovanny\Desktop\web_scraping_peps\notebooks\raw\sancionados,02_benchmark_fuentes_mexico.csv
+02_fuentes_mexico,CompraNet,download,0.0,0.0,0.0,skipped_by_default,,ENABLE_LARGE_DOWNLOADS=False; usar carga manual en raw/compranet,02_benchmark_fuentes_mexico.csv
+02_fuentes_mexico,DeclaraNet,download,0.0,0.0,0.0,manual_only,,Sin URL directa estable configurada; usar C:\Users\Giovanny\Desktop\web_scraping_peps\notebooks\raw\declaranet,02_benchmark_fuentes_mexico.csv
+02_fuentes_mexico,SAT 69-B,parsing,0.001246,0.0,0.0,no_files,,files=0,02_benchmark_fuentes_mexico.csv
+02_fuentes_mexico,Servidores publicos sancionados,parsing,0.000781,0.0,0.0,no_files,,files=0,02_benchmark_fuentes_mexico.csv
+02_fuentes_mexico,CompraNet contratos publicos,parsing,0.000682,0.0,0.0,no_files,,files=0,02_benchmark_fuentes_mexico.csv
+02_fuentes_mexico,DeclaraNet,parsing,0.000699,0.0,0.0,no_files,,files=0,02_benchmark_fuentes_mexico.csv
+02_fuentes_mexico,SAT 69-B,matching,0.000324,0.0,0.0,no_candidates,,Coloca CSV/XLSX con columna de nombre en C:\Users\Giovanny\Desktop\web_scraping_peps\notebooks\raw\sat_69b,02_benchmark_fuentes_mexico.csv
+02_fuentes_mexico,Servidores publicos sancionados,matching,0.00018,0.0,0.0,no_candidates,,Coloca CSV/XLSX con columna de nombre en C:\Users\Giovanny\Desktop\web_scraping_peps\notebooks\raw\sancionados,02_benchmark_fuentes_mexico.csv
+02_fuentes_mexico,CompraNet contratos publicos,matching,0.000174,0.0,0.0,no_candidates,,Coloca CSV/XLSX con columna de nombre en C:\Users\Giovanny\Desktop\web_scraping_peps\notebooks\raw\compranet,02_benchmark_fuentes_mexico.csv
+02_fuentes_mexico,DeclaraNet,matching,0.00018,0.0,0.0,no_candidates,,Coloca CSV/XLSX con columna de nombre en C:\Users\Giovanny\Desktop\web_scraping_peps\notebooks\raw\declaranet,02_benchmark_fuentes_mexico.csv
+03_noticias_adverse_media,DuckDuckGo,query,0.0,0.0,0.0,disabled,,ENABLE_DUCKDUCKGO=False,03_benchmark_noticias.csv
+03_noticias_adverse_media,GDELT,query,0.0,0.0,0.0,disabled,,ENABLE_GDELT=False,03_benchmark_noticias.csv
+03_noticias_adverse_media,ALL,summary,0.031629,0.0,0.0,ok,,personas=10; queries=0; resultados=0; resultados_minuto=0.0,03_benchmark_noticias.csv
+04_consolidacion_scoring_reporte_final,ALL,benchmark_general_summary,6.782141,549328.0,5.60295,ok,,notebook_mas_lento=01_benchmark_sanciones.csv; fuente_mas_lenta=OFAC SDN; senales_generadas=38; senales_segundo=5.60295,04_benchmark_general.csv

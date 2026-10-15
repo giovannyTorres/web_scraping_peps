@@ -1,0 +1,14 @@
+﻿source,source_type,attempted,success,rows_downloaded_or_loaded,rows_parsed,matches_found,unique_people_with_hits,runtime_seconds,error_message,notes
+ALL,benchmark_only,True,True,0,0,0,0,0.031629,,personas=10; queries=0; resultados=0; resultados_minuto=0.0
+CompraNet,benchmark_only,True,False,0,0,0,0,0.0,,ENABLE_LARGE_DOWNLOADS=False; usar carga manual en raw/compranet
+CompraNet contratos publicos,benchmark_only,True,False,0,0,0,0,0.000856,,files=0; Coloca CSV/XLSX con columna de nombre en C:\Users\Giovanny\Desktop\web_scraping_peps\notebooks\raw\compranet
+DeclaraNet,benchmark_only,True,False,0,0,0,0,0.000879,,Sin URL directa estable configurada; usar C:\Users\Giovanny\Desktop\web_scraping_peps\notebooks\raw\declaranet; files=0; Coloca CSV/XLSX con columna de nombre en C:\Users\Giovanny\Desktop\web_scraping_peps\notebooks\raw\declaranet
+DuckDuckGo,benchmark_only,True,False,0,0,0,0,0.0,,ENABLE_DUCKDUCKGO=False
+GDELT,benchmark_only,True,False,0,0,0,0,0.0,,ENABLE_GDELT=False
+OFAC Consolidated,benchmark_only,True,True,1586,1586,0,0,0.087908,,raw reutilizado; sha256=466179521ec7a28f6d588584787a0144bc79e86a439ea26f1ae112013def8c0b
+OFAC SDN,official_sanctions_list,True,True,43581,43581,38,6,3.502467,,raw reutilizado; sha256=85030e0207480c7fe8d0abc3f75bbeab1fa217568b7e726ff330d6bc2e1ce40a
+OFAC/UN,benchmark_only,True,True,489380,0,0,0,1.206963,,evidence_rows=38
+SAT 69-B,benchmark_only,True,False,0,0,0,0,0.00157,,Sin URL directa estable configurada; usar C:\Users\Giovanny\Desktop\web_scraping_peps\notebooks\raw\sat_69b; files=0; Coloca CSV/XLSX con columna de nombre en C:\Users\Giovanny\Desktop\web_scraping_peps\notebooks\raw\sat_69b
+Servidores publicos sancionados,benchmark_only,True,False,0,0,0,0,0.000961,,Sin URL directa estable configurada; usar C:\Users\Giovanny\Desktop\web_scraping_peps\notebooks\raw\sancionados; files=0; Coloca CSV/XLSX con columna de nombre en C:\Users\Giovanny\Desktop\web_scraping_peps\notebooks\raw\sancionados
+UN Consolidated,benchmark_only,True,True,3771,3771,0,0,0.165399,,raw reutilizado; sha256=864e6256c9e17f77af600a17a12872af5498208ed608d74e678cb675d688673c
+input,benchmark_only,True,True,11010,0,0,0,1.783509,,benchmark local de normalizacion; benchmark local de normalizacion; benchmark local de normalizacion
