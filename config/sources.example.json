@@ -1,0 +1,114 @@
+{
+  "user_agent": "PEPSResearch/2.0 (+replace-with-operator-contact)",
+  "cache_ttl_seconds": 900,
+  "robots_ttl_seconds": 86400,
+  "circuit_seconds": 86400,
+  "max_redirects": 4,
+  "sources": [
+    {
+      "id": "gdelt",
+      "kind": "gdelt",
+      "base_url": "https://api.gdeltproject.org/api/v2/doc/doc",
+      "allowed_hosts": [
+        "api.gdeltproject.org"
+      ],
+      "enabled": false,
+      "terms_approved": false,
+      "robots_required": true,
+      "terms_url": "https://www.gdeltproject.org/about.html",
+      "review_note": "Free discovery service. Review service terms, robots and attribution. Returned publishers require separate opt-in; GDELT snippets are discovery only.",
+      "timespan": "7d",
+      "max_records": 100,
+      "min_interval_seconds": 5,
+      "max_bytes": 2000000,
+      "timeout_seconds": 25,
+      "discovery": true
+    },
+    {
+      "id": "google_news_rss",
+      "kind": "rss",
+      "document_kind": "news",
+      "base_url": "https://news.google.com",
+      "url": "https://news.google.com/rss/search?q={query}&hl=es-419&gl=MX&ceid=MX:es-419",
+      "allowed_hosts": [
+        "news.google.com"
+      ],
+      "enabled": false,
+      "terms_approved": false,
+      "robots_required": true,
+      "terms_url": "https://policies.google.com/terms",
+      "review_note": "Optional RSS discovery. A public feed is not permission to scrape publishers. No Google News URL decoding, paywall circumvention or bot challenge bypass.",
+      "min_interval_seconds": 10,
+      "max_bytes": 2000000,
+      "timeout_seconds": 25,
+      "discovery": true
+    },
+    {
+      "id": "gob_mx",
+      "kind": "official",
+      "base_url": "https://www.gob.mx",
+      "allowed_hosts": [
+        "www.gob.mx"
+      ],
+      "enabled": false,
+      "terms_approved": false,
+      "robots_required": true,
+      "terms_url": "https://www.gob.mx/terminos",
+      "review_note": "Direct official document URLs only. Review reuse conditions and source-specific access rules before enabling.",
+      "min_interval_seconds": 5,
+      "max_bytes": 2000000,
+      "timeout_seconds": 25,
+      "discovery": false
+    },
+    {
+      "id": "dof",
+      "kind": "official",
+      "base_url": "https://www.dof.gob.mx",
+      "allowed_hosts": [
+        "www.dof.gob.mx",
+        "dof.gob.mx"
+      ],
+      "enabled": false,
+      "terms_approved": false,
+      "robots_required": true,
+      "review_note": "Direct public HTML documents. PDF ingestion must use a separately reviewed offline extractor.",
+      "min_interval_seconds": 5,
+      "max_bytes": 2000000,
+      "timeout_seconds": 25,
+      "discovery": false
+    },
+    {
+      "id": "mcci",
+      "kind": "ngo",
+      "base_url": "https://contralacorrupcion.mx",
+      "allowed_hosts": [
+        "contralacorrupcion.mx",
+        "www.contralacorrupcion.mx"
+      ],
+      "enabled": false,
+      "terms_approved": false,
+      "robots_required": true,
+      "review_note": "Direct public investigation URLs only after review of access, reuse and retention terms.",
+      "min_interval_seconds": 10,
+      "max_bytes": 2000000,
+      "timeout_seconds": 25,
+      "discovery": false
+    },
+    {
+      "id": "public_comments_example",
+      "kind": "public_comment",
+      "base_url": "https://example.org",
+      "allowed_hosts": [
+        "example.org"
+      ],
+      "enabled": false,
+      "terms_approved": false,
+      "robots_required": true,
+      "review_note": "Template only. Replace host and document URL with an explicitly authorized public forum. Comments are unverified leads requiring human review; no private profiles or authentication bypass.",
+      "min_interval_seconds": 10,
+      "max_bytes": 1000000,
+      "timeout_seconds": 20,
+      "discovery": false
+    }
+  ]
+}
