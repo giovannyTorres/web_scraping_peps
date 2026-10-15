@@ -24,7 +24,7 @@ RESOURCES = (
     "defaults/sources.json", "defaults/news_sources.json",
     "models/context-role-es-v1.json", "licenses/CONTEXT_MODEL_CODE.txt",
     "licenses/CONTEXT_MODEL_DATA.txt", "web/index.html", "web/app.js",
-    "web/import.js", "web/style.css",
+    "web/import.js", "web/workflow.js", "web/style.css",
 )
 
 
@@ -140,12 +140,17 @@ def validate(executable=None):
                 require(response.status == 200, "La página local no cargó.")
             token = re.search(r'<meta name="peps-token" content="([^"]+)"', html)
             require(token is not None and token[1] != "__TOKEN__", "Token de sesión ausente.")
-            for name in ("app.js", "import.js", "style.css"):
+            for name in ("app.js", "import.js", "workflow.js", "style.css"):
                 with urlopen(base + "/" + name, timeout=10) as response:
                     require(response.status == 200 and bool(response.read()), "Asset no servido: " + name)
             headers = {"X-PEPS-Token": token[1]}
             with urlopen(Request(base + "/api/stats", headers=headers), timeout=10) as response:
                 require(json.load(response)["entities"] == 1, "La UI no abrió el banco de la CLI.")
+            with urlopen(Request(base + "/api/explanation?id=distribution&run_id=" + explanation["run"]["id"],
+                    headers=headers), timeout=10) as response:
+                existing = json.load(response)
+                require(existing["run"]["historical"] and existing["result"]["score"] == explanation["result"]["score"],
+                    "La UI no leyó la evaluación existente de la CLI.")
             with urlopen(Request(base + "/api/shutdown", data=b"{}", headers=headers), timeout=10) as response:
                 require(json.load(response)["ok"], "El cierre de la UI falló.")
             require(process.wait(timeout=10) == 0, "El servidor terminó con error.")

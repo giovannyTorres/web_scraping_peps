@@ -11,6 +11,7 @@ from urllib.parse import parse_qs, urlsplit
 
 from .engine import capacity
 from .store import read_entities, now, canonical, digest
+from .workflow import GuidedWorkflow, OperationTracker, WorkflowError
 
 
 def _boolean(value, field):
@@ -25,27 +26,79 @@ def create_server(engine, port=0):
     news = NewsAcquirer(engine)
     token = secrets.token_urlsafe(32)
     web = Path(__file__).parent / 'web'
-    state = {'busy': False, 'last_result': None, 'error': None}
-    lock = threading.Lock()
+    tracker = OperationTracker()
+    workflow = GuidedWorkflow(engine.store, sources_provider=news.sources)
+    lock = threading.RLock()
     tickets = {}
     import_operations = {}
     import_ttl = 30 * 60
 
-    def background(fn, online=False):
+    def start_operation(kind, action, phase='', online=False, message=''):
         with lock:
-            if state['busy']:
-                raise ValueError('Ya hay una operación en curso')
+            workflow.require(action, tracker.snapshot())
+            operation_id = tracker.start(kind, phase=phase, message=message)
             if online:
                 engine.online = True
-            state.update(busy=True, error=None, last_result=None, operation_id=None)
+            engine.stop_event.clear()
+            return operation_id
+
+    def background(fn, online=False, kind='analysis', action='analyze', phase='', message=''):
+        operation_id = start_operation(kind, action, phase, online, message)
         def execute():
             try:
-                state['last_result'] = fn()
+                result = fn()
+                paused = engine.stop_event.is_set() or (isinstance(result, dict) and
+                    (result.get('cancelled') or result.get('pending', 0) or result.get('status') == 'paused'))
+                tracker.finish(status='paused' if paused else 'completed', result=result,
+                               message='Proceso pausado. Revisa lo pendiente antes de continuar.' if paused else 'Paso terminado.')
             except Exception as exc:
-                state['error'] = f'{type(exc).__name__}: {exc}'
-            finally:
-                state['busy'] = False
+                if kind == 'download':
+                    workflow.mark_download(status='failed', details={'error': str(exc)})
+                tracker.finish(status='failed', message=f'{type(exc).__name__}: {exc}')
         threading.Thread(target=execute, daemon=True).start()
+        return operation_id
+
+    def synchronous(fn, kind, action):
+        start_operation(kind, action, phase='scoring')
+        try:
+            result = fn()
+            tracker.finish(result=result, message='Cambios guardados y evaluación actualizada.')
+            return result
+        except Exception as exc:
+            tracker.finish(status='failed', message=str(exc))
+            raise
+
+    def acquire_news():
+        workflow.mark_download(status='running')
+        result = news.acquire(workers=4, seconds=120, max_articles=1000, progress=tracker.update, reset_stop=False)
+        incomplete = result.get('cancelled') or result.get('pending', 0) or result.get('failed', 0)
+        workflow.mark_download(status='paused' if incomplete else 'completed', details=result)
+        return dict(result, status='paused' if incomplete else result.get('status', 'ok'))
+
+    def analyze_bank():
+        workflow.mark_analysis(status='running')
+        attribution = news.attribute(limit=None, rescore=False, cancelable=True, progress=tracker.update)
+        if engine.stop_event.is_set() or attribution.get('cancelled') or attribution.get('pending', 0):
+            return {'status': 'paused', 'cancelled': engine.stop_event.is_set(), 'attribution': attribution}
+        workflow.mark_analysis(status='scoring')
+        scored = engine.rescore(progress=tracker.update, cancelable=True)
+        if engine.stop_event.is_set():
+            return {'status': 'paused', 'cancelled': True, 'scored': scored, 'attribution': attribution}
+        result = {'scored': scored, 'attribution': attribution}
+        workflow.mark_analysis(details=result)
+        return result
+
+    def stored_explanation(entity_id, run_id=None):
+        """HTTP reads never launch scoring; computation belongs to step four."""
+        if not run_id:
+            workflow.require('view_results', tracker.snapshot())
+        run = engine.store.get_score_run(run_id, entity_id) if run_id else engine.store.latest_score_run(entity_id)
+        if not run:
+            raise WorkflowError('Completa el paso «Analizar y calcular» para obtener el scoring.', 409)
+        return {'entity': run['entity_snapshot'], 'result': run['result'],
+                'explanation': run['result'].get('explainability', {}),
+                'run': {'id': run['id'], 'created_at': run['created_at'], 'historical': bool(run_id)},
+                'history': engine.store.score_history(entity_id), 'evidence_count': len(run['evidence_manifest'])}
 
     def prune_imports(reserve_slot=False):
         cutoff = time.monotonic() - import_ttl
@@ -83,16 +136,15 @@ def create_server(engine, port=0):
                 if (operation['preview_hash'] == preview_hash and operation['request_hash'] == request_hash
                         and operation['status'] != 'error'):
                     return operation['id']
-            if state['busy']:
-                raise ValueError('Hay una operación en curso. Espere a que termine antes de importar.')
-            operation_id = secrets.token_urlsafe(24)
+            workflow.require('import', tracker.snapshot())
+            operation_id = tracker.start('import', phase='saving', message='Guardando la lista revisada…')
+            engine.stop_event.clear()
             stamp = time.monotonic()
             operation = {'id': operation_id, 'status': 'queued', 'phase': 'saving',
                          'created_at': now(), 'preview_hash': preview_hash,
                          'request_hash': request_hash,
                          'updated_monotonic': stamp, 'result': None}
             import_operations[operation_id] = operation
-            state.update(busy=True, error=None, last_result=None, operation_id=operation_id)
 
         def execute_import():
             try:
@@ -100,22 +152,13 @@ def create_server(engine, port=0):
                     operation.update(status='running', updated_monotonic=time.monotonic())
                 report = commit_import(engine.store, payload)
                 public = public_import_result(report)
-                with lock:
-                    operation.update(phase='scoring', result=copy.deepcopy(public), updated_monotonic=time.monotonic())
-                accepted = report.get('accepted_ids', [])
-                try:
-                    scored = engine.rescore(accepted) if accepted else 0
-                    public.update(scored=scored, scoring_status='completed')
-                except Exception as exc:
-                    # Import is committed. Do not suggest it failed or invite
-                    # a second import merely because subsequent scoring failed.
-                    public.update(scored=None, scoring_status='pending',
-                                  scoring_error='Los datos se guardaron. La evaluación local quedó pendiente; consulte la entidad para reintentar.',
-                                  scoring_error_type=type(exc).__name__)
+                public.update(scored=0, scoring_status='not_started')
+                tracker.update(phase='saving', completed=public.get('imported', 0),
+                               total=public.get('imported', 0), unit='entidades', message='Lista guardada. Continúa con las fuentes.')
                 with lock:
                     operation.update(status='completed', phase='done', result=public,
                                      updated_monotonic=time.monotonic())
-                    state['last_result'] = {'operation_id': operation_id, **public}
+                    tracker.finish(result={'operation_id': operation_id, **public}, message='Lista guardada. Continúa con las fuentes.')
             except Exception as exc:
                 conflict = isinstance(exc, ImportConflict)
                 reason = str(exc) if isinstance(exc, (ValueError, TypeError, KeyError)) else 'No se pudo guardar la importación. Revise la vista previa antes de reintentar.'
@@ -123,10 +166,7 @@ def create_server(engine, port=0):
                     operation.update(status='error', phase='done', error=reason,
                         error_code='preview_stale' if conflict else 'invalid_import',
                         retry_preview=True, updated_monotonic=time.monotonic())
-                    state['error'] = reason
-            finally:
-                with lock:
-                    state['busy'] = False
+                    tracker.finish(status='failed', message=reason)
         threading.Thread(target=execute_import, daemon=True).start()
         return operation_id
 
@@ -180,10 +220,14 @@ def create_server(engine, port=0):
                 if path == '/':
                     self.reply((web / 'index.html').read_text(encoding='utf-8').replace('__TOKEN__', token).encode('utf-8'),
                                content_type='text/html; charset=utf-8')
-                elif path in ('/app.js', '/import.js', '/style.css'):
+                elif path in ('/app.js', '/import.js', '/workflow.js', '/style.css'):
                     self.reply((web / path[1:]).read_bytes(), content_type='text/javascript; charset=utf-8' if path.endswith('.js') else 'text/css; charset=utf-8')
                 elif path == '/api/stats':
-                    self.reply(dict(engine.store.stats(), online=engine.online, operation=state.copy(), capacity=capacity()))
+                    operation = tracker.snapshot()
+                    self.reply(dict(engine.store.stats(), online=engine.online, operation=operation,
+                                    workflow=workflow.snapshot(operation), capacity=capacity()))
+                elif path == '/api/workflow':
+                    self.reply(workflow.snapshot(tracker.snapshot()))
                 elif path == '/api/import-status':
                     with lock:
                         prune_imports()
@@ -196,7 +240,14 @@ def create_server(engine, port=0):
                         operation.pop('updated_monotonic', None)
                         self.reply(operation)
                 elif path == '/api/entities':
-                    self.reply(engine.store.list_entities(query.get('q', [''])[0], query.get('limit', [100])[0], query.get('offset', [0])[0]))
+                    current = workflow.snapshot(tracker.snapshot())['actions']['view_results']['enabled']
+                    rows = engine.store.list_entities(query.get('q', [''])[0], query.get('limit', [100])[0], query.get('offset', [0])[0])
+                    for row in rows:
+                        row['score_available'] = row['score'] is not None
+                        row['score_current'] = current and row['score_available']
+                        if not current:
+                            row['score'] = None
+                    self.reply(rows)
                 elif path == '/api/entity':
                     entity_id = query.get('id', [''])[0]
                     entity = engine.store.get_entity(entity_id)
@@ -209,7 +260,7 @@ def create_server(engine, port=0):
                     if not engine.store.get_entity(entity_id):
                         self.reply({'error': 'Entidad inexistente'}, 404)
                     else:
-                        self.reply(engine.explanation(entity_id, query.get('run_id', [None])[0]))
+                        self.reply(stored_explanation(entity_id, query.get('run_id', [None])[0]))
                 elif path == '/api/run-evidence':
                     item = engine.store.run_evidence(query.get('run_id', [''])[0], query.get('id', [''])[0])
                     self.reply(item if item else {'error': 'Evidencia inexistente en esta evaluación'}, 200 if item else 404)
@@ -218,8 +269,12 @@ def create_server(engine, port=0):
                 elif path == '/api/audit':
                     self.reply(engine.store.verify_audit())
                 elif path == '/api/news':
-                    self.reply({'stats': news.stats(), 'articles': news.articles(), 'sources': news.sources(), 'plan': news.plan()})
+                    value = {'stats': news.stats(), 'articles': news.articles()}
+                    if query.get('summary', ['0'])[0] != '1':
+                        value.update(sources=news.sources(), plan=news.plan())
+                    self.reply(value)
                 elif path == '/api/export':
+                    workflow.require('export', tracker.snapshot())
                     # Exportación completa y streaming: memoria acotada para bancos grandes.
                     self.send_response(200)
                     self.send_header('Content-Type', 'application/x-ndjson; charset=utf-8')
@@ -231,7 +286,7 @@ def create_server(engine, port=0):
                 else:
                     self.reply({'error': 'No encontrado'}, 404)
             except (ValueError, TypeError, KeyError) as exc:
-                self.reply({'error': str(exc)}, 400)
+                self.reply({'error': str(exc)}, getattr(exc, 'status', 400))
 
         def do_POST(self):
             if not self.authorized():
@@ -246,6 +301,7 @@ def create_server(engine, port=0):
                     raise ValueError('La petición debe contener un objeto JSON')
                 if self.path == '/api/import-preview':
                     from .importing import preview_import
+                    workflow.require('import', tracker.snapshot())
                     self.reply(preview_import(engine.store, data))
                     return
                 elif self.path == '/api/import-confirm':
@@ -253,47 +309,93 @@ def create_server(engine, port=0):
                     return
                 elif self.path == '/api/import-entities':
                     text = str(data['text'])
-                    background(lambda: {'imported': engine.store.import_entities(read_entities(text)), 'scored': engine.rescore()})
+                    operation_id = background(lambda: {'imported': engine.store.import_entities(read_entities(text)),
+                        'scored': 0, 'scoring_status': 'not_started'}, kind='import', action='import', phase='saving')
+                    self.reply({'ok': True, 'operation_id': operation_id})
+                    return
                 elif self.path == '/api/import-documents':
                     text = str(data['text'])
-                    background(lambda: {'imported': engine.import_documents(json.loads(x) for x in text.splitlines() if x.strip()),
-                                        'scored': engine.rescore()})
-                elif self.path == '/api/score':
-                    background(lambda: {'scored': engine.rescore()})
+                    operation_id = background(lambda: {'imported': engine.import_documents(
+                        json.loads(x) for x in text.splitlines() if x.strip()), 'scored': 0,
+                        'scoring_status': 'not_started'}, kind='document_import', action='import', phase='saving')
+                    self.reply({'ok': True, 'operation_id': operation_id})
+                    return
+                elif self.path in ('/api/score', '/api/workflow-analyze', '/api/news-attribute'):
+                    if self.path == '/api/news-attribute':
+                        _boolean(data.get('force', False), 'force')
+                    operation_id = background(analyze_bank, kind='analysis', action='analyze', phase='attribution',
+                                              message='Vinculando noticias con las entidades de tu lista…')
+                    self.reply({'ok': True, 'operation_id': operation_id})
+                    return
+                elif self.path == '/api/workflow-mode':
+                    with lock:
+                        value = workflow.set_mode(data.get('mode'), tracker.snapshot())
+                        if value['mode'] == 'local':
+                            engine.online = False
+                        self.reply(value)
+                    return
+                elif self.path == '/api/workflow-confirm-sources':
+                    with lock:
+                        self.reply(workflow.confirm_sources(tracker.snapshot()))
+                    return
+                elif self.path == '/api/workflow-accept-partial':
+                    with lock:
+                        self.reply(workflow.accept_partial(tracker.snapshot()))
+                    return
                 elif self.path == '/api/collect':
                     if not _boolean(data.get('online', False), 'online'):
                         raise ValueError('Active red autorizada para recolectar')
                     def collect():
                         queued = engine.queue_discovery()
-                        return {'queued': queued, **engine.run(workers=4, max_jobs=1000, seconds=120)}
-                    background(collect, online=True)
+                        return {'queued': queued, **engine.run(workers=4, max_jobs=1000, seconds=120,
+                                                               progress=tracker.update, reset_stop=False)}
+                    background(collect, online=True, kind='download', action='download', phase='download')
                 elif self.path == '/api/stop':
-                    engine.stop_event.set()
+                    with lock:
+                        expected = data.get('operation_id')
+                        if expected is not None and expected != tracker.snapshot()['operation_id']:
+                            raise WorkflowError('La operación cambió. Actualiza su estado antes de pedir una pausa.')
+                        tracker.request_cancel()
+                        engine.stop_event.set()
                 elif self.path == '/api/retry':
-                    engine.store.retry_failed()
+                    with lock:
+                        workflow.require('configure_sources', tracker.snapshot())
+                        engine.store.retry_failed()
                 elif self.path == '/api/source':
-                    engine.set_source(data['id'], _boolean(data['enabled'], 'enabled'),
-                                      _boolean(data['terms_approved'], 'terms_approved'))
+                    enabled = _boolean(data['enabled'], 'enabled')
+                    approved = _boolean(data['terms_approved'], 'terms_approved')
+                    with lock:
+                        workflow.require('configure_sources', tracker.snapshot())
+                        engine.set_source(data['id'], enabled, approved)
                 elif self.path == '/api/review':
                     if not data.get('expected_run_id'):
                         raise ValueError('Abra la evaluación actual antes de registrar una revisión')
-                    entity_id = engine.store.review(data['id'], data['status'], data['actor'], data['reason'], data.get('event_id'), data.get('identity_spans'), expected_run_id=data['expected_run_id'])
-                    engine.rescore(entity_id)
+                    def review():
+                        entity_id = engine.store.review(data['id'], data['status'], data['actor'], data['reason'],
+                            data.get('event_id'), data.get('identity_spans'), expected_run_id=data['expected_run_id'])
+                        engine.rescore(entity_id, progress=tracker.update)
+                        workflow.mark_analysis()
+                        return {'entity_id': entity_id}
+                    synchronous(review, kind='review', action='review')
                 elif self.path == '/api/replay':
+                    if tracker.busy:
+                        raise WorkflowError('Espera a que termine el paso actual antes de reproducir una evaluación.')
                     self.reply(engine.replay_score(str(data['run_id'])))
                     return
                 elif self.path == '/api/news-acquire':
                     if not _boolean(data.get('online', False), 'online'):
                         raise ValueError('Active la conexión autorizada para descargar noticias')
-                    background(lambda: news.acquire(workers=4, seconds=120, max_articles=1000), online=True)
-                elif self.path == '/api/news-attribute':
-                    force = _boolean(data.get('force', False), 'force')
-                    background(lambda: news.attribute(limit=1000, force=force))
+                    operation_id = background(acquire_news, online=True, kind='download', action='download', phase='download',
+                                              message='Preparando las fuentes y descubriendo noticias…')
+                    self.reply({'ok': True, 'operation_id': operation_id})
+                    return
                 elif self.path == '/api/news-source':
-                    news.set_source(data['id'], _boolean(data['enabled'], 'enabled'),
-                                    _boolean(data['terms_approved'], 'terms_approved'),
-                                    _boolean(data.get('download_articles', False), 'download_articles'),
-                                    _boolean(data.get('article_terms_approved', False), 'article_terms_approved'))
+                    values = [_boolean(data['enabled'], 'enabled'), _boolean(data['terms_approved'], 'terms_approved'),
+                              _boolean(data.get('download_articles', False), 'download_articles'),
+                              _boolean(data.get('article_terms_approved', False), 'article_terms_approved')]
+                    with lock:
+                        workflow.require('configure_sources', tracker.snapshot())
+                        news.set_source(data['id'], *values)
                 elif self.path == '/api/backup':
                     from .store import now
                     destination = engine.data_dir / 'backups' / ('peps-' + now().replace(':', '-').replace('+', '_') + '.sqlite3')
@@ -303,12 +405,15 @@ def create_server(engine, port=0):
                 elif self.path == '/api/export-ticket':
                     ticket = secrets.token_urlsafe(32)
                     with lock:
+                        workflow.require('export', tracker.snapshot())
                         for old in [k for k, expiry in tickets.items() if expiry <= time.time()]:
                             tickets.pop(old, None)
                         tickets[ticket] = time.time() + 30
                     self.reply({'url': '/api/export?ticket=' + ticket})
                     return
                 elif self.path == '/api/shutdown':
+                    with lock:
+                        workflow.require('configure_sources', tracker.snapshot())
                     engine.stop_event.set()
                     threading.Thread(target=self.server.shutdown, daemon=True).start()
                 else:
@@ -316,7 +421,7 @@ def create_server(engine, port=0):
                     return
                 self.reply({'ok': True})
             except (ValueError, KeyError, TypeError) as exc:
-                self.reply({'error': str(exc)}, 400)
+                self.reply({'error': str(exc)}, getattr(exc, 'status', 400))
 
     return ThreadingHTTPServer(('127.0.0.1', port), Handler), token
 

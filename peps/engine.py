@@ -12,6 +12,39 @@ from urllib.parse import urlsplit
 from .store import Store, canonical, digest, now
 
 
+def _emit_progress(callback, phase, completed, total, unit, message, *, event='progress', **details):
+    """Progress observers run after commits and cannot invalidate completed work."""
+    if callback is not None:
+        try:
+            callback(dict(phase=phase, completed=completed, total=total, unit=unit,
+                          message=message, event=event, **details))
+        except Exception:
+            pass
+
+
+def _job_progress(store, kind_prefix=None, unreported_ids=()):
+    with store.connection() as con:
+        con.execute('BEGIN')
+        rows = con.execute("SELECT status,count(*) AS n,"
+                           "sum(kind IN ('discover','news_feed','news_query')) AS discovery "
+                           'FROM jobs WHERE (? IS NULL OR kind LIKE ?) GROUP BY status',
+                           (kind_prefix, (kind_prefix or '') + '%')).fetchall()
+        jobs = {row['status']: row['n'] for row in rows}
+        discovery_pending = sum(row['discovery'] for row in rows if row['status'] in ('queued', 'running', 'deferred'))
+        # Other workers can commit before they obtain the callback lock. Keep
+        # those finished units in the denominator until their own report arrives.
+        unreported_completed = 0
+        if unreported_ids:
+            unreported_completed = con.execute("SELECT count(*) FROM jobs WHERE status='done' AND id IN (" +
+                                               ','.join('?' for _ in unreported_ids) + ')',
+                                               tuple(unreported_ids)).fetchone()[0]
+    pending = sum(jobs.get(state, 0) for state in ('queued', 'running', 'deferred'))
+    return dict(jobs=jobs, pending=pending, deferred=jobs.get('deferred', 0),
+                blocked=jobs.get('blocked', 0), dead=jobs.get('dead', 0),
+                failed=jobs.get('blocked', 0) + jobs.get('dead', 0), queue_complete=pending == 0,
+                discovery_pending=discovery_pending, unreported_completed=unreported_completed)
+
+
 def normalized(text):
     text = ''.join(c for c in unicodedata.normalize('NFD', text.casefold()) if not unicodedata.combining(c))
     return ' '.join(re.findall(r'\w+', text, re.UNICODE))
@@ -141,28 +174,38 @@ class Engine:
                     unmatched += not bool(entity_ids)
         return {'documents': count, 'links': links, 'unmatched': unmatched}
 
-    def rescore(self, entity_id=None):
+    def rescore(self, entity_id=None, *, progress=None, cancelable=False):
         from .nlp import analyze
         from .scoring import score_entity
         from .contextual import analyze_evidence, get_method_info
         from .explainability import explain_score, scoring_fingerprint
         mode = self.context_mode()
         count = 0
-        if entity_id and not isinstance(entity_id, str):
-            requested = set(entity_id)
-            entities = (e for e in self.store.iter_entities() if e['id'] in requested)
+        if entity_id and isinstance(entity_id, str):
+            ids = [entity_id]
         else:
-            entities = [self.store.get_entity(entity_id)] if entity_id else self.store.iter_entities()
-        iterator = iter(entities)
-        while batch := list(islice(iterator, 250)):
+            requested = set(entity_id) if entity_id else None
+            with self.store.connection() as con:
+                ids = [row[0] for row in con.execute('SELECT id FROM entities ORDER BY id')
+                       if requested is None or row[0] in requested]
+        total = len(ids)
+        _emit_progress(progress, 'scoring', 0, total, 'entidades', 'Iniciando el cálculo de resultados.', event='start')
+        iterator = iter(ids)
+        # Interactive progress commits each entity before reporting it. CLI
+        # callers retain the existing 250-entity transaction throughput.
+        batch_size = 1 if progress is not None or cancelable else 250
+        while batch := list(islice(iterator, batch_size)):
+            if cancelable and self.stop_event.is_set():
+                break
             with self.store.connection() as con:
                 con.execute('BEGIN IMMEDIATE')
-                for entity in batch:
-                    if entity is None:
+                for current_id in batch:
+                    row = con.execute('SELECT * FROM entities WHERE id=?', (current_id,)).fetchone()
+                    if row is None:
                         raise ValueError('Entidad inexistente')
                     # The bank may change after iter_entities filled this batch.
                     # Score the entity and evidence from the same write snapshot.
-                    entity = self.store.entity(con.execute('SELECT * FROM entities WHERE id=?', (entity['id'],)).fetchone())
+                    entity = self.store.entity(row)
                     evidence = self.store.evidence(entity['id'], connection=con)
                     for item in evidence:
                         if item['source_kind'] == 'discovery' or item['metadata'].get('discovery_only'):
@@ -181,7 +224,13 @@ class Engine:
                     result['explainability'] = explain_score(result)
                     self.store.save_score(entity['id'], result, connection=con,
                                           entity_snapshot=entity, evidence_snapshot=evidence)
-                    count += 1
+            count += len(batch)
+            _emit_progress(progress, 'scoring', count, total, 'entidades',
+                           f'{count} de {total} entidades calculadas.', entity_id=batch[-1], pending=total - count)
+        cancelled = bool(cancelable and self.stop_event.is_set() and count < total)
+        _emit_progress(progress, 'scoring', count, total, 'entidades',
+                       'Cálculo detenido.' if cancelled else 'Cálculo del lote finalizado.',
+                       event='finish', cancelled=cancelled, pending=total - count)
         return count
 
     def context_mode(self):
@@ -376,13 +425,24 @@ class Engine:
         else:
             raise ValueError('Tipo de tarea desconocido')
 
-    def run(self, workers=4, max_jobs=100, seconds=120):
+    def run(self, workers=4, max_jobs=100, seconds=120, *, progress=None, reset_stop=True):
         from .collector import SafeFetcher
         if not self.online:
+            _emit_progress(progress, 'download', 0, None, 'tareas', 'Comprobando el modo de descarga.', event='start')
+            _emit_progress(progress, 'download', 0, None, 'tareas', 'La descarga está desactivada.',
+                           event='finish', offline=True)
             return {'status': 'offline', 'processed': 0}
-        self.stop_event.clear()
+        if reset_stop:
+            self.stop_event.clear()
+        if self.stop_event.is_set():
+            summary = _job_progress(self.store)
+            _emit_progress(progress, 'download', 0, None, 'tareas', 'Iniciando el lote de descarga.',
+                           event='start', processed=0, **summary)
+            _emit_progress(progress, 'download', 0, None, 'tareas', 'Lote detenido antes de iniciar.',
+                           event='finish', processed=0, cancelled=True, **summary)
+            return dict(status='ok', processed=0, completed=0, cancelled=True, **summary)
         workers = min(max(int(workers), 1), 32)
-        deadline, counter, lock = time.monotonic() + seconds, [0], threading.Lock()
+        deadline, counter, completed, lock = time.monotonic() + seconds, [0], [0], threading.Lock()
         fetcher = SafeFetcher(self.config(), self.data_dir, offline=False)
         self._news_acquirer, self._news_resolver = None, None
         with self.store.connection() as con:
@@ -392,6 +452,8 @@ class Engine:
             from .identity import IdentityResolver
             self._news_acquirer = NewsAcquirer(self)
             self._news_resolver = IdentityResolver(self.store.iter_entities())
+        _emit_progress(progress, 'download', 0, None, 'tareas', 'Iniciando el lote de descarga.',
+                       event='start', processed=0, **_job_progress(self.store))
 
         def work():
             while not self.stop_event.is_set() and time.monotonic() < deadline:
@@ -422,6 +484,16 @@ class Engine:
                 finally:
                     lease_stop.set()
                     heartbeat.join(timeout=1)
+                with self.store.connection() as con:
+                    state = con.execute('SELECT status,owner FROM jobs WHERE id=?', (job['id'],)).fetchone()
+                with lock:
+                    if state and state['status'] == 'done' and state['owner'] == job['owner']:
+                        completed[0] += 1
+                    if progress is not None:
+                        _emit_progress(progress, 'download', completed[0], None, 'tareas',
+                                       f"Tarea {state['status'] if state else 'desconocida'}; {completed[0]} completadas.",
+                                       processed=counter[0], job_id=job['id'], job_status=state['status'] if state else None,
+                                       **_job_progress(self.store))
         try:
             with self.store.connection() as anchor:
                 anchor.execute('SELECT value FROM meta LIMIT 1').fetchone()
@@ -430,7 +502,12 @@ class Engine:
         finally:
             if hasattr(fetcher, 'close'):
                 fetcher.close()
-        return {'status': 'ok', 'processed': counter[0], 'jobs': self.store.stats()['jobs']}
+        summary = _job_progress(self.store)
+        cancelled = self.stop_event.is_set()
+        _emit_progress(progress, 'download', completed[0], None, 'tareas',
+                       f"Lote {'detenido' if cancelled else 'finalizado'}; {summary['pending']} tareas pendientes.",
+                       event='finish', processed=counter[0], cancelled=cancelled, **summary)
+        return dict(status='ok', processed=counter[0], completed=completed[0], cancelled=cancelled, **summary)
 
 
 def capacity(entities=40000, queries=2, search_interval=5, articles=5, article_rate=1, overlap=.5):

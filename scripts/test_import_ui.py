@@ -43,6 +43,23 @@ def main():
         assert condition, name
         report['checks'][name] = True
 
+    def analyze_local_bank(page):
+        """The browser workflow requires an explicit analysis after every import."""
+        if not page.locator('[data-panel="sources"]').is_visible():
+            if page.locator('#workflow-mobile-step').is_visible():
+                page.locator('#workflow-mobile-step').select_option('sources')
+            else:
+                page.locator('[data-workflow-step="sources"]').click()
+        page.locator('[data-panel="sources"]').wait_for()
+        page.locator('#workflow-mode-local').click()
+        page.locator('#workflow-sources-next').click()
+        page.locator('[data-panel="news"]').wait_for()
+        page.locator('#workflow-download-next').click()
+        page.locator('[data-panel="analysis"]').wait_for()
+        page.locator('#workflow-analyze').click()
+        page.locator('[data-panel="bank"]').wait_for()
+        page.locator('#search').fill('')
+
     with tempfile.TemporaryDirectory() as tmp:
         engine = Engine(tmp)
         server, _ = create_server(engine)
@@ -58,12 +75,9 @@ def main():
                 page.on('pageerror', lambda exc: page_errors.append(str(exc)))
                 page.on('request', lambda request: network.append(request.url))
                 page.goto(address)
-                page.locator('#empty').wait_for()
-                checked('empty_bank_has_name_and_csv_entry_points',
-                        page.locator('#empty [data-import-open="single"]').count() == 1 and
-                        page.locator('#empty [data-import-open="csv"]').count() == 1)
-
-                page.locator('#empty [data-import-open="single"]').click()
+                page.locator('[data-panel="import"]').wait_for()
+                checked('empty_workflow_starts_with_name_and_csv_entry_points',
+                        page.locator('#import-single-tab').is_visible() and page.locator('#import-csv-tab').is_visible())
                 page.locator('#single-name').fill('Persona Sintética Estrella')
                 page.locator('#single-save').click()
                 checked('individual_type_is_required_without_silent_person_default',
@@ -76,13 +90,18 @@ def main():
                 page.locator('#single-role').fill('Docente sintética')
                 start = time.perf_counter()
                 page.locator('#single-save').click()
-                page.get_by_role('heading', name='¿Por qué obtuvo este score?').wait_for()
-                report['timings_ms']['single_save_to_explanation'] = (time.perf_counter() - start) * 1000
+                page.locator('[data-panel="sources"]').wait_for()
+                report['timings_ms']['single_save_to_source_step'] = (time.perf_counter() - start) * 1000
                 entity = next(engine.store.iter_entities())
                 checked('single_identity_hints_and_aliases_persist',
                         entity['context']['city'] == 'Toluca' and entity['context']['role'] == 'Docente sintética' and
                         entity['aliases'] == ['Estrella de prueba', 'E. Sintética'])
-                checked('individual_save_opens_real_auditable_explanation',
+                checked('individual_save_preserves_explicit_analysis_step',
+                        engine.store.latest_score_run(entity['id']) is None and engine.store.get_score(entity['id']) is None)
+                analyze_local_bank(page)
+                page.get_by_role('row', name='Consultar Persona Sintética Estrella', exact=True).click()
+                page.get_by_role('heading', name='¿Por qué obtuvo este score?').wait_for()
+                checked('explicit_analysis_opens_real_auditable_explanation',
                         page.locator('.score-number strong').inner_text() == '0' and
                         'esto no acredita ausencia de riesgo' in page.locator('#detail').inner_text())
 
@@ -195,14 +214,15 @@ def main():
                         'no almacenar' not in json.dumps(list(engine.store.iter_entities()), ensure_ascii=False) and
                         '<img' not in json.dumps(list(engine.store.iter_entities()), ensure_ascii=False))
 
-                page.locator('#csv-status').get_by_role('button', name='Ir al banco', exact=True).click()
+                page.locator('[data-panel="sources"]').wait_for()
+                checked('csv_save_does_not_run_implicit_scoring', engine.store.latest_score_run('csv-brisa') is None)
+                analyze_local_bank(page)
                 page.get_by_role('row', name='Consultar Empresa Sintética Brisa', exact=True).wait_for()
-                checked('receipt_bank_button_reveals_imported_list_without_previous_filter',
+                checked('explicit_analysis_reveals_imported_list_without_previous_filter',
                         page.locator('#search').input_value() == '')
-                page.locator('.toolbar [data-import-open="csv"]').click()
-                page.get_by_role('button', name='Consultar primera entidad', exact=True).click()
+                page.get_by_role('row', name='Consultar Empresa Sintética Brisa', exact=True).click()
                 page.get_by_role('heading', name='¿Por qué obtuvo este score?').wait_for()
-                checked('imported_list_links_to_existing_score_audit',
+                checked('analyzed_imported_list_links_to_existing_score_audit',
                         page.locator('.score-number strong').inner_text() == str(engine.explanation('csv-brisa')['result']['score']))
                 checked('double_confirmation_click_submits_one_operation',
                         len([url for url in network if url.endswith('/api/import-confirm')]) == confirmations_before + 1)
@@ -264,9 +284,9 @@ def main():
                 while engine.store.stats()['entities'] != 4 and time.monotonic() < deadline:
                     page.wait_for_timeout(10)
                 assert engine.store.stats()['entities'] == 4
-                page.locator('#single-status').get_by_role('button', name='Ir al banco', exact=True).click()
+                analyze_local_bank(page)
                 page.get_by_role('row', name='Consultar Persona Sintética Comprobante', exact=True).wait_for()
-                checked('missing_receipt_bank_action_can_verify_saved_entities', page.locator('#search').input_value() == '')
+                checked('missing_receipt_explicit_workflow_can_verify_saved_entities', page.locator('#search').input_value() == '')
                 page.unroute('**/api/import-status?id=*', missing_receipt)
                 checked('no_external_requests', not [url for url in network if not url.startswith(address)])
                 checked('no_browser_errors', not page_errors)

@@ -1,8 +1,10 @@
-# PEPS MX 2.2.1
+# PEPS MX 2.3.0
 
 Banco local de noticias y documentos públicos sobre personas, empresas y organizaciones mexicanas. Separa la adquisición de fuentes autorizadas de la atribución local de identidad, conserva procedencia y versiones, y ordena la revisión documental con una puntuación explicable.
 
-La versión consolidada integra la importación guiada, el historial y la explicación de evaluaciones, con correcciones de recolección, vigencia de revisiones y exportación. La comparación de las siete ramas y el tratamiento de los notebooks originales están en [CONSOLIDACION.md](docs/CONSOLIDACION.md), y las comprobaciones de esta versión en [VALIDACION_2_2_1.md](docs/VALIDACION_2_2_1.md).
+La interfaz organiza el trabajo en cinco pasos: **cargar lista → preparar fuentes → descargar noticias → analizar y calcular → revisar resultados**. Cada paso muestra su estado, el avance disponible y el motivo de cualquier bloqueo. Importar datos ya no ejecuta scoring; el cálculo se inicia explícitamente después de terminar la adquisición. Consulte [FLUJO_GUIADO.md](docs/FLUJO_GUIADO.md) para recorrerlo y [VALIDACION_2_3_0.md](docs/VALIDACION_2_3_0.md) para sus comprobaciones.
+
+El historial y la explicación de evaluaciones se conservan. La comparación de ramas y el tratamiento de los notebooks originales están en [CONSOLIDACION.md](docs/CONSOLIDACION.md); las comprobaciones anteriores permanecen en [VALIDACION_2_2_1.md](docs/VALIDACION_2_2_1.md).
 
 La condición PEP, un parentesco, un cargo o un contrato público no son conductas adversas por sí mismos. Los resultados son candidatos de revisión: no acreditan identidad, culpabilidad ni ausencia de riesgos. El sistema no debe decidir automáticamente la contratación, la admisión bancaria ni el acceso a servicios.
 
@@ -22,7 +24,9 @@ Ejecute los comandos desde la raíz del proyecto. En el bundle sustituya `python
 
 ## Flujo de trabajo
 
-En la interfaz, **Agregar nombre** permite dar de alta una persona, empresa u organización y abrir su expediente. **Importar CSV** acepta columnas en cualquier orden, títulos repetidos o vacíos y tablas pegadas: muestra ejemplos y pide identificar el contenido de cada columna antes de guardar. Puede separar nombres y apellidos, indicar tipos propios, omitir columnas y revisar errores, duplicados y posibles actualizaciones. Consulte [la guía de importación](docs/IMPORTACION_GUIADA.md), con ejemplos ficticios listos para cargar. Estas altas usan la evidencia ya disponible; no activan por sí solas búsquedas en internet.
+En la interfaz, **Guardar y continuar** da de alta una persona, empresa u organización y conduce a la preparación de fuentes. **Importar CSV** acepta columnas en cualquier orden, títulos repetidos o vacíos y tablas pegadas: muestra ejemplos y pide identificar el contenido de cada columna antes de guardar. Puede separar nombres y apellidos, indicar tipos propios, omitir columnas y revisar errores, duplicados y posibles actualizaciones. Consulte [la guía de importación](docs/IMPORTACION_GUIADA.md), con ejemplos ficticios listos para cargar. Estas altas no activan búsquedas ni calculan scores.
+
+En el paso 2 elija fuentes autorizadas o el modo de **documentos locales**, y confirme la selección. El paso 3 conserva el progreso de adquisición; las descargas pendientes impiden calcular resultados. El paso 4 atribuye las noticias y calcula el banco completo con barras de avance. El paso 5 permite consultar las explicaciones, registrar revisiones y exportar. La pausa espera a que termine el trabajo en curso antes de habilitar otra operación. El servidor aplica los mismos controles que los botones.
 
 1. Importe entidades con IDs estables, nombres, tipo, alias y contexto. Los homónimos conservan IDs distintos; los atributos son pistas hasta verificarse con procedencia.
 2. Adquiera noticias: un trabajo por RSS y ventana, consultas por lotes cuando la fuente lo permita, URLs deduplicadas y cuerpos sólo con permiso separado.
@@ -47,7 +51,7 @@ python -m peps --data-dir .\runtime score-history ID_ENTIDAD
 python -m peps --data-dir .\runtime replay ID_EVALUACION
 ```
 
-`replay` comprueba el scoring y su traza cuando código y parámetros son compatibles; los análisis auxiliares se conservan archivados y no se reinfieren. Abrir una entidad actualiza localmente una evaluación ausente u obsoleta, sin consultar internet. Las versiones anteriores a 2.2 no tenían snapshots completos recuperables: se conserva su bitácora y se crea una evaluación nueva; no se reconstruye un historial que nunca se guardó.
+`replay` comprueba el scoring y su traza cuando código y parámetros son compatibles; los análisis auxiliares se conservan archivados y no se reinfieren. La interfaz sólo consulta resultados guardados después del paso de análisis; abrir una entidad no inicia un cálculo. El comando CLI `explain` conserva su actualización local explícita, sin consultar internet. Las versiones anteriores a 2.2 no tenían snapshots completos recuperables: se conserva su bitácora y se crea una evaluación nueva; no se reconstruye un historial que nunca se guardó.
 
 Las fuentes comienzan desactivadas en `runtime/news_sources.json`. `enabled` y `terms_approved` habilitan acceso; `download_articles` y `article_terms_approved` autorizan por separado guardar cuerpos. Un RSS gratuito no concede permiso de uso comercial. El catálogo documenta restricciones y mantiene todos esos permisos desactivados. Lea [NOTICIAS.md](docs/NOTICIAS.md) y [FUENTES_NOTICIAS.md](docs/FUENTES_NOTICIAS.md) antes de configurar fuentes.
 

@@ -5,6 +5,26 @@ on:
   pull_request:
   workflow_dispatch:
 jobs:
+  guided-ui:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install playwright==1.62.0
+      - run: python -m playwright install --with-deps chromium
+      - run: python scripts/test_workflow_ui.py
+      - run: python scripts/test_import_ui.py
+      - run: python scripts/test_explainability_ui.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: guided-ui-validation
+          path: |
+            runtime/guided-ui-validation/
+            runtime/import-ui-validation/
+            runtime/ui-validation/
   unit:
     strategy:
       matrix:
