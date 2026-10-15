@@ -13,6 +13,7 @@ from .store import read_entities
 
 
 def default_data_dir():
+    # Preserve existing local banks when the visible product name changes.
     if os.name == 'nt':
         return Path(os.environ.get('LOCALAPPDATA', str(Path.cwd()))) / 'PEPS-MX'
     return Path(os.environ.get('XDG_DATA_HOME', str(Path.cwd() / 'runtime'))) / 'peps-mx'
@@ -82,7 +83,7 @@ def import_legacy(engine, source):
 
 
 def main():
-    parser = argparse.ArgumentParser(description='PEPS MX · Banco de fuentes públicas y prioridad de revisión')
+    parser = argparse.ArgumentParser(description='WebScope · Web scraping y análisis documental')
     parser.add_argument('--data-dir', type=Path, default=default_data_dir())
     parser.add_argument('--config', type=Path)
     parser.add_argument('--online', action='store_true', help='Permite sólo fuentes habilitadas y autorizadas')

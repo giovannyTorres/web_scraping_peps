@@ -1,6 +1,6 @@
 # De la lista al scoring
 
-La interfaz de PEPS MX 2.3 guía el trabajo en cinco pasos. La barra lateral indica
+La interfaz de WebScope 2.3.1 guía el trabajo en cinco pasos. La barra lateral indica
 qué terminó, qué está activo y qué falta. Los botones muestran el motivo cuando
 una acción todavía no está disponible.
 

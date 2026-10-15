@@ -171,7 +171,7 @@ def create_server(engine, port=0):
         return operation_id
 
     class Handler(BaseHTTPRequestHandler):
-        server_version = 'PEPS-MX/2'
+        server_version = 'WebScope/2'
 
         def log_message(self, *_):
             pass
@@ -186,7 +186,7 @@ def create_server(engine, port=0):
             self.send_header('X-Content-Type-Options', 'nosniff')
             self.send_header('Referrer-Policy', 'no-referrer')
             self.send_header('Content-Security-Policy', "default-src 'self'; script-src 'self'; style-src 'self'; "
-                             "img-src 'self' data:; connect-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'")
+                             "img-src 'self' data:; font-src 'self'; connect-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'")
             self.end_headers()
             self.wfile.write(data)
 
@@ -222,6 +222,8 @@ def create_server(engine, port=0):
                                content_type='text/html; charset=utf-8')
                 elif path in ('/app.js', '/import.js', '/workflow.js', '/style.css'):
                     self.reply((web / path[1:]).read_bytes(), content_type='text/javascript; charset=utf-8' if path.endswith('.js') else 'text/css; charset=utf-8')
+                elif path in ('/fonts/Lato-Regular.woff2', '/fonts/Lato-Bold.woff2', '/fonts/SourceSerif4-Roman.woff2'):
+                    self.reply((web / 'fonts' / Path(path).name).read_bytes(), content_type='font/woff2')
                 elif path == '/api/stats':
                     operation = tracker.snapshot()
                     self.reply(dict(engine.store.stats(), online=engine.online, operation=operation,
@@ -278,7 +280,7 @@ def create_server(engine, port=0):
                     # Exportación completa y streaming: memoria acotada para bancos grandes.
                     self.send_response(200)
                     self.send_header('Content-Type', 'application/x-ndjson; charset=utf-8')
-                    self.send_header('Content-Disposition', 'attachment; filename=peps-export.jsonl')
+                    self.send_header('Content-Disposition', 'attachment; filename=webscope-export.jsonl')
                     self.send_header('Cache-Control', 'no-store')
                     self.end_headers()
                     for row in engine.store.export():
@@ -398,7 +400,7 @@ def create_server(engine, port=0):
                         news.set_source(data['id'], *values)
                 elif self.path == '/api/backup':
                     from .store import now
-                    destination = engine.data_dir / 'backups' / ('peps-' + now().replace(':', '-').replace('+', '_') + '.sqlite3')
+                    destination = engine.data_dir / 'backups' / ('webscope-' + now().replace(':', '-').replace('+', '_') + '.sqlite3')
                     engine.store.backup(destination)
                     self.reply({'file': str(destination)})
                     return
@@ -429,7 +431,7 @@ def create_server(engine, port=0):
 def serve(engine, open_browser=True):
     server, _ = create_server(engine)
     url = f'http://127.0.0.1:{server.server_port}'
-    print('PEPS MX: ' + url, flush=True)
+    print('WebScope: ' + url, flush=True)
     print('Datos locales: ' + str(engine.data_dir), flush=True)
     if open_browser:
         webbrowser.open(url)

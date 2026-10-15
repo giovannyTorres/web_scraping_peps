@@ -1,4 +1,4 @@
-"""Smoke-test an installed wheel or a frozen bundle using only the stdlib.
+"""Smoke-test an installed WebScope wheel or portable bundle using the stdlib.
 
 Run with the installed environment's Python and -I. Every CLI process runs from
 a fresh directory outside the checkout, without PYTHONPATH or optional NLP.
@@ -25,6 +25,9 @@ RESOURCES = (
     "models/context-role-es-v1.json", "licenses/CONTEXT_MODEL_CODE.txt",
     "licenses/CONTEXT_MODEL_DATA.txt", "web/index.html", "web/app.js",
     "web/import.js", "web/workflow.js", "web/style.css",
+    "web/fonts/Lato-Regular.woff2", "web/fonts/Lato-Bold.woff2",
+    "web/fonts/SourceSerif4-Roman.woff2",
+    "licenses/LATO_OFL.txt", "licenses/SOURCE_SERIF_4_OFL.txt", "licenses/FONT_SOURCES.txt",
 )
 
 
@@ -43,14 +46,17 @@ def validate(executable=None):
         import peps
         package_dir = Path(peps.__file__).resolve().parent
         require(package_dir != checkout / "peps", "Se importó el checkout; instale el wheel y use python -I.")
-        executable = Path(sys.executable).with_name("peps.exe" if os.name == "nt" else "peps")
-        require(executable.is_file(), "No se encontró el punto de entrada peps instalado.")
+        executable = Path(sys.executable).with_name("webscope.exe" if os.name == "nt" else "webscope")
+        require(executable.is_file(), "No se encontró el punto de entrada webscope instalado.")
         kind = "wheel"
 
     resources = {}
     for name in RESOURCES:
         raw = (package_dir / name).read_bytes()
         require(bool(raw), "Recurso vacío: " + name)
+        if name.endswith('.woff2'):
+            require(len(raw) >= 48 and raw[:4] == b'wOF2' and int.from_bytes(raw[8:12], 'big') == len(raw),
+                "Archivo WOFF2 inválido: " + name)
         resources[name] = {"bytes": len(raw), "sha256": hashlib.sha256(raw).hexdigest()}
 
     env = dict(os.environ)
@@ -58,7 +64,7 @@ def validate(executable=None):
         env.pop(name, None)
     env["PYTHONUTF8"] = "1"
     commands = []
-    with tempfile.TemporaryDirectory(prefix="peps-distribution-") as staging:
+    with tempfile.TemporaryDirectory(prefix="webscope-distribution-") as staging:
         cwd = Path(staging)
         data_dir = cwd / "data"
 
@@ -69,6 +75,13 @@ def validate(executable=None):
             return json.loads(result.stdout) if parse else result.stdout
 
         require("import-entities" in command("--help", parse=False), "La ayuda CLI no está disponible.")
+        if kind == 'wheel':
+            legacy_cli = Path(sys.executable).with_name('peps.exe' if os.name == 'nt' else 'peps')
+            require(legacy_cli.is_file(), 'No se conservó el comando compatible peps.')
+            legacy = subprocess.run([str(legacy_cli), '--help'], cwd=cwd, env=env,
+                capture_output=True, encoding='utf-8', timeout=60, check=True)
+            require('import-entities' in legacy.stdout, 'La CLI anterior dejó de funcionar.')
+            commands.append('peps --help')
         entities = cwd / "entities.csv"
         entities.write_text("id,name,kind\ndistribution,Entidad Sintética Aurora,company\n", encoding="utf-8")
         require(command("import-entities", entities)["imported"] == 1, "Importación CLI fallida.")
@@ -143,6 +156,14 @@ def validate(executable=None):
             for name in ("app.js", "import.js", "workflow.js", "style.css"):
                 with urlopen(base + "/" + name, timeout=10) as response:
                     require(response.status == 200 and bool(response.read()), "Asset no servido: " + name)
+            css = (package_dir / "web/style.css").read_text(encoding="utf-8")
+            for name in ("Lato-Regular.woff2", "Lato-Bold.woff2", "SourceSerif4-Roman.woff2"):
+                require(name in css, "La hoja de estilos no referencia la fuente local: " + name)
+                with urlopen(base + "/fonts/" + name, timeout=10) as response:
+                    require(response.status == 200 and response.headers.get_content_type() == "font/woff2",
+                        "La fuente no se sirve como WOFF2: " + name)
+                    require(hashlib.sha256(response.read()).hexdigest() == resources["web/fonts/" + name]["sha256"],
+                        "La fuente HTTP difiere del recurso empaquetado: " + name)
             headers = {"X-PEPS-Token": token[1]}
             with urlopen(Request(base + "/api/stats", headers=headers), timeout=10) as response:
                 require(json.load(response)["entities"] == 1, "La UI no abrió el banco de la CLI.")
@@ -176,7 +197,7 @@ def validate(executable=None):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--executable", type=Path, help="PEPS-CLI.exe dentro de la carpeta portable final")
+    parser.add_argument("--executable", type=Path, help="WebScope-CLI.exe dentro de la carpeta portable final")
     parser.add_argument("--output", type=Path, help="Reporte JSON; use runtime/ para validaciones locales")
     args = parser.parse_args()
     result = validate(args.executable)
