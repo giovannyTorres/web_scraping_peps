@@ -1,0 +1,10 @@
+# Unified diff context lines intentionally contain a single space.
+docs/benchmarks/*.patch -whitespace
+# Preserve pinned artifact/corpus hashes and source fingerprints on Windows.
+*.json text eol=lf
+*.jsonl text eol=lf
+*.py text eol=lf
+*.js text eol=lf
+*.css text eol=lf
+*.html text eol=lf
+*.patch text eol=lf

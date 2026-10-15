@@ -8,6 +8,37 @@ from peps.store import digest, now
 
 
 class PipelineTests(unittest.TestCase):
+    def test_rss_discovery_can_download_an_html_article_from_the_same_source(self):
+        with tempfile.TemporaryDirectory() as temp:
+            engine = Engine(temp, online=True)
+            engine.store.import_entities([{'id': 'target', 'name': 'Arturo Pérez Montes'}])
+            source = {'id': 'publisher-feed', 'kind': 'rss', 'document_kind': 'news',
+                      'url': 'https://example.org/feed?q={query}', 'allowed_hosts': ['example.org'],
+                      'enabled': True, 'terms_approved': True, 'discovery': True}
+            engine.config_path.write_text(json.dumps({'sources': [source]}), encoding='utf-8')
+
+            class Fetcher:
+                def fetch(self, url, _source):
+                    if '/feed?' in url:
+                        body = ('<rss><channel><item><title>Resumen</title>'
+                                '<link>https://example.org/article</link></item></channel></rss>')
+                    else:
+                        body = ('<html><head><title>Artículo editorial</title>'
+                                '<meta property="article:published_time" content="2026-10-01">'
+                                '</head><body><p>Arturo Pérez Montes inauguró una biblioteca.</p></body></html>')
+                    return {'url': url, 'status': 'ok', 'body': body,
+                            'retrieved_at': now(), 'sha256': digest(body)}
+
+            engine.queue_discovery('2026-10-15')
+            engine._execute(engine.store.claim(), Fetcher())
+            engine._execute(engine.store.claim(), Fetcher())
+            self.assertEqual(engine.store.stats()['jobs'], {'done': 2})
+            evidence = engine.store.evidence('target')[0]
+            self.assertEqual(evidence['source_kind'], 'news')
+            self.assertEqual(evidence['title'], 'Artículo editorial')
+            self.assertEqual(evidence['published_at'][:10], '2026-10-01')
+            self.assertEqual(evidence['text'], 'Arturo Pérez Montes inauguró una biblioteca.')
+
     def test_cached_discovery_article_date_and_scoring_end_to_end(self):
         with tempfile.TemporaryDirectory() as temp:
             engine = Engine(temp, online=True)

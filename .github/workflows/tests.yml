@@ -1,5 +1,9 @@
 name: Validación PEPS MX
-on: [push, pull_request]
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
 jobs:
   unit:
     strategy:
@@ -14,7 +18,52 @@ jobs:
           python-version: ${{ matrix.python }}
       - run: python -m unittest discover -s tests -v
       - run: python scripts/benchmark.py --data-dir runtime/ci --size 1000 --output runtime/ci-benchmark.json
+      - run: python scripts/benchmark_import.py --repetitions 1 --output runtime/ci-import-benchmark.json
+      - name: Build wheel
+        run: python -m pip wheel --no-deps --wheel-dir runtime/wheels .
+      - name: Create isolated wheel environment
+        run: python -m venv runtime/wheel-env
+      - name: Install and validate wheel (Linux)
+        if: runner.os != 'Windows'
+        run: |
+          runtime/wheel-env/bin/python -m pip install --no-index --no-deps --find-links runtime/wheels peps-mx
+          runtime/wheel-env/bin/python -I scripts/validate_distribution.py --output runtime/ci-wheel-validation.json
+      - name: Install and validate wheel (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          runtime/wheel-env/Scripts/python.exe -m pip install --no-index --no-deps --find-links runtime/wheels peps-mx
+          runtime/wheel-env/Scripts/python.exe -I scripts/validate_distribution.py --output runtime/ci-wheel-validation.json
       - uses: actions/upload-artifact@v4
         with:
           name: benchmark-${{ matrix.os }}-${{ matrix.python }}
-          path: runtime/ci-benchmark.json
+          path: |
+            runtime/ci-benchmark.json
+            runtime/ci-import-benchmark.json
+            runtime/ci-wheel-validation.json
+  windows-portable:
+    needs: unit
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -r requirements-build.lock.txt
+      - run: ./scripts/build_windows.ps1 -Destination runtime/windows-dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: PEPS-MX-windows-portable
+          path: |
+            runtime/windows-dist/PEPS-MX/
+            runtime/windows-dist/windows-distribution-validation.json
+  nlp-optional:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -r requirements-nlp.lock.txt
+      - run: python scripts/setup_local_nlp.py --download --install
+      - run: python -m unittest discover -s tests -p test_advanced_nlp.py -v
+      - run: python -m unittest discover -s tests -p test_contextual.py -v

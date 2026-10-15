@@ -1,6 +1,8 @@
-# PEPS MX 2.1
+# PEPS MX 2.2.1
 
 Banco local de noticias y documentos públicos sobre personas, empresas y organizaciones mexicanas. Separa la adquisición de fuentes autorizadas de la atribución local de identidad, conserva procedencia y versiones, y ordena la revisión documental con una puntuación explicable.
+
+La versión consolidada integra la importación guiada, el historial y la explicación de evaluaciones, con correcciones de recolección, vigencia de revisiones y exportación. La comparación de las siete ramas y el tratamiento de los notebooks originales están en [CONSOLIDACION.md](docs/CONSOLIDACION.md), y las comprobaciones de esta versión en [VALIDACION_2_2_1.md](docs/VALIDACION_2_2_1.md).
 
 La condición PEP, un parentesco, un cargo o un contrato público no son conductas adversas por sí mismos. Los resultados son candidatos de revisión: no acreditan identidad, culpabilidad ni ausencia de riesgos. El sistema no debe decidir automáticamente la contratación, la admisión bancaria ni el acceso a servicios.
 
@@ -8,7 +10,9 @@ La condición PEP, un parentesco, un cargo o un contrato público no son conduct
 
 El paquete portable usa la carpeta completa `PEPS-MX`, con `PEPS-MX.exe`, `PEPS-CLI.exe` y la carpeta auxiliar `_internal`. Abra `PEPS-MX.exe` con doble clic: inicia un servidor en `127.0.0.1` y abre el navegador predeterminado sin mostrar una consola. No requiere instalar Python en la máquina de destino. Mantenga juntos ambos ejecutables y `_internal`; distribuir únicamente un `.exe` no funciona. El paquete no es un instalador ni un servicio de Windows.
 
-Desde el código fuente se requiere Python 3.10 o posterior. El programa utiliza únicamente la biblioteca estándar en ejecución: no necesita Hugging Face, claves de un modelo ni servicios de IA.
+Desde el código fuente se requiere Python 3.10 o posterior. La instalación base utiliza únicamente la biblioteca estándar en ejecución: no necesita Hugging Face, claves de un modelo ni servicios de IA.
+
+La sección **«¿Por qué obtuvo este score?»** conecta cada resultado con sus eventos, multiplicadores reales, notas originales y fragmentos resaltados. Conserva evaluaciones históricas en la misma SQLite y permite reproducir el cálculo. El clasificador contextual incluido (1.43 MB, CPU, sin dependencias adicionales) sólo propone papeles auxiliares y puede abstenerse: no agrega ni elimina puntos. NER y dependencias de spaCy son opcionales, con instalación explícita desde GitHub. Consulte [EXPLICABILIDAD.md](docs/EXPLICABILIDAD.md) para usarlo y [el benchmark comparativo](docs/BENCHMARK_EXPLICABILIDAD.md) para sus limitaciones medidas, incluida la baja cobertura de acusaciones. La investigación y prueba real de Laya se completaron antes de spaCy.
 
 ```powershell
 python -m peps --data-dir .\runtime ui
@@ -17,6 +21,8 @@ python -m peps --data-dir .\runtime ui
 Ejecute los comandos desde la raíz del proyecto. En el bundle sustituya `python -m peps` por la ruta a `PEPS-CLI.exe`, que conserva salida y errores de consola. Desde la carpeta portable, para diagnóstico de apertura use `.\PEPS-CLI.exe --data-dir .\runtime ui --no-browser`; muestra la URL local. `PEPS-MX.exe` está destinado al doble clic. Para conservar los datos en una ubicación explícita, utilice siempre el mismo `--data-dir`; sin esa opción, Windows usa `%LOCALAPPDATA%\PEPS-MX`.
 
 ## Flujo de trabajo
+
+En la interfaz, **Agregar nombre** permite dar de alta una persona, empresa u organización y abrir su expediente. **Importar CSV** acepta columnas en cualquier orden, títulos repetidos o vacíos y tablas pegadas: muestra ejemplos y pide identificar el contenido de cada columna antes de guardar. Puede separar nombres y apellidos, indicar tipos propios, omitir columnas y revisar errores, duplicados y posibles actualizaciones. Consulte [la guía de importación](docs/IMPORTACION_GUIADA.md), con ejemplos ficticios listos para cargar. Estas altas usan la evidencia ya disponible; no activan por sí solas búsquedas en internet.
 
 1. Importe entidades con IDs estables, nombres, tipo, alias y contexto. Los homónimos conservan IDs distintos; los atributos son pistas hasta verificarse con procedencia.
 2. Adquiera noticias: un trabajo por RSS y ventana, consultas por lotes cuando la fuente lo permita, URLs deduplicadas y cuerpos sólo con permiso separado.
@@ -33,9 +39,19 @@ python -m peps --data-dir .\runtime audit
 python -m peps --data-dir .\runtime export .\exportaciones\banco.jsonl
 ```
 
+Para consultar o auditar una evaluación desde consola:
+
+```powershell
+python -m peps --data-dir .\runtime explain ID_ENTIDAD
+python -m peps --data-dir .\runtime score-history ID_ENTIDAD
+python -m peps --data-dir .\runtime replay ID_EVALUACION
+```
+
+`replay` comprueba el scoring y su traza cuando código y parámetros son compatibles; los análisis auxiliares se conservan archivados y no se reinfieren. Abrir una entidad actualiza localmente una evaluación ausente u obsoleta, sin consultar internet. Las versiones anteriores a 2.2 no tenían snapshots completos recuperables: se conserva su bitácora y se crea una evaluación nueva; no se reconstruye un historial que nunca se guardó.
+
 Las fuentes comienzan desactivadas en `runtime/news_sources.json`. `enabled` y `terms_approved` habilitan acceso; `download_articles` y `article_terms_approved` autorizan por separado guardar cuerpos. Un RSS gratuito no concede permiso de uso comercial. El catálogo documenta restricciones y mantiene todos esos permisos desactivados. Lea [NOTICIAS.md](docs/NOTICIAS.md) y [FUENTES_NOTICIAS.md](docs/FUENTES_NOTICIAS.md) antes de configurar fuentes.
 
-Las entidades admiten `kind=person`, `company` u `organization`; los alias se separan con `|` en CSV y `context` contiene JSON. La importación manual autorizada sigue disponible con `import-documents documentos.jsonl`. Para cargas grandes utilice la CLI: la interfaz limita cada petición de importación a 16 MB. Los formatos y el modo cerrado están en [OPERACION.md](docs/OPERACION.md).
+El formato técnico de entidades, disponible en la CLI y en las opciones avanzadas de la interfaz, admite `kind=person`, `company` u `organization`; los alias se separan con `|` en CSV y `context` contiene JSON. El asistente visual permite mapear otros encabezados a estos datos sin editar el archivo. La importación manual autorizada sigue disponible con `import-documents documentos.jsonl`. Para cargas grandes utilice la CLI con el formato técnico: la interfaz limita cada petición de importación a 16 MB. Los formatos y el modo cerrado están en [OPERACION.md](docs/OPERACION.md).
 
 ## Implementación y alcance
 
@@ -75,10 +91,12 @@ Los notebooks originales y sus salidas se conservan como material histórico. Su
 PyInstaller es una dependencia de construcción, no de ejecución. Instálelo en un entorno de desarrollo permitido, o use un wheelhouse aprobado para una construcción sin internet.
 
 ```powershell
-python -m pip install pyinstaller
+python -m pip install -r requirements-build.lock.txt
 .\scripts\build_windows.ps1 -Python python -Destination dist
 ```
 
-El script ejecuta las pruebas y construye las variantes gráfica y de consola, colocando `PEPS-CLI.exe` junto a `PEPS-MX.exe` para compartir `_internal`. Distribuya `dist\PEPS-MX` completo. El entorno de destino debe permitir ejecución de aplicaciones locales, apertura de navegador y escritura en el directorio de datos; políticas corporativas pueden impedirlo.
+El script ejecuta las pruebas y construye las variantes gráfica y de consola, colocando `PEPS-CLI.exe` junto a `PEPS-MX.exe` para compartir `_internal`. Comprueba los recursos compartidos y prueba el paquete final desde una carpeta ajena al repositorio: importación, cálculo, explicación, historial, replay, auditoría, exportación, respaldo y servidor local. Distribuya `dist\PEPS-MX` completo. El entorno de destino debe permitir ejecución de aplicaciones locales, apertura de navegador y escritura en el directorio de datos; políticas corporativas pueden impedirlo.
+
+La CI verifica además el wheel instalado en un entorno limpio, sin dependencias de ejecución, en Windows/Linux con Python 3.10/3.12. `scripts/validate_distribution.py` admite `--output` para guardar el comprobante y `--executable` para probar la CLI de un paquete portable.
 
 Para finalidad, retención, rectificación, restricciones de acceso y fuentes primarias consulte [PRIVACIDAD_Y_FUENTES.md](docs/PRIVACIDAD_Y_FUENTES.md). El software incorpora controles técnicos; su uso legal depende de la finalidad, organización, fuentes y régimen aplicable.

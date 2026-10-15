@@ -1,0 +1,12 @@
+laya-onnx
+Copyright 2026 MstyAI
+
+This product includes an ONNX inference implementation for Laya, originally
+developed by Convai Innovations and contributors and distributed under the
+Apache License 2.0.
+
+Laya source: https://github.com/NandhaKishorM/laya
+Laya model: https://huggingface.co/convaiinnovations/laya
+
+ONNX Runtime is distributed by Microsoft under the MIT License.
+https://github.com/microsoft/onnxruntime

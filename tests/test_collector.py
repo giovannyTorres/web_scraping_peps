@@ -321,6 +321,45 @@ class SafeFetcherTests(unittest.TestCase):
         self.assertEqual(refreshed["body"], "changed")
         self.assertEqual(len(transport.calls), 2)
 
+    def test_redirected_feed_keeps_relative_urls_on_fresh_and_revalidated_cache(self):
+        self.source.update(kind='rss', cache_ttl_seconds=20)
+        final_url = 'https://news.example/section/feed.rss'
+        body = ('<rss><channel><item><title>Nota</title><link>article</link>'
+                '</item></channel></rss>').encode()
+        transport = self.transport({
+            self.url: [(302, {'location': final_url}, b'')],
+            final_url: [(200, {'etag': '"feed-v1"'}, body), (304, {}, b'')]})
+        fetched = self.fetcher.fetch(self.url, self.source)
+        self.now[0] += 1
+        fresh = self.fetcher.fetch(self.url, self.source)
+        self.now[0] += 20
+        revalidated = self.fetcher.fetch(self.url, self.source)
+        self.assertEqual([result['status'] for result in (fetched, fresh, revalidated)],
+                         ['ok', 'not_modified', 'not_modified'])
+        for result in (fetched, fresh, revalidated):
+            self.assertEqual(result.get('final_url'), final_url)
+            self.assertEqual(parse_results(result, self.source)[0]['url'],
+                             'https://news.example/section/article')
+        self.assertEqual(len(transport.calls), 3)
+
+    def test_legacy_cache_without_response_url_is_revalidated_once(self):
+        self.source['cache_ttl_seconds'] = 20
+        final_url = 'https://news.example/section/article'
+        transport = self.transport({
+            self.url: [(302, {'location': final_url}, b'')],
+            final_url: [(200, {}, b'old'), (200, {}, b'updated')]})
+        self.fetcher.fetch(self.url, self.source)
+        with self.fetcher._db() as db:
+            db.execute("UPDATE http_cache SET final_url='' WHERE url=?", (self.url,))
+        self.now[0] += 1
+        refreshed = self.fetcher.fetch(self.url, self.source)
+        cached = self.fetcher.fetch(self.url, self.source)
+        self.assertEqual(refreshed['body'], 'updated')
+        self.assertEqual(refreshed.get('final_url'), final_url)
+        self.assertEqual(cached.get('final_url'), final_url)
+        self.assertEqual(cached['network_requests'], 0)
+        self.assertEqual(len(transport.calls), 3)
+
     def test_unsupported_binary_type(self):
         self.transport({self.url: [(200, {"content-type": "application/pdf"}, b"%PDF")]})
         self.assertEqual(self.fetcher.fetch(self.url, self.source)["status"], "error")
@@ -647,6 +686,10 @@ class SourceAdapterTests(unittest.TestCase):
         self.assertEqual(result[0]["source_kind"], "official")
         self.assertEqual(result[0]["text"], "Texto público")
         self.assertEqual(result[0]["published_at"], "2026-10-14T10:00:00+00:00")
+        # The retained discovery source id must not override article parsing.
+        article = parse_results(response, {"id": "gdelt", "kind": "news"})[0]
+        self.assertEqual(article['title'], 'Investigación')
+        self.assertEqual(article['source_id'], 'gdelt')
         response["status"] = "blocked"
         self.assertEqual(parse_results(response, {"kind": "news"}), [])
 

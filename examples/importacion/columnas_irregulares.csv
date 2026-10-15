@@ -1,0 +1,5 @@
+Lista ficticia para probar la importación guiada
+Referencia;Nombre;Nombre;;Clase;Localidad
+demo-lirio;Persona Ficticia Lirio;Lirio de prueba;omitir este dato;PF;Ciudad de Prueba
+demo-brisa;Empresa Ficticia Brisa;Brisa Demo;omitir este dato;SOC;Ciudad de Muestra;comentario adicional que debe omitirse
+demo-incompleto;;Alias sin titular;omitir este dato;PF;Ciudad de Ejemplo

@@ -48,7 +48,7 @@ python -m peps --data-dir .\runtime import-entities .\notebooks\output\00_peps_n
 python -m peps --data-dir .\runtime import-legacy .\notebooks\output\04_master_evidence.csv
 ```
 
-La importación histórica se vincula por `nombre_persona_input`. Sus snippets y resúmenes no sustituyen la lectura de la fuente original; se marcan para revalidación. No ejecute notebooks antiguos esperando que sus puntuaciones equivalgan al modelo actual.
+La importación de entidades conserva `seed_id` como ID cuando no se proporciona `id`. La evidencia histórica se vincula primero por ese ID, comprobando que el nombre corresponda; para bancos importados antes de 2.2.1, admite el nombre normalizado sólo cuando identifica una entidad única. Los nombres ambiguos, conflictos entre ID y nombre, entidades desconocidas y filas sin texto se omiten con contadores explícitos en `legacy_skipped`. Se conservan la fila de origen en `metadata.legacy_record`, las fechas, los hashes declarados y el fragmento o resumen disponible; un hash histórico declarado no equivale a verificar nuevamente su archivo. Sus snippets y resúmenes no sustituyen la lectura de la fuente original; toda esa evidencia se marca para revalidación y no puntúa. No ejecute notebooks antiguos esperando que sus puntuaciones equivalgan al modelo actual.
 
 `import-official` procesa una copia local de una lista oficial y valida el archivo completo en un área temporal antes de publicar documentos en el banco. No realiza la descarga de la lista:
 
@@ -139,6 +139,8 @@ python -m peps --data-dir .\runtime audit
 python -m peps capacity --entities 40000
 ```
 
-La API de respaldo SQLite produce una copia consistente del banco y cierra las conexiones al terminar. Una restauración debe realizarse con la aplicación y workers detenidos, en un directorio nuevo y con los archivos originales preservados. El respaldo de la base no incluye automáticamente configuración, estado HTTP ni `news_snapshots/`; consérvelos por separado. No borre el estado HTTP para eludir circuitos o mejorar un benchmark. `audit` verifica la cadena de eventos, los hashes del cuerpo documental y las puntuaciones actuales; mantenga un hash o respaldo externo para detectar una eventual reescritura completa del banco.
+La exportación CLI se publica sólo al terminar: si falla la escritura, conserva la exportación anterior. Tanto exportación como respaldo rechazan el banco activo y sus archivos auxiliares como destino, incluidos enlaces al mismo archivo.
+
+La API de respaldo SQLite produce una copia consistente del banco y cierra las conexiones al terminar. Una restauración debe realizarse con la aplicación y workers detenidos, en un directorio nuevo y con los archivos originales preservados. El respaldo de la base no incluye automáticamente configuración, estado HTTP ni `news_snapshots/`; consérvelos por separado. No borre el estado HTTP para eludir circuitos o mejorar un benchmark. `audit` verifica la cadena de eventos, los hashes del cuerpo documental y las puntuaciones actuales; devuelve código de salida 2 si detecta una inconsistencia, para que las automatizaciones puedan detenerse. Mantenga un hash o respaldo externo para detectar una eventual reescritura completa del banco.
 
 SQLite admite múltiples lectores y un escritor a la vez; los índices y lotes ayudan, pero la aplicación no ofrece cómputo distribuido horizontal. `news-plan` estima peticiones y días bajo distribución equilibrada entre fuentes autorizadas. Su resultado es optimista: faltan latencias sostenidas, consultas adicionales por saturación, bloqueos, descarga histórica y revisión humana. Una proyección dentro de siete días no constituye SLA ni demuestra noticias atribuidas a las 40 mil identidades.

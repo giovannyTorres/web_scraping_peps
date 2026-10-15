@@ -4,10 +4,11 @@ import io
 import json
 import os
 import sys
+import tempfile
 import time
 from pathlib import Path
 
-from .engine import Engine, capacity
+from .engine import Engine, capacity, normalized
 from .store import read_entities
 
 
@@ -15,6 +16,69 @@ def default_data_dir():
     if os.name == 'nt':
         return Path(os.environ.get('LOCALAPPDATA', str(Path.cwd()))) / 'PEPS-MX'
     return Path(os.environ.get('XDG_DATA_HOME', str(Path.cwd() / 'runtime'))) / 'peps-mx'
+
+
+def export_jsonl(store, target):
+    """Publish a complete export without truncating the bank or an older export."""
+    target = Path(target).resolve()
+    database = store.path.resolve()
+    protected = [database, *(Path(str(database) + suffix) for suffix in ('-wal', '-shm', '-journal'))]
+    if any(target == path or (target.exists() and path.exists() and target.samefile(path))
+           for path in protected):
+        raise ValueError('La exportación requiere una ruta distinta del banco y sus archivos auxiliares')
+    target.parent.mkdir(parents=True, exist_ok=True)
+    staged = None
+    try:
+        with tempfile.NamedTemporaryFile(mode='w', encoding='utf-8', dir=target.parent,
+                                         prefix='.' + target.name + '-', suffix='.tmp', delete=False) as dest:
+            staged = Path(dest.name)
+            for row in store.export():
+                dest.write(json.dumps(row, ensure_ascii=False) + '\n')
+            dest.flush()
+            os.fsync(dest.fileno())
+        os.replace(staged, target)
+    finally:
+        if staged is not None:
+            staged.unlink(missing_ok=True)
+    return {'exported': str(target)}
+
+
+def import_legacy(engine, source):
+    """Keep old notebook evidence as unverified history with unambiguous links."""
+    entities = {entity['id']: entity for entity in engine.store.iter_entities()}
+    by_name = {}
+    for entity in entities.values():
+        by_name.setdefault(normalized(entity['name']), []).append(entity['id'])
+    skipped = {'unknown_entity': 0, 'ambiguous_name': 0, 'identity_conflict': 0, 'empty_text': 0}
+
+    def documents():
+        for row in csv.DictReader(source):
+            name = normalized(row.get('nombre_persona_input') or '')
+            entity_id = (row.get('seed_id') or row.get('id') or '').strip()
+            if entity_id in entities:
+                if name and normalized(entities[entity_id]['name']) != name:
+                    skipped['identity_conflict'] += 1
+                    continue
+            else:
+                candidates = by_name.get(name, []) if name else []
+                if len(candidates) != 1:
+                    skipped['ambiguous_name' if candidates else 'unknown_entity'] += 1
+                    continue
+                entity_id = candidates[0]
+            text = next((row.get(key) for key in ('snippet', 'evidence_text', 'evidence_snippet',
+                         'evidence_summary', 'involvement_summary') if (row.get(key) or '').strip()), '')
+            if not text:
+                skipped['empty_text'] += 1
+                continue
+            yield {'url': row.get('evidence_url') or row.get('url') or row.get('source_url') or '',
+                   'title': row.get('title') or row.get('evidence_title') or '', 'text': text,
+                   'published_at': row.get('evidence_date') or None,
+                   'retrieved_at': row.get('retrieved_at') or None,
+                   'source_kind': 'legacy', 'source_id': row.get('source') or 'legacy',
+                   'entity_ids': [entity_id], 'metadata': {'legacy': True,
+                   'requires_source_revalidation': True, 'legacy_record': row}}
+    result = engine.import_documents(documents())
+    return dict(result, legacy_skipped=skipped)
 
 
 def main():
@@ -32,6 +96,11 @@ def main():
     official.add_argument('--source-url', required=True, help='URL HTTPS del recurso oficial de origen')
     official.add_argument('--list-name', choices=('sdn', 'non_sdn'), default='sdn', help='Sólo para OFAC')
     sub.add_parser('score')
+    explain = sub.add_parser('explain', help='Explicación y snapshot auditable de una entidad, sin inferencia externa')
+    explain.add_argument('entity_id')
+    explain.add_argument('--run-id')
+    sub.add_parser('replay', help='Reproduce scoring y traza de un snapshot compatible').add_argument('run_id')
+    sub.add_parser('score-history', help='Enumera evaluaciones históricas de una entidad').add_argument('entity_id')
     sub.add_parser('reanalyze')
     sub.add_parser('queue')
     worker = sub.add_parser('worker')
@@ -75,6 +144,15 @@ def main():
     if command == 'ui':
         from .app import serve
         serve(engine, open_browser=not getattr(args, 'no_browser', False))
+        return
+    if command in ('explain', 'replay', 'score-history'):
+        if command == 'explain':
+            result = engine.explanation(args.entity_id, args.run_id)
+        elif command == 'replay':
+            result = engine.replay_score(args.run_id)
+        else:
+            result = engine.store.score_history(args.entity_id)
+        print(json.dumps(result, ensure_ascii=False, indent=2))
         return
     if command.startswith('news-'):
         from .news import NewsAcquirer
@@ -133,19 +211,7 @@ def main():
             raise SystemExit(2)
     elif command == 'import-legacy':
         with args.file.open(encoding='utf-8-sig', newline='') as source:
-            rows = csv.DictReader(source)
-            entities = {e['name']: e['id'] for e in engine.store.iter_entities()}
-            def documents():
-                for row in rows:
-                    name = row.get('nombre_persona_input') or ''
-                    if name not in entities:
-                        continue
-                    yield {'url': row.get('evidence_url') or row.get('url') or '',
-                           'title': row.get('title') or row.get('evidence_title') or '',
-                           'text': row.get('snippet') or row.get('evidence_text') or row.get('involvement_summary') or '',
-                           'source_kind': 'legacy', 'source_id': row.get('source', 'legacy'),
-                           'entity_ids': [entities[name]], 'metadata': {'legacy': True, 'requires_source_revalidation': True}}
-            result = engine.import_documents(documents())
+            result = import_legacy(engine, source)
     elif command == 'score':
         result = {'scored': engine.rescore()}
     elif command == 'reanalyze':
@@ -182,15 +248,13 @@ def main():
     elif command == 'retry':
         result = {'requeued': engine.store.retry_failed()}
     elif command == 'export':
-        args.file.parent.mkdir(parents=True, exist_ok=True)
-        with args.file.open('w', encoding='utf-8') as dest:
-            for row in engine.store.export():
-                dest.write(json.dumps(row, ensure_ascii=False) + '\n')
-        result = {'exported': str(args.file.resolve())}
+        result = export_jsonl(engine.store, args.file)
     elif command == 'backup':
         engine.store.backup(args.file)
         result = {'backup': str(args.file.resolve())}
     print(json.dumps(result, ensure_ascii=False, indent=2))
+    if command == 'audit' and not result.get('ok'):
+        raise SystemExit(2)
 
 
 if __name__ == '__main__':

@@ -1,0 +1,7 @@
+# Optional, only to reproduce synthetic training and benchmark on Python >=3.11.
+# Application inference needs none of these packages and performs no downloads.
+scikit-learn==1.8.0
+numpy==2.3.5
+scipy==1.17.0
+joblib==1.5.3
+threadpoolctl==3.6.0

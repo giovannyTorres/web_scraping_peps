@@ -144,6 +144,9 @@ class Engine:
     def rescore(self, entity_id=None):
         from .nlp import analyze
         from .scoring import score_entity
+        from .contextual import analyze_evidence, get_method_info
+        from .explainability import explain_score, scoring_fingerprint
+        mode = self.context_mode()
         count = 0
         if entity_id and not isinstance(entity_id, str):
             requested = set(entity_id)
@@ -172,9 +175,71 @@ class Engine:
                             item['analysis'] = analyze(item['text'], analysis_entity, item['source_kind'])
                         con.execute('UPDATE evidence SET analysis=? WHERE id=?', (canonical(item['analysis']), item['id']))
                     result = score_entity(entity, evidence)
-                    self.store.save_score(entity['id'], result, connection=con)
+                    result['contextual_analysis'] = [analyze_evidence(entity, item, mode) for item in evidence]
+                    result['provenance'] = {'score_authority': scoring_fingerprint(),
+                                            'context_method': get_method_info(mode)}
+                    result['explainability'] = explain_score(result)
+                    self.store.save_score(entity['id'], result, connection=con,
+                                          entity_snapshot=entity, evidence_snapshot=evidence)
                     count += 1
         return count
+
+    def context_mode(self):
+        """Explicit local configuration; never implicitly import a large stack."""
+        value = self.config().get('context_analysis') or {}
+        if not isinstance(value, dict):
+            raise ValueError('context_analysis debe ser un objeto')
+        mode = value.get('mode', 'discriminative')
+        if mode not in {'discriminative', 'advanced', 'enriched', 'hybrid'}:
+            raise ValueError('context_analysis.mode no es válido')
+        return mode
+
+    def explanation(self, entity_id, run_id=None):
+        from .explainability import VERSION, scoring_fingerprint
+        from .contextual import get_method_info
+        entity = self.store.get_entity(entity_id)
+        if not entity:
+            raise ValueError('Entidad inexistente')
+        if run_id:
+            run = self.store.get_score_run(run_id, entity_id)
+            if not run:
+                raise ValueError('Evaluación inexistente para esta entidad')
+        else:
+            run = self.store.latest_score_run(entity_id)
+            provenance = (run or {}).get('result', {}).get('provenance', {})
+            if (not run or provenance.get('score_authority') != scoring_fingerprint()
+                    or provenance.get('context_method') != get_method_info(self.context_mode())
+                    or run['result'].get('explainability', {}).get('version') != VERSION
+                    or run['result'].get('as_of') != now()[:10]):
+                self.rescore(entity_id)
+                run = self.store.latest_score_run(entity_id)
+        return {'entity': run['entity_snapshot'], 'result': run['result'],
+                'explanation': run['result'].get('explainability', {}),
+                'run': {'id': run['id'], 'created_at': run['created_at'], 'historical': bool(run_id)},
+                'history': self.store.score_history(entity_id),
+                'evidence_count': len(run['evidence_manifest'])}
+
+    def replay_score(self, run_id):
+        from .explainability import scoring_fingerprint
+        from .scoring import score_entity
+        run = self.store.get_score_run(run_id)
+        if not run:
+            raise ValueError('Evaluación inexistente')
+        result = run['result']
+        if result.get('provenance', {}).get('score_authority') != scoring_fingerprint():
+            return {'status': 'unsupported', 'matched': False, 'run_id': run_id,
+                    'reason': 'La versión, configuración o código del scorer difieren del snapshot. La evaluación histórica se conserva sin reinterpretarla.'}
+        evidence = self.store.materialize_run_evidence(run)
+        replayed = score_entity(run['entity_snapshot'], evidence, as_of=result['as_of'])
+        recorded = {key: value for key, value in result.items()
+                    if key not in {'contextual_analysis', 'provenance', 'explainability'}}
+        matched = replayed == recorded
+        return {'status': 'matched' if matched else 'mismatch', 'matched': matched,
+                'run_id': run_id, 'recorded_score': result['score'], 'replayed_score': replayed['score'],
+                'different_fields': sorted(key for key in set(recorded) | set(replayed)
+                                           if recorded.get(key) != replayed.get(key)),
+                'scope': 'authoritative_scoring_and_trace', 'auxiliary_replayed': False,
+                'reason': 'Se reprodujeron el scoring y su traza con entradas y fecha históricas. Los análisis auxiliares permanecen archivados; no se reinfirieron.'}
 
     def reanalyze(self):
         from .nlp import analyze
@@ -229,7 +294,8 @@ class Engine:
             return False
         if status in ('deferred', 'error', 'not_modified'):
             self.store.finish(job, 'deferred', result.get('error') or status,
-                              self._retry_epoch(result.get('retry_at')), consume_attempt=result.get('request_attempted', True))
+                              self._retry_epoch(result.get('retry_at')),
+                              consume_attempt=result.get('error_code') not in ('host_interval', 'robots_pending'))
         else:
             self.store.finish(job, 'blocked', result.get('error') or status)
         return True
@@ -290,12 +356,17 @@ class Engine:
             result = fetcher.fetch(record['url'], source)
             if self._handle_fetch_failure(result, job):
                 return
-            extracted = parse_results(result, source)
+            document_kind = source.get('document_kind') or (
+                'news' if source.get('kind') in ('rss', 'atom', 'gdelt') else source.get('kind', 'news'))
+            # A discovery transport describes the index/feed, not the fetched HTML.
+            page_source = dict(source, kind=document_kind)
+            extracted = parse_results(result, page_source)
             page = extracted[0] if extracted else {}
-            record.update(url=result.get('url') or record['url'], text=extract_text(result.get('body', '')),
+            record.update(url=result.get('final_url') or result.get('url') or record['url'],
+                          text=extract_text(result.get('body', '')),
                           title=page.get('title') or record.get('title', ''),
                           published_at=page.get('published_at') or record.get('published_at'),
-                          source_kind=source.get('kind', 'news'), source_id=source['id'],
+                          source_kind=document_kind, source_id=source['id'],
                           retrieved_at=result.get('retrieved_at') or now(),
                           metadata={'fetch_hash': result.get('sha256'), 'content_type': result.get('content_type')})
             self.import_documents([dict(record, entity_ids=payload['entity_ids'])])

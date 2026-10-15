@@ -70,7 +70,12 @@ class _ArticleText(HTMLParser):
 
     def handle_starttag(self, tag, attrs):
         attrs = dict(attrs)
-        hidden = tag in ('script', 'style', 'nav', 'aside', 'footer', 'header', 'form', 'noscript', 'svg')
+        # HTML permits </head> to be omitted before visible body content.
+        if (self.stack and self.stack[-1][0] == 'head'
+                and tag not in ('base', 'link', 'meta', 'title', 'noscript', 'style', 'script', 'template')):
+            self.stack.pop()
+        hidden = tag in ('head', 'title', 'template', 'iframe', 'script', 'style', 'nav',
+                         'aside', 'footer', 'header', 'form', 'noscript', 'svg')
         hidden = hidden or attrs.get('aria-hidden') == 'true' or 'hidden' in attrs
         hidden = hidden or bool(re.search(r'\b(?:advert|related|social-share|cookie|menu|sidebar)\b', attrs.get('class', ''), re.I))
         parent = self.stack[-1][1] if self.stack else (False, False, None)
@@ -471,7 +476,7 @@ class NewsAcquirer:
                     'content_cluster': fingerprint, 'scope': 'full_article', 'source_config_hash': digest(canonical(source)),
                     'terms_url': source.get('terms_url'), 'source_policy': source_policy(source), 'raw_snapshot_sha256': snapshot_hash,
                     'raw_snapshot_path': str(snapshot.relative_to(self.engine.data_dir)),
-                    'fetch_sha256': result.get('sha256'), 'extraction_version': 'article-main-1',
+                    'fetch_sha256': result.get('sha256'), 'extraction_version': 'article-main-2',
                     'etag': result.get('etag'), 'last_modified': result.get('last_modified')}
         with self.store.connection() as con:
             con.execute('BEGIN IMMEDIATE')

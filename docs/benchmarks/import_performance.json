@@ -1,0 +1,388 @@
+{
+  "benchmark": "guided_csv_import",
+  "schema_version": 1,
+  "created_at_utc": "2026-10-15T15:23:53.054275+00:00",
+  "environment": {
+    "python": "3.12.14",
+    "implementation": "CPython",
+    "sqlite": "3.53.1",
+    "platform": "Linux-6.18.44-x86_64-with-glibc2.41",
+    "machine": "x86_64",
+    "processor": null,
+    "logical_cpu_count": 5,
+    "dependencies": "Python standard library only"
+  },
+  "configuration": {
+    "sizes": [
+      1000,
+      10000
+    ],
+    "repetitions_per_size": 3,
+    "fresh_process_per_repetition": true,
+    "fresh_temporary_store_per_repetition": true,
+    "initial_bank_entities": 0,
+    "delimiter": ";",
+    "existing_policy": "skip",
+    "skip_invalid": false,
+    "scoring_enabled": false
+  },
+  "fixture": {
+    "data": "Entirely synthetic; no personal datasets or external sources.",
+    "columns": 8,
+    "header_columns": 7,
+    "duplicate_header": "Nota",
+    "mapped_fields": [
+      "id",
+      "name",
+      "kind",
+      "aliases",
+      "city",
+      "context_note",
+      "ignore",
+      "ignore"
+    ],
+    "kind_values": [
+      "persona",
+      "empresa",
+      "organización"
+    ],
+    "aliases_per_entity": 2,
+    "multiline_quoted_note_per_row": true,
+    "ragged_rows": "Every tenth data row has an eighth column; other rows have seven.",
+    "ignored_columns": 2,
+    "expected_invalid_rows": 0,
+    "generator": "fixture(size) in scripts/benchmark_import.py"
+  },
+  "measurement": {
+    "timed_preview": "preview_import: parse, validate, normalize, compare against empty bank, hash and sample.",
+    "timed_commit": "commit_import: BEGIN IMMEDIATE, complete revalidation, insert, audit and durable SQLite commit.",
+    "excluded": [
+      "Fixture generation",
+      "Store/schema initialization",
+      "Post-run integrity checks",
+      "Downloads and network",
+      "Models and NLP",
+      "Entity scoring",
+      "HTTP API and browser rendering"
+    ],
+    "cpu": "time.process_time per stage, in milliseconds; no utilization percentage inferred.",
+    "wall": "time.perf_counter per stage, in milliseconds.",
+    "rss": "resource.RUSAGE_SELF.ru_maxrss lifetime process high-water mark; Linux KiB/macOS bytes converted to MiB. Includes imports, fixture, preview, commit and validation; not incremental per-stage RAM. Windows/unsupported platforms: null.",
+    "storage": "On-disk SQLite main file plus present WAL/SHM after stage connections close, in bytes.",
+    "summary": "Actual raw samples plus median/min/max. Three repetitions do not establish tail percentiles.",
+    "limits": "Synthetic empty-bank import only; timings depend on hardware/filesystem/cache and do not predict scoring or populated-bank performance."
+  },
+  "source_sha256": {
+    "scripts/benchmark_import.py": "d00f3c867bf791c16243cae786a8db2e28720f0c98f8fc368de3f27b571d7f09",
+    "peps/importing.py": "54fc447531cecb986c3e4be4570d0d3f2280a4f86d5dd50e60c0109bf008e310",
+    "peps/store.py": "4aac502c12f4b38159cae1556e7a1141f27f59b992d48a82f815138ec5bd6f0f"
+  },
+  "cases": [
+    {
+      "rows": 1000,
+      "samples": [
+        {
+          "rows": 1000,
+          "csv_utf8_bytes": 188796,
+          "preview": {
+            "wall_ms": 28.695,
+            "cpu_ms": 28.71
+          },
+          "commit": {
+            "wall_ms": 49.117,
+            "cpu_ms": 48.891
+          },
+          "peak_process_rss_mb": 18.762,
+          "storage_before": {
+            "sqlite_bytes": 126976,
+            "wal_bytes": 0,
+            "shm_bytes": 0,
+            "total_bytes": 126976
+          },
+          "storage_after": {
+            "sqlite_bytes": 434176,
+            "wal_bytes": 0,
+            "shm_bytes": 0,
+            "total_bytes": 434176
+          },
+          "storage_growth_bytes": 307200,
+          "validation": {
+            "preview_ready": true,
+            "accepted_rows": 1000,
+            "invalid_rows": 0,
+            "audit_verified": true
+          },
+          "repetition": 1
+        },
+        {
+          "rows": 1000,
+          "csv_utf8_bytes": 188796,
+          "preview": {
+            "wall_ms": 32.512,
+            "cpu_ms": 32.528
+          },
+          "commit": {
+            "wall_ms": 45.308,
+            "cpu_ms": 45.316
+          },
+          "peak_process_rss_mb": 18.766,
+          "storage_before": {
+            "sqlite_bytes": 126976,
+            "wal_bytes": 0,
+            "shm_bytes": 0,
+            "total_bytes": 126976
+          },
+          "storage_after": {
+            "sqlite_bytes": 434176,
+            "wal_bytes": 0,
+            "shm_bytes": 0,
+            "total_bytes": 434176
+          },
+          "storage_growth_bytes": 307200,
+          "validation": {
+            "preview_ready": true,
+            "accepted_rows": 1000,
+            "invalid_rows": 0,
+            "audit_verified": true
+          },
+          "repetition": 2
+        },
+        {
+          "rows": 1000,
+          "csv_utf8_bytes": 188796,
+          "preview": {
+            "wall_ms": 31.774,
+            "cpu_ms": 31.827
+          },
+          "commit": {
+            "wall_ms": 54.484,
+            "cpu_ms": 54.491
+          },
+          "peak_process_rss_mb": 18.762,
+          "storage_before": {
+            "sqlite_bytes": 126976,
+            "wal_bytes": 0,
+            "shm_bytes": 0,
+            "total_bytes": 126976
+          },
+          "storage_after": {
+            "sqlite_bytes": 434176,
+            "wal_bytes": 0,
+            "shm_bytes": 0,
+            "total_bytes": 434176
+          },
+          "storage_growth_bytes": 307200,
+          "validation": {
+            "preview_ready": true,
+            "accepted_rows": 1000,
+            "invalid_rows": 0,
+            "audit_verified": true
+          },
+          "repetition": 3
+        }
+      ],
+      "summary": {
+        "repetitions": 3,
+        "preview": {
+          "wall_ms": {
+            "n": 3,
+            "median": 31.774,
+            "min": 28.695,
+            "max": 32.512
+          },
+          "cpu_ms": {
+            "n": 3,
+            "median": 31.827,
+            "min": 28.71,
+            "max": 32.528
+          }
+        },
+        "commit": {
+          "wall_ms": {
+            "n": 3,
+            "median": 49.117,
+            "min": 45.308,
+            "max": 54.484
+          },
+          "cpu_ms": {
+            "n": 3,
+            "median": 48.891,
+            "min": 45.316,
+            "max": 54.491
+          }
+        },
+        "peak_process_rss_mb": {
+          "n": 3,
+          "median": 18.762,
+          "min": 18.762,
+          "max": 18.766
+        },
+        "storage_after_total_bytes": {
+          "n": 3,
+          "median": 434176,
+          "min": 434176,
+          "max": 434176
+        },
+        "storage_growth_bytes": {
+          "n": 3,
+          "median": 307200,
+          "min": 307200,
+          "max": 307200
+        }
+      }
+    },
+    {
+      "rows": 10000,
+      "samples": [
+        {
+          "rows": 10000,
+          "csv_utf8_bytes": 1887396,
+          "preview": {
+            "wall_ms": 593.136,
+            "cpu_ms": 593.279
+          },
+          "commit": {
+            "wall_ms": 1235.839,
+            "cpu_ms": 1235.785
+          },
+          "peak_process_rss_mb": 44.191,
+          "storage_before": {
+            "sqlite_bytes": 126976,
+            "wal_bytes": 0,
+            "shm_bytes": 0,
+            "total_bytes": 126976
+          },
+          "storage_after": {
+            "sqlite_bytes": 3198976,
+            "wal_bytes": 0,
+            "shm_bytes": 0,
+            "total_bytes": 3198976
+          },
+          "storage_growth_bytes": 3072000,
+          "validation": {
+            "preview_ready": true,
+            "accepted_rows": 10000,
+            "invalid_rows": 0,
+            "audit_verified": true
+          },
+          "repetition": 1
+        },
+        {
+          "rows": 10000,
+          "csv_utf8_bytes": 1887396,
+          "preview": {
+            "wall_ms": 705.799,
+            "cpu_ms": 704.556
+          },
+          "commit": {
+            "wall_ms": 1118.515,
+            "cpu_ms": 1117.719
+          },
+          "peak_process_rss_mb": 44.191,
+          "storage_before": {
+            "sqlite_bytes": 126976,
+            "wal_bytes": 0,
+            "shm_bytes": 0,
+            "total_bytes": 126976
+          },
+          "storage_after": {
+            "sqlite_bytes": 3198976,
+            "wal_bytes": 0,
+            "shm_bytes": 0,
+            "total_bytes": 3198976
+          },
+          "storage_growth_bytes": 3072000,
+          "validation": {
+            "preview_ready": true,
+            "accepted_rows": 10000,
+            "invalid_rows": 0,
+            "audit_verified": true
+          },
+          "repetition": 2
+        },
+        {
+          "rows": 10000,
+          "csv_utf8_bytes": 1887396,
+          "preview": {
+            "wall_ms": 472.276,
+            "cpu_ms": 472.162
+          },
+          "commit": {
+            "wall_ms": 1142.098,
+            "cpu_ms": 1140.633
+          },
+          "peak_process_rss_mb": 44.195,
+          "storage_before": {
+            "sqlite_bytes": 126976,
+            "wal_bytes": 0,
+            "shm_bytes": 0,
+            "total_bytes": 126976
+          },
+          "storage_after": {
+            "sqlite_bytes": 3198976,
+            "wal_bytes": 0,
+            "shm_bytes": 0,
+            "total_bytes": 3198976
+          },
+          "storage_growth_bytes": 3072000,
+          "validation": {
+            "preview_ready": true,
+            "accepted_rows": 10000,
+            "invalid_rows": 0,
+            "audit_verified": true
+          },
+          "repetition": 3
+        }
+      ],
+      "summary": {
+        "repetitions": 3,
+        "preview": {
+          "wall_ms": {
+            "n": 3,
+            "median": 593.136,
+            "min": 472.276,
+            "max": 705.799
+          },
+          "cpu_ms": {
+            "n": 3,
+            "median": 593.279,
+            "min": 472.162,
+            "max": 704.556
+          }
+        },
+        "commit": {
+          "wall_ms": {
+            "n": 3,
+            "median": 1142.098,
+            "min": 1118.515,
+            "max": 1235.839
+          },
+          "cpu_ms": {
+            "n": 3,
+            "median": 1140.633,
+            "min": 1117.719,
+            "max": 1235.785
+          }
+        },
+        "peak_process_rss_mb": {
+          "n": 3,
+          "median": 44.191,
+          "min": 44.191,
+          "max": 44.195
+        },
+        "storage_after_total_bytes": {
+          "n": 3,
+          "median": 3198976,
+          "min": 3198976,
+          "max": 3198976
+        },
+        "storage_growth_bytes": {
+          "n": 3,
+          "median": 3072000,
+          "min": 3072000,
+          "max": 3072000
+        }
+      }
+    }
+  ]
+}

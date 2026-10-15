@@ -1,5 +1,6 @@
 """Interfaz local: loopback, token por sesión, límites de entrada y CSP."""
 import json
+import copy
 import secrets
 import threading
 import time
@@ -9,7 +10,14 @@ from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
 
 from .engine import capacity
-from .store import read_entities
+from .store import read_entities, now, canonical, digest
+
+
+def _boolean(value, field):
+    """Keep consent flags explicit: JSON strings such as "false" are not consent."""
+    if not isinstance(value, bool):
+        raise ValueError(field + ' debe ser booleano')
+    return value
 
 
 def create_server(engine, port=0):
@@ -20,12 +28,16 @@ def create_server(engine, port=0):
     state = {'busy': False, 'last_result': None, 'error': None}
     lock = threading.Lock()
     tickets = {}
+    import_operations = {}
+    import_ttl = 30 * 60
 
-    def background(fn):
+    def background(fn, online=False):
         with lock:
             if state['busy']:
                 raise ValueError('Ya hay una operación en curso')
-            state.update(busy=True, error=None)
+            if online:
+                engine.online = True
+            state.update(busy=True, error=None, last_result=None, operation_id=None)
         def execute():
             try:
                 state['last_result'] = fn()
@@ -34,6 +46,89 @@ def create_server(engine, port=0):
             finally:
                 state['busy'] = False
         threading.Thread(target=execute, daemon=True).start()
+
+    def prune_imports(reserve_slot=False):
+        cutoff = time.monotonic() - import_ttl
+        expired = [key for key, value in import_operations.items()
+                   if value['updated_monotonic'] < cutoff and value['status'] in ('completed', 'error')]
+        for key in expired:
+            del import_operations[key]
+        while len(import_operations) > 32 - int(reserve_slot):
+            old = next((key for key, value in import_operations.items()
+                        if value['status'] in ('completed', 'error')), None)
+            if old is None:
+                break
+            del import_operations[old]
+
+    def public_import_result(report):
+        value = {key: copy.deepcopy(report[key]) for key in
+                 ('imported', 'counts', 'warnings', 'source_hash', 'bank_revision') if key in report}
+        for key, limit in (('accepted_ids', 100), ('existing_ids', 100), ('sample_entities', 20)):
+            values = report.get(key, [])
+            value[key] = copy.deepcopy(values[:limit])
+            if len(values) > limit:
+                value[key + '_truncated'] = True
+        return value
+
+    def queue_import(payload):
+        """Keep receipts separate from global activity; never retain CSV text."""
+        from .importing import commit_import, ImportConflict
+        preview_hash = payload.get('preview_hash')
+        if not isinstance(preview_hash, str) or len(preview_hash) != 64 or any(c not in '0123456789abcdef' for c in preview_hash):
+            raise ValueError('Revise la vista previa antes de confirmar la importación')
+        request_hash = digest(canonical(payload))
+        with lock:
+            prune_imports(reserve_slot=True)
+            for operation in import_operations.values():
+                if (operation['preview_hash'] == preview_hash and operation['request_hash'] == request_hash
+                        and operation['status'] != 'error'):
+                    return operation['id']
+            if state['busy']:
+                raise ValueError('Hay una operación en curso. Espere a que termine antes de importar.')
+            operation_id = secrets.token_urlsafe(24)
+            stamp = time.monotonic()
+            operation = {'id': operation_id, 'status': 'queued', 'phase': 'saving',
+                         'created_at': now(), 'preview_hash': preview_hash,
+                         'request_hash': request_hash,
+                         'updated_monotonic': stamp, 'result': None}
+            import_operations[operation_id] = operation
+            state.update(busy=True, error=None, last_result=None, operation_id=operation_id)
+
+        def execute_import():
+            try:
+                with lock:
+                    operation.update(status='running', updated_monotonic=time.monotonic())
+                report = commit_import(engine.store, payload)
+                public = public_import_result(report)
+                with lock:
+                    operation.update(phase='scoring', result=copy.deepcopy(public), updated_monotonic=time.monotonic())
+                accepted = report.get('accepted_ids', [])
+                try:
+                    scored = engine.rescore(accepted) if accepted else 0
+                    public.update(scored=scored, scoring_status='completed')
+                except Exception as exc:
+                    # Import is committed. Do not suggest it failed or invite
+                    # a second import merely because subsequent scoring failed.
+                    public.update(scored=None, scoring_status='pending',
+                                  scoring_error='Los datos se guardaron. La evaluación local quedó pendiente; consulte la entidad para reintentar.',
+                                  scoring_error_type=type(exc).__name__)
+                with lock:
+                    operation.update(status='completed', phase='done', result=public,
+                                     updated_monotonic=time.monotonic())
+                    state['last_result'] = {'operation_id': operation_id, **public}
+            except Exception as exc:
+                conflict = isinstance(exc, ImportConflict)
+                reason = str(exc) if isinstance(exc, (ValueError, TypeError, KeyError)) else 'No se pudo guardar la importación. Revise la vista previa antes de reintentar.'
+                with lock:
+                    operation.update(status='error', phase='done', error=reason,
+                        error_code='preview_stale' if conflict else 'invalid_import',
+                        retry_preview=True, updated_monotonic=time.monotonic())
+                    state['error'] = reason
+            finally:
+                with lock:
+                    state['busy'] = False
+        threading.Thread(target=execute_import, daemon=True).start()
+        return operation_id
 
     class Handler(BaseHTTPRequestHandler):
         server_version = 'PEPS-MX/2'
@@ -64,7 +159,8 @@ def create_server(engine, port=0):
             if origin and origin != 'http://' + expected:
                 self.reply({'error': 'Origen no permitido'}, 403)
                 return False
-            if api and not secrets.compare_digest(self.headers.get('X-PEPS-Token', ''), token):
+            supplied_token = self.headers.get('X-PEPS-Token', '')
+            if api and not (supplied_token.isascii() and secrets.compare_digest(supplied_token, token)):
                 self.reply({'error': 'Sesión inválida'}, 403)
                 return False
             return True
@@ -84,10 +180,21 @@ def create_server(engine, port=0):
                 if path == '/':
                     self.reply((web / 'index.html').read_text(encoding='utf-8').replace('__TOKEN__', token).encode('utf-8'),
                                content_type='text/html; charset=utf-8')
-                elif path in ('/app.js', '/style.css'):
+                elif path in ('/app.js', '/import.js', '/style.css'):
                     self.reply((web / path[1:]).read_bytes(), content_type='text/javascript; charset=utf-8' if path.endswith('.js') else 'text/css; charset=utf-8')
                 elif path == '/api/stats':
                     self.reply(dict(engine.store.stats(), online=engine.online, operation=state.copy(), capacity=capacity()))
+                elif path == '/api/import-status':
+                    with lock:
+                        prune_imports()
+                        operation = copy.deepcopy(import_operations.get(query.get('id', [''])[0]))
+                    if operation is None:
+                        self.reply({'error': 'Seguimiento no disponible. Consulte el banco para comprobar si los datos ya se guardaron.'}, 404)
+                    else:
+                        operation.pop('preview_hash', None)
+                        operation.pop('request_hash', None)
+                        operation.pop('updated_monotonic', None)
+                        self.reply(operation)
                 elif path == '/api/entities':
                     self.reply(engine.store.list_entities(query.get('q', [''])[0], query.get('limit', [100])[0], query.get('offset', [0])[0]))
                 elif path == '/api/entity':
@@ -97,6 +204,15 @@ def create_server(engine, port=0):
                         self.reply({'error': 'Entidad inexistente'}, 404)
                     else:
                         self.reply({'entity': entity, 'evidence': engine.store.evidence(entity_id, 200), 'evidence_limit': 200})
+                elif path == '/api/explanation':
+                    entity_id = query.get('id', [''])[0]
+                    if not engine.store.get_entity(entity_id):
+                        self.reply({'error': 'Entidad inexistente'}, 404)
+                    else:
+                        self.reply(engine.explanation(entity_id, query.get('run_id', [None])[0]))
+                elif path == '/api/run-evidence':
+                    item = engine.store.run_evidence(query.get('run_id', [''])[0], query.get('id', [''])[0])
+                    self.reply(item if item else {'error': 'Evidencia inexistente en esta evaluación'}, 200 if item else 404)
                 elif path == '/api/sources':
                     self.reply(engine.sources())
                 elif path == '/api/audit':
@@ -126,7 +242,16 @@ def create_server(engine, port=0):
                     self.reply({'error': 'Entrada vacía o mayor de 16 MB; use CLI para cargas masivas'}, 413)
                     return
                 data = json.loads(self.rfile.read(length))
-                if self.path == '/api/import-entities':
+                if not isinstance(data, dict):
+                    raise ValueError('La petición debe contener un objeto JSON')
+                if self.path == '/api/import-preview':
+                    from .importing import preview_import
+                    self.reply(preview_import(engine.store, data))
+                    return
+                elif self.path == '/api/import-confirm':
+                    self.reply({'operation_id': queue_import(data)}, 202)
+                    return
+                elif self.path == '/api/import-entities':
                     text = str(data['text'])
                     background(lambda: {'imported': engine.store.import_entities(read_entities(text)), 'scored': engine.rescore()})
                 elif self.path == '/api/import-documents':
@@ -136,32 +261,39 @@ def create_server(engine, port=0):
                 elif self.path == '/api/score':
                     background(lambda: {'scored': engine.rescore()})
                 elif self.path == '/api/collect':
-                    engine.online = bool(data.get('online'))
-                    if not engine.online:
+                    if not _boolean(data.get('online', False), 'online'):
                         raise ValueError('Active red autorizada para recolectar')
                     def collect():
                         queued = engine.queue_discovery()
                         return {'queued': queued, **engine.run(workers=4, max_jobs=1000, seconds=120)}
-                    background(collect)
+                    background(collect, online=True)
                 elif self.path == '/api/stop':
                     engine.stop_event.set()
                 elif self.path == '/api/retry':
                     engine.store.retry_failed()
                 elif self.path == '/api/source':
-                    engine.set_source(data['id'], data['enabled'], data['terms_approved'])
+                    engine.set_source(data['id'], _boolean(data['enabled'], 'enabled'),
+                                      _boolean(data['terms_approved'], 'terms_approved'))
                 elif self.path == '/api/review':
-                    entity_id = engine.store.review(data['id'], data['status'], data['actor'], data['reason'], data.get('event_id'), data.get('identity_spans'))
+                    if not data.get('expected_run_id'):
+                        raise ValueError('Abra la evaluación actual antes de registrar una revisión')
+                    entity_id = engine.store.review(data['id'], data['status'], data['actor'], data['reason'], data.get('event_id'), data.get('identity_spans'), expected_run_id=data['expected_run_id'])
                     engine.rescore(entity_id)
+                elif self.path == '/api/replay':
+                    self.reply(engine.replay_score(str(data['run_id'])))
+                    return
                 elif self.path == '/api/news-acquire':
-                    engine.online = bool(data.get('online'))
-                    if not engine.online:
+                    if not _boolean(data.get('online', False), 'online'):
                         raise ValueError('Active la conexión autorizada para descargar noticias')
-                    background(lambda: news.acquire(workers=4, seconds=120, max_articles=1000))
+                    background(lambda: news.acquire(workers=4, seconds=120, max_articles=1000), online=True)
                 elif self.path == '/api/news-attribute':
-                    background(lambda: news.attribute(limit=1000, force=bool(data.get('force'))))
+                    force = _boolean(data.get('force', False), 'force')
+                    background(lambda: news.attribute(limit=1000, force=force))
                 elif self.path == '/api/news-source':
-                    news.set_source(data['id'], data['enabled'], data['terms_approved'], data.get('download_articles', False),
-                                    data.get('article_terms_approved', False))
+                    news.set_source(data['id'], _boolean(data['enabled'], 'enabled'),
+                                    _boolean(data['terms_approved'], 'terms_approved'),
+                                    _boolean(data.get('download_articles', False), 'download_articles'),
+                                    _boolean(data.get('article_terms_approved', False), 'article_terms_approved'))
                 elif self.path == '/api/backup':
                     from .store import now
                     destination = engine.data_dir / 'backups' / ('peps-' + now().replace(':', '-').replace('+', '_') + '.sqlite3')

@@ -2,15 +2,17 @@
 from __future__ import annotations
 
 import hashlib
+import copy
 import json
 import math
 import re
 from datetime import date, datetime, timezone
 from typing import Any
+from urllib.parse import urlsplit
 
 from .nlp import analyze
 
-MODEL_VERSION = "review-priority-1.1.0"
+MODEL_VERSION = "review-priority-1.2.1"
 PARAMETERS = {
     "category_points": {"money_laundering": 38, "organized_crime": 42, "corruption": 34,
         "fraud": 30, "violence": 42, "tax": 26, "public_procurement": 26,
@@ -27,6 +29,7 @@ PARAMETERS = {
     "exact_content_freshness": "earliest_accepted_publication_or_event_date",
     "aggregation": "100 * (1 - product(1 - event_points / 100)); capped at 95",
     "validation": "review.status=confirmed with nonempty actor and reason; never automatic",
+    "review_binding_policy": "Persisted body/entity bindings must remain current for every source; news additionally binds identity rules and bank revision.",
     "news_identity_policy": "Unresolved identity does not score; supported body spans or explicit human-selected spans required.",
 }
 PARAMETERS_HASH = hashlib.sha256(json.dumps(PARAMETERS, sort_keys=True,
@@ -44,6 +47,12 @@ def _date(value: Any) -> date | None:
 
 def _combine(points: list[float]) -> int:
     return min(PARAMETERS["maximum_score"], max(0, round(100 * (1 - math.prod(1 - max(0, min(95, p)) / 100 for p in points)))))
+
+
+def _body_span(value: Any, text: str) -> bool:
+    return (isinstance(value, dict) and type(value.get('start')) is int and type(value.get('end')) is int
+        and 0 <= value['start'] < value['end'] <= len(text)
+        and text[value['start']:value['end']] == value.get('text'))
 
 
 def _event_key(entity: dict, evidence: dict, finding: dict, published: date | None) -> str:
@@ -75,7 +84,7 @@ def score_entity(entity: dict[str, Any], evidence: list[dict[str, Any]],
     audits: list[dict[str, Any]] = []
     groups: dict[str, list[dict[str, Any]]] = {}
     seen_content: dict[str, str] = {}
-    content_events: dict[str, str] = {}
+    candidates: list[dict[str, Any]] = []
     content_dates: dict[str, date] = {}
     warnings: list[str] = []
     for index, item in enumerate(evidence):
@@ -88,7 +97,13 @@ def score_entity(entity: dict[str, Any], evidence: list[dict[str, Any]],
             "computed_content_hash": digest, "review": item.get("review") or {"status": "pending"},
             "exclusions": [], "findings": []}
         audits.append(audit)
-        review = item.get("review") or {}
+        review = item.get("review")
+        if review is None:
+            review = {}
+        if not isinstance(review, dict):
+            audit["review"] = {"status": "invalid"}
+            audit["exclusions"].append("invalid_evidence_review")
+            continue
         status = str(review.get("status", "pending"))
         if status == "rejected":
             audit["exclusions"].append("human_rejected")
@@ -104,7 +119,17 @@ def score_entity(entity: dict[str, Any], evidence: list[dict[str, Any]],
             audit["exclusions"].append("legacy_source_requires_revalidation")
             continue
         resolution = item.get('identity_resolution')
-        confirmed_review = status == 'confirmed' and bool(str(review.get('actor', '')).strip()) and bool(str(review.get('reason', '')).strip())
+        confirmed_review = (status == 'confirmed'
+            and isinstance(review.get('actor'), str) and bool(review['actor'].strip())
+            and isinstance(review.get('reason'), str) and bool(review['reason'].strip()))
+        # Persisted reviews bind identity and body even for official/manual
+        # sources. An entity update must never validate another person's
+        # findings using the previous identity's human confirmation.
+        if confirmed_review and any(key in review for key in ('content_hash', 'entity_signature')):
+            from .identity import entity_signature
+            if review.get('content_hash') != digest or review.get('entity_signature') != entity_signature(entity):
+                confirmed_review = False
+                audit['exclusions'].append('human_identity_review_stale_or_incomplete')
         analysis_entity, identity_spans = entity, None
         if metadata.get('news_module') or resolution is not None:
             from .identity import MODEL_VERSION as IDENTITY_VERSION, RULES_HASH as IDENTITY_RULES_HASH, entity_signature, entity_for_analysis
@@ -117,27 +142,31 @@ def score_entity(entity: dict[str, Any], evidence: list[dict[str, Any]],
                     or (item.get('identity_bank_revision') is not None and review.get('bank_revision') != item['identity_bank_revision'])):
                 confirmed_review = False
                 audit['exclusions'].append('human_identity_review_stale_or_incomplete')
-            if (resolution.get('entity_id') != entity.get('id') or resolution.get('content_hash') != digest
+            if (not isinstance(resolution.get('features'), dict)
+                    or resolution.get('entity_id') != entity.get('id') or resolution.get('content_hash') != digest
                     or resolution.get('entity_signature') != entity_signature(entity)
                     or resolution.get('model_version') != IDENTITY_VERSION
                     or (resolution.get('features') or {}).get('rules_hash') != IDENTITY_RULES_HASH
                     or (item.get('identity_bank_revision') is not None and resolution.get('bank_revision') != item['identity_bank_revision'])):
                 audit['exclusions'].append('stale_or_invalid_identity_resolution')
                 continue
-            mentions = [m for m in resolution.get('mentions', []) if isinstance(m.get('start'), int)
-                        and isinstance(m.get('end'), int) and 0 <= m['start'] < m['end'] <= len(body)
-                        and body[m['start']:m['end']] == m.get('text')]
-            identity_spans = [m for m in mentions if m.get('identity_supported')]
-            if confirmed_review and review.get('identity_spans'):
-                allowed = {(m['start'], m['end']) for m in review['identity_spans'] if isinstance(m, dict)
-                           and isinstance(m.get('start'), int) and isinstance(m.get('end'), int)}
+            if not isinstance(resolution.get('mentions', []), list):
+                audit['exclusions'].append('invalid_identity_mentions')
+                continue
+            mentions = [m for m in resolution.get('mentions', []) if _body_span(m, body)]
+            identity_spans = [m for m in mentions if m.get('identity_supported') is True]
+            if confirmed_review and 'identity_spans' in review:
+                if not isinstance(review['identity_spans'], list):
+                    audit['exclusions'].append('invalid_human_identity_selection')
+                    continue
+                allowed = {(m['start'], m['end']) for m in review['identity_spans'] if _body_span(m, body)}
                 identity_spans = [m for m in mentions if (m['start'], m['end']) in allowed]
             elif confirmed_review and len(mentions) == 1:
                 identity_spans = mentions
             if (resolution.get('status') != 'matched' and not confirmed_review) or not identity_spans:
                 audit['exclusions'].append('identity_ambiguous_or_requires_selected_spans')
                 continue
-            analysis_entity = entity_for_analysis(entity, resolution)
+            analysis_entity = entity_for_analysis(entity, dict(resolution, mentions=mentions))
             # A human may select a generated legal-name variant after checking
             # its source. Only those literal body spans are eligible for NLP.
             analysis_entity = dict(analysis_entity, aliases=list(dict.fromkeys([
@@ -162,6 +191,15 @@ def score_entity(entity: dict[str, Any], evidence: list[dict[str, Any]],
             cached = {}
         compatible = bool(cached) and all(cached.get(key) == canonical.get(key) for key in
             ("entity_signature", "content_hash", "model_version", "rules_hash"))
+        # Current metadata identifies inputs and rules, not the integrity of
+        # cached decisions. Never let edited findings retain valid metadata and
+        # invent a contribution backed only by an otherwise literal quote.
+        if compatible and any(cached.get(key) != canonical.get(key) for key in
+                              ("mentions", "findings", "identity_confidence")):
+            audit["exclusions"].append("cached_analysis_content_mismatch")
+            audit["analysis_recomputed"] = False
+            warnings.append(f"{evidence_id}: análisis almacenado incompatible con las decisiones canónicas; evidencia excluida.")
+            continue
         analysis = cached if compatible else canonical
         audit["analysis_recomputed"] = not compatible
         audit["analysis_model_version"] = analysis.get("model_version")
@@ -198,7 +236,7 @@ def score_entity(entity: dict[str, Any], evidence: list[dict[str, Any]],
         age_weight = max(PARAMETERS["minimum_age_weight"], 2 ** (-age_days / PARAMETERS["half_life_days"])) if age_days is not None else PARAMETERS["undated_weight"]
         audit.update({"identity_confidence": identity, "validated": confirmed,
             "age_days": age_days, "age_weight": round(age_weight, 6)})
-        for finding in analysis.get("findings", []):
+        for finding_index, finding in enumerate(analysis.get("findings", [])):
             category, stage = finding.get("category"), finding.get("stage")
             result = {"category": category, "stage": stage,
                 "relationship": finding.get("relationship"), "negated": finding.get("negated", False),
@@ -245,7 +283,7 @@ def score_entity(entity: dict[str, Any], evidence: list[dict[str, Any]],
             stage_weight = PARAMETERS["stage_weights"][stage]
             # Denials are retained as context and never generate a fresh adverse score.
             points = 0. if stage == "denial" else base * stage_weight * source * identity_weight * event_age_weight * uncertainty_weight
-            key = content_events.setdefault(digest, _event_key(entity, item, finding, effective_date))
+            key = _event_key(entity, item, finding, effective_date)
             if effective_date:
                 content_dates[digest] = min(content_dates.get(digest, effective_date), effective_date)
             result.update({"event_group": key, "base_points": base,
@@ -254,13 +292,44 @@ def score_entity(entity: dict[str, Any], evidence: list[dict[str, Any]],
                 "event_date": event_date.isoformat() if event_date else None,
                 "effective_date": effective_date.isoformat() if effective_date else None,
                 "age_days": event_age, "uncertainty_weight": uncertainty_weight,
+                "calculation_inputs": {"base_points": base, "stage_weight": stage_weight,
+                    "source_weight": source, "identity_weight": identity_weight,
+                    "age_weight": event_age_weight, "uncertainty_weight": uncertainty_weight,
+                    "denial_zero_override": stage == "denial"},
+                "raw_points_before_dedup": points,
                 "points_before_dedup": round(points, 6)})
-            groups.setdefault(key, []).append({"evidence_id": evidence_id, "points": points,
+            publisher = metadata.get('publisher_id')
+            cluster = metadata.get('content_cluster')
+            if publisher is not None and not isinstance(publisher, str):
+                warnings.append(f'{evidence_id}: publisher_id inválido; se utiliza la procedencia documental sin presumir corroboración.')
+            if cluster is not None and not isinstance(cluster, str):
+                warnings.append(f'{evidence_id}: content_cluster inválido; se utiliza el hash del cuerpo.')
+            try:
+                source_host = urlsplit(str(item.get('source_url') or '')).hostname
+            except ValueError:
+                source_host = None
+            declared_publisher = isinstance(publisher, str) and bool(publisher)
+            candidates.append({"evidence_id": evidence_id, "points": points,
                 "validated": confirmed, "stage": stage, "category": category, "published": effective_date,
                 "age_weight": event_age_weight,
+                "candidate_event_group": key, "finding_index": finding_index,
                 "audit": result, "content_hash": digest, "source_url": item.get("source_url"),
-                "publisher_id": metadata.get('publisher_id') or item.get('source_url'),
-                "content_cluster": metadata.get('content_cluster') or digest})
+                "publisher_id": publisher if declared_publisher else source_host or 'unknown_source',
+                "publisher_basis": 'declared' if declared_publisher else 'url_hostname_inferred' if source_host else 'unknown',
+                "source_host": source_host,
+                "content_cluster": cluster if isinstance(cluster, str) and cluster else digest})
+    # Resolve exact-copy groups only after every candidate passed the gates.
+    # The first input copy used to select its own publication quarter, so
+    # reversing old/recent copies could change the final score. Earliest
+    # accepted dates and stable tie breaks make that decision reproducible.
+    content_events: dict[str, str] = {}
+    for member in sorted(candidates, key=lambda m: (
+            m["published"] or date.max, m["evidence_id"], m["finding_index"], m["candidate_event_group"])):
+        content_events.setdefault(member["content_hash"], member["candidate_event_group"])
+    for member in candidates:
+        key = content_events[member["content_hash"]]
+        member["audit"]["event_group"] = key
+        groups.setdefault(key, []).append(member)
     components = []
     for key, members in sorted(groups.items()):
         for member in members:
@@ -285,14 +354,30 @@ def score_entity(entity: dict[str, Any], evidence: list[dict[str, Any]],
         validated_resolutions = [m for m in applicable if m["validated"]]
         validated_resolved_categories = {m["category"] for m in validated_resolutions}
         validated = max((m["points"] for m in adverse if m["validated"] and m["category"] not in validated_resolved_categories), default=0.)
+        selections = []
+        for member in members:
+            provisional_eligible = member['points'] > 0 and member['category'] not in resolved_categories
+            validated_eligible = member['points'] > 0 and member['validated'] and member['category'] not in validated_resolved_categories
+            selections.append({'evidence_id': member['evidence_id'], 'finding_index': member['finding_index'],
+                'category': member['category'], 'stage': member['stage'],
+                'points_after_dedup': member['points'],
+                'provisional_selected': provisional_eligible and member['points'] == provisional,
+                'validated_selected': validated_eligible and member['points'] == validated,
+                'resolution_applied': member in applicable,
+                'validated_resolution_applied': member in validated_resolutions})
+        selections.sort(key=lambda value: (value['evidence_id'], value['finding_index']))
         components.append({"event_group": key, "evidence_ids": sorted({m["evidence_id"] for m in members}),
+            "selections": selections,
             "source_support": {'distinct_publishers': len({m['publisher_id'] for m in members}),
+                               'publisher_ownership_verified': False,
+                               'publisher_id_basis': [list(pair) for pair in sorted({(m['publisher_id'], m['publisher_basis']) for m in members})],
+                               'distinct_source_hosts': len({m['source_host'] for m in members if m['source_host']}),
                                'distinct_content_clusters': len({m['content_cluster'] for m in members}),
                                'publisher_ids': sorted({m['publisher_id'] for m in members if m['publisher_id']}),
                                'syndicated_copies_are_not_independent_corroboration': True},
             "provisional_points": round(provisional, 6), "validated_points": round(validated, 6),
-            "aggregation": "maximum_per_event", "resolution": applicable[-1]["stage"] if applicable else None,
-            "resolution_review_required": bool(applicable and not validated_resolutions)})
+            "aggregation": "maximum_per_event", "resolution": max(applicable, key=lambda m: (m['published'], m['evidence_id'], m['finding_index']))["stage"] if applicable else None,
+            "resolution_review_required": bool(resolved_categories - validated_resolved_categories)})
         for member in members:
             member["audit"]["event_provisional_points"] = round(provisional, 6)
     provisional_score = _combine([c["provisional_points"] for c in components])
@@ -307,7 +392,7 @@ def score_entity(entity: dict[str, Any], evidence: list[dict[str, Any]],
         "Un cero no acredita ausencia de riesgo; también puede indicar datos insuficientes."]
     return {"score": score, "label": label, "explanation": explanation,
         "model_version": MODEL_VERSION, "parameters_hash": PARAMETERS_HASH,
-        "parameters": PARAMETERS, "as_of": today.isoformat(), "components": components,
+        "parameters": copy.deepcopy(PARAMETERS), "as_of": today.isoformat(), "components": components,
         "review_required": review_required, "status": "provisional" if review_required else "validated" if any(not a["exclusions"] for a in audits) else "no_evidence",
         "provisional_score": provisional_score, "validated_score": validated_score,
         "evidence_audit": audits, "warnings": warnings,

@@ -146,7 +146,7 @@ def parse_results(fetch_result: dict, source: dict) -> list[dict]:
     candidates = []
     limit = max(1, min(int(source.get('max_items', source.get('max_records', 250))), 100000))
     fetch_result['parse_metadata'] = {'observed_entries': 0, 'truncated': False}
-    if source_id == "gdelt" or kind == "gdelt":
+    if kind == "gdelt" or (source_id == "gdelt" and "kind" not in source):
         try:
             payload = json.loads(body)
         except (ValueError, RecursionError) as exc:
