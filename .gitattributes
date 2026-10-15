@@ -8,3 +8,6 @@ docs/benchmarks/*.patch -whitespace
 *.css text eol=lf
 *.html text eol=lf
 *.patch text eol=lf
+# Preserve the upstream OFL license text, including its original line endings/spaces.
+peps/licenses/LATO_OFL.txt whitespace=-blank-at-eol
+peps/licenses/SOURCE_SERIF_4_OFL.txt whitespace=-blank-at-eol
