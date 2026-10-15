@@ -27,7 +27,7 @@ class ProgressTests(unittest.TestCase):
         news = NewsAcquirer(self.engine)
         source = {'id': 'fixture', 'kind': 'rss', 'allowed_hosts': ['example.org'],
                   'enabled': True, 'terms_approved': True, 'url': 'https://example.org/feed'}
-        news.config_path.write_text(json.dumps({'sources': [source]}), encoding='utf-8')
+        news.config_path.write_text(json.dumps({'sources': [source], 'search': {'strategy': 'feeds'}}), encoding='utf-8')
         for index in range(count):
             news._observe({'url': f'https://example.org/{index}', 'title': 'Informe público',
                            'text': 'Persona Sintética Uno inauguró una biblioteca.'},
@@ -167,9 +167,9 @@ class ProgressTests(unittest.TestCase):
 
     def test_news_total_and_eta_become_known_after_feed_discovery_commits(self):
         news = self.news_fixture(count=0)
-        source = dict(news.sources()[0], download_articles=True, article_terms_approved=True,
+        source = dict(news.sources()[0], download_articles=True, article_terms_approved=True, min_interval_seconds=0,
                       urls=[f'https://example.org/feed-{index}' for index in range(3)])
-        news.config_path.write_text(json.dumps({'sources': [source]}), encoding='utf-8')
+        news.config_path.write_text(json.dumps({'sources': [source], 'search': {'strategy': 'feeds'}}), encoding='utf-8')
         events, snapshots, clock = [], [], [0.]
         tracker = OperationTracker(clock=lambda: clock[0])
         tracker.start('download', phase='download')
@@ -204,7 +204,7 @@ class ProgressTests(unittest.TestCase):
         self.assertEqual(result['pending'], 0)
         self.assertEqual(result['total'], 9)
         self.assertIsNone(events[0]['total'])
-        self.assertEqual(events[0]['discovery_pending'], 3)
+        self.assertTrue(any(event['discovery_pending'] == 3 for event in events))
         self.assertTrue(all(event['total'] is None for event in events if event['discovery_pending']))
         self.assertTrue(all(event['total'] == 9 for event in events[1:] if not event['discovery_pending']))
         self.assertIsNone(snapshots[0]['eta_seconds'])
@@ -231,8 +231,9 @@ class ProgressTests(unittest.TestCase):
 
         with patch('peps.collector.SafeFetcher', Fetcher), patch.object(news, 'execute', side_effect=execute):
             result = news.acquire(queue=False, workers=1, seconds=1, progress=observe)
-        self.assertEqual(events[1]['total'], 2)
-        self.assertIsNone(events[2]['total'])
+        unit_events = [event for event in events if event['event'] == 'progress']
+        self.assertEqual(unit_events[0]['total'], 2)
+        self.assertIsNone(unit_events[1]['total'])
         self.assertIsNone(events[-1]['total'])
         self.assertEqual(result['discovery_pending'], 1)
         self.assertEqual(result['completed'], 2)

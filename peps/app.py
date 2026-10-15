@@ -50,11 +50,14 @@ def create_server(engine, port=0):
                 paused = engine.stop_event.is_set() or (isinstance(result, dict) and
                     (result.get('cancelled') or result.get('pending', 0) or result.get('status') == 'paused'))
                 tracker.finish(status='paused' if paused else 'completed', result=result,
-                               message='Proceso pausado. Revisa lo pendiente antes de continuar.' if paused else 'Paso terminado.')
+                               operation_id=operation_id,
+                               message=(result.get('message') if isinstance(result, dict) else None) or
+                                   ('Descarga en pausa. Puedes reanudarla o cerrar con la cobertura disponible.'
+                                    if paused and kind == 'download' else 'Proceso pausado.' if paused else 'Paso terminado.'))
             except Exception as exc:
                 if kind == 'download':
                     workflow.mark_download(status='failed', details={'error': str(exc)})
-                tracker.finish(status='failed', message=f'{type(exc).__name__}: {exc}')
+                tracker.finish(status='failed', message=f'{type(exc).__name__}: {exc}', operation_id=operation_id)
         threading.Thread(target=execute, daemon=True).start()
         return operation_id
 
@@ -68,12 +71,29 @@ def create_server(engine, port=0):
             tracker.finish(status='failed', message=str(exc))
             raise
 
-    def acquire_news():
-        workflow.mark_download(status='running')
-        result = news.acquire(workers=4, seconds=120, max_articles=1000, progress=tracker.update, reset_stop=False)
+    def acquire_news(resume=False):
+        workflow.mark_download(status='running', resume=resume,
+                               details=None if resume else {'acquisition_context': {'search': news.search_config()}})
+        result = news.acquire(workers=4, seconds=900, max_articles=10000, queue=not resume,
+                              progress=tracker.update, reset_stop=False)
         incomplete = result.get('cancelled') or result.get('pending', 0) or result.get('failed', 0)
         workflow.mark_download(status='paused' if incomplete else 'completed', details=result)
         return dict(result, status='paused' if incomplete else result.get('status', 'ok'))
+
+    def acquisition_context():
+        """Archive the actual acquisition limits with each evaluation."""
+        snapshot = workflow.snapshot(tracker.snapshot())
+        coverage, counts, news_counts = snapshot['coverage'], snapshot['counts'], news.stats()
+        archived = coverage.get('acquisition_context') or {}
+        return {'mode': coverage['mode'], 'status': coverage['status'],
+                'partial': bool(coverage.get('partial')), 'accepted_partial': bool(coverage.get('accepted_partial')),
+                'pending_tasks': counts['pending_downloads'], 'failed_tasks': coverage['failed'],
+                'articles': counts['articles'], 'full_articles': news_counts['scopes'].get('full_article', 0),
+                'metadata_only_articles': sum(number for scope, number in news_counts['scopes'].items() if scope != 'full_article'),
+                'search': copy.deepcopy(archived.get('search')), 'search_plan': copy.deepcopy(coverage.get('search_plan')),
+                'planning_warnings': copy.deepcopy(coverage.get('plan_warnings', [])),
+                'planning_truncated': bool(coverage.get('plan_truncated')),
+                'limitations': copy.deepcopy(coverage.get('limitations', []))}
 
     def analyze_bank():
         workflow.mark_analysis(status='running')
@@ -81,7 +101,7 @@ def create_server(engine, port=0):
         if engine.stop_event.is_set() or attribution.get('cancelled') or attribution.get('pending', 0):
             return {'status': 'paused', 'cancelled': engine.stop_event.is_set(), 'attribution': attribution}
         workflow.mark_analysis(status='scoring')
-        scored = engine.rescore(progress=tracker.update, cancelable=True)
+        scored = engine.rescore(progress=tracker.update, cancelable=True, acquisition=acquisition_context())
         if engine.stop_event.is_set():
             return {'status': 'paused', 'cancelled': True, 'scored': scored, 'attribution': attribution}
         result = {'scored': scored, 'attribution': attribution}
@@ -275,6 +295,8 @@ def create_server(engine, port=0):
                     if query.get('summary', ['0'])[0] != '1':
                         value.update(sources=news.sources(), plan=news.plan())
                     self.reply(value)
+                elif path == '/api/news-search':
+                    self.reply({'config': news.search_config(), 'plan': news.search_plan()})
                 elif path == '/api/export':
                     workflow.require('export', tracker.snapshot())
                     # Exportación completa y streaming: memoria acotada para bancos grandes.
@@ -340,7 +362,7 @@ def create_server(engine, port=0):
                     with lock:
                         self.reply(workflow.confirm_sources(tracker.snapshot()))
                     return
-                elif self.path == '/api/workflow-accept-partial':
+                elif self.path in ('/api/workflow-accept-partial', '/api/workflow-finish-download'):
                     with lock:
                         self.reply(workflow.accept_partial(tracker.snapshot()))
                     return
@@ -375,7 +397,7 @@ def create_server(engine, port=0):
                     def review():
                         entity_id = engine.store.review(data['id'], data['status'], data['actor'], data['reason'],
                             data.get('event_id'), data.get('identity_spans'), expected_run_id=data['expected_run_id'])
-                        engine.rescore(entity_id, progress=tracker.update)
+                        engine.rescore(entity_id, progress=tracker.update, acquisition=acquisition_context())
                         workflow.mark_analysis()
                         return {'entity_id': entity_id}
                     synchronous(review, kind='review', action='review')
@@ -387,9 +409,22 @@ def create_server(engine, port=0):
                 elif self.path == '/api/news-acquire':
                     if not _boolean(data.get('online', False), 'online'):
                         raise ValueError('Active la conexión autorizada para descargar noticias')
-                    operation_id = background(acquire_news, online=True, kind='download', action='download', phase='download',
-                                              message='Preparando las fuentes y descubriendo noticias…')
+                    resume = _boolean(data.get('resume', False), 'resume')
+                    with lock:
+                        value = workflow.require('download', tracker.snapshot())
+                        if resume and not value['coverage'].get('resume_available'):
+                            raise WorkflowError('La cola no corresponde al alcance vigente o no tiene tareas pendientes; inicie una nueva búsqueda.')
+                        if not resume and not news.search_plan()['query_count']:
+                            raise WorkflowError('El plan no contiene consultas. Vuelva a Preparar fuentes: habilite una fuente de búsqueda dirigida o elija Feeds generales, y confirme el alcance.')
+                        operation_id = background(lambda: acquire_news(resume), online=True, kind='download', action='download', phase='download',
+                                                  message='Reanudando las tareas pendientes…' if resume else 'Preparando las búsquedas y descubriendo noticias…')
                     self.reply({'ok': True, 'operation_id': operation_id})
+                    return
+                elif self.path == '/api/news-search':
+                    with lock:
+                        workflow.require('configure_sources', tracker.snapshot())
+                        news.set_search_config(data)
+                        self.reply({'config': news.search_config(), 'plan': news.search_plan()})
                     return
                 elif self.path == '/api/news-source':
                     values = [_boolean(data['enabled'], 'enabled'), _boolean(data['terms_approved'], 'terms_approved'),

@@ -4,7 +4,40 @@
   "robots_ttl_seconds": 86400,
   "circuit_seconds": 86400,
   "max_redirects": 4,
+  "search": {
+    "strategy": "targeted", "preset": "identity", "window": "auto", "max_queries": 1000,
+    "include_aliases": true, "use_context": true
+  },
   "sources": [
+    {
+      "id": "desinformemonos_search", "source_name": "Desinformémonos: archivo por entidad y fecha",
+      "kind": "rss", "search_kind": "wordpress_rss", "document_kind": "news",
+      "url": "https://desinformemonos.org/feed/", "base_url": "https://desinformemonos.org/",
+      "search_url": "https://desinformemonos.org/", "allowed_hosts": ["desinformemonos.org", "www.desinformemonos.org"],
+      "enabled": false, "terms_approved": false, "robots_required": true, "discovery": true,
+      "download_articles": false, "article_terms_approved": false,
+      "historical_coverage": "publisher_search_best_effort_not_exhaustive",
+      "terms_url": "https://desinformemonos.org/",
+      "permission_scope": "pendiente de revisión del operador; búsqueda RSS pública del editor; no se presume licencia para conservar o reutilizar artículos",
+      "review_note": "Verificación pública: robots permitió la consulta RSS por frase y año; una búsqueda exacta sobre López Obrador en 2020 devolvió 10 notas con fechas de 2020. Se planifican nombres y alias de las entidades cargadas por año/mes y se dividen resultados saturados. El top RSS es limitado y no garantiza archivo completo. Los metadatos no se presentan como el cuerpo original ni acreditan identidad; revise condiciones y permisos del editor antes de habilitar.",
+      "max_records": 10, "search_max_records": 10, "max_query_chars": 500, "min_window_seconds": 86400,
+      "min_interval_seconds": 5, "max_bytes": 2000000, "timeout_seconds": 20
+    },
+    {
+      "id": "google_news_search", "source_name": "Google News: consulta manual; automatización no disponible",
+      "kind": "rss", "search_kind": "google_news_rss", "document_kind": "news",
+      "base_url": "https://news.google.com/rss/search", "allowed_hosts": ["news.google.com"],
+      "enabled": false, "terms_approved": false, "robots_required": true, "discovery": true,
+      "download_articles": false, "article_terms_approved": false,
+      "language": "es-419", "country": "MX", "edition": "MX:es-419",
+      "automated_search": false, "robots_status": "RSS/search disallowed on verification; manual candidate only",
+      "terms_url": "https://policies.google.com/terms",
+      "historical_coverage": "dated_search_best_effort_not_exhaustive",
+      "permission_scope": "pendiente de revisión del operador; sólo metadatos y enlaces del agregador; cada editor conserva los derechos de sus artículos",
+      "review_note": "Candidato de consulta manual: el robots.txt verificado bloquea /rss/search, por lo que el plan automático lo omite. Una comprobación de disponibilidad devolvió 100 notas de 2020, sin garantía de archivo completo. Los enlaces pueden requerir abrir el editor; no se tratan como cuerpos. No se elude robots ni se presume identidad por la consulta.",
+      "max_records": 100, "max_query_chars": 1000, "min_window_seconds": 86400,
+      "min_interval_seconds": 5, "max_bytes": 2000000, "timeout_seconds": 20
+    },
     {
       "id": "jornada_rss", "source_name": "La Jornada", "kind": "rss", "document_kind": "news",
       "url": "https://www.jornada.com.mx/rss/edicion.xml?v=1", "base_url": "https://www.jornada.com.mx",
@@ -92,6 +125,7 @@
       "permission_scope": "pendiente de revisión del operador; sólo metadatos de descubrimiento; cada editor enlazado necesita permiso separado",
       "review_note": "Los lotes de frases OR reducen llamadas, pero ArtList limita la salida a 250. Divida ventanas saturadas y registre los límites pendientes; no se garantiza paginación por cursor ni un historial completo. SourceCountry filtra el país del medio, no la nacionalidad del sujeto. max_query_chars es un límite local conservador, no un máximo verificado de la API.",
       "batch_size": 6, "max_query_chars": 250, "max_records": 250, "timespan": "7d",
+      "max_history_days": 90, "historical_coverage": "recent_rolling_window_only",
       "source_country": "mexico", "source_lang": "spanish", "min_window_seconds": 900,
       "min_interval_seconds": 5, "max_bytes": 2000000, "timeout_seconds": 20
     }

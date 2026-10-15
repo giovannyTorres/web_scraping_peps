@@ -174,7 +174,7 @@ class Engine:
                     unmatched += not bool(entity_ids)
         return {'documents': count, 'links': links, 'unmatched': unmatched}
 
-    def rescore(self, entity_id=None, *, progress=None, cancelable=False):
+    def rescore(self, entity_id=None, *, progress=None, cancelable=False, acquisition=None):
         from .nlp import analyze
         from .scoring import score_entity
         from .contextual import analyze_evidence, get_method_info
@@ -221,6 +221,9 @@ class Engine:
                     result['contextual_analysis'] = [analyze_evidence(entity, item, mode) for item in evidence]
                     result['provenance'] = {'score_authority': scoring_fingerprint(),
                                             'context_method': get_method_info(mode)}
+                    if acquisition is not None:
+                        # Coverage is a historical limit, never a scoring input.
+                        result['provenance']['acquisition'] = json.loads(canonical(acquisition))
                     result['explainability'] = explain_score(result)
                     self.store.save_score(entity['id'], result, connection=con,
                                           entity_snapshot=entity, evidence_snapshot=evidence)

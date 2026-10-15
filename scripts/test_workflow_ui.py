@@ -51,11 +51,13 @@ class ControlledOperations:
         self.calls = 0
         self.completed = 0
         self.queued = False
+        self.queue_modes = []
         self.lock = threading.Lock()
 
     def acquire(self, acquirer, *args, progress=None, **kwargs):
         with self.lock:
             self.calls += 1
+            self.queue_modes.append(kwargs.get('queue', True))
         if kwargs.get('reset_stop', True):
             acquirer.engine.stop_event.clear()
         if not self.queued:
@@ -335,6 +337,10 @@ def run_validation(args):
                         checked('explicit_source_authorization_saved', allowed['status'] == 200)
                         page.reload()
                         page.locator('[data-panel="sources"]').wait_for()
+                        page.locator('#workflow-search-strategy').select_option('feeds')
+                        page.locator('#workflow-save-search').click()
+                        wait_until(page, lambda: api(page, 'news-search')['body']['config']['strategy'] == 'feeds',
+                                   'The fixture must explicitly select its generic RSS feed')
                         page.locator('#workflow-sources-next').click()
                         page.locator('[data-panel="news"]').wait_for()
                         checked('download_needs_explicit_network_consent', api(page, 'news-acquire', {'online': False})['status'] in (400, 409))
@@ -396,20 +402,24 @@ def run_validation(args):
                         wait_until(page, lambda: page.locator('[data-workflow-step="download"]').get_attribute('data-status') == 'paused', 'Paused step was not rendered')
                         paused_bar = page.locator('#workflow-step-progress-download').get_attribute('value')
                         checked('paused_step_never_shows_complete_progress', paused_bar is None or float(paused_bar) <= 99)
-                        checked('pending_tasks_block_partial_acceptance_and_analysis', api(page, 'workflow-accept-partial', {})['status'] == 409 and api(page, 'workflow-analyze', {})['status'] == 409)
+                        pending_flow = api(page, 'workflow')['body']
+                        checked('pending_tasks_need_resume_or_explicit_partial_close',
+                                pending_flow['actions']['accept_partial']['enabled'] and
+                                api(page, 'workflow-analyze', {})['status'] == 409)
                         screenshot(page, 'desktop-paused-download')
 
                         controlled.prepare_resume()
-                        resumed = api(page, 'news-acquire', {'online': True})
+                        resumed = api(page, 'news-acquire', {'online': True, 'resume': True})
                         checked('resume_accepted', resumed['status'] in (200, 202))
                         wait_until(page, controlled.entered.is_set, 'Resume did not start the remaining tasks')
                         controlled.release.set()
                         wait_until(page, lambda: not api(page, 'stats')['body']['operation']['busy'], 'Resumed acquisition did not finish')
                         checked('resume_preserves_single_queue_and_completes_remaining_tasks', controlled.calls == 2 and controlled.completed == 2 and engine.store.stats()['jobs'].get('done') == 2)
+                        checked('resume_does_not_enqueue_discovery_again', controlled.queue_modes == [True, False])
                         checked('completed_download_still_requires_analysis', not api(page, 'workflow')['body']['analysis_current'] and engine.store.latest_score_run(entity['id']) is None)
                         page.reload()
                         page.locator('[data-panel="news"]').wait_for()
-                        page.locator('#workflow-download-next').click()
+                        page.locator('#news-acquire').click()
                         page.locator('[data-panel="analysis"]').wait_for()
                         page.locator('#workflow-analyze').focus()
                         page.keyboard.press('Enter')
@@ -460,7 +470,7 @@ def run_validation(args):
                         checked('local_mode_blocks_download_api', not local['actions']['download']['enabled'] and api(page, 'news-acquire', {'online': True})['status'] == 409)
                         page.locator('#workflow-sources-next').click()
                         page.locator('[data-panel="news"]').wait_for()
-                        page.locator('#workflow-download-next').click()
+                        page.locator('#news-acquire').click()
                         page.locator('[data-panel="analysis"]').wait_for()
                         page.locator('#workflow-analyze').click()
                         wait_until(page, lambda: api(page, 'workflow')['body']['analysis_current'], 'Local analysis did not publish current results')

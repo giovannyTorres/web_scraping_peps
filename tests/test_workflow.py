@@ -2,6 +2,7 @@
 from copy import deepcopy
 import concurrent.futures
 import tempfile
+import time
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -110,6 +111,43 @@ class OperationTrackerTests(unittest.TestCase):
         with self.assertRaises(WorkflowError):
             self.tracker.update(completed=11)
 
+    def test_runtime_activity_metadata_is_bounded_copied_and_kept_in_final_receipt(self):
+        self.tracker.start('download')
+        event = {'event': 'activity', 'completed': 0, 'pending': 64, 'deferred': 60,
+                 'ready': 2, 'active_tasks': 2, 'waiting': True, 'next_retry_at': 1100.,
+                 'wait_seconds': 100., 'next_retry': '1970-01-01T00:18:20+00:00',
+                 'current_source': 'Fuente ficticia', 'job_kind': 'news_article',
+                 'jobs': {'queued': 4, 'deferred': 60}, 'headers': {'Authorization': 'not public'},
+                 'failed': True, 'processed': -1, 'unknown': object(), 'last_error': 'x' * 3000}
+        with patch('peps.workflow.time.time', return_value=1000.):
+            self.tracker.update(event)
+            snapshot = self.tracker.snapshot()
+        self.assertEqual(snapshot['pending'], 64)
+        self.assertEqual(snapshot['next_retry_seconds'], 100.)
+        self.assertEqual(snapshot['current_source'], 'Fuente ficticia')
+        self.assertEqual(len(snapshot['last_error']), 2000)
+        self.assertNotIn('headers', snapshot)
+        self.assertNotIn('unknown', snapshot['details'])
+        self.assertNotIn('failed', snapshot['details'])
+        self.assertNotIn('processed', snapshot['details'])
+        event['jobs']['queued'] = 999
+        snapshot['jobs']['queued'] = 888
+        self.assertEqual(self.tracker.snapshot()['jobs']['queued'], 4)
+        self.tracker.finish('paused', result={'stop_reason': 'backoff', 'pending': 64})
+        with patch('peps.workflow.time.time', return_value=1050.):
+            final = self.tracker.snapshot()
+        self.assertEqual(final['stop_reason'], 'backoff')
+        self.assertEqual(final['details']['stop_reason'], 'backoff')
+        self.assertEqual(final['next_retry_seconds'], 50.)
+        self.tracker.start('analysis')
+        self.assertEqual(self.tracker.snapshot()['details'], {})
+
+    def test_waiting_for_retry_does_not_publish_a_throughput_eta(self):
+        self.tracker.start('download', total=10)
+        self.clock.value = 10
+        self.tracker.update(completed=3, waiting=True)
+        self.assertIsNone(self.tracker.snapshot()['eta_seconds'])
+
 
 class GuidedWorkflowTests(unittest.TestCase):
     def setUp(self):
@@ -170,19 +208,29 @@ class GuidedWorkflowTests(unittest.TestCase):
         with self.assertRaises(WorkflowError):
             self.workflow.accept_partial(tracker)
 
-    def test_external_queued_deferred_and_running_jobs_block_analysis_even_in_local_mode(self):
+    def test_local_analysis_ignores_inactive_online_queue_without_mutating_it(self):
         self.import_bank()
         self.workflow.set_mode('local')
+        self.workflow.confirm_sources()
         job_id = self.engine.store.enqueue('news_feed', {'synthetic': True})
         for status in ('queued', 'deferred', 'running'):
             with self.engine.store.connection() as con:
-                con.execute('UPDATE jobs SET status=? WHERE id=?', (status, job_id))
+                con.execute('UPDATE jobs SET status=?,lease_until=?,owner=?,due=? WHERE id=?',
+                            (status, time.time() - 100 if status == 'running' else None,
+                             'expired-worker' if status == 'running' else None, time.time() + 500, job_id))
+                before = dict(con.execute('SELECT * FROM jobs WHERE id=?', (job_id,)).fetchone())
             snapshot = self.workflow.snapshot()
             self.assertEqual(snapshot['counts']['pending_downloads'], 1)
-            with self.subTest(status=status), self.assertRaises(WorkflowError):
-                self.workflow.require('analyze')
-            with self.assertRaises(WorkflowError):
+            with self.subTest(status=status):
+                self.assertTrue(snapshot['actions']['analyze']['enabled'])
+                self.workflow.mark_analysis(status='running')
+                self.engine.rescore()
                 self.workflow.mark_analysis()
+                self.assertTrue(self.workflow.snapshot()['analysis_current'])
+                for action in ('view_results', 'export', 'review'):
+                    self.assertTrue(self.workflow.snapshot()['actions'][action]['enabled'])
+                with self.engine.store.connection() as con:
+                    self.assertEqual(before, dict(con.execute('SELECT * FROM jobs WHERE id=?', (job_id,)).fetchone()))
 
     def test_partial_coverage_requires_a_finished_current_acquisition_and_explicit_acceptance(self):
         self.import_bank()
@@ -197,13 +245,180 @@ class GuidedWorkflowTests(unittest.TestCase):
         self.assertTrue(snapshot['coverage']['accepted_partial'])
         self.assertTrue(snapshot['actions']['analyze']['enabled'])
 
-    def test_pending_download_prevents_partial_acceptance_and_completed_receipt_becomes_paused(self):
+    def test_pending_download_requires_explicit_closure_and_completed_receipt_becomes_paused(self):
         self.import_bank()
         self.workflow.mark_download(status='running')
         self.engine.store.enqueue('news_article', {'synthetic': True})
         self.assertEqual(self.workflow.mark_download(), 'paused')
+        self.assertFalse(self.workflow.snapshot()['actions']['analyze']['enabled'])
+        self.assertTrue(self.workflow.snapshot()['actions']['finish_download']['enabled'])
+        snapshot = self.workflow.finish_download()
+        self.assertTrue(snapshot['coverage']['closed_partial'])
+        self.assertTrue(snapshot['coverage']['resume_available'])
+        self.assertTrue(snapshot['actions']['analyze']['enabled'])
+
+    def test_paused_235_articles_64_jobs_can_be_closed_and_analyzed_without_losing_queue(self):
+        self.import_bank()
+        self.document()
+        self.workflow.mark_download(status='running')
+        with self.engine.store.connection() as con:
+            con.executemany('INSERT INTO news_articles(id,canonical_url,publisher_id,source_id,title,summary,'
+                            'discovered_at,scope,status) VALUES(?,?,?,?,?,?,?,?,?)', [
+                ('fictional-' + str(number), 'https://synthetic.invalid/news/' + str(number), 'synthetic',
+                 'synthetic', 'Noticia ficticia ' + str(number), 'Resumen ficticio.', '2026-10-15',
+                 'feed_metadata_only', 'discovered') for number in range(235)])
+        for number in range(64):
+            self.engine.store.enqueue('news_article', {'synthetic': number})
+        with self.engine.store.connection() as con:
+            rows = con.execute('SELECT id FROM jobs ORDER BY id').fetchall()
+            for index, row in enumerate(rows):
+                con.execute('UPDATE jobs SET status=?,due=?,lease_until=?,owner=? WHERE id=?',
+                            ('queued' if index < 32 else 'deferred' if index < 62 else 'running',
+                             time.time() + 600 if 32 <= index < 62 else time.time() - 5,
+                             time.time() - 30 if index >= 62 else None,
+                             'expired-synthetic-worker' if index >= 62 else None, row['id']))
+            before = [dict(row) for row in con.execute('SELECT * FROM jobs ORDER BY id')]
+        self.workflow.mark_download(status='paused', details={'stop_reason': 'time_limit', 'pending': 64})
+        snapshot = self.workflow.snapshot()
+        self.assertEqual(snapshot['counts']['articles'], 235)
+        self.assertEqual(snapshot['counts']['pending_downloads'], 64)
+        self.assertEqual(snapshot['coverage']['active_running'], 0)
+        self.assertEqual(snapshot['coverage']['expired_running'], 2)
+        self.assertEqual(snapshot['coverage']['stop_reason'], 'time_limit')
+        self.assertIsNotNone(snapshot['coverage']['next_retry_at'])
+        self.assertFalse(snapshot['actions']['analyze']['enabled'])
+        snapshot = self.workflow.finish_download()
+        self.assertTrue(snapshot['coverage']['accepted_partial'])
+        self.assertTrue(snapshot['coverage']['partial'])
+        self.assertTrue(snapshot['coverage']['closed_partial'])
+        self.assertEqual(snapshot['coverage']['limitations']['articles'], 235)
+        self.assertEqual(snapshot['coverage']['limitations']['pending_downloads'], 64)
+        self.assertTrue(snapshot['actions']['analyze']['enabled'])
+        self.workflow.mark_analysis(status='running')
+        self.engine.rescore()
+        self.workflow.mark_analysis()
+        restored = GuidedWorkflow(self.engine.store, lambda: deepcopy(self.sources))
+        self.assertTrue(restored.snapshot()['analysis_current'])
+        for action in ('view_results', 'export', 'review'):
+            self.assertTrue(restored.snapshot()['actions'][action]['enabled'])
+        restored.finish_download()  # Same decision is idempotent and keeps current scores.
+        self.assertTrue(restored.snapshot()['analysis_current'])
+        with self.engine.store.connection() as con:
+            self.assertEqual(before, [dict(row) for row in con.execute('SELECT * FROM jobs ORDER BY id')])
+            self.assertEqual(con.execute('SELECT count(*) FROM news_articles').fetchone()[0], 235)
+            self.assertEqual(con.execute("SELECT count(*) FROM audit WHERE action='workflow_download_closed_partial'").fetchone()[0], 1)
+        self.assertTrue(self.engine.store.verify_audit()['ok'])
+        restored.mark_download(status='running')
+        snapshot = restored.snapshot()
+        self.assertFalse(snapshot['coverage']['accepted_partial'])
+        self.assertFalse(snapshot['analysis_current'])
+        self.assertFalse(snapshot['actions']['analyze']['enabled'])
+
+    def test_active_cli_lease_blocks_partial_closure_and_local_analysis_until_expiry(self):
+        self.import_bank()
+        self.workflow.mark_download(status='paused')
+        self.engine.store.enqueue('news_article', {'synthetic': True})
+        job = self.engine.store.claim(lease_seconds=300, kind_prefix='news_')
+        snapshot = self.workflow.snapshot()
+        self.assertTrue(snapshot['coverage']['worker_active'])
+        self.assertFalse(snapshot['actions']['finish_download']['enabled'])
+        with self.assertRaisesRegex(WorkflowError, 'en ejecución'):
+            self.workflow.finish_download()
+        with self.engine.store.connection() as con:
+            con.execute('UPDATE jobs SET lease_until=? WHERE id=?', (time.time() - 1, job['id']))
+        self.assertTrue(self.workflow.finish_download()['actions']['analyze']['enabled'])
+        self.workflow.set_mode('local')
+        self.workflow.confirm_sources()
+        self.engine.store.claim(lease_seconds=300, kind_prefix='news_')
+        self.assertFalse(self.workflow.snapshot()['actions']['analyze']['enabled'])
+        with self.assertRaisesRegex(WorkflowError, 'en ejecución'):
+            self.workflow.mark_analysis(status='running')
+
+    def test_partial_closure_expires_after_queue_activity_and_search_configuration_change(self):
+        self.import_bank()
+        self.document()
+        self.engine.store.enqueue('news_article', {'synthetic': True})
+        self.workflow.mark_download(status='paused')
+        self.workflow.finish_download()
+        self.engine.store.claim(lease_seconds=-1, kind_prefix='news_')
+        self.assertFalse(self.workflow.snapshot()['coverage']['accepted_partial'])
+        self.assertFalse(self.workflow.snapshot()['actions']['analyze']['enabled'])
+        self.workflow.finish_download()
+        self.assertTrue(self.workflow.snapshot()['coverage']['accepted_partial'])
+        self.engine.store.audit('news_search_configured', {'days': 7})
+        self.assertFalse(self.workflow.snapshot()['coverage']['accepted_partial'])
+        self.assertFalse(self.workflow.snapshot()['sources_confirmed'])
+        self.assertFalse(self.workflow.snapshot()['coverage']['resume_available'])
+        self.assertTrue(self.workflow.snapshot()['coverage']['needs_new_search'])
+        with self.assertRaisesRegex(WorkflowError, 'otra configuración'):
+            self.workflow.mark_download(status='running', resume=True)
         with self.assertRaises(WorkflowError):
-            self.workflow.accept_partial()
+            self.workflow.finish_download()
+
+    def test_local_corpus_import_does_not_change_the_scope_of_resumable_queries(self):
+        self.import_bank()
+        self.engine.store.enqueue('news_article', {'synthetic': True})
+        self.workflow.mark_download(status='paused')
+        self.document()
+        snapshot = self.workflow.snapshot()
+        self.assertFalse(snapshot['coverage']['acquisition_current'])
+        self.assertTrue(snapshot['coverage']['resume_available'])
+        self.assertFalse(snapshot['coverage']['needs_new_search'])
+
+    def test_disabled_source_added_on_upgrade_requires_confirmation_and_resume_without_data_loss(self):
+        self.import_bank()
+        self.document()
+        self.engine.store.enqueue('news_article', {'synthetic': True})
+        self.workflow.mark_download(status='paused', details={'pending': 1})
+        self.sources.append({'id': 'new-disabled-public-feed', 'enabled': False, 'terms_approved': False})
+        restored = GuidedWorkflow(self.engine.store, lambda: deepcopy(self.sources))
+        self.assertFalse(restored.snapshot()['sources_confirmed'])
+        with self.assertRaises(WorkflowError):
+            restored.finish_download()
+        restored.confirm_sources()
+        with self.assertRaises(WorkflowError):
+            restored.finish_download()
+        restored.mark_download(status='running')
+        restored.mark_download(status='paused', details={'pending': 1})
+        self.assertTrue(restored.finish_download()['actions']['analyze']['enabled'])
+        self.assertEqual(self.engine.store.stats()['documents'], 1)
+        self.assertEqual(self.engine.store.stats()['jobs']['queued'], 1)
+
+    def test_truncated_historical_plan_requires_partial_closure_and_resume_keeps_original_period(self):
+        self.import_bank()
+        self.document()
+        original = {'search': {'days': 7}}
+        plan = {'config': {'days': 7}, 'queries': [{'query': 'Ficticia'}], 'truncated': True,
+                'queries_required': 100, 'query_count': 40, 'entities_covered': 40,
+                'entities_total': 100, 'warnings': ['Presupuesto de consultas recortado.'],
+                'coverage': 'best_effort_not_exhaustive',
+                'sources': [{'id': 'synthetic', 'historical': True, 'complete_archive': False}]}
+        self.workflow.mark_download(status='running', details={'acquisition_context': original})
+        self.workflow.mark_download(details={'queued': {'search_plan': plan}})
+        snapshot = self.workflow.snapshot()
+        self.assertEqual(snapshot['coverage']['acquisition_context'], original)
+        self.assertTrue(snapshot['coverage']['partial'])
+        self.assertTrue(snapshot['coverage']['plan_truncated'])
+        self.assertNotIn('queries', snapshot['coverage']['search_plan'])
+        self.assertFalse(snapshot['actions']['analyze']['enabled'])
+        snapshot = self.workflow.finish_download()
+        self.assertEqual(snapshot['coverage']['limitations']['search_plan']['query_count'], 40)
+        self.workflow.mark_download(status='running', resume=True)
+        self.workflow.mark_download(status='paused', details={'queued': None, 'stop_reason': 'backoff'})
+        snapshot = self.workflow.snapshot()
+        self.assertEqual(snapshot['coverage']['acquisition_context'], original)
+        self.assertEqual(snapshot['coverage']['search_plan']['config'], {'days': 7})
+        self.assertEqual(snapshot['coverage']['plan_warnings'], plan['warnings'])
+        self.assertFalse(snapshot['coverage']['accepted_partial'])
+
+    def test_external_discovery_between_attribution_and_scoring_checkpoint_is_rejected(self):
+        self.import_bank()
+        self.workflow.set_mode('local')
+        self.workflow.confirm_sources()
+        self.workflow.mark_analysis(status='running')
+        self.engine.store.audit('news_discovery_completed', {'source_id': 'synthetic', 'records': 1})
+        with self.assertRaisesRegex(WorkflowError, 'Los datos cambiaron durante la atribución'):
+            self.workflow.mark_analysis(status='scoring')
 
     def test_bank_changes_source_saves_corpus_imports_and_reviews_invalidate_current_results(self):
         self.import_bank()

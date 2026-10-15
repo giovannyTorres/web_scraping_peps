@@ -6,6 +6,19 @@ la aplicación tienen las mismas fuentes. Todas comienzan desactivadas, con
 `article_terms_approved=false`. Activar lectura de RSS no habilita automáticamente
 descarga de artículos, almacenamiento de un archivo comercial ni redistribución.
 
+WebScope 2.4 añade [búsqueda dirigida e histórica](RECUPERACION_DESCARGA.md):
+nombres y alias por ventanas temporales, con presupuesto y cobertura visibles.
+**Desinformémonos** ofrece un adaptador RSS por frase y año/mes. La consulta
+[«López Obrador», año 2020](https://desinformemonos.org/?s=%22L%C3%B3pez+Obrador%22&feed=rss2&year=2020)
+respondió con diez notas fechadas en ese año; su `robots.txt` permitió la ruta.
+El top observado es diez, con subdivisión de ventanas saturadas y sin garantía
+de archivo completo. La fuente empieza deshabilitada y requiere revisión de
+condiciones; la verificación técnica no concede permisos sobre los cuerpos.
+Google News queda como consulta manual: el plan automático lo omite por el
+bloqueo de su `robots.txt`. GDELT conserva sólo su alcance reciente de hasta
+tres meses. Las métricas de las secciones siguientes corresponden a los ensayos
+anteriores, no a una medición exhaustiva del nuevo plan histórico.
+
 ## Dos trabajos separados
 
 La adquisición descarga cada RSS autorizado una vez por actualización, conserva
