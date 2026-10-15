@@ -1,0 +1,242 @@
+{
+  "synthetic": true,
+  "notice": "Entidades, sucesos, documentos y URLs completamente inventados; no describen personas reales ni fuentes oficiales verificadas.",
+  "measurement_as_of": "2026-10-15",
+  "context_mode": "discriminative",
+  "fixture_hashes": {
+    "entities.jsonl": "09477e6c0f5f14bdb51d337bbdf546013363724db9bc5939dd91016480cf7cbc",
+    "documents.jsonl": "0c93cc0e21b52b614f2448db2c1d30b905ddb5035e0cec90ecfa3ab79e85aa9b"
+  },
+  "not_expected_values_for_ci": true,
+  "date_policy": "La fecha real UTC del Engine determina el envejecimiento; no se fijan resultados esperados por run_id ni timestamp.",
+  "current": [
+    {
+      "entity_id": "demo-alta",
+      "name": "Consorcio Boreal Inventado",
+      "score": 82,
+      "label": "alta",
+      "as_of": "2026-10-15",
+      "provisional_score": 82,
+      "validated_score": 0,
+      "review_required": true,
+      "evidence_count": 5,
+      "replay_matched": true,
+      "factors": [
+        {
+          "event_group": "demo-alta|event:demo-alta-evento-002",
+          "title": "crimen organizado",
+          "provisional_points": 32.718,
+          "validated_points": 0.0,
+          "score_without_event": 73,
+          "score_delta_when_removed": 9,
+          "resolution": null,
+          "resolution_review_required": false
+        },
+        {
+          "event_group": "demo-alta|event:demo-alta-evento-004",
+          "title": "violencia",
+          "provisional_points": 32.718,
+          "validated_points": 0.0,
+          "score_without_event": 73,
+          "score_delta_when_removed": 9,
+          "resolution": null,
+          "resolution_review_required": false
+        },
+        {
+          "event_group": "demo-alta|event:demo-alta-evento-001",
+          "title": "lavado de dinero",
+          "provisional_points": 29.602,
+          "validated_points": 0.0,
+          "score_without_event": 74,
+          "score_delta_when_removed": 8,
+          "resolution": null,
+          "resolution_review_required": false
+        },
+        {
+          "event_group": "demo-alta|event:demo-alta-evento-003",
+          "title": "corrupción",
+          "provisional_points": 26.486,
+          "validated_points": 0.0,
+          "score_without_event": 76,
+          "score_delta_when_removed": 6,
+          "resolution": null,
+          "resolution_review_required": false
+        },
+        {
+          "event_group": "demo-alta|event:demo-alta-evento-005",
+          "title": "fraude",
+          "provisional_points": 23.37,
+          "validated_points": 0.0,
+          "score_without_event": 77,
+          "score_delta_when_removed": 5,
+          "resolution": null,
+          "resolution_review_required": false
+        }
+      ],
+      "exclusions": [],
+      "warnings": [
+        "Hay documentos pendientes de revisión; el resultado conserva su carácter provisional.",
+        "No hay una contribución positiva validada por revisión humana."
+      ]
+    },
+    {
+      "entity_id": "demo-media",
+      "name": "Comercializadora Ámbar Ficticia",
+      "score": 33,
+      "label": "media",
+      "as_of": "2026-10-15",
+      "provisional_score": 33,
+      "validated_score": 0,
+      "review_required": true,
+      "evidence_count": 1,
+      "replay_matched": true,
+      "factors": [
+        {
+          "event_group": "demo-media|event:demo-media-evento-001",
+          "title": "violencia",
+          "provisional_points": 32.718,
+          "validated_points": 0.0,
+          "score_without_event": 0,
+          "score_delta_when_removed": 33,
+          "resolution": null,
+          "resolution_review_required": false
+        }
+      ],
+      "exclusions": [],
+      "warnings": [
+        "Hay documentos pendientes de revisión; el resultado conserva su carácter provisional.",
+        "No hay una contribución positiva validada por revisión humana."
+      ]
+    },
+    {
+      "entity_id": "demo-victima",
+      "name": "Cooperativa Marfil Imaginaria",
+      "score": 0,
+      "label": "sin señales puntuables",
+      "as_of": "2026-10-15",
+      "provisional_score": 0,
+      "validated_score": 0,
+      "review_required": true,
+      "evidence_count": 1,
+      "replay_matched": true,
+      "factors": [],
+      "exclusions": [],
+      "warnings": [
+        "Hay documentos pendientes de revisión; el resultado conserva su carácter provisional.",
+        "No hay una contribución positiva validada por revisión humana.",
+        "Cero no acredita ausencia de riesgo. Consulte cobertura, exclusiones y evidencia insuficiente."
+      ]
+    },
+    {
+      "entity_id": "demo-denunciante",
+      "name": "Transportes Vértice Simulados",
+      "score": 0,
+      "label": "sin señales puntuables",
+      "as_of": "2026-10-15",
+      "provisional_score": 0,
+      "validated_score": 0,
+      "review_required": true,
+      "evidence_count": 1,
+      "replay_matched": true,
+      "factors": [],
+      "exclusions": [
+        {
+          "code": "association_is_not_adverse_conduct",
+          "count": 1,
+          "label": "La asociación no atribuye una conducta directa"
+        }
+      ],
+      "warnings": [
+        "Hay documentos pendientes de revisión; el resultado conserva su carácter provisional.",
+        "No hay una contribución positiva validada por revisión humana.",
+        "Cero no acredita ausencia de riesgo. Consulte cobertura, exclusiones y evidencia insuficiente."
+      ]
+    },
+    {
+      "entity_id": "demo-homonimo",
+      "name": "Renata Olmo Inventada",
+      "score": 0,
+      "label": "sin señales puntuables",
+      "as_of": "2026-10-15",
+      "provisional_score": 0,
+      "validated_score": 0,
+      "review_required": true,
+      "evidence_count": 1,
+      "replay_matched": true,
+      "factors": [],
+      "exclusions": [
+        {
+          "code": "identity_ambiguous_or_requires_selected_spans",
+          "count": 1,
+          "label": "Identidad ambigua o menciones sin seleccionar"
+        }
+      ],
+      "warnings": [
+        "Hay documentos pendientes de revisión; el resultado conserva su carácter provisional.",
+        "No hay una contribución positiva validada por revisión humana.",
+        "Cero no acredita ausencia de riesgo. Consulte cobertura, exclusiones y evidencia insuficiente."
+      ]
+    },
+    {
+      "entity_id": "demo-resolucion",
+      "name": "Laboratorio Cedro Simulado",
+      "score": 0,
+      "label": "sin señales puntuables",
+      "as_of": "2026-10-15",
+      "provisional_score": 0,
+      "validated_score": 0,
+      "review_required": true,
+      "evidence_count": 2,
+      "replay_matched": true,
+      "factors": [
+        {
+          "event_group": "demo-resolucion|event:demo-cedro-evento-001",
+          "title": "fraude",
+          "provisional_points": 0.0,
+          "validated_points": 0.0,
+          "score_without_event": 0,
+          "score_delta_when_removed": 0,
+          "resolution": "acquittal",
+          "resolution_review_required": true
+        }
+      ],
+      "exclusions": [],
+      "warnings": [
+        "Hay documentos pendientes de revisión; el resultado conserva su carácter provisional.",
+        "No hay una contribución positiva validada por revisión humana.",
+        "Existe una resolución exculpatoria pendiente de revisión; consulte ambas ramas.",
+        "Cero no acredita ausencia de riesgo. Consulte cobertura, exclusiones y evidencia insuficiente.",
+        "Los análisis auxiliares muestran acusaciones y resoluciones o negativas en notas distintas. No se ha establecido que correspondan al mismo evento ni su cronología."
+      ]
+    }
+  ],
+  "historical_before_resolution": {
+    "entity_id": "demo-resolucion",
+    "name": "Laboratorio Cedro Simulado",
+    "score": 10,
+    "label": "baja",
+    "as_of": "2026-10-15",
+    "provisional_score": 10,
+    "validated_score": 0,
+    "review_required": true,
+    "evidence_count": 1,
+    "replay_matched": true,
+    "factors": [
+      {
+        "event_group": "demo-resolucion|event:demo-cedro-evento-001",
+        "title": "fraude",
+        "provisional_points": 10.46669,
+        "validated_points": 0.0,
+        "score_without_event": 0,
+        "score_delta_when_removed": 10,
+        "resolution": null,
+        "resolution_review_required": false
+      }
+    ],
+    "exclusions": [],
+    "warnings": [
+      "Hay documentos pendientes de revisión; el resultado conserva su carácter provisional.",
+      "No hay una contribución positiva validada por revisión humana."
+    ]
+  }
+}

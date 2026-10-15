@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "peps-mx"
-version = "2.1.0"
+version = "2.2.0"
 description = "Banco local y auditable de fuentes públicas para revisión de entidades"
 requires-python = ">=3.10"
 dependencies = []
@@ -16,4 +16,4 @@ peps = "peps.cli:main"
 include = ["peps*"]
 
 [tool.setuptools.package-data]
-peps = ["web/*", "defaults/*.json"]
+peps = ["web/*", "defaults/*.json", "models/*.json", "licenses/*.txt"]

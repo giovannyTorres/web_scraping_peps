@@ -1,0 +1,16 @@
+{
+  "package": "peps-mx",
+  "version": "2.2.0",
+  "wheel_bytes": 389610,
+  "wheel_sha256": "d3541be2e56a11bcf23a1019470cd36d61485a444b6bbcee9f94e415d13aced1",
+  "platform": "Linux-6.18.44-x86_64-with-glibc2.41",
+  "python": "3.12.14",
+  "environment": "clean venv created without pip; installed wheel via --no-index --no-deps --target",
+  "requires_dist": [],
+  "model_sha256": "ba227bc782936a1e19901f8a1464618e160a5e525593c71affd1705f45a8f563",
+  "model_and_license_notices_included": true,
+  "no_scientific_or_ml_modules_imported": true,
+  "python_socket_connect_blocked": true,
+  "scoring_trace_replay_matched": true,
+  "audit_ok": true
+}

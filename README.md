@@ -1,4 +1,4 @@
-# PEPS MX 2.1
+# PEPS MX 2.2
 
 Banco local de noticias y documentos públicos sobre personas, empresas y organizaciones mexicanas. Separa la adquisición de fuentes autorizadas de la atribución local de identidad, conserva procedencia y versiones, y ordena la revisión documental con una puntuación explicable.
 
@@ -8,7 +8,9 @@ La condición PEP, un parentesco, un cargo o un contrato público no son conduct
 
 El paquete portable usa la carpeta completa `PEPS-MX`, con `PEPS-MX.exe`, `PEPS-CLI.exe` y la carpeta auxiliar `_internal`. Abra `PEPS-MX.exe` con doble clic: inicia un servidor en `127.0.0.1` y abre el navegador predeterminado sin mostrar una consola. No requiere instalar Python en la máquina de destino. Mantenga juntos ambos ejecutables y `_internal`; distribuir únicamente un `.exe` no funciona. El paquete no es un instalador ni un servicio de Windows.
 
-Desde el código fuente se requiere Python 3.10 o posterior. El programa utiliza únicamente la biblioteca estándar en ejecución: no necesita Hugging Face, claves de un modelo ni servicios de IA.
+Desde el código fuente se requiere Python 3.10 o posterior. La instalación base utiliza únicamente la biblioteca estándar en ejecución: no necesita Hugging Face, claves de un modelo ni servicios de IA.
+
+La sección **«¿Por qué obtuvo este score?»** conecta cada resultado con sus eventos, multiplicadores reales, notas originales y fragmentos resaltados. Conserva evaluaciones históricas en la misma SQLite y permite reproducir el cálculo. El clasificador contextual incluido (1.43 MB, CPU, sin dependencias adicionales) sólo propone papeles auxiliares y puede abstenerse: no agrega ni elimina puntos. NER y dependencias de spaCy son opcionales, con instalación explícita desde GitHub. Consulte [EXPLICABILIDAD.md](docs/EXPLICABILIDAD.md) para usarlo y [el benchmark comparativo](docs/BENCHMARK_EXPLICABILIDAD.md) para sus limitaciones medidas, incluida la baja cobertura de acusaciones. La investigación y prueba real de Laya se completaron antes de spaCy.
 
 ```powershell
 python -m peps --data-dir .\runtime ui
@@ -32,6 +34,16 @@ python -m peps --data-dir .\runtime news-stats
 python -m peps --data-dir .\runtime audit
 python -m peps --data-dir .\runtime export .\exportaciones\banco.jsonl
 ```
+
+Para consultar o auditar una evaluación desde consola:
+
+```powershell
+python -m peps --data-dir .\runtime explain ID_ENTIDAD
+python -m peps --data-dir .\runtime score-history ID_ENTIDAD
+python -m peps --data-dir .\runtime replay ID_EVALUACION
+```
+
+`replay` comprueba el scoring y su traza cuando código y parámetros son compatibles; los análisis auxiliares se conservan archivados y no se reinfieren. Abrir una entidad actualiza localmente una evaluación ausente u obsoleta, sin consultar internet. Las versiones anteriores a 2.2 no tenían snapshots completos recuperables: se conserva su bitácora y se crea una evaluación nueva; no se reconstruye un historial que nunca se guardó.
 
 Las fuentes comienzan desactivadas en `runtime/news_sources.json`. `enabled` y `terms_approved` habilitan acceso; `download_articles` y `article_terms_approved` autorizan por separado guardar cuerpos. Un RSS gratuito no concede permiso de uso comercial. El catálogo documenta restricciones y mantiene todos esos permisos desactivados. Lea [NOTICIAS.md](docs/NOTICIAS.md) y [FUENTES_NOTICIAS.md](docs/FUENTES_NOTICIAS.md) antes de configurar fuentes.
 

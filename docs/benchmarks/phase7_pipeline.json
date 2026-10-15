@@ -1,0 +1,325 @@
+{
+  "phase": 7,
+  "generated_at": "2026-10-15T09:00:33.046595+00:00",
+  "scope": "invented_local_default_pipeline_and_actual_loopback_UI_API_not_browser_rendering",
+  "environment": {
+    "pid": 5202,
+    "python": "3.12.14",
+    "executable": "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python",
+    "platform": "Linux-6.18.44-x86_64-with-glibc2.41",
+    "logical_cpus": 5,
+    "gpu_used": false,
+    "context_mode": "discriminative"
+  },
+  "fixture": {
+    "entities": 21,
+    "small_entities": 20,
+    "notes_per_small_entity": 4,
+    "heavy_notes": 205,
+    "total_documents": 285,
+    "all_synthetic": true
+  },
+  "data_dir": "/workspace/web_scraping_peps/runtime/phase7-explanation-20261015-04",
+  "code_sha256": {
+    "peps/engine.py": "5613d96fee32bf6b4804d13ae9af660153d15174a077fe3fdbb90598494a9637",
+    "peps/store.py": "edb3a165a51fb889726003ceaa94c56b865e45f229c757f76acb4370f830e7f6",
+    "peps/scoring.py": "6f7b2d87c54b1cef1ece91e28372d659466a4b8a4ace2833eeb491956984638a",
+    "peps/nlp.py": "f7e5ed8cbcf844139314a294932c511a4049802caadec64a4e14e70ea24daadf",
+    "peps/identity.py": "f05524947d5b1d765803da6faa145f3b422a61a10971a1caca3c6983f3436d2f",
+    "peps/contextual.py": "fad91e095fffb16b97cac6d1f29a3e25e05a2ff20f6963cee0e82c0c448c6c94",
+    "peps/context_model.py": "ada181d47cc0bd45c4bb3124db9920ee52fdb4e7115643a582c05f56de30a59b",
+    "peps/explainability.py": "6673536e1008ddbe63413094cef12bee31cc27a898791ee5728d0261df094e89",
+    "peps/app.py": "edc2e69cbfdf58d1788086e5c747dda3d7401da4eb255c06c2d9d2919293faf9",
+    "scripts/benchmark_explanation_pipeline.py": "f1721920971f26d18445af855a10a65f845ef03806dfcebdb36a74de320a169e",
+    "peps/web/app.js": "58e90c327a7f415d0e86c14f68a53ee873e51121461c597499501d3dfc47c699",
+    "peps/web/style.css": "93bd68980b66eafd1eb06a4055447ee7958bd325282198ef6a6e172f0483e316",
+    "peps/web/index.html": "670e3a47c9b72fa4fb4557b756cf58a7afa661e37452350614b9e767ac364f9e"
+  },
+  "timings": {
+    "import_entities": {
+      "wall_ms": 2.625942999657127,
+      "cpu_ms": 1.3179799999999964
+    },
+    "import_documents": {
+      "wall_ms": 142.93847899989487,
+      "cpu_ms": 134.23344300000002,
+      "result": {
+        "documents": 285,
+        "links": 285,
+        "unmatched": 0
+      }
+    },
+    "cold_first_entity_compute": {
+      "wall_ms": 46.23014500020872,
+      "cpu_ms": 44.778337
+    },
+    "small_batch_rescore": {
+      "wall_ms": 148.415465999733,
+      "cpu_ms": 144.65340299999997,
+      "entities": 20
+    },
+    "heavy_entity_compute": {
+      "wall_ms": 363.9827609999884,
+      "cpu_ms": 358.642169,
+      "notes": 205
+    },
+    "warm_small_explanation": {
+      "n": 60,
+      "mean_ms": 6.342586516658836,
+      "p50_ms": 6.33943899993028,
+      "p95_ms": 6.546681000145327,
+      "max_ms": 6.710928999837051,
+      "total_ms": 380.55519099953017
+    },
+    "warm_small_explanation_cpu": {
+      "n": 60,
+      "mean_ms": 6.343745466666691,
+      "p50_ms": 6.341694000000064,
+      "p95_ms": 6.548708000000181,
+      "max_ms": 6.713039999999948,
+      "total_ms": 380.6247280000015
+    },
+    "warm_small_snapshot_lookup": {
+      "n": 60,
+      "mean_ms": 2.7060850832943593,
+      "p50_ms": 2.6729579999482667,
+      "p95_ms": 2.922398000009707,
+      "max_ms": 3.3169880002787977,
+      "total_ms": 162.36510499766155
+    },
+    "warm_small_replay": {
+      "n": 60,
+      "mean_ms": 7.541596816645324,
+      "p50_ms": 7.444741999734106,
+      "p95_ms": 8.085080999990168,
+      "max_ms": 8.835865000037302,
+      "total_ms": 452.49580899871944
+    },
+    "warm_heavy_explanation": {
+      "n": 3,
+      "mean_ms": 51.10657799984134,
+      "p50_ms": 51.61386199961271,
+      "p95_ms": 52.56045099986295,
+      "max_ms": 52.56045099986295,
+      "total_ms": 153.31973399952403
+    },
+    "warm_heavy_historical_explanation": {
+      "n": 3,
+      "mean_ms": 41.119147333271634,
+      "p50_ms": 41.16596699986985,
+      "p95_ms": 41.194133999852056,
+      "max_ms": 41.194133999852056,
+      "total_ms": 123.35744199981491
+    },
+    "http_small_explanation": {
+      "n": 60,
+      "mean_ms": 8.222150183329783,
+      "p50_ms": 8.191318000172032,
+      "p95_ms": 8.62379999989571,
+      "max_ms": 9.764091999841185,
+      "total_ms": 493.329010999787
+    },
+    "http_target_historical_note": {
+      "n": 3,
+      "mean_ms": 21.023223000004993,
+      "p50_ms": 21.155373000055988,
+      "p95_ms": 21.888677999868378,
+      "max_ms": 21.888677999868378,
+      "total_ms": 63.06966900001498
+    },
+    "http_heavy_explanation": {
+      "n": 3,
+      "mean_ms": 64.94449000001623,
+      "p50_ms": 66.95791999982248,
+      "p95_ms": 68.3237950001967,
+      "max_ms": 68.3237950001967,
+      "total_ms": 194.8334700000487
+    }
+  },
+  "checks": {
+    "faithfulness": {
+      "literal_scoring_citations_checked": 2,
+      "source_document_removal_counterfactuals_checked": 2
+    },
+    "warm_replay_successes": 60,
+    "http_small_response_bytes": {
+      "min": 41216,
+      "max": 41216
+    },
+    "note_beyond_page": {
+      "total_notes": 205,
+      "visible_notes": 200,
+      "api_page_limit": 200,
+      "target_outside_visible_page": true,
+      "target_exact_original_text": true,
+      "target_response_bytes": 2203,
+      "explanation_response_bytes": 1222834
+    },
+    "repeat_identical_rescore": {
+      "documents_before": 285,
+      "documents_after": 285,
+      "runs_before": 21,
+      "runs_after": 21,
+      "original_bodies_not_reinserted": true,
+      "identical_snapshot_reused": true
+    },
+    "audit": {
+      "ok": true,
+      "checked": 330,
+      "head_hash": "ee57c6fa486553bb79e35b971019c896c89a3f7fac36764af9be0e850741933a",
+      "score_runs_checked": 21,
+      "scope": "event_chain_document_content_current_scores_and_historical_score_runs_with_document_metadata",
+      "limitation": "Una reescritura completa requiere detectar con un hash o respaldo externo."
+    }
+  },
+  "storage": {
+    "counts": {
+      "entities": 21,
+      "documents": 285,
+      "evidence": 285,
+      "scores": 21,
+      "score_runs": 21,
+      "audit": 330
+    },
+    "sqlite_files": {
+      "peps.sqlite3": 5046272
+    },
+    "sqlite_total_bytes": 5046272,
+    "sqlite_page_bytes_by_object": {
+      "audit": 155648,
+      "audit_action": 12288,
+      "audit_score_run_hash": 4096,
+      "doc_url": 24576,
+      "documents": 151552,
+      "entities": 4096,
+      "entity_name": 4096,
+      "evidence": 344064,
+      "evidence_entity": 12288,
+      "jobs": 4096,
+      "jobs_ready": 4096,
+      "meta": 4096,
+      "news_articles": 4096,
+      "news_content": 4096,
+      "news_discovery_runs": 4096,
+      "news_identity_history": 4096,
+      "news_identity_links": 4096,
+      "news_observation_article": 4096,
+      "news_observations": 4096,
+      "news_publisher_content": 4096,
+      "news_query_windows": 4096,
+      "news_topic": 4096,
+      "news_topic_index": 4096,
+      "score_runs": 2293760,
+      "score_runs_entity": 4096,
+      "scores": 1814528,
+      "sqlite_autoindex_documents_1": 28672,
+      "sqlite_autoindex_entities_1": 4096,
+      "sqlite_autoindex_evidence_1": 28672,
+      "sqlite_autoindex_evidence_2": 32768,
+      "sqlite_autoindex_jobs_1": 4096,
+      "sqlite_autoindex_meta_1": 4096,
+      "sqlite_autoindex_news_articles_1": 4096,
+      "sqlite_autoindex_news_articles_2": 4096,
+      "sqlite_autoindex_news_discovery_runs_1": 4096,
+      "sqlite_autoindex_news_identity_history_1": 4096,
+      "sqlite_autoindex_news_identity_links_1": 4096,
+      "sqlite_autoindex_news_observations_1": 4096,
+      "sqlite_autoindex_news_publisher_content_1": 4096,
+      "sqlite_autoindex_news_query_windows_1": 4096,
+      "sqlite_autoindex_news_topic_index_1": 4096,
+      "sqlite_autoindex_score_runs_1": 4096,
+      "sqlite_autoindex_scores_1": 4096,
+      "sqlite_schema": 12288,
+      "sqlite_sequence": 4096
+    },
+    "original_body_utf8_bytes": 34081,
+    "historical_payload_utf8_bytes": 2280045,
+    "current_result_utf8_bytes": 1802762,
+    "manifest_top_level_body_copies": 0,
+    "body_storage": "Original bodies reside in documents.text; manifests reference document_id and content hashes.",
+    "redundancy_limit": "Literal citations and structured results remain in traces/current cache/history. This is not zero total textual redundancy."
+  },
+  "fresh_restart_lookup": {
+    "current_explanation": {
+      "pid": 5271,
+      "warm_process_preexisting": false,
+      "operation": "current_explanation",
+      "startup_import_engine_plus_first_operation_ms": 43.77307799995833,
+      "first_operation_wall_ms": 39.02629399999569,
+      "first_operation_cpu_ms": 39.01567,
+      "replay_matched": null,
+      "peak_rss": {
+        "bytes": 29884416,
+        "current_rss_bytes": 27832320,
+        "method": "proc_self_status_VmHWM_current_address_space"
+      },
+      "network_guard": {}
+    },
+    "snapshot_lookup": {
+      "pid": 5272,
+      "warm_process_preexisting": false,
+      "operation": "snapshot_lookup",
+      "startup_import_engine_plus_first_operation_ms": 7.798138999987714,
+      "first_operation_wall_ms": 2.800984000259632,
+      "first_operation_cpu_ms": 2.8014169999999865,
+      "replay_matched": null,
+      "peak_rss": {
+        "bytes": 23842816,
+        "current_rss_bytes": 23842816,
+        "method": "proc_self_status_VmHWM_current_address_space"
+      },
+      "network_guard": {}
+    },
+    "replay": {
+      "pid": 5273,
+      "warm_process_preexisting": false,
+      "operation": "replay",
+      "startup_import_engine_plus_first_operation_ms": 19.238019000113127,
+      "first_operation_wall_ms": 14.737183000306686,
+      "first_operation_cpu_ms": 14.730446000000008,
+      "replay_matched": true,
+      "peak_rss": {
+        "bytes": 24215552,
+        "current_rss_bytes": 24215552,
+        "method": "proc_self_status_VmHWM_current_address_space"
+      },
+      "network_guard": {}
+    },
+    "historical_target_note": {
+      "pid": 5285,
+      "warm_process_preexisting": false,
+      "operation": "historical_target_note",
+      "startup_import_engine_plus_first_operation_ms": 25.540071000250464,
+      "first_operation_wall_ms": 20.844700999987253,
+      "first_operation_cpu_ms": 20.84764600000001,
+      "replay_matched": null,
+      "peak_rss": {
+        "bytes": 30478336,
+        "current_rss_bytes": 28069888,
+        "method": "proc_self_status_VmHWM_current_address_space"
+      },
+      "network_guard": {}
+    }
+  },
+  "peak_rss": {
+    "bytes": 59609088,
+    "current_rss_bytes": 51044352,
+    "method": "proc_self_status_VmHWM_current_address_space"
+  },
+  "process_wall_seconds": 3.667964361000031,
+  "process_cpu_seconds": 2.971358724,
+  "network_guard": {
+    "python_socket_guard": true,
+    "allowed_loopback_create_connection": 67,
+    "allowed_loopback_getaddrinfo": 67,
+    "allowed_loopback_connect": 67,
+    "scope": "Blocks off-loopback Python DNS/connect operations; not packet capture of native libraries."
+  },
+  "pass": true,
+  "limitations": [
+    "Synthetic official-source fixtures; not real notes or web coverage.",
+    "Single shared Linux machine; no Windows/GPU/browser-render timing.",
+    "Warm lookups include integrity checking/JSON decode and current provenance checks.",
+    "No SLA inferred from these observations; only generous regression threshold belongs in tests."
+  ]
+}

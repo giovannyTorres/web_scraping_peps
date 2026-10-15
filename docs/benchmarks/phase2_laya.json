@@ -1,0 +1,391 @@
+{
+  "phase": 2,
+  "completed_at": "2026-10-15T08:28:48.396462+00:00",
+  "model": "Laya-English-421M-ONNX-FP16",
+  "revision": "c5d78730f3493e4fe16d61507ef4b78eef7318cf",
+  "source": "https://github.com/MstyAI/laya-onnx/releases/download/model-c5d78730/",
+  "hashes_verified": true,
+  "environment": {
+    "platform": "Linux-6.18.44-x86_64-with-glibc2.41",
+    "python": "3.12.14",
+    "onnxruntime": "1.24.4",
+    "numpy": "2.3.5",
+    "regex": "2026.2.28",
+    "threads": 2,
+    "provider": "CPUExecutionProvider"
+  },
+  "golden_protocol_checks": [
+    {
+      "case": 0,
+      "question": "department",
+      "tokens": 40,
+      "expected_tokens": 40,
+      "actual": 0,
+      "expected": 0,
+      "passed": true
+    },
+    {
+      "case": 0,
+      "question": "refund",
+      "tokens": 46,
+      "expected_tokens": 46,
+      "actual": 1,
+      "expected": 1,
+      "passed": true
+    },
+    {
+      "case": 0,
+      "question": "urgency",
+      "tokens": 45,
+      "expected_tokens": 45,
+      "actual": 2,
+      "expected": 2,
+      "passed": true
+    },
+    {
+      "case": 1,
+      "question": "difficulty",
+      "tokens": 125,
+      "expected_tokens": 125,
+      "actual": 1,
+      "expected": 1,
+      "passed": true
+    },
+    {
+      "case": 2,
+      "question": "relevant",
+      "tokens": 512,
+      "expected_tokens": 512,
+      "actual": 0,
+      "expected": 0,
+      "passed": true
+    }
+  ],
+  "load_ms": 5288.894519999985,
+  "disk_model_bytes": 849221933,
+  "cpu_seconds": 10.239999999999998,
+  "metrics": {
+    "n": 10,
+    "accuracy": 0.4,
+    "macro_f1": 0.24404761904761904,
+    "per_label": {
+      "accused": {
+        "precision": 1.0,
+        "recall": 0.5,
+        "f1": 0.6666666666666666,
+        "support": 2
+      },
+      "complainant": {
+        "precision": 0,
+        "recall": 0.0,
+        "f1": 0,
+        "support": 1
+      },
+      "homonym": {
+        "precision": 0,
+        "recall": 0.0,
+        "f1": 0,
+        "support": 1
+      },
+      "incidental": {
+        "precision": 0,
+        "recall": 0.0,
+        "f1": 0,
+        "support": 1
+      },
+      "insufficient": {
+        "precision": 0,
+        "recall": 0.0,
+        "f1": 0,
+        "support": 1
+      },
+      "negated": {
+        "precision": 0.16666666666666666,
+        "recall": 1.0,
+        "f1": 0.2857142857142857,
+        "support": 1
+      },
+      "reported_fact": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0,
+        "support": 1
+      },
+      "victim": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "support": 2
+      }
+    },
+    "latency_p50_ms": 436.84423150000384,
+    "latency_p95_ms": 718.0871523000177,
+    "max_observed_rss_mb": 1745.03515625
+  },
+  "limitations": [
+    "Small synthetic hand-labelled challenge set; no claim of real-world accuracy.",
+    "English checkpoint tested directly in Spanish, without translation.",
+    "Golden checks verify five token counts and predicted options, not all possible tokenizer inputs or full probability parity.",
+    "Model distributions are not calibrated risk probabilities for this task.",
+    "No NER, relation or evidence-span quality measured by this phase.",
+    "512 tokens include instructions/options; truncation is surfaced explicitly.",
+    "Model outputs do not contribute to the existing score."
+  ],
+  "results": [
+    {
+      "id": "es_accused",
+      "entity": "Empresa Aurora",
+      "text": "La fiscalía acusó a Empresa Aurora de fraude. La investigación sigue abierta y no existe sentencia.",
+      "expected_role": "accused",
+      "predicted_role": "negated",
+      "correct": false,
+      "latency_ms": 435.8563900000263,
+      "answer": {
+        "probabilities": {
+          "accused": 0.4019208371438914,
+          "reported_fact": 0.05220988689922293,
+          "victim": 0.0028942893813815847,
+          "complainant": 0.01675289624304873,
+          "negated": 0.47081054042074416,
+          "incidental": 0.0071983942739645024,
+          "homonym": 0.0024756230310410137,
+          "insufficient": 0.045737532606705676
+        },
+        "tokens": 151,
+        "truncated": false,
+        "choice": "negated"
+      },
+      "rss_mb": 1730.67578125
+    },
+    {
+      "id": "es_victim",
+      "entity": "Empresa Aurora",
+      "text": "Empresa Aurora fue víctima de un fraude cometido por sus proveedores.",
+      "expected_role": "victim",
+      "predicted_role": "victim",
+      "correct": true,
+      "latency_ms": 407.64087200000176,
+      "answer": {
+        "probabilities": {
+          "accused": 0.06982959542970997,
+          "reported_fact": 0.12963210259720787,
+          "victim": 0.519243928383643,
+          "complainant": 0.24768335369520544,
+          "negated": 0.01303155339657351,
+          "incidental": 0.0059692677256517526,
+          "homonym": 0.0014700248294869623,
+          "insufficient": 0.013140173942521618
+        },
+        "tokens": 142,
+        "truncated": false,
+        "choice": "victim"
+      },
+      "rss_mb": 1732.84765625
+    },
+    {
+      "id": "es_complainant",
+      "entity": "Empresa Aurora",
+      "text": "Empresa Aurora denunció a un proveedor por fraude ante la fiscalía.",
+      "expected_role": "complainant",
+      "predicted_role": "negated",
+      "correct": false,
+      "latency_ms": 399.2531129999861,
+      "answer": {
+        "probabilities": {
+          "accused": 0.12592127676894918,
+          "reported_fact": 0.06395485418544898,
+          "victim": 0.006926206658642472,
+          "complainant": 0.3044343387223618,
+          "negated": 0.4326860267889042,
+          "incidental": 0.028707681653727227,
+          "homonym": 0.003954184146491445,
+          "insufficient": 0.033415431075474705
+        },
+        "tokens": 142,
+        "truncated": false,
+        "choice": "negated"
+      },
+      "rss_mb": 1733.91015625
+    },
+    {
+      "id": "es_negated",
+      "entity": "Empresa Aurora",
+      "text": "El tribunal absolvió a Empresa Aurora: no cometió fraude y no fue responsable.",
+      "expected_role": "negated",
+      "predicted_role": "negated",
+      "correct": true,
+      "latency_ms": 406.2245169999983,
+      "answer": {
+        "probabilities": {
+          "accused": 0.026345787500538585,
+          "reported_fact": 0.004784017890730877,
+          "victim": 0.00032844439942811895,
+          "complainant": 0.0007971734303862132,
+          "negated": 0.9637777321778154,
+          "incidental": 0.0009540889539590468,
+          "homonym": 0.0003938638585204049,
+          "insufficient": 0.002618891788621305
+        },
+        "tokens": 144,
+        "truncated": false,
+        "choice": "negated"
+      },
+      "rss_mb": 1734.16015625
+    },
+    {
+      "id": "es_incidental",
+      "entity": "Empresa Aurora",
+      "text": "La noticia sobre el fraude de Grupo Delta mencionó que Empresa Aurora patrocinó un concierto.",
+      "expected_role": "incidental",
+      "predicted_role": "reported_fact",
+      "correct": false,
+      "latency_ms": 427.2436219999918,
+      "answer": {
+        "probabilities": {
+          "accused": 0.09644088409773495,
+          "reported_fact": 0.6687584645035141,
+          "victim": 0.01520754274412495,
+          "complainant": 0.08832657183062716,
+          "negated": 0.07294004291504039,
+          "incidental": 0.029836457388040007,
+          "homonym": 0.0024693359436665473,
+          "insufficient": 0.026020700577251765
+        },
+        "tokens": 150,
+        "truncated": false,
+        "choice": "reported_fact"
+      },
+      "rss_mb": 1737.28515625
+    },
+    {
+      "id": "es_homonym",
+      "entity": "Empresa Aurora",
+      "text": "Aurora Logistics fue acusada de fraude. Es una entidad distinta de Empresa Aurora y no tienen relación.",
+      "expected_role": "homonym",
+      "predicted_role": "negated",
+      "correct": false,
+      "latency_ms": 592.9933809999852,
+      "answer": {
+        "probabilities": {
+          "accused": 0.1188356003814721,
+          "reported_fact": 0.010353763046931037,
+          "victim": 0.001282121289562757,
+          "complainant": 0.0025848738910535223,
+          "negated": 0.8510405819768239,
+          "incidental": 0.002682597411395678,
+          "homonym": 0.004514457698539103,
+          "insufficient": 0.008706004304221844
+        },
+        "tokens": 153,
+        "truncated": false,
+        "choice": "negated"
+      },
+      "rss_mb": 1738.45703125
+    },
+    {
+      "id": "es_fact",
+      "entity": "Empresa Aurora",
+      "text": "El tribunal condenó a Empresa Aurora por fraude tras comprobar que falsificó facturas.",
+      "expected_role": "reported_fact",
+      "predicted_role": "negated",
+      "correct": false,
+      "latency_ms": 437.8320729999814,
+      "answer": {
+        "probabilities": {
+          "accused": 0.2515353105620019,
+          "reported_fact": 0.2709138714469721,
+          "victim": 0.00549272923786809,
+          "complainant": 0.019096388905396146,
+          "negated": 0.3972665172342009,
+          "incidental": 0.012523801368703739,
+          "homonym": 0.004942929556671353,
+          "insufficient": 0.03822845168818582
+        },
+        "tokens": 146,
+        "truncated": false,
+        "choice": "negated"
+      },
+      "rss_mb": 1740.51953125
+    },
+    {
+      "id": "es_insufficient",
+      "entity": "Empresa Aurora",
+      "text": "Empresa Aurora presentó su nueva identidad visual. No hay más datos disponibles.",
+      "expected_role": "insufficient",
+      "predicted_role": "negated",
+      "correct": false,
+      "latency_ms": 749.6320829999945,
+      "answer": {
+        "probabilities": {
+          "accused": 0.011488314616935938,
+          "reported_fact": 0.017685056956549178,
+          "victim": 0.0025249410138808133,
+          "complainant": 0.003620324095200145,
+          "negated": 0.8248391671632821,
+          "incidental": 0.04457913531954961,
+          "homonym": 0.0019896131631540613,
+          "insufficient": 0.09327344767144814
+        },
+        "tokens": 144,
+        "truncated": false,
+        "choice": "negated"
+      },
+      "rss_mb": 1743.76953125
+    },
+    {
+      "id": "en_accused",
+      "entity": "Aurora Company",
+      "text": "Prosecutors accused Aurora Company of fraud. The investigation remains open and no verdict has been issued.",
+      "expected_role": "accused",
+      "predicted_role": "accused",
+      "correct": true,
+      "latency_ms": 581.3689149999846,
+      "answer": {
+        "probabilities": {
+          "accused": 0.5781878245833293,
+          "reported_fact": 0.16118862670851503,
+          "victim": 0.001484606259573629,
+          "complainant": 0.01371852555595594,
+          "negated": 0.2133308543848942,
+          "incidental": 0.005894584099164571,
+          "homonym": 0.0014389304398165644,
+          "insufficient": 0.02475604796875096
+        },
+        "tokens": 142,
+        "truncated": false,
+        "choice": "accused"
+      },
+      "rss_mb": 1744.97265625
+    },
+    {
+      "id": "en_victim",
+      "entity": "Aurora Company",
+      "text": "Aurora Company was the victim of fraud committed by its suppliers.",
+      "expected_role": "victim",
+      "predicted_role": "victim",
+      "correct": true,
+      "latency_ms": 679.5322370000463,
+      "answer": {
+        "probabilities": {
+          "accused": 0.024029030464776488,
+          "reported_fact": 0.02374474007193998,
+          "victim": 0.8387735370434274,
+          "complainant": 0.05057166954225108,
+          "negated": 0.02953808145950376,
+          "incidental": 0.009737230276330007,
+          "homonym": 0.0009745644675314644,
+          "insufficient": 0.022631146674239676
+        },
+        "tokens": 136,
+        "truncated": false,
+        "choice": "victim"
+      },
+      "rss_mb": 1745.03515625
+    }
+  ],
+  "network_verification": {
+    "python_socket_guard_enabled": false,
+    "native_packet_traffic_measured": false,
+    "note": "Initial gate execution before network guard was added. No network traffic count was measured. See phase2_laya_guarded.json for repeated guarded run."
+  }
+}

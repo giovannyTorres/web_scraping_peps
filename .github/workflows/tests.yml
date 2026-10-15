@@ -18,3 +18,14 @@ jobs:
         with:
           name: benchmark-${{ matrix.os }}-${{ matrix.python }}
           path: runtime/ci-benchmark.json
+  nlp-optional:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -r requirements-nlp.lock.txt
+      - run: python scripts/setup_local_nlp.py --download --install
+      - run: python -m unittest discover -s tests -p test_advanced_nlp.py -v
+      - run: python -m unittest discover -s tests -p test_contextual.py -v

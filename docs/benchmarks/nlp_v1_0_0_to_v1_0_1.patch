@@ -1,0 +1,69 @@
+--- a/peps/advanced_nlp.py
++++ b/peps/advanced_nlp.py
+@@ -19,7 +19,7 @@
+ from .nlp import _fold, _mentions
+ 
+ MODEL_NAME = "es_core_news_sm"
+-MODEL_VERSION = "es-spacy-dependency-1.0.0"
++MODEL_VERSION = "es-spacy-dependency-1.0.1"
+ MODEL_WHEEL_SHA256 = "e451a83d6df79b87e9eed0cb553f03e99e36a3bab18a7b79f0dcfd1fdf875e12"
+ CONFIG = {"max_chars": 80000, "max_findings": 80, "max_dependency_hops": 4,
+           "model": MODEL_NAME, "model_version": "3.8.0", "spacy_version": "3.8.11"}
+@@ -131,6 +131,25 @@
+         _lemma(c) == "ser" and c.dep_.startswith("aux") for c in predicate.children)
+ 
+ 
++def _unresolved_negation_scope(predicate) -> str | None:
++    """Negated acquittal or denial is neither a resolution nor a new allegation.
++
++    Include a finite complement ("No se descartó que X cometiera ...") without
++    donating negation across unrelated coordinated clauses. This deliberately
++    abstains instead of applying classical double-negation to reported speech.
++    """
++    cursor = predicate
++    for _ in range(CONFIG["max_dependency_hops"]):
++        lemma = _lemma(cursor)
++        if _negated(cursor) and lemma in RESOLUTION | DENIAL:
++            return ("negated_resolution_does_not_establish_adverse_fact" if lemma in RESOLUTION
++                    else "negated_denial_does_not_establish_adverse_fact")
++        if cursor.dep_ not in {"ccomp", "csubj", "xcomp", "acl"} or cursor.head == cursor:
++            break
++        cursor = cursor.head
++    return None
++
++
+ def _classify(target, sentence) -> tuple[str, list[dict[str, Any]]]:
+     candidates = []
+     for predicate in sentence:
+@@ -145,8 +164,11 @@
+         subject = edge.dep_.startswith("nsubj")
+         argument = edge.dep_ in {"obj", "iobj", "obl", "nsubj", "nsubj:pass"}
+         passive = _passive(predicate)
++        unresolved_negation = _unresolved_negation_scope(predicate)
+         role, status = "insufficient", "unresolved_dependency"
+-        if indirect:
++        if unresolved_negation:
++            role, status = "insufficient", unresolved_negation
++        elif indirect:
+             role, status = "indirect", "third_party_event"
+         elif not argument:
+             continue
+@@ -175,7 +197,7 @@
+                 status = "reported_judicial_outcome" if lemma in {"condenar", "sentenciar", "sancionar"} else "reported_allegation_not_proven"
+         elif lemma in EVENT_NOUNS and any(_lemma(c) in {"contra"} for c in target.children):
+             role, status = "accused", "reported_allegation_not_proven"
+-        if role != "insufficient" or status == "hypothetical_event":
++        if role != "insufficient" or status == "hypothetical_event" or unresolved_negation:
+             candidates.append({"role": role, "status": status, "event": _token_span(predicate),
+                 "dependency_path": [{**_token_span(t), "dependency": t.dep_} for t in path],
+                 "argument": edge.dep_, "passive": passive, "negated": _negated(predicate),
+@@ -263,6 +285,9 @@
+         role = "insufficient"
+     if len(competing) > 1:
+         warnings.append("Papeles distintos entre fragmentos; posible contradicción o cambio temporal sin resolver.")
++    if any(event["status"] in {"negated_resolution_does_not_establish_adverse_fact",
++            "negated_denial_does_not_establish_adverse_fact"} for event in events):
++        warnings.append("Negación de una resolución o de una negativa: se requiere revisión; no acredita absolución ni constituye un nuevo hecho adverso.")
+     if truncated and not base["truncated"]:
+         warnings.append("Presupuesto de texto/menciones excedido: análisis parcial; revise la nota completa.")
+     if not findings:

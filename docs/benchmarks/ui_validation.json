@@ -1,0 +1,36 @@
+{
+  "kind": "synthetic_offline_browser_validation",
+  "processed_at": "2026-10-15T08:56:53.639727+00:00",
+  "browser": "Chromium",
+  "playwright_version": "1.62.0",
+  "fixtures": "210 synthetic documents, 3 synthetic entities; no real notes",
+  "checks": {
+    "actual_score_and_scale": true,
+    "real_factors_and_nonadditive_delta": true,
+    "unicode_exact_citation_after_1800_chars": true,
+    "citation_loads_evidence_beyond_200_notes": true,
+    "xss_rendered_as_plain_text": true,
+    "auxiliary_separate_from_factors": true,
+    "replay_matches": true,
+    "desktop_explanation_heading_visible": true,
+    "current_review_creates_new_evaluation": true,
+    "historical_notes_readonly": true,
+    "return_to_current": true,
+    "stale_review_rejected_without_overwriting": true,
+    "zero_is_insufficient_not_risk_absence": true,
+    "unicode_astral_offsets": true,
+    "entity_selection_race_does_not_replace_latest": true,
+    "mobile_no_horizontal_page_overflow": true,
+    "no_external_requests": true,
+    "no_browser_errors": true
+  },
+  "screenshots": [
+    "runtime/ui-validation/desktop-citation.png",
+    "runtime/ui-validation/desktop-explanation.png",
+    "runtime/ui-validation/mobile.png"
+  ],
+  "browser_version": "154.0.8037.57",
+  "entity_open_latency_ms": 283.79673199970057,
+  "page_errors": [],
+  "passed": true
+}

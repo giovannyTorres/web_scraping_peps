@@ -1,0 +1,2553 @@
+{
+  "phase": 4,
+  "completed_at": "2026-10-15T08:36:56.969877+00:00",
+  "model": "Laya-English-421M-ONNX-FP16",
+  "revision": "c5d78730f3493e4fe16d61507ef4b78eef7318cf",
+  "source": "https://github.com/MstyAI/laya-onnx/releases/download/model-c5d78730/",
+  "hashes_verified": true,
+  "experiment_code_sha256": "7b676494060e970b449e81bede5c21fd49cde7154f93e6dfea9796d47df58c22",
+  "network_verification": {
+    "python_socket_guard_enabled": true,
+    "blocked_python_socket_attempts": 0,
+    "onnxruntime_native_telemetry_disabled": true,
+    "method": "Python socket connect/connect_ex/create_connection/getaddrinfo blocked during model load and all predictions; native library packet traffic not measured"
+  },
+  "privacy": {
+    "original_text_included": false,
+    "corpus_file": "tests/data/context_challenge.jsonl",
+    "notice": "Keep outputs local when using private cases. Default outputs contain case identifiers, text hashes and predictions, without original notes."
+  },
+  "environment": {
+    "platform": "Linux-6.18.44-x86_64-with-glibc2.41",
+    "python": "3.12.14",
+    "onnxruntime": "1.24.4",
+    "numpy": "2.3.5",
+    "regex": "2026.2.28",
+    "psutil": "7.2.2",
+    "threads": 2,
+    "provider": "CPUExecutionProvider",
+    "initial_rss_mb": 45.14453125
+  },
+  "protocol": {
+    "context_tokens": 512,
+    "prompt": {
+      "role": {
+        "type": "choice",
+        "instructions": "What role does {entity_name} have in this report? Select the most specific role supported by the text.",
+        "criteria": {
+          "accused": "Target is accused, investigated or convicted of wrongdoing; a conviction is a reported judicial outcome",
+          "victim": "Target suffered wrongdoing committed by others",
+          "complainant": "Target reported or denounced wrongdoing by others",
+          "incidental": "Target is mentioned without involvement in the reported wrongdoing",
+          "negated": "The target denies wrongdoing or the text explicitly negates the allegation",
+          "resolved": "The case against the target was dismissed or target was acquitted by an authority",
+          "insufficient": "No target mention, ambiguity, hypothetical allegations or contradictory roles prevent identifying a role",
+          "indirect": "Target has only an indirect relationship to another entity involved in wrongdoing"
+        }
+      }
+    },
+    "abstain_threshold": 0.65,
+    "abstain_rule": "truncated or max option probability below threshold; experimental, uncalibrated",
+    "corpus_sha256": "8425c256e6dcc97a1664577b6aa593b09a75123fc28adf6f07cc20f16e36816a"
+  },
+  "golden_protocol_checks": [
+    {
+      "case": 0,
+      "question": "department",
+      "tokens": 40,
+      "expected_tokens": 40,
+      "actual": 0,
+      "expected": 0,
+      "passed": true
+    },
+    {
+      "case": 0,
+      "question": "refund",
+      "tokens": 46,
+      "expected_tokens": 46,
+      "actual": 1,
+      "expected": 1,
+      "passed": true
+    },
+    {
+      "case": 0,
+      "question": "urgency",
+      "tokens": 45,
+      "expected_tokens": 45,
+      "actual": 2,
+      "expected": 2,
+      "passed": true
+    },
+    {
+      "case": 1,
+      "question": "difficulty",
+      "tokens": 125,
+      "expected_tokens": 125,
+      "actual": 1,
+      "expected": 1,
+      "passed": true
+    },
+    {
+      "case": 2,
+      "question": "relevant",
+      "tokens": 512,
+      "expected_tokens": 512,
+      "actual": 0,
+      "expected": 0,
+      "passed": true
+    }
+  ],
+  "load_ms": 2839.8179129999335,
+  "disk_model_bytes": 849221933,
+  "cpu_seconds": 125.27000000000001,
+  "metrics": {
+    "n": 72,
+    "accuracy": 0.3194444444444444,
+    "macro_f1": 0.2363296081031882,
+    "per_label": {
+      "accused": {
+        "precision": 0.5,
+        "recall": 0.4444444444444444,
+        "f1": 0.47058823529411764,
+        "support": 9
+      },
+      "complainant": {
+        "precision": 1.0,
+        "recall": 0.1111111111111111,
+        "f1": 0.19999999999999998,
+        "support": 9
+      },
+      "incidental": {
+        "precision": 0,
+        "recall": 0.0,
+        "f1": 0,
+        "support": 9
+      },
+      "indirect": {
+        "precision": 0,
+        "recall": 0.0,
+        "f1": 0,
+        "support": 9
+      },
+      "insufficient": {
+        "precision": 0,
+        "recall": 0.0,
+        "f1": 0,
+        "support": 9
+      },
+      "negated": {
+        "precision": 0.1794871794871795,
+        "recall": 0.7777777777777778,
+        "f1": 0.29166666666666663,
+        "support": 9
+      },
+      "resolved": {
+        "precision": 0.45,
+        "recall": 1.0,
+        "f1": 0.6206896551724138,
+        "support": 9
+      },
+      "victim": {
+        "precision": 0.5,
+        "recall": 0.2222222222222222,
+        "f1": 0.30769230769230765,
+        "support": 9
+      }
+    },
+    "latency_p50_ms": 780.2054554999813,
+    "latency_p95_ms": 1129.1010472999915,
+    "max_observed_rss_mb": 1831.2890625,
+    "rss_measurement": "current fresh process sampled after each note, not peak allocation or historical ru_maxrss",
+    "abstained": 56,
+    "truncated": 1
+  },
+  "limitations": [
+    "Small synthetic hand-labelled challenge set; no claim of real-world accuracy.",
+    "English checkpoint tested directly in Spanish, without translation.",
+    "Golden checks verify five token counts and predicted options, not all possible tokenizer inputs or full probability parity.",
+    "Model distributions are not calibrated risk probabilities for this task.",
+    "No NER, relation or evidence-span quality measured by this phase.",
+    "512 tokens include instructions/options; truncation is surfaced explicitly.",
+    "Model outputs do not contribute to the existing score."
+  ],
+  "predictions": [
+    {
+      "id": "challenge-a01",
+      "role": "accused",
+      "latency_ms": 669.6941700000707,
+      "abstained": true,
+      "truncated": false
+    },
+    {
+      "id": "challenge-a02",
+      "role": "accused",
+      "latency_ms": 693.2621529999778,
+      "abstained": true,
+      "truncated": false
+    },
+    {
+      "id": "challenge-a03",
+      "role": "accused",
+      "latency_ms": 721.8224239999245,
+      "abstained": true,
+      "truncated": false
+    },
+    {
+      "id": "challenge-a04",
+      "role": "negated",
+      "latency_ms": 690.5297649999511,
+      "abstained": false,
+      "truncated": false
+    },
+    {
+      "id": "challenge-a05",
+      "role": "negated",
+      "latency_ms": 711.8918540001005,
+      "abstained": true,
+      "truncated": false
+    },
+    {
+      "id": "challenge-a06",
+      "role": "negated",
+      "latency_ms": 707.4462159999939,
+      "abstained": false,
+      "truncated": false
+    },
+    {
+      "id": "challenge-a07",
+      "role": "resolved",
+      "latency_ms": 717.3461620000126,
+      "abstained": true,
+      "truncated": false
+    },
+    {
+      "id": "challenge-a08",
+      "role": "negated",
+      "latency_ms": 760.8913589999702,
+      "abstained": true,
+      "truncated": false
+    },
+    {
+      "id": "challenge-a09",
+      "role": "accused",
+      "latency_ms": 685.2844779999714,
+      "abstained": false,
+      "truncated": false
+    },
+    {
+      "id": "challenge-v01",
+      "role": "negated",
+      "latency_ms": 677.0121320000726,
+      "abstained": true,
+      "truncated": false
+    },
+    {
+      "id": "challenge-v02",
+      "role": "negated",
+      "latency_ms": 653.1125139999858,
+      "abstained": true,
+      "truncated": false
+    },
+    {
+      "id": "challenge-v03",
+      "role": "victim",
+      "latency_ms": 738.8322470000048,
+      "abstained": false,
+      "truncated": false
+    },
+    {
+      "id": "challenge-v04",
+      "role": "accused",
+      "latency_ms": 723.0365339999025,
+      "abstained": false,
+      "truncated": false
+    },
+    {
+      "id": "challenge-v05",
+      "role": "resolved",
+      "latency_ms": 798.3800370000154,
+      "abstained": true,
+      "truncated": false
+    },
+    {
+      "id": "challenge-v06",
+      "role": "negated",
+      "latency_ms": 733.2396750000498,
+      "abstained": false,
+      "truncated": false
+    },
+    {
+      "id": "challenge-v07",
+      "role": "resolved",
+      "latency_ms": 856.4767410000513,
+      "abstained": true,
+      "truncated": false
+    },
+    {
+      "id": "challenge-v08",
+      "role": "victim",
+      "latency_ms": 902.1414869999944,
+      "abstained": true,
+      "truncated": false
+    },
+    {
+      "id": "challenge-v09",
+      "role": "resolved",
+      "latency_ms": 1099.4967029999998,
+      "abstained": true,
+      "truncated": false
+    },
+    {
+      "id": "challenge-c01",
+      "role": "complainant",
+      "latency_ms": 972.6658829999906,
+      "abstained": true,
+      "truncated": false
+    },
+    {
+      "id": "challenge-c02",
+      "role": "resolved",
+      "latency_ms": 1107.3959099999229,
+      "abstained": true,
+      "truncated": false
+    },
+    {
+      "id": "challenge-c03",
+      "role": "victim",
+      "latency_ms": 939.2494209999995,
+      "abstained": true,
+      "truncated": false
+    },
+    {
+      "id": "challenge-c04",
+      "role": "negated",
+      "latency_ms": 996.4900279999256,
+      "abstained": true,
+      "truncated": false
+    },
+    {
+      "id": "challenge-c05",
+      "role": "resolved",
+      "latency_ms": 688.5745639999641,
+      "abstained": true,
+      "truncated": false
+    },
+    {
+      "id": "challenge-c06",
+      "role": "negated",
+      "latency_ms": 755.8767630000602,
+      "abstained": true,
+      "truncated": false
+    },
+    {
+      "id": "challenge-c07",
+      "role": "negated",
+      "latency_ms": 722.0865769999136,
+      "abstained": true,
+      "truncated": false
+    },
+    {
+      "id": "challenge-c08",
+      "role": "resolved",
+      "latency_ms": 679.6473829999741,
+      "abstained": true,
+      "truncated": false
+    },
+    {
+      "id": "challenge-c09",
+      "role": "negated",
+      "latency_ms": 1272.9196469999806,
+      "abstained": true,
+      "truncated": false
+    },
+    {
+      "id": "challenge-i01",
+      "role": "negated",
+      "latency_ms": 1097.4430299999085,
+      "abstained": false,
+      "truncated": false
+    },
+    {
+      "id": "challenge-i02",
+      "role": "resolved",
+      "latency_ms": 695.1170840000032,
+      "abstained": true,
+      "truncated": false
+    },
+    {
+      "id": "challenge-i03",
+      "role": "negated",
+      "latency_ms": 767.0769589999509,
+      "abstained": true,
+      "truncated": false
+    },
+    {
+      "id": "challenge-i04",
+      "role": "negated",
+      "latency_ms": 976.74792600003,
+      "abstained": false,
+      "truncated": false
+    },
+    {
+      "id": "challenge-i05",
+      "role": "negated",
+      "latency_ms": 818.2696860000078,
+      "abstained": true,
+      "truncated": false
+    },
+    {
+      "id": "challenge-i06",
+      "role": "negated",
+      "latency_ms": 1047.5433599999633,
+      "abstained": true,
+      "truncated": false
+    },
+    {
+      "id": "challenge-i07",
+      "role": "resolved",
+      "latency_ms": 1102.186637999921,
+      "abstained": true,
+      "truncated": false
+    },
+    {
+      "id": "challenge-i08",
+      "role": "negated",
+      "latency_ms": 1131.336540999996,
+      "abstained": true,
+      "truncated": false
+    },
+    {
+      "id": "challenge-i09",
+      "role": "negated",
+      "latency_ms": 765.5798100000766,
+      "abstained": true,
+      "truncated": false
+    },
+    {
+      "id": "challenge-n01",
+      "role": "negated",
+      "latency_ms": 701.5106490000562,
+      "abstained": true,
+      "truncated": false
+    },
+    {
+      "id": "challenge-n02",
+      "role": "negated",
+      "latency_ms": 693.1655360000377,
+      "abstained": false,
+      "truncated": false
+    },
+    {
+      "id": "challenge-n03",
+      "role": "negated",
+      "latency_ms": 691.908438999917,
+      "abstained": true,
+      "truncated": false
+    },
+    {
+      "id": "challenge-n04",
+      "role": "accused",
+      "latency_ms": 703.2838989999846,
+      "abstained": true,
+      "truncated": false
+    },
+    {
+      "id": "challenge-n05",
+      "role": "negated",
+      "latency_ms": 842.4720869999192,
+      "abstained": true,
+      "truncated": false
+    },
+    {
+      "id": "challenge-n06",
+      "role": "negated",
+      "latency_ms": 1166.6752339999675,
+      "abstained": true,
+      "truncated": false
+    },
+    {
+      "id": "challenge-n07",
+      "role": "resolved",
+      "latency_ms": 955.9970440000143,
+      "abstained": true,
+      "truncated": false
+    },
+    {
+      "id": "challenge-n08",
+      "role": "negated",
+      "latency_ms": 1015.1565940000182,
+      "abstained": false,
+      "truncated": false
+    },
+    {
+      "id": "challenge-n09",
+      "role": "negated",
+      "latency_ms": 907.1477200000118,
+      "abstained": false,
+      "truncated": false
+    },
+    {
+      "id": "challenge-r01",
+      "role": "resolved",
+      "latency_ms": 806.5602650000301,
+      "abstained": false,
+      "truncated": false
+    },
+    {
+      "id": "challenge-r02",
+      "role": "resolved",
+      "latency_ms": 740.425125999991,
+      "abstained": true,
+      "truncated": false
+    },
+    {
+      "id": "challenge-r03",
+      "role": "resolved",
+      "latency_ms": 726.9781779999676,
+      "abstained": true,
+      "truncated": false
+    },
+    {
+      "id": "challenge-r04",
+      "role": "resolved",
+      "latency_ms": 766.0033930000054,
+      "abstained": false,
+      "truncated": false
+    },
+    {
+      "id": "challenge-r05",
+      "role": "resolved",
+      "latency_ms": 910.4094719999694,
+      "abstained": true,
+      "truncated": false
+    },
+    {
+      "id": "challenge-r06",
+      "role": "resolved",
+      "latency_ms": 760.9677340000189,
+      "abstained": true,
+      "truncated": false
+    },
+    {
+      "id": "challenge-r07",
+      "role": "resolved",
+      "latency_ms": 754.1041759999416,
+      "abstained": true,
+      "truncated": false
+    },
+    {
+      "id": "challenge-r08",
+      "role": "resolved",
+      "latency_ms": 746.6044889999921,
+      "abstained": false,
+      "truncated": false
+    },
+    {
+      "id": "challenge-r09",
+      "role": "resolved",
+      "latency_ms": 774.8065060000044,
+      "abstained": true,
+      "truncated": false
+    },
+    {
+      "id": "challenge-u01",
+      "role": "resolved",
+      "latency_ms": 785.6044049999582,
+      "abstained": true,
+      "truncated": false
+    },
+    {
+      "id": "challenge-u02",
+      "role": "negated",
+      "latency_ms": 963.7856889999057,
+      "abstained": true,
+      "truncated": false
+    },
+    {
+      "id": "challenge-u03",
+      "role": "negated",
+      "latency_ms": 1116.6157110000086,
+      "abstained": true,
+      "truncated": false
+    },
+    {
+      "id": "challenge-u04",
+      "role": "negated",
+      "latency_ms": 876.7073029999892,
+      "abstained": true,
+      "truncated": false
+    },
+    {
+      "id": "challenge-u05",
+      "role": "victim",
+      "latency_ms": 989.8699679999936,
+      "abstained": true,
+      "truncated": false
+    },
+    {
+      "id": "challenge-u06",
+      "role": "negated",
+      "latency_ms": 963.7419509999745,
+      "abstained": true,
+      "truncated": false
+    },
+    {
+      "id": "challenge-u07",
+      "role": "negated",
+      "latency_ms": 1127.2720069999878,
+      "abstained": true,
+      "truncated": false
+    },
+    {
+      "id": "challenge-u08",
+      "role": "negated",
+      "latency_ms": 1035.049602000072,
+      "abstained": false,
+      "truncated": false
+    },
+    {
+      "id": "challenge-u09",
+      "role": "negated",
+      "latency_ms": 1013.3005650000086,
+      "abstained": true,
+      "truncated": false
+    },
+    {
+      "id": "challenge-d01",
+      "role": "negated",
+      "latency_ms": 666.9817440000543,
+      "abstained": true,
+      "truncated": false
+    },
+    {
+      "id": "challenge-d02",
+      "role": "negated",
+      "latency_ms": 733.484212999997,
+      "abstained": true,
+      "truncated": false
+    },
+    {
+      "id": "challenge-d03",
+      "role": "negated",
+      "latency_ms": 720.9153500000411,
+      "abstained": true,
+      "truncated": false
+    },
+    {
+      "id": "challenge-d04",
+      "role": "negated",
+      "latency_ms": 767.5041580000652,
+      "abstained": true,
+      "truncated": false
+    },
+    {
+      "id": "challenge-d05",
+      "role": "negated",
+      "latency_ms": 804.7955480000155,
+      "abstained": true,
+      "truncated": false
+    },
+    {
+      "id": "challenge-d06",
+      "role": "accused",
+      "latency_ms": 897.062136000045,
+      "abstained": true,
+      "truncated": false
+    },
+    {
+      "id": "challenge-d07",
+      "role": "accused",
+      "latency_ms": 1040.2933880000091,
+      "abstained": false,
+      "truncated": false
+    },
+    {
+      "id": "challenge-d08",
+      "role": "negated",
+      "latency_ms": 1034.855728000025,
+      "abstained": true,
+      "truncated": false
+    },
+    {
+      "id": "challenge-d09",
+      "role": "negated",
+      "latency_ms": 2380.35932899993,
+      "abstained": true,
+      "truncated": true
+    }
+  ],
+  "results": [
+    {
+      "id": "challenge-a01",
+      "expected_role": "accused",
+      "text_sha256": "536eb196e728313abbcdd4584f151ca51cc7207a1f4d54a64dcca6e7251660fb",
+      "entity_id": "fictional-challenge-a01",
+      "predicted_role": "accused",
+      "correct": true,
+      "abstained": true,
+      "latency_ms": 669.6941700000707,
+      "answer": {
+        "probabilities": {
+          "accused": 0.5058628175485916,
+          "victim": 0.0062941228721973864,
+          "complainant": 0.006257351662349988,
+          "incidental": 0.015854126265593026,
+          "negated": 0.17363346204075467,
+          "resolved": 0.23433377116716383,
+          "insufficient": 0.030417886154916696,
+          "indirect": 0.02734646228843279
+        },
+        "tokens": 234,
+        "truncated": false,
+        "choice": "accused"
+      },
+      "rss_mb": 1790.22265625
+    },
+    {
+      "id": "challenge-a02",
+      "expected_role": "accused",
+      "text_sha256": "a587964e8a87754cc6e27eedf87ba7852f61926680706a2b6ca9edd999b23a40",
+      "entity_id": "fictional-challenge-a02",
+      "predicted_role": "accused",
+      "correct": true,
+      "abstained": true,
+      "latency_ms": 693.2621529999778,
+      "answer": {
+        "probabilities": {
+          "accused": 0.5862044084274656,
+          "victim": 0.007222880813959394,
+          "complainant": 0.006166018077553646,
+          "incidental": 0.017582220815343056,
+          "negated": 0.12827307503046717,
+          "resolved": 0.1986718470378399,
+          "insufficient": 0.03500020286135916,
+          "indirect": 0.02087934693601213
+        },
+        "tokens": 244,
+        "truncated": false,
+        "choice": "accused"
+      },
+      "rss_mb": 1792.66015625
+    },
+    {
+      "id": "challenge-a03",
+      "expected_role": "accused",
+      "text_sha256": "b0fbdacf06164d753d14498e66a74e0afefbe4a7e627e82f3afe879c721a71de",
+      "entity_id": "fictional-challenge-a03",
+      "predicted_role": "accused",
+      "correct": true,
+      "abstained": true,
+      "latency_ms": 721.8224239999245,
+      "answer": {
+        "probabilities": {
+          "accused": 0.3475575724599542,
+          "victim": 0.012759744087434651,
+          "complainant": 0.012734847428054552,
+          "incidental": 0.03587247324393352,
+          "negated": 0.18567301495018734,
+          "resolved": 0.31522151872657683,
+          "insufficient": 0.03627760214622704,
+          "indirect": 0.053903226957631764
+        },
+        "tokens": 248,
+        "truncated": false,
+        "choice": "accused"
+      },
+      "rss_mb": 1796.40234375
+    },
+    {
+      "id": "challenge-a04",
+      "expected_role": "accused",
+      "text_sha256": "3d3ce0af5f42e1ed9dc3675186b66c01476a905f3c4afaab626445ee97240120",
+      "entity_id": "fictional-challenge-a04",
+      "predicted_role": "negated",
+      "correct": false,
+      "abstained": false,
+      "latency_ms": 690.5297649999511,
+      "answer": {
+        "probabilities": {
+          "accused": 0.11733276845735255,
+          "victim": 0.016633716753072545,
+          "complainant": 0.012506894298506733,
+          "incidental": 0.00919956315058418,
+          "negated": 0.6666673633451353,
+          "resolved": 0.13690790880827472,
+          "insufficient": 0.019456234554322827,
+          "indirect": 0.02129555063275111
+        },
+        "tokens": 241,
+        "truncated": false,
+        "choice": "negated"
+      },
+      "rss_mb": 1798.65234375
+    },
+    {
+      "id": "challenge-a05",
+      "expected_role": "accused",
+      "text_sha256": "0503b5b3635a4139f573dbb044a6692aed55f2b0f63814310878572eda59bd5f",
+      "entity_id": "fictional-challenge-a05",
+      "predicted_role": "negated",
+      "correct": false,
+      "abstained": true,
+      "latency_ms": 711.8918540001005,
+      "answer": {
+        "probabilities": {
+          "accused": 0.055669725808469246,
+          "victim": 0.01803837114489428,
+          "complainant": 0.019295713319214463,
+          "incidental": 0.0420029901099367,
+          "negated": 0.440220080754692,
+          "resolved": 0.30852771313930427,
+          "insufficient": 0.06842457434978845,
+          "indirect": 0.047820831373700544
+        },
+        "tokens": 248,
+        "truncated": false,
+        "choice": "negated"
+      },
+      "rss_mb": 1800.2109375
+    },
+    {
+      "id": "challenge-a06",
+      "expected_role": "accused",
+      "text_sha256": "17f2e3ab43111158768ffa3a1943c0b268dc6516d3feb15114cef2f601f69256",
+      "entity_id": "fictional-challenge-a06",
+      "predicted_role": "negated",
+      "correct": false,
+      "abstained": false,
+      "latency_ms": 707.4462159999939,
+      "answer": {
+        "probabilities": {
+          "accused": 0.020208896099807486,
+          "victim": 0.016916158391287083,
+          "complainant": 0.00864846183236005,
+          "incidental": 0.011241186016143302,
+          "negated": 0.661312690556957,
+          "resolved": 0.25446512728475223,
+          "insufficient": 0.012614121045973996,
+          "indirect": 0.014593358772718853
+        },
+        "tokens": 244,
+        "truncated": false,
+        "choice": "negated"
+      },
+      "rss_mb": 1802.4609375
+    },
+    {
+      "id": "challenge-a07",
+      "expected_role": "accused",
+      "text_sha256": "ca573605163b50b8b406e2b9e6b13efdd51ff9dee63c22f568772c987a299304",
+      "entity_id": "fictional-challenge-a07",
+      "predicted_role": "resolved",
+      "correct": false,
+      "abstained": true,
+      "latency_ms": 717.3461620000126,
+      "answer": {
+        "probabilities": {
+          "accused": 0.22321894259843292,
+          "victim": 0.01769066393328338,
+          "complainant": 0.009827216544337818,
+          "incidental": 0.028630561133498763,
+          "negated": 0.2883019630385727,
+          "resolved": 0.32989416865571713,
+          "insufficient": 0.04780651380768372,
+          "indirect": 0.05462997028847354
+        },
+        "tokens": 242,
+        "truncated": false,
+        "choice": "resolved"
+      },
+      "rss_mb": 1805.01953125
+    },
+    {
+      "id": "challenge-a08",
+      "expected_role": "accused",
+      "text_sha256": "60414aeae17a4ff58251dd7fef7f822058e37553c685713dc72c9a07dc04acde",
+      "entity_id": "fictional-challenge-a08",
+      "predicted_role": "negated",
+      "correct": false,
+      "abstained": true,
+      "latency_ms": 760.8913589999702,
+      "answer": {
+        "probabilities": {
+          "accused": 0.03166867323189658,
+          "victim": 0.0051121824751032005,
+          "complainant": 0.004381240849299758,
+          "incidental": 0.0757829039640813,
+          "negated": 0.5805484477432059,
+          "resolved": 0.18108248849852843,
+          "insufficient": 0.05198345928330232,
+          "indirect": 0.0694406039545825
+        },
+        "tokens": 262,
+        "truncated": false,
+        "choice": "negated"
+      },
+      "rss_mb": 1807.0859375
+    },
+    {
+      "id": "challenge-a09",
+      "expected_role": "accused",
+      "text_sha256": "ae300a8edc687311b723bef4c4a83d6506af9495cf44551a79cbbf71587a3420",
+      "entity_id": "fictional-olmo-27",
+      "predicted_role": "accused",
+      "correct": true,
+      "abstained": false,
+      "latency_ms": 685.2844779999714,
+      "answer": {
+        "probabilities": {
+          "accused": 0.8128533860352171,
+          "victim": 0.003502130492458427,
+          "complainant": 0.0028977117509668207,
+          "incidental": 0.014969056692232294,
+          "negated": 0.02424366322393328,
+          "resolved": 0.10830569231033285,
+          "insufficient": 0.0136095513185446,
+          "indirect": 0.01961880817631478
+        },
+        "tokens": 246,
+        "truncated": false,
+        "choice": "accused"
+      },
+      "rss_mb": 1808.7734375
+    },
+    {
+      "id": "challenge-v01",
+      "expected_role": "victim",
+      "text_sha256": "8809d746b2216c2e0f8eb7b7d6878c725dfc1753b5e1212df903f29c9e6564e2",
+      "entity_id": "fictional-challenge-v01",
+      "predicted_role": "negated",
+      "correct": false,
+      "abstained": true,
+      "latency_ms": 677.0121320000726,
+      "answer": {
+        "probabilities": {
+          "accused": 0.18755758102967005,
+          "victim": 0.30413651725095925,
+          "complainant": 0.022027114065706687,
+          "incidental": 0.00917567182356204,
+          "negated": 0.31873209658711676,
+          "resolved": 0.09664171424987583,
+          "insufficient": 0.026106735156115796,
+          "indirect": 0.03562256983699347
+        },
+        "tokens": 241,
+        "truncated": false,
+        "choice": "negated"
+      },
+      "rss_mb": 1808.8359375
+    },
+    {
+      "id": "challenge-v02",
+      "expected_role": "victim",
+      "text_sha256": "5493be5fe6ef8f527336a3388cb5d7c56b149c3748d67b8021fcb58a25ba1b4a",
+      "entity_id": "fictional-challenge-v02",
+      "predicted_role": "negated",
+      "correct": false,
+      "abstained": true,
+      "latency_ms": 653.1125139999858,
+      "answer": {
+        "probabilities": {
+          "accused": 0.23315893774707921,
+          "victim": 0.22183113946478444,
+          "complainant": 0.016792001862788012,
+          "incidental": 0.023177064929146965,
+          "negated": 0.29073726302014075,
+          "resolved": 0.1010189211286365,
+          "insufficient": 0.06206951784489693,
+          "indirect": 0.051215154002527116
+        },
+        "tokens": 234,
+        "truncated": false,
+        "choice": "negated"
+      },
+      "rss_mb": 1811.2109375
+    },
+    {
+      "id": "challenge-v03",
+      "expected_role": "victim",
+      "text_sha256": "1d2793d5a6647633e6fda4023f409b5446730f32b25992ff956dd49b3e4937ac",
+      "entity_id": "fictional-challenge-v03",
+      "predicted_role": "victim",
+      "correct": true,
+      "abstained": false,
+      "latency_ms": 738.8322470000048,
+      "answer": {
+        "probabilities": {
+          "accused": 0.020826282238349727,
+          "victim": 0.9588598145541665,
+          "complainant": 0.005638374695769532,
+          "incidental": 0.0021018020352478036,
+          "negated": 0.001761278698878555,
+          "resolved": 0.005338310496661204,
+          "insufficient": 0.0021432557022269443,
+          "indirect": 0.003330881578699803
+        },
+        "tokens": 241,
+        "truncated": false,
+        "choice": "victim"
+      },
+      "rss_mb": 1811.4609375
+    },
+    {
+      "id": "challenge-v04",
+      "expected_role": "victim",
+      "text_sha256": "da2831f0793551beaea7662d4ca7b58eca45db1a994d440c6a72464c1b36b0b4",
+      "entity_id": "fictional-challenge-v04",
+      "predicted_role": "accused",
+      "correct": false,
+      "abstained": false,
+      "latency_ms": 723.0365339999025,
+      "answer": {
+        "probabilities": {
+          "accused": 0.9085483187001574,
+          "victim": 0.006600341992878638,
+          "complainant": 0.001781707038223611,
+          "incidental": 0.004972500487874511,
+          "negated": 0.015975019370846083,
+          "resolved": 0.04457831054372246,
+          "insufficient": 0.011042613498349335,
+          "indirect": 0.006501188367947912
+        },
+        "tokens": 252,
+        "truncated": false,
+        "choice": "accused"
+      },
+      "rss_mb": 1811.76953125
+    },
+    {
+      "id": "challenge-v05",
+      "expected_role": "victim",
+      "text_sha256": "8fc2a56a387e7d2e44d344101197c6f931e5ccaefed0de85e4af53e1d599ed4c",
+      "entity_id": "fictional-challenge-v05",
+      "predicted_role": "resolved",
+      "correct": false,
+      "abstained": true,
+      "latency_ms": 798.3800370000154,
+      "answer": {
+        "probabilities": {
+          "accused": 0.0786619148165341,
+          "victim": 0.19949883902048657,
+          "complainant": 0.0075861863194426095,
+          "incidental": 0.021265252027279528,
+          "negated": 0.139001680164769,
+          "resolved": 0.4956897548253173,
+          "insufficient": 0.02583927213247337,
+          "indirect": 0.032457100693697505
+        },
+        "tokens": 247,
+        "truncated": false,
+        "choice": "resolved"
+      },
+      "rss_mb": 1815.1484375
+    },
+    {
+      "id": "challenge-v06",
+      "expected_role": "victim",
+      "text_sha256": "785b2380e72f73d4879c91a10ecb6127d59b61372752707486417a062af68531",
+      "entity_id": "fictional-challenge-v06",
+      "predicted_role": "negated",
+      "correct": false,
+      "abstained": false,
+      "latency_ms": 733.2396750000498,
+      "answer": {
+        "probabilities": {
+          "accused": 0.05535796074703677,
+          "victim": 0.012525418395992888,
+          "complainant": 0.005734625442722898,
+          "incidental": 0.024049001034061383,
+          "negated": 0.6589105875406902,
+          "resolved": 0.16774508493331186,
+          "insufficient": 0.03248004182889,
+          "indirect": 0.04319728007729383
+        },
+        "tokens": 251,
+        "truncated": false,
+        "choice": "negated"
+      },
+      "rss_mb": 1815.5859375
+    },
+    {
+      "id": "challenge-v07",
+      "expected_role": "victim",
+      "text_sha256": "821130ce9f5e28eeb2621e7c57b7a9e06bce603c39b8a82ac209496e387dd74d",
+      "entity_id": "fictional-challenge-v07",
+      "predicted_role": "resolved",
+      "correct": false,
+      "abstained": true,
+      "latency_ms": 856.4767410000513,
+      "answer": {
+        "probabilities": {
+          "accused": 0.09178724318265757,
+          "victim": 0.07667260984244294,
+          "complainant": 0.011059568036560934,
+          "incidental": 0.04315708580724837,
+          "negated": 0.29831965349435985,
+          "resolved": 0.3771099759972314,
+          "insufficient": 0.05528620139037004,
+          "indirect": 0.046607662249128816
+        },
+        "tokens": 252,
+        "truncated": false,
+        "choice": "resolved"
+      },
+      "rss_mb": 1815.83203125
+    },
+    {
+      "id": "challenge-v08",
+      "expected_role": "victim",
+      "text_sha256": "c4a191be5a9ebf7a6093f345edb512b4dd2a1c13e41f0e5914f343985a4a1446",
+      "entity_id": "fictional-challenge-v08",
+      "predicted_role": "victim",
+      "correct": true,
+      "abstained": true,
+      "latency_ms": 902.1414869999944,
+      "answer": {
+        "probabilities": {
+          "accused": 0.05070753018064268,
+          "victim": 0.5739542127165429,
+          "complainant": 0.10938361015327958,
+          "incidental": 0.03277945817329197,
+          "negated": 0.09457144281057546,
+          "resolved": 0.06512539706027407,
+          "insufficient": 0.024815938895935728,
+          "indirect": 0.048662410009457584
+        },
+        "tokens": 258,
+        "truncated": false,
+        "choice": "victim"
+      },
+      "rss_mb": 1816.26953125
+    },
+    {
+      "id": "challenge-v09",
+      "expected_role": "victim",
+      "text_sha256": "c3798ca0a014fbcf12ed77613aea0d1ecf80655ea3e32e32e6bc4786a4070ee5",
+      "entity_id": "fictional-challenge-v09",
+      "predicted_role": "resolved",
+      "correct": false,
+      "abstained": true,
+      "latency_ms": 1099.4967029999998,
+      "answer": {
+        "probabilities": {
+          "accused": 0.09425425209914773,
+          "victim": 0.14973682100561164,
+          "complainant": 0.028950710140448786,
+          "incidental": 0.01615697795233807,
+          "negated": 0.18471920018128002,
+          "resolved": 0.46985107528553494,
+          "insufficient": 0.02472063335978422,
+          "indirect": 0.031610329975854515
+        },
+        "tokens": 270,
+        "truncated": false,
+        "choice": "resolved"
+      },
+      "rss_mb": 1818.64453125
+    },
+    {
+      "id": "challenge-c01",
+      "expected_role": "complainant",
+      "text_sha256": "1503bbe3f1e787d34e966ffb6a1d0fd7c6599c9b6b867a07dc2e7004cc23f393",
+      "entity_id": "fictional-challenge-c01",
+      "predicted_role": "complainant",
+      "correct": true,
+      "abstained": true,
+      "latency_ms": 972.6658829999906,
+      "answer": {
+        "probabilities": {
+          "accused": 0.18828348950734822,
+          "victim": 0.0888964640618864,
+          "complainant": 0.4189454652415562,
+          "incidental": 0.01803443192014123,
+          "negated": 0.06480062644292672,
+          "resolved": 0.12890149491651026,
+          "insufficient": 0.02942300959093915,
+          "indirect": 0.06271501831869178
+        },
+        "tokens": 242,
+        "truncated": false,
+        "choice": "complainant"
+      },
+      "rss_mb": 1818.828125
+    },
+    {
+      "id": "challenge-c02",
+      "expected_role": "complainant",
+      "text_sha256": "85b9d93248465c37a3a0f58d2a603961c6d79b389851dc593ac6eb3e45146dc8",
+      "entity_id": "fictional-challenge-c02",
+      "predicted_role": "resolved",
+      "correct": false,
+      "abstained": true,
+      "latency_ms": 1107.3959099999229,
+      "answer": {
+        "probabilities": {
+          "accused": 0.062864206738822,
+          "victim": 0.16618963351328972,
+          "complainant": 0.0590987842215401,
+          "incidental": 0.04620086107910396,
+          "negated": 0.13159575609394314,
+          "resolved": 0.42107133751258813,
+          "insufficient": 0.05051298438003711,
+          "indirect": 0.062466436460675887
+        },
+        "tokens": 236,
+        "truncated": false,
+        "choice": "resolved"
+      },
+      "rss_mb": 1819.015625
+    },
+    {
+      "id": "challenge-c03",
+      "expected_role": "complainant",
+      "text_sha256": "a24ee02d9a796e1d82991f74cb652a9a43b1f9a1b44a45fc70feed542c783911",
+      "entity_id": "fictional-challenge-c03",
+      "predicted_role": "victim",
+      "correct": false,
+      "abstained": true,
+      "latency_ms": 939.2494209999995,
+      "answer": {
+        "probabilities": {
+          "accused": 0.24495826685883265,
+          "victim": 0.3283407567981604,
+          "complainant": 0.019990720902965813,
+          "incidental": 0.010637854704367502,
+          "negated": 0.05750616062935909,
+          "resolved": 0.29317582307997436,
+          "insufficient": 0.016866830990246617,
+          "indirect": 0.028523586036093496
+        },
+        "tokens": 244,
+        "truncated": false,
+        "choice": "victim"
+      },
+      "rss_mb": 1819.20703125
+    },
+    {
+      "id": "challenge-c04",
+      "expected_role": "complainant",
+      "text_sha256": "2ff801cbe56bf1c9053df32922ab67b0b264dac01b0fad6247faa6482f1594c1",
+      "entity_id": "fictional-challenge-c04",
+      "predicted_role": "negated",
+      "correct": false,
+      "abstained": true,
+      "latency_ms": 996.4900279999256,
+      "answer": {
+        "probabilities": {
+          "accused": 0.03073612706805107,
+          "victim": 0.02881760937929643,
+          "complainant": 0.039960271618421195,
+          "incidental": 0.14344356169197367,
+          "negated": 0.36772412029762086,
+          "resolved": 0.2497899501218487,
+          "insufficient": 0.06478229804236033,
+          "indirect": 0.07474606178042772
+        },
+        "tokens": 257,
+        "truncated": false,
+        "choice": "negated"
+      },
+      "rss_mb": 1819.33203125
+    },
+    {
+      "id": "challenge-c05",
+      "expected_role": "complainant",
+      "text_sha256": "7768cbc250ec223a5d7c892a4691ee27c9e1fb40a27bbd813576cc6a776a27ab",
+      "entity_id": "fictional-challenge-c05",
+      "predicted_role": "resolved",
+      "correct": false,
+      "abstained": true,
+      "latency_ms": 688.5745639999641,
+      "answer": {
+        "probabilities": {
+          "accused": 0.1354794771224391,
+          "victim": 0.01691645384802976,
+          "complainant": 0.016276350124148357,
+          "incidental": 0.0159927468132378,
+          "negated": 0.3593837066607829,
+          "resolved": 0.3803266031209456,
+          "insufficient": 0.04112595222796184,
+          "indirect": 0.03449871008245458
+        },
+        "tokens": 246,
+        "truncated": false,
+        "choice": "resolved"
+      },
+      "rss_mb": 1819.89453125
+    },
+    {
+      "id": "challenge-c06",
+      "expected_role": "complainant",
+      "text_sha256": "1e5090dc28e76f8eeb774d2aa7fadb7a760a29f660aa8e5e9c0a157e32ba6f35",
+      "entity_id": "fictional-challenge-c06",
+      "predicted_role": "negated",
+      "correct": false,
+      "abstained": true,
+      "latency_ms": 755.8767630000602,
+      "answer": {
+        "probabilities": {
+          "accused": 0.03966679141955784,
+          "victim": 0.008844115443011948,
+          "complainant": 0.010120021663457277,
+          "incidental": 0.03349909121699046,
+          "negated": 0.5689251032276141,
+          "resolved": 0.22542380867243955,
+          "insufficient": 0.06686458547669527,
+          "indirect": 0.0466564828802335
+        },
+        "tokens": 262,
+        "truncated": false,
+        "choice": "negated"
+      },
+      "rss_mb": 1821.328125
+    },
+    {
+      "id": "challenge-c07",
+      "expected_role": "complainant",
+      "text_sha256": "599346f2e446d6548dfa0b3e4d0cd706a652204d7b31545dd33336c5bd19f8cb",
+      "entity_id": "fictional-challenge-c07",
+      "predicted_role": "negated",
+      "correct": false,
+      "abstained": true,
+      "latency_ms": 722.0865769999136,
+      "answer": {
+        "probabilities": {
+          "accused": 0.07143582966972722,
+          "victim": 0.06838480003110192,
+          "complainant": 0.10214770467542482,
+          "incidental": 0.09201294926765412,
+          "negated": 0.3602859108599927,
+          "resolved": 0.15632703850397187,
+          "insufficient": 0.07275075218922453,
+          "indirect": 0.07665501480290286
+        },
+        "tokens": 253,
+        "truncated": false,
+        "choice": "negated"
+      },
+      "rss_mb": 1821.6328125
+    },
+    {
+      "id": "challenge-c08",
+      "expected_role": "complainant",
+      "text_sha256": "498f4a108c78420803211af078456dbab6503cf73eab3051104f43596e286bcf",
+      "entity_id": "fictional-challenge-c08",
+      "predicted_role": "resolved",
+      "correct": false,
+      "abstained": true,
+      "latency_ms": 679.6473829999741,
+      "answer": {
+        "probabilities": {
+          "accused": 0.06563430962455362,
+          "victim": 0.03894912313887399,
+          "complainant": 0.012517684702912287,
+          "incidental": 0.028194904364724497,
+          "negated": 0.1886682221166456,
+          "resolved": 0.5754812960914965,
+          "insufficient": 0.043381914453094986,
+          "indirect": 0.047172545507698616
+        },
+        "tokens": 245,
+        "truncated": false,
+        "choice": "resolved"
+      },
+      "rss_mb": 1821.6953125
+    },
+    {
+      "id": "challenge-c09",
+      "expected_role": "complainant",
+      "text_sha256": "94f91201960782907f2eba69a5b842cd7aef516cb755a4cb0733f0737773d6f8",
+      "entity_id": "fictional-challenge-c09",
+      "predicted_role": "negated",
+      "correct": false,
+      "abstained": true,
+      "latency_ms": 1272.9196469999806,
+      "answer": {
+        "probabilities": {
+          "accused": 0.11254823667450008,
+          "victim": 0.02998355203026651,
+          "complainant": 0.03156085806705996,
+          "incidental": 0.06668317679022091,
+          "negated": 0.3034040440593752,
+          "resolved": 0.17542691534978386,
+          "insufficient": 0.1443026912543424,
+          "indirect": 0.13609052577445102
+        },
+        "tokens": 307,
+        "truncated": false,
+        "choice": "negated"
+      },
+      "rss_mb": 1822.12890625
+    },
+    {
+      "id": "challenge-i01",
+      "expected_role": "incidental",
+      "text_sha256": "40bdd994022ba42255415f8123468fbf6e595fd4f71f5611d01545fb08bfe7c7",
+      "entity_id": "fictional-challenge-i01",
+      "predicted_role": "negated",
+      "correct": false,
+      "abstained": false,
+      "latency_ms": 1097.4430299999085,
+      "answer": {
+        "probabilities": {
+          "accused": 0.006710605482195553,
+          "victim": 0.00189285117145191,
+          "complainant": 0.0019339572320169177,
+          "incidental": 0.011337263223332563,
+          "negated": 0.8805660907933374,
+          "resolved": 0.06763999329816323,
+          "insufficient": 0.019771439700768445,
+          "indirect": 0.010147799098734122
+        },
+        "tokens": 241,
+        "truncated": false,
+        "choice": "negated"
+      },
+      "rss_mb": 1822.25390625
+    },
+    {
+      "id": "challenge-i02",
+      "expected_role": "incidental",
+      "text_sha256": "e09c9b68f0c4257ab2dc15939bbb6a9fb02f45ac81a09e0bf288acb42023e57b",
+      "entity_id": "fictional-challenge-i02",
+      "predicted_role": "resolved",
+      "correct": false,
+      "abstained": true,
+      "latency_ms": 695.1170840000032,
+      "answer": {
+        "probabilities": {
+          "accused": 0.1840825104093908,
+          "victim": 0.07800361084712956,
+          "complainant": 0.010926708465620003,
+          "incidental": 0.05808096116673891,
+          "negated": 0.159934013218965,
+          "resolved": 0.3625301753000609,
+          "insufficient": 0.0640136216419821,
+          "indirect": 0.08242839895011271
+        },
+        "tokens": 244,
+        "truncated": false,
+        "choice": "resolved"
+      },
+      "rss_mb": 1822.37890625
+    },
+    {
+      "id": "challenge-i03",
+      "expected_role": "incidental",
+      "text_sha256": "90b71cd40de73924152cc31f866c336d7d08edcfafef95d7f5745a2faf3dc3b7",
+      "entity_id": "fictional-challenge-i03",
+      "predicted_role": "negated",
+      "correct": false,
+      "abstained": true,
+      "latency_ms": 767.0769589999509,
+      "answer": {
+        "probabilities": {
+          "accused": 0.13053449676213552,
+          "victim": 0.023301560284395516,
+          "complainant": 0.020244791546241897,
+          "incidental": 0.10470868290792645,
+          "negated": 0.41301121245572436,
+          "resolved": 0.16126677221726765,
+          "insufficient": 0.07828963129503858,
+          "indirect": 0.06864285253127013
+        },
+        "tokens": 267,
+        "truncated": false,
+        "choice": "negated"
+      },
+      "rss_mb": 1822.44140625
+    },
+    {
+      "id": "challenge-i04",
+      "expected_role": "incidental",
+      "text_sha256": "41101bc074416e9115d9ef1905c9d092471b33a008b7b6662a240876bd77b4cd",
+      "entity_id": "fictional-challenge-i04",
+      "predicted_role": "negated",
+      "correct": false,
+      "abstained": false,
+      "latency_ms": 976.74792600003,
+      "answer": {
+        "probabilities": {
+          "accused": 0.05233261259778442,
+          "victim": 0.015390680986443209,
+          "complainant": 0.0061161038283269725,
+          "incidental": 0.02145660059405489,
+          "negated": 0.6904978276208078,
+          "resolved": 0.16162638599948845,
+          "insufficient": 0.02608451182294994,
+          "indirect": 0.026495276550144282
+        },
+        "tokens": 250,
+        "truncated": false,
+        "choice": "negated"
+      },
+      "rss_mb": 1822.62109375
+    },
+    {
+      "id": "challenge-i05",
+      "expected_role": "incidental",
+      "text_sha256": "8de99a3abf229a59bd452494d9068a59735cb1b15de02c0a40edc8bc8c9e8326",
+      "entity_id": "fictional-challenge-i05",
+      "predicted_role": "negated",
+      "correct": false,
+      "abstained": true,
+      "latency_ms": 818.2696860000078,
+      "answer": {
+        "probabilities": {
+          "accused": 0.06553130674283271,
+          "victim": 0.03349908499681511,
+          "complainant": 0.008811785432456703,
+          "incidental": 0.1019307285605316,
+          "negated": 0.30519647541804823,
+          "resolved": 0.29725459132324794,
+          "insufficient": 0.07642685572801299,
+          "indirect": 0.11134917179805484
+        },
+        "tokens": 243,
+        "truncated": false,
+        "choice": "negated"
+      },
+      "rss_mb": 1822.74609375
+    },
+    {
+      "id": "challenge-i06",
+      "expected_role": "incidental",
+      "text_sha256": "88215904160eaa79d45d83bc0dc92c7cbe15361cea7d474d2fda1a718fefcb5e",
+      "entity_id": "fictional-challenge-i06",
+      "predicted_role": "negated",
+      "correct": false,
+      "abstained": true,
+      "latency_ms": 1047.5433599999633,
+      "answer": {
+        "probabilities": {
+          "accused": 0.010809013854712604,
+          "victim": 0.00871079892294016,
+          "complainant": 0.0033518101018310048,
+          "incidental": 0.026393756298062784,
+          "negated": 0.6094415435326316,
+          "resolved": 0.25505089060906194,
+          "insufficient": 0.05333253200293679,
+          "indirect": 0.03290965467782306
+        },
+        "tokens": 253,
+        "truncated": false,
+        "choice": "negated"
+      },
+      "rss_mb": 1822.93359375
+    },
+    {
+      "id": "challenge-i07",
+      "expected_role": "incidental",
+      "text_sha256": "12e3979efc98a6d93755ebe0b29760a9c004e2a31a79eea69d741750081de378",
+      "entity_id": "fictional-challenge-i07",
+      "predicted_role": "resolved",
+      "correct": false,
+      "abstained": true,
+      "latency_ms": 1102.186637999921,
+      "answer": {
+        "probabilities": {
+          "accused": 0.10815026252839681,
+          "victim": 0.014922051608542687,
+          "complainant": 0.013480971907237725,
+          "incidental": 0.039160498421415856,
+          "negated": 0.16374493214721908,
+          "resolved": 0.5692865550359203,
+          "insufficient": 0.04199252629604549,
+          "indirect": 0.04926220205522212
+        },
+        "tokens": 255,
+        "truncated": false,
+        "choice": "resolved"
+      },
+      "rss_mb": 1823.05859375
+    },
+    {
+      "id": "challenge-i08",
+      "expected_role": "incidental",
+      "text_sha256": "82203a13d49e913703e574b897c92969701454b896a1bc456fdcd7853767a1b0",
+      "entity_id": "fictional-challenge-i08",
+      "predicted_role": "negated",
+      "correct": false,
+      "abstained": true,
+      "latency_ms": 1131.336540999996,
+      "answer": {
+        "probabilities": {
+          "accused": 0.03366369711611223,
+          "victim": 0.010933200326070123,
+          "complainant": 0.010190874633926456,
+          "incidental": 0.0681596788786066,
+          "negated": 0.46668326526469156,
+          "resolved": 0.24093530758839768,
+          "insufficient": 0.053264765334332116,
+          "indirect": 0.11616921085786312
+        },
+        "tokens": 257,
+        "truncated": false,
+        "choice": "negated"
+      },
+      "rss_mb": 1823.05859375
+    },
+    {
+      "id": "challenge-i09",
+      "expected_role": "incidental",
+      "text_sha256": "e99a7f39ad6ed8887f06c64c8eef8d900d2cd7f15df2d5d43dd42fac4c5c5b17",
+      "entity_id": "fictional-challenge-i09",
+      "predicted_role": "negated",
+      "correct": false,
+      "abstained": true,
+      "latency_ms": 765.5798100000766,
+      "answer": {
+        "probabilities": {
+          "accused": 0.2287542582973696,
+          "victim": 0.017918141641607706,
+          "complainant": 0.00925966541426751,
+          "incidental": 0.02849342993814291,
+          "negated": 0.42569887167205234,
+          "resolved": 0.19874558690590122,
+          "insufficient": 0.06850158544890088,
+          "indirect": 0.022628460681757934
+        },
+        "tokens": 267,
+        "truncated": false,
+        "choice": "negated"
+      },
+      "rss_mb": 1823.1171875
+    },
+    {
+      "id": "challenge-n01",
+      "expected_role": "negated",
+      "text_sha256": "17d03b4b89a651e64f37796c0f8022a32dbac5ad34cf7ab23a15f984700ac01b",
+      "entity_id": "fictional-challenge-n01",
+      "predicted_role": "negated",
+      "correct": true,
+      "abstained": true,
+      "latency_ms": 701.5106490000562,
+      "answer": {
+        "probabilities": {
+          "accused": 0.12676707074414761,
+          "victim": 0.02358798212984223,
+          "complainant": 0.009614675622984925,
+          "incidental": 0.023611028154360125,
+          "negated": 0.4476671823559936,
+          "resolved": 0.3049863684859075,
+          "insufficient": 0.014237261010994949,
+          "indirect": 0.049528431495769056
+        },
+        "tokens": 247,
+        "truncated": false,
+        "choice": "negated"
+      },
+      "rss_mb": 1823.1171875
+    },
+    {
+      "id": "challenge-n02",
+      "expected_role": "negated",
+      "text_sha256": "9f12985b1dc061a5f9d0037bc4c62a782d72c69a7d00c14353cd62a5fe84275c",
+      "entity_id": "fictional-challenge-n02",
+      "predicted_role": "negated",
+      "correct": true,
+      "abstained": false,
+      "latency_ms": 693.1655360000377,
+      "answer": {
+        "probabilities": {
+          "accused": 0.05111413851341206,
+          "victim": 0.009453109736639834,
+          "complainant": 0.004629680645201609,
+          "incidental": 0.03343179276862033,
+          "negated": 0.7270886028044957,
+          "resolved": 0.09706767305348378,
+          "insufficient": 0.04184578487656186,
+          "indirect": 0.03536921760158465
+        },
+        "tokens": 246,
+        "truncated": false,
+        "choice": "negated"
+      },
+      "rss_mb": 1823.2421875
+    },
+    {
+      "id": "challenge-n03",
+      "expected_role": "negated",
+      "text_sha256": "ce1789d6476b91129ce993af5f216d6f124030fecd2f062058de4c3cbd1c2e1e",
+      "entity_id": "fictional-challenge-n03",
+      "predicted_role": "negated",
+      "correct": true,
+      "abstained": true,
+      "latency_ms": 691.908438999917,
+      "answer": {
+        "probabilities": {
+          "accused": 0.11163307751008912,
+          "victim": 0.012193427028868954,
+          "complainant": 0.0063568958104351465,
+          "incidental": 0.02148369570809105,
+          "negated": 0.49712726613770275,
+          "resolved": 0.22320207075892592,
+          "insufficient": 0.061842421237244226,
+          "indirect": 0.06616114580864278
+        },
+        "tokens": 245,
+        "truncated": false,
+        "choice": "negated"
+      },
+      "rss_mb": 1823.55078125
+    },
+    {
+      "id": "challenge-n04",
+      "expected_role": "negated",
+      "text_sha256": "4cc71df608dd3f47d268ffac6d3c799aebbcb9a44137a0a5578b65418ce0a321",
+      "entity_id": "fictional-challenge-n04",
+      "predicted_role": "accused",
+      "correct": false,
+      "abstained": true,
+      "latency_ms": 703.2838989999846,
+      "answer": {
+        "probabilities": {
+          "accused": 0.5895625041988848,
+          "victim": 0.03358057110757053,
+          "complainant": 0.006373245087046126,
+          "incidental": 0.007364253825480542,
+          "negated": 0.018159817284040158,
+          "resolved": 0.3192930128762338,
+          "insufficient": 0.007612870712989101,
+          "indirect": 0.01805372490775504
+        },
+        "tokens": 246,
+        "truncated": false,
+        "choice": "accused"
+      },
+      "rss_mb": 1823.67578125
+    },
+    {
+      "id": "challenge-n05",
+      "expected_role": "negated",
+      "text_sha256": "e12b48f785bdba33f2ff2ac94a25ee8365a1453f2a4ea750b33c8c2a68131468",
+      "entity_id": "fictional-challenge-n05",
+      "predicted_role": "negated",
+      "correct": true,
+      "abstained": true,
+      "latency_ms": 842.4720869999192,
+      "answer": {
+        "probabilities": {
+          "accused": 0.09684283362481673,
+          "victim": 0.007136486608566167,
+          "complainant": 0.005579676140261413,
+          "incidental": 0.01182357466528973,
+          "negated": 0.4466939782126039,
+          "resolved": 0.3703234157256574,
+          "insufficient": 0.040879574302520795,
+          "indirect": 0.020720460720283815
+        },
+        "tokens": 242,
+        "truncated": false,
+        "choice": "negated"
+      },
+      "rss_mb": 1823.73828125
+    },
+    {
+      "id": "challenge-n06",
+      "expected_role": "negated",
+      "text_sha256": "ec1285f44e861b893260d939a4e83207bf79928c31f8e01b09a14eee4767638a",
+      "entity_id": "fictional-challenge-n06",
+      "predicted_role": "negated",
+      "correct": true,
+      "abstained": true,
+      "latency_ms": 1166.6752339999675,
+      "answer": {
+        "probabilities": {
+          "accused": 0.025052066157791486,
+          "victim": 0.007011411214749964,
+          "complainant": 0.008181155697823734,
+          "incidental": 0.030659228007377783,
+          "negated": 0.5130840552128271,
+          "resolved": 0.3471721877819813,
+          "insufficient": 0.030956081262443615,
+          "indirect": 0.03788381466500517
+        },
+        "tokens": 260,
+        "truncated": false,
+        "choice": "negated"
+      },
+      "rss_mb": 1824.046875
+    },
+    {
+      "id": "challenge-n07",
+      "expected_role": "negated",
+      "text_sha256": "4a130cc2fa5849bcdcb59c9bff48db374bc3e909b260f92e6f0fdc2ee0691a40",
+      "entity_id": "fictional-challenge-n07",
+      "predicted_role": "resolved",
+      "correct": false,
+      "abstained": true,
+      "latency_ms": 955.9970440000143,
+      "answer": {
+        "probabilities": {
+          "accused": 0.3879741003738689,
+          "victim": 0.004637850282453992,
+          "complainant": 0.003909287880690614,
+          "incidental": 0.0050986511192983325,
+          "negated": 0.03838792047892688,
+          "resolved": 0.5261683692174244,
+          "insufficient": 0.015169559613163063,
+          "indirect": 0.018654261034173943
+        },
+        "tokens": 241,
+        "truncated": false,
+        "choice": "resolved"
+      },
+      "rss_mb": 1824.359375
+    },
+    {
+      "id": "challenge-n08",
+      "expected_role": "negated",
+      "text_sha256": "450d84bb71423df2890c51a43d727c4151599cda6ba59ff3674f2a8621714dd7",
+      "entity_id": "fictional-challenge-n08",
+      "predicted_role": "negated",
+      "correct": true,
+      "abstained": false,
+      "latency_ms": 1015.1565940000182,
+      "answer": {
+        "probabilities": {
+          "accused": 0.04132608590696242,
+          "victim": 0.002026197469681847,
+          "complainant": 0.004181871005899843,
+          "incidental": 0.003651064321763326,
+          "negated": 0.7984150802630083,
+          "resolved": 0.13304199585844542,
+          "insufficient": 0.0063454900467785685,
+          "indirect": 0.011012215127460184
+        },
+        "tokens": 254,
+        "truncated": false,
+        "choice": "negated"
+      },
+      "rss_mb": 1824.359375
+    },
+    {
+      "id": "challenge-n09",
+      "expected_role": "negated",
+      "text_sha256": "0e0d46ba2ba405d6c79e4f42b39f233f20fe1f4c72902ec4c839230a77a6522e",
+      "entity_id": "fictional-challenge-n09",
+      "predicted_role": "negated",
+      "correct": true,
+      "abstained": false,
+      "latency_ms": 907.1477200000118,
+      "answer": {
+        "probabilities": {
+          "accused": 0.062366306023390536,
+          "victim": 0.005475723834744759,
+          "complainant": 0.0107838333869412,
+          "incidental": 0.03792446905157922,
+          "negated": 0.6842839248532531,
+          "resolved": 0.12449908688624417,
+          "insufficient": 0.03799861148583157,
+          "indirect": 0.03666804447801552
+        },
+        "tokens": 255,
+        "truncated": false,
+        "choice": "negated"
+      },
+      "rss_mb": 1824.546875
+    },
+    {
+      "id": "challenge-r01",
+      "expected_role": "resolved",
+      "text_sha256": "e66061d7643902d953c7b84eb46cedca85cc8396aeadd084edc2664adfee0ac5",
+      "entity_id": "fictional-olmo-27",
+      "predicted_role": "resolved",
+      "correct": true,
+      "abstained": false,
+      "latency_ms": 806.5602650000301,
+      "answer": {
+        "probabilities": {
+          "accused": 0.03985171569467446,
+          "victim": 0.0006948309170095771,
+          "complainant": 0.00070577273696806,
+          "incidental": 0.0026531185500559855,
+          "negated": 0.02688630395445352,
+          "resolved": 0.9244126652764729,
+          "insufficient": 0.0016602915031791903,
+          "indirect": 0.0031353013671861062
+        },
+        "tokens": 244,
+        "truncated": false,
+        "choice": "resolved"
+      },
+      "rss_mb": 1825.671875
+    },
+    {
+      "id": "challenge-r02",
+      "expected_role": "resolved",
+      "text_sha256": "15f7394826470c1b07448623e276603a6df40c4cc21d100821bd5cc339713dea",
+      "entity_id": "fictional-challenge-r02",
+      "predicted_role": "resolved",
+      "correct": true,
+      "abstained": true,
+      "latency_ms": 740.425125999991,
+      "answer": {
+        "probabilities": {
+          "accused": 0.104994295234231,
+          "victim": 0.02194416229141004,
+          "complainant": 0.006682920924404207,
+          "incidental": 0.020384439690513224,
+          "negated": 0.1778166802314569,
+          "resolved": 0.598020197448733,
+          "insufficient": 0.028121772310220523,
+          "indirect": 0.04203553186903115
+        },
+        "tokens": 251,
+        "truncated": false,
+        "choice": "resolved"
+      },
+      "rss_mb": 1825.671875
+    },
+    {
+      "id": "challenge-r03",
+      "expected_role": "resolved",
+      "text_sha256": "2795445d87002d9319380cda44f38fadaf74cac8f38289384061c58e3221d0f4",
+      "entity_id": "fictional-challenge-r03",
+      "predicted_role": "resolved",
+      "correct": true,
+      "abstained": true,
+      "latency_ms": 726.9781779999676,
+      "answer": {
+        "probabilities": {
+          "accused": 0.042070415611641494,
+          "victim": 0.005437039152275388,
+          "complainant": 0.0048216652508642705,
+          "incidental": 0.018183069047472872,
+          "negated": 0.2355043955059574,
+          "resolved": 0.633936158564745,
+          "insufficient": 0.032860731757358756,
+          "indirect": 0.027186525109684768
+        },
+        "tokens": 246,
+        "truncated": false,
+        "choice": "resolved"
+      },
+      "rss_mb": 1825.921875
+    },
+    {
+      "id": "challenge-r04",
+      "expected_role": "resolved",
+      "text_sha256": "ffdb17559b4c5fccefe23bbd45387c0c70b8e247fd4a05962fd70cfc7873f502",
+      "entity_id": "fictional-challenge-r04",
+      "predicted_role": "resolved",
+      "correct": true,
+      "abstained": false,
+      "latency_ms": 766.0033930000054,
+      "answer": {
+        "probabilities": {
+          "accused": 0.04373609703944653,
+          "victim": 0.008367803351964782,
+          "complainant": 0.004090153269572202,
+          "incidental": 0.013496240590259521,
+          "negated": 0.11173692117517342,
+          "resolved": 0.7763419023341656,
+          "insufficient": 0.017788102606424237,
+          "indirect": 0.0244427796329937
+        },
+        "tokens": 257,
+        "truncated": false,
+        "choice": "resolved"
+      },
+      "rss_mb": 1826.23046875
+    },
+    {
+      "id": "challenge-r05",
+      "expected_role": "resolved",
+      "text_sha256": "133768d68e48c1ecf2839e37cab9cd4069181088d3b291bdac135fdfaee8b46a",
+      "entity_id": "fictional-challenge-r05",
+      "predicted_role": "resolved",
+      "correct": true,
+      "abstained": true,
+      "latency_ms": 910.4094719999694,
+      "answer": {
+        "probabilities": {
+          "accused": 0.10173641331299035,
+          "victim": 0.010024571347798085,
+          "complainant": 0.0063907462084938456,
+          "incidental": 0.010870933938697657,
+          "negated": 0.2155838526729546,
+          "resolved": 0.5999049435306386,
+          "insufficient": 0.029148548096433836,
+          "indirect": 0.026339990891993025
+        },
+        "tokens": 246,
+        "truncated": false,
+        "choice": "resolved"
+      },
+      "rss_mb": 1826.35546875
+    },
+    {
+      "id": "challenge-r06",
+      "expected_role": "resolved",
+      "text_sha256": "9220924c13526f09f6c52e994e34158af4ae5e02d62b675de2b50d08c0997f4b",
+      "entity_id": "fictional-challenge-r06",
+      "predicted_role": "resolved",
+      "correct": true,
+      "abstained": true,
+      "latency_ms": 760.9677340000189,
+      "answer": {
+        "probabilities": {
+          "accused": 0.08693935416363496,
+          "victim": 0.03486658756310804,
+          "complainant": 0.013476973217841614,
+          "incidental": 0.02299778476196071,
+          "negated": 0.16401638937729685,
+          "resolved": 0.612963156792861,
+          "insufficient": 0.031789092656683136,
+          "indirect": 0.03295066146661359
+        },
+        "tokens": 255,
+        "truncated": false,
+        "choice": "resolved"
+      },
+      "rss_mb": 1826.41796875
+    },
+    {
+      "id": "challenge-r07",
+      "expected_role": "resolved",
+      "text_sha256": "4a0a3a966e2e45d4df705f765ec349bc8b75957bfae894d67bb6fbfe4087c6d2",
+      "entity_id": "fictional-challenge-r07",
+      "predicted_role": "resolved",
+      "correct": true,
+      "abstained": true,
+      "latency_ms": 754.1041759999416,
+      "answer": {
+        "probabilities": {
+          "accused": 0.06171238300504279,
+          "victim": 0.022474218034224527,
+          "complainant": 0.005467475431144069,
+          "incidental": 0.03518443748245852,
+          "negated": 0.2806844541879859,
+          "resolved": 0.43600504056155415,
+          "insufficient": 0.10716350376993698,
+          "indirect": 0.05130848752765308
+        },
+        "tokens": 257,
+        "truncated": false,
+        "choice": "resolved"
+      },
+      "rss_mb": 1826.79296875
+    },
+    {
+      "id": "challenge-r08",
+      "expected_role": "resolved",
+      "text_sha256": "4b9ab19be2127293131a7c1355ad9ac90db23b7d9d3369727f6baf3fb450b9e2",
+      "entity_id": "fictional-challenge-r08",
+      "predicted_role": "resolved",
+      "correct": true,
+      "abstained": false,
+      "latency_ms": 746.6044889999921,
+      "answer": {
+        "probabilities": {
+          "accused": 0.02342166595648122,
+          "victim": 0.0014477551980959468,
+          "complainant": 0.0007726682347157487,
+          "incidental": 0.0031869495562110144,
+          "negated": 0.015274397074198738,
+          "resolved": 0.9470101995388516,
+          "insufficient": 0.0044052171016983515,
+          "indirect": 0.0044811473397472395
+        },
+        "tokens": 254,
+        "truncated": false,
+        "choice": "resolved"
+      },
+      "rss_mb": 1827.85546875
+    },
+    {
+      "id": "challenge-r09",
+      "expected_role": "resolved",
+      "text_sha256": "cf0b92409680ea5ee90c2dd1ddca2ac2906e645d0e4b8543e5f1c884243973df",
+      "entity_id": "fictional-challenge-r09",
+      "predicted_role": "resolved",
+      "correct": true,
+      "abstained": true,
+      "latency_ms": 774.8065060000044,
+      "answer": {
+        "probabilities": {
+          "accused": 0.02304391060256446,
+          "victim": 0.007254762558432039,
+          "complainant": 0.0048658938420351235,
+          "incidental": 0.010763740804030409,
+          "negated": 0.44098678602897057,
+          "resolved": 0.46124809908769354,
+          "insufficient": 0.03418559918513969,
+          "indirect": 0.017651207891134207
+        },
+        "tokens": 263,
+        "truncated": false,
+        "choice": "resolved"
+      },
+      "rss_mb": 1827.98046875
+    },
+    {
+      "id": "challenge-u01",
+      "expected_role": "insufficient",
+      "text_sha256": "1b94262ad5900cf9d88d9847c7de17336dc01af9ebf3c96631e2d20d0dff7e69",
+      "entity_id": "fictional-challenge-u01",
+      "predicted_role": "resolved",
+      "correct": false,
+      "abstained": true,
+      "latency_ms": 785.6044049999582,
+      "answer": {
+        "probabilities": {
+          "accused": 0.09924391227392287,
+          "victim": 0.047743440879629395,
+          "complainant": 0.07434874551860646,
+          "incidental": 0.05004993071643507,
+          "negated": 0.20724403899626237,
+          "resolved": 0.2700322166560449,
+          "insufficient": 0.1475340017127671,
+          "indirect": 0.10380371324633181
+        },
+        "tokens": 249,
+        "truncated": false,
+        "choice": "resolved"
+      },
+      "rss_mb": 1828.16796875
+    },
+    {
+      "id": "challenge-u02",
+      "expected_role": "insufficient",
+      "text_sha256": "437512ebeb90640f3ab66aba74cac936d3e523c1042837e1ca249c63ce500499",
+      "entity_id": "fictional-challenge-u02",
+      "predicted_role": "negated",
+      "correct": false,
+      "abstained": true,
+      "latency_ms": 963.7856889999057,
+      "answer": {
+        "probabilities": {
+          "accused": 0.014869216859532434,
+          "victim": 0.0067679362137388465,
+          "complainant": 0.0058858429891132545,
+          "incidental": 0.12807029153217783,
+          "negated": 0.4357938128182029,
+          "resolved": 0.2648411590437348,
+          "insufficient": 0.08337819729036838,
+          "indirect": 0.060393543253131565
+        },
+        "tokens": 245,
+        "truncated": false,
+        "choice": "negated"
+      },
+      "rss_mb": 1828.2265625
+    },
+    {
+      "id": "challenge-u03",
+      "expected_role": "insufficient",
+      "text_sha256": "6ff9de8a34d1277f9c94bd099a39aa1d1f488845fb2027b35c5abf1f62909bb2",
+      "entity_id": "fictional-challenge-u03",
+      "predicted_role": "negated",
+      "correct": false,
+      "abstained": true,
+      "latency_ms": 1116.6157110000086,
+      "answer": {
+        "probabilities": {
+          "accused": 0.11471801508170851,
+          "victim": 0.022545821379078602,
+          "complainant": 0.011811523453761094,
+          "incidental": 0.04431486969899888,
+          "negated": 0.4862826856744864,
+          "resolved": 0.1371650820001088,
+          "insufficient": 0.11332618310509536,
+          "indirect": 0.06983581960676233
+        },
+        "tokens": 264,
+        "truncated": false,
+        "choice": "negated"
+      },
+      "rss_mb": 1828.4765625
+    },
+    {
+      "id": "challenge-u04",
+      "expected_role": "insufficient",
+      "text_sha256": "b70a4f65ce2bcfc5538318d972dd437a1c4ae91a284c0c29b08e0c03cb13ea8e",
+      "entity_id": "fictional-challenge-u04",
+      "predicted_role": "negated",
+      "correct": false,
+      "abstained": true,
+      "latency_ms": 876.7073029999892,
+      "answer": {
+        "probabilities": {
+          "accused": 0.046258720823311096,
+          "victim": 0.020072140765710653,
+          "complainant": 0.008310425955363522,
+          "incidental": 0.06050396396176782,
+          "negated": 0.3097041737789863,
+          "resolved": 0.13837484552840684,
+          "insufficient": 0.3087981794848452,
+          "indirect": 0.10797754970160858
+        },
+        "tokens": 250,
+        "truncated": false,
+        "choice": "negated"
+      },
+      "rss_mb": 1828.6640625
+    },
+    {
+      "id": "challenge-u05",
+      "expected_role": "insufficient",
+      "text_sha256": "a631c24c7a3cf36e48a7a5ca0fe6ac870797476265bb3545e2df991c9a75387c",
+      "entity_id": "fictional-challenge-u05",
+      "predicted_role": "victim",
+      "correct": false,
+      "abstained": true,
+      "latency_ms": 989.8699679999936,
+      "answer": {
+        "probabilities": {
+          "accused": 0.05398185185648555,
+          "victim": 0.3050739017293218,
+          "complainant": 0.024189684098656156,
+          "incidental": 0.06613973447026149,
+          "negated": 0.2826991846895858,
+          "resolved": 0.09987031896590237,
+          "insufficient": 0.07808380599852367,
+          "indirect": 0.08996151819126319
+        },
+        "tokens": 249,
+        "truncated": false,
+        "choice": "victim"
+      },
+      "rss_mb": 1828.78515625
+    },
+    {
+      "id": "challenge-u06",
+      "expected_role": "insufficient",
+      "text_sha256": "d6a7f3223d45e7991f390f76144530c33e343f0fe8ebe3a52c46fb8c5a93e970",
+      "entity_id": "fictional-challenge-u06",
+      "predicted_role": "negated",
+      "correct": false,
+      "abstained": true,
+      "latency_ms": 963.7419509999745,
+      "answer": {
+        "probabilities": {
+          "accused": 0.033945013444264455,
+          "victim": 0.01732490749815226,
+          "complainant": 0.005758057456346164,
+          "incidental": 0.06575030398071069,
+          "negated": 0.5582162311439774,
+          "resolved": 0.11610080182150896,
+          "insufficient": 0.10938671274988421,
+          "indirect": 0.09351797190515576
+        },
+        "tokens": 247,
+        "truncated": false,
+        "choice": "negated"
+      },
+      "rss_mb": 1829.78515625
+    },
+    {
+      "id": "challenge-u07",
+      "expected_role": "insufficient",
+      "text_sha256": "822519117f3d51320f021fa5a8abed3b7a2704e690ae8f5cb669dd7bb4af5d7f",
+      "entity_id": "fictional-challenge-u07",
+      "predicted_role": "negated",
+      "correct": false,
+      "abstained": true,
+      "latency_ms": 1127.2720069999878,
+      "answer": {
+        "probabilities": {
+          "accused": 0.02632458113832903,
+          "victim": 0.007439854607943195,
+          "complainant": 0.00385225471541859,
+          "incidental": 0.07851261077885724,
+          "negated": 0.572797607255948,
+          "resolved": 0.09605454601461078,
+          "insufficient": 0.12460715117884695,
+          "indirect": 0.0904113943100461
+        },
+        "tokens": 258,
+        "truncated": false,
+        "choice": "negated"
+      },
+      "rss_mb": 1829.84765625
+    },
+    {
+      "id": "challenge-u08",
+      "expected_role": "insufficient",
+      "text_sha256": "8df866dea3c43639841e7e9e9739d758bf75a8afbf733e81d9e8b95c1e07b058",
+      "entity_id": "fictional-challenge-u08",
+      "predicted_role": "negated",
+      "correct": false,
+      "abstained": false,
+      "latency_ms": 1035.049602000072,
+      "answer": {
+        "probabilities": {
+          "accused": 0.0450651120181937,
+          "victim": 0.009613909891573888,
+          "complainant": 0.005607791911625705,
+          "incidental": 0.043085530217351536,
+          "negated": 0.6583301060227019,
+          "resolved": 0.09761638336417446,
+          "insufficient": 0.08823226614388738,
+          "indirect": 0.05244890043049143
+        },
+        "tokens": 269,
+        "truncated": false,
+        "choice": "negated"
+      },
+      "rss_mb": 1830.03515625
+    },
+    {
+      "id": "challenge-u09",
+      "expected_role": "insufficient",
+      "text_sha256": "d72b479f2b1508d6db975aab75cbf32383b19233907b311db6fc3fa2e056ce32",
+      "entity_id": "fictional-challenge-u09",
+      "predicted_role": "negated",
+      "correct": false,
+      "abstained": true,
+      "latency_ms": 1013.3005650000086,
+      "answer": {
+        "probabilities": {
+          "accused": 0.027209988318366574,
+          "victim": 0.007188988923901016,
+          "complainant": 0.005389589213362582,
+          "incidental": 0.048997331153223286,
+          "negated": 0.6426777065213385,
+          "resolved": 0.1425664011737569,
+          "insufficient": 0.060729394520608604,
+          "indirect": 0.06524060017544256
+        },
+        "tokens": 260,
+        "truncated": false,
+        "choice": "negated"
+      },
+      "rss_mb": 1830.21875
+    },
+    {
+      "id": "challenge-d01",
+      "expected_role": "indirect",
+      "text_sha256": "cee721dce38da425549be49a8d3b2465ac5c35e899234c5f2833d6b47e104567",
+      "entity_id": "fictional-challenge-d01",
+      "predicted_role": "negated",
+      "correct": false,
+      "abstained": true,
+      "latency_ms": 666.9817440000543,
+      "answer": {
+        "probabilities": {
+          "accused": 0.12234276100993086,
+          "victim": 0.013631774204325726,
+          "complainant": 0.00775963872835121,
+          "incidental": 0.028999374200104653,
+          "negated": 0.5910347958794959,
+          "resolved": 0.13268821030709843,
+          "insufficient": 0.03647995017702075,
+          "indirect": 0.06706349549367246
+        },
+        "tokens": 237,
+        "truncated": false,
+        "choice": "negated"
+      },
+      "rss_mb": 1830.22265625
+    },
+    {
+      "id": "challenge-d02",
+      "expected_role": "indirect",
+      "text_sha256": "36e2978d5f33da76d9c0aca0eec16df63e2d2668dfb0db65a4c94bece73cf822",
+      "entity_id": "fictional-challenge-d02",
+      "predicted_role": "negated",
+      "correct": false,
+      "abstained": true,
+      "latency_ms": 733.484212999997,
+      "answer": {
+        "probabilities": {
+          "accused": 0.10489426423337492,
+          "victim": 0.010560185015151,
+          "complainant": 0.004686114059859558,
+          "incidental": 0.009728510965395893,
+          "negated": 0.5913556438165157,
+          "resolved": 0.2338542215626693,
+          "insufficient": 0.02192325547440575,
+          "indirect": 0.022997804872627807
+        },
+        "tokens": 254,
+        "truncated": false,
+        "choice": "negated"
+      },
+      "rss_mb": 1830.34765625
+    },
+    {
+      "id": "challenge-d03",
+      "expected_role": "indirect",
+      "text_sha256": "0fffbf6a0b57b66ec5882950c577a11c0cba16493470ed5f86a1e331a86eabcb",
+      "entity_id": "fictional-challenge-d03",
+      "predicted_role": "negated",
+      "correct": false,
+      "abstained": true,
+      "latency_ms": 720.9153500000411,
+      "answer": {
+        "probabilities": {
+          "accused": 0.0762418904593699,
+          "victim": 0.01450329999834773,
+          "complainant": 0.015743162736575965,
+          "incidental": 0.10389067378960838,
+          "negated": 0.38326948488717033,
+          "resolved": 0.20177373936780393,
+          "insufficient": 0.07531572609927784,
+          "indirect": 0.12926202266184575
+        },
+        "tokens": 255,
+        "truncated": false,
+        "choice": "negated"
+      },
+      "rss_mb": 1830.41015625
+    },
+    {
+      "id": "challenge-d04",
+      "expected_role": "indirect",
+      "text_sha256": "6445699a3bc46c928614ef2b7a567318666d460b8f4dbac5bdbf0f3c585e20f0",
+      "entity_id": "fictional-challenge-d04",
+      "predicted_role": "negated",
+      "correct": false,
+      "abstained": true,
+      "latency_ms": 767.5041580000652,
+      "answer": {
+        "probabilities": {
+          "accused": 0.06979385672944025,
+          "victim": 0.011256997784041906,
+          "complainant": 0.008037203824302971,
+          "incidental": 0.04118559403482658,
+          "negated": 0.6074124064957035,
+          "resolved": 0.14455844117385921,
+          "insufficient": 0.05363074131063283,
+          "indirect": 0.06412475864719276
+        },
+        "tokens": 263,
+        "truncated": false,
+        "choice": "negated"
+      },
+      "rss_mb": 1830.47265625
+    },
+    {
+      "id": "challenge-d05",
+      "expected_role": "indirect",
+      "text_sha256": "b9c2e9c4fc2001130044b1551ccb66c66a8e885cd8d1e38f8fd09f9f0f809e10",
+      "entity_id": "fictional-challenge-d05",
+      "predicted_role": "negated",
+      "correct": false,
+      "abstained": true,
+      "latency_ms": 804.7955480000155,
+      "answer": {
+        "probabilities": {
+          "accused": 0.02851389877822173,
+          "victim": 0.01929358848799737,
+          "complainant": 0.016318428052886514,
+          "incidental": 0.13088162187683866,
+          "negated": 0.43165804817644393,
+          "resolved": 0.16772675671714288,
+          "insufficient": 0.07549066609899811,
+          "indirect": 0.13011699181147085
+        },
+        "tokens": 259,
+        "truncated": false,
+        "choice": "negated"
+      },
+      "rss_mb": 1830.47265625
+    },
+    {
+      "id": "challenge-d06",
+      "expected_role": "indirect",
+      "text_sha256": "d060f4079b5f6409f402496a62f64e6d3242e0b3b2117e490727074cb7a7239d",
+      "entity_id": "fictional-challenge-d06",
+      "predicted_role": "accused",
+      "correct": false,
+      "abstained": true,
+      "latency_ms": 897.062136000045,
+      "answer": {
+        "probabilities": {
+          "accused": 0.2891445911326355,
+          "victim": 0.2874553650637033,
+          "complainant": 0.048334078937687805,
+          "incidental": 0.011946686526817202,
+          "negated": 0.05932125163424518,
+          "resolved": 0.2390087614432076,
+          "insufficient": 0.022698287673723266,
+          "indirect": 0.04209097758798009
+        },
+        "tokens": 254,
+        "truncated": false,
+        "choice": "accused"
+      },
+      "rss_mb": 1830.66015625
+    },
+    {
+      "id": "challenge-d07",
+      "expected_role": "indirect",
+      "text_sha256": "d39f4cd29fba49e7101cbdad8ec2345cf6731d6172910b314b1a9291590d7f55",
+      "entity_id": "fictional-challenge-d07",
+      "predicted_role": "accused",
+      "correct": false,
+      "abstained": false,
+      "latency_ms": 1040.2933880000091,
+      "answer": {
+        "probabilities": {
+          "accused": 0.729289383253523,
+          "victim": 0.011183086172412551,
+          "complainant": 0.009003460792316445,
+          "incidental": 0.008532641198411831,
+          "negated": 0.1546731142156686,
+          "resolved": 0.0437070547041177,
+          "insufficient": 0.017584749417908916,
+          "indirect": 0.026026510245640958
+        },
+        "tokens": 246,
+        "truncated": false,
+        "choice": "accused"
+      },
+      "rss_mb": 1830.78515625
+    },
+    {
+      "id": "challenge-d08",
+      "expected_role": "indirect",
+      "text_sha256": "f1fffe5d12d69c1cdf887db51e17421e1f0bd1111c6e5b964432017a7f150dc4",
+      "entity_id": "fictional-challenge-d08",
+      "predicted_role": "negated",
+      "correct": false,
+      "abstained": true,
+      "latency_ms": 1034.855728000025,
+      "answer": {
+        "probabilities": {
+          "accused": 0.07924264729588312,
+          "victim": 0.0814194191924589,
+          "complainant": 0.01888203986583517,
+          "incidental": 0.0816184367584692,
+          "negated": 0.37812846554427704,
+          "resolved": 0.21503263729701055,
+          "insufficient": 0.05729652556493367,
+          "indirect": 0.08837982848113218
+        },
+        "tokens": 260,
+        "truncated": false,
+        "choice": "negated"
+      },
+      "rss_mb": 1830.97265625
+    },
+    {
+      "id": "challenge-d09",
+      "expected_role": "indirect",
+      "text_sha256": "1adc351303450444761591cfd47ef5f5d4245956779599f0327dc9536d6eb4ca",
+      "entity_id": "fictional-challenge-d09",
+      "predicted_role": "negated",
+      "correct": false,
+      "abstained": true,
+      "latency_ms": 2380.35932899993,
+      "answer": {
+        "probabilities": {
+          "accused": 0.17464358137718053,
+          "victim": 0.05129888342749708,
+          "complainant": 0.021311885986168712,
+          "incidental": 0.09637763981902893,
+          "negated": 0.2953406731794535,
+          "resolved": 0.18800649667488786,
+          "insufficient": 0.054155922838859484,
+          "indirect": 0.11886491669692384
+        },
+        "tokens": 512,
+        "truncated": true,
+        "choice": "negated"
+      },
+      "rss_mb": 1831.2890625
+    }
+  ]
+}

@@ -32,6 +32,11 @@ def main():
     official.add_argument('--source-url', required=True, help='URL HTTPS del recurso oficial de origen')
     official.add_argument('--list-name', choices=('sdn', 'non_sdn'), default='sdn', help='Sólo para OFAC')
     sub.add_parser('score')
+    explain = sub.add_parser('explain', help='Explicación y snapshot auditable de una entidad, sin inferencia externa')
+    explain.add_argument('entity_id')
+    explain.add_argument('--run-id')
+    sub.add_parser('replay', help='Reproduce scoring y traza de un snapshot compatible').add_argument('run_id')
+    sub.add_parser('score-history', help='Enumera evaluaciones históricas de una entidad').add_argument('entity_id')
     sub.add_parser('reanalyze')
     sub.add_parser('queue')
     worker = sub.add_parser('worker')
@@ -75,6 +80,15 @@ def main():
     if command == 'ui':
         from .app import serve
         serve(engine, open_browser=not getattr(args, 'no_browser', False))
+        return
+    if command in ('explain', 'replay', 'score-history'):
+        if command == 'explain':
+            result = engine.explanation(args.entity_id, args.run_id)
+        elif command == 'replay':
+            result = engine.replay_score(args.run_id)
+        else:
+            result = engine.store.score_history(args.entity_id)
+        print(json.dumps(result, ensure_ascii=False, indent=2))
         return
     if command.startswith('news-'):
         from .news import NewsAcquirer

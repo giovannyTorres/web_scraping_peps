@@ -1,0 +1,1446 @@
+{
+  "phase": 2,
+  "candidate": "es-context-discriminative-1.0.0",
+  "executed_at": "2026-10-15T08:34:14.774148+00:00",
+  "protocol": "Trained once on train families; fixed margin 0.7 before holdout evaluation; no tuning on holdout. Corpus is synthetic and families are the independent units.",
+  "dataset": {
+    "file": "tests/data/context_holdout.jsonl",
+    "sha256": "e6701b9d89f4d0de8d698016c7ecc6c323c32c552868e8772786801f80692a88",
+    "examples": 128,
+    "families": 32,
+    "train_family_overlap": 0,
+    "source": "synthetic_invented_not_real_project_notes"
+  },
+  "environment": {
+    "python": "3.12.14",
+    "platform": "Linux-6.18.44-x86_64-with-glibc2.41",
+    "machine": "x86_64",
+    "processor": "",
+    "gpu_used": false
+  },
+  "training_export": {
+    "export_max_abs_logit_delta": 4.999191760557409e-07,
+    "features": 7291,
+    "model_bytes": 1432196
+  },
+  "model_sha256": "ba227bc782936a1e19901f8a1464618e160a5e525593c71affd1705f45a8f563",
+  "runtime_config_hash": "8806813034f55e34f35cc1846dfb089f46ada08c05d02dc1e3fc1363b624f37f",
+  "config_hash": "cfc5174ed6b5d764d58fad885ff3f979b33e402b0ac8d7f10f36e28eeee80544",
+  "training_corpus_sha256": "f24e47520ef4900d76005969b82e5278f9c2204dfa1296aea30748a4f31e6531",
+  "metrics": {
+    "roles_with_abstention": {
+      "accused": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1-score": 0.0,
+        "support": 16.0
+      },
+      "complainant": {
+        "precision": 0.5,
+        "recall": 0.25,
+        "f1-score": 0.3333333333333333,
+        "support": 16.0
+      },
+      "incidental": {
+        "precision": 0.6,
+        "recall": 0.375,
+        "f1-score": 0.46153846153846156,
+        "support": 16.0
+      },
+      "indirect": {
+        "precision": 0.6666666666666666,
+        "recall": 0.5,
+        "f1-score": 0.5714285714285714,
+        "support": 16.0
+      },
+      "insufficient": {
+        "precision": 0.16216216216216217,
+        "recall": 0.75,
+        "f1-score": 0.26666666666666666,
+        "support": 16.0
+      },
+      "negated": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1-score": 0.0,
+        "support": 16.0
+      },
+      "resolved": {
+        "precision": 1.0,
+        "recall": 0.75,
+        "f1-score": 0.8571428571428571,
+        "support": 16.0
+      },
+      "victim": {
+        "precision": 0.5,
+        "recall": 0.25,
+        "f1-score": 0.3333333333333333,
+        "support": 16.0
+      },
+      "accuracy": 0.359375,
+      "macro avg": {
+        "precision": 0.4286036036036036,
+        "recall": 0.359375,
+        "f1-score": 0.3529304029304029,
+        "support": 128.0
+      },
+      "weighted avg": {
+        "precision": 0.4286036036036036,
+        "recall": 0.359375,
+        "f1-score": 0.3529304029304029,
+        "support": 128.0
+      }
+    },
+    "raw_argmax_roles": {
+      "accused": {
+        "precision": 0.32,
+        "recall": 0.5,
+        "f1-score": 0.3902439024390244,
+        "support": 16.0
+      },
+      "complainant": {
+        "precision": 0.6666666666666666,
+        "recall": 0.5,
+        "f1-score": 0.5714285714285714,
+        "support": 16.0
+      },
+      "incidental": {
+        "precision": 0.5454545454545454,
+        "recall": 0.75,
+        "f1-score": 0.631578947368421,
+        "support": 16.0
+      },
+      "indirect": {
+        "precision": 0.5333333333333333,
+        "recall": 0.5,
+        "f1-score": 0.5161290322580645,
+        "support": 16.0
+      },
+      "insufficient": {
+        "precision": 0.5,
+        "recall": 0.25,
+        "f1-score": 0.3333333333333333,
+        "support": 16.0
+      },
+      "negated": {
+        "precision": 1.0,
+        "recall": 0.375,
+        "f1-score": 0.5454545454545454,
+        "support": 16.0
+      },
+      "resolved": {
+        "precision": 0.6666666666666666,
+        "recall": 1.0,
+        "f1-score": 0.8,
+        "support": 16.0
+      },
+      "victim": {
+        "precision": 0.5,
+        "recall": 0.5,
+        "f1-score": 0.5,
+        "support": 16.0
+      },
+      "accuracy": 0.546875,
+      "macro avg": {
+        "precision": 0.5915151515151515,
+        "recall": 0.546875,
+        "f1-score": 0.536021041535245,
+        "support": 128.0
+      },
+      "weighted avg": {
+        "precision": 0.5915151515151515,
+        "recall": 0.546875,
+        "f1-score": 0.536021041535245,
+        "support": 128.0
+      }
+    },
+    "confusion_labels": [
+      "accused",
+      "complainant",
+      "incidental",
+      "indirect",
+      "insufficient",
+      "negated",
+      "resolved",
+      "victim"
+    ],
+    "confusion_matrix": [
+      [
+        0,
+        4,
+        0,
+        0,
+        8,
+        0,
+        0,
+        4
+      ],
+      [
+        0,
+        4,
+        0,
+        0,
+        12,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        6,
+        0,
+        10,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        8,
+        8,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        4,
+        0,
+        12,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        4,
+        12,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        4,
+        0,
+        12,
+        0
+      ],
+      [
+        4,
+        0,
+        0,
+        0,
+        8,
+        0,
+        0,
+        4
+      ]
+    ],
+    "review_relevance": {
+      "precision": 1.0,
+      "recall": 0.4583333333333333,
+      "f1": 0.6285714285714286,
+      "definition": "All roles except incidental/insufficient are review-relevant; this is not guilt or adverse-score relevance."
+    },
+    "adverse_false_positives": 4,
+    "adverse_false_positive_denominator": 112,
+    "abstentions": 74,
+    "exact_quote_rate": 1.0,
+    "quote_denominator": 132,
+    "scoring_fidelity": "Auxiliary engine never calls or modifies scoring; no auxiliary prediction is asserted as a score contribution.",
+    "ner_and_relation_f1": null,
+    "ner_and_relation_reason": "No NER/relation task in phase-2 discriminative classifier; target-name offsets are literal matching."
+  },
+  "performance": {
+    "cold_artifact_load_ms": 31.3881519999768,
+    "latency_per_note_ms": {
+      "median": 0.49975100000665407,
+      "p95": 0.6125989999645753,
+      "max": 1.4911150000216367,
+      "n": 128
+    },
+    "cpu_per_note_ms_median": 0.5002194999999543,
+    "entity_latency_scope": "Each holdout note evaluates one entity; multi-note entity aggregation excluded.",
+    "model_disk_bytes": 1432196,
+    "peak_python_allocated_bytes": 6921311,
+    "cold_process_max_rss_bytes": 16502784,
+    "rss_measurement_method": "Linux /proc/self/status VmHWM, no tracemalloc",
+    "memory_scope": "Separate fresh processes: Python allocation peak with tracemalloc; Linux VmHWM total resident high-water without tracemalloc. RSS includes interpreter baseline and cold stdlib inference, excludes training; unavailable platforms report null."
+  },
+  "restrictions": {
+    "inference_network_calls": 0,
+    "hugging_face": false,
+    "inference_dependencies": "Python stdlib + existing peps.nlp segmentation/matching"
+  },
+  "limitations": [
+    "No reviewed real-news labels available for this proof of concept.",
+    "Synthetic template variants are correlated; example-level scores are optimistic and not deployment validation.",
+    "Exact quote rate validates provenance, not semantic correctness or source truth.",
+    "No identity resolution, general relation extraction or factuality verification.",
+    "No final architecture selection before phase-3 NLP and independent comparative benchmark."
+  ],
+  "predictions": [
+    {
+      "id": "holdout-accused-00-0",
+      "family": "holdout-accused-00",
+      "expected": "accused",
+      "predicted": "complainant",
+      "raw_predicted": "complainant",
+      "margin": 0.716528,
+      "abstained": false
+    },
+    {
+      "id": "holdout-accused-00-1",
+      "family": "holdout-accused-00",
+      "expected": "accused",
+      "predicted": "complainant",
+      "raw_predicted": "complainant",
+      "margin": 0.766071,
+      "abstained": false
+    },
+    {
+      "id": "holdout-accused-00-2",
+      "family": "holdout-accused-00",
+      "expected": "accused",
+      "predicted": "complainant",
+      "raw_predicted": "complainant",
+      "margin": 0.708722,
+      "abstained": false
+    },
+    {
+      "id": "holdout-accused-00-3",
+      "family": "holdout-accused-00",
+      "expected": "accused",
+      "predicted": "complainant",
+      "raw_predicted": "complainant",
+      "margin": 0.755617,
+      "abstained": false
+    },
+    {
+      "id": "holdout-accused-01-0",
+      "family": "holdout-accused-01",
+      "expected": "accused",
+      "predicted": "victim",
+      "raw_predicted": "victim",
+      "margin": 1.011271,
+      "abstained": false
+    },
+    {
+      "id": "holdout-accused-01-1",
+      "family": "holdout-accused-01",
+      "expected": "accused",
+      "predicted": "victim",
+      "raw_predicted": "victim",
+      "margin": 0.993832,
+      "abstained": false
+    },
+    {
+      "id": "holdout-accused-01-2",
+      "family": "holdout-accused-01",
+      "expected": "accused",
+      "predicted": "victim",
+      "raw_predicted": "victim",
+      "margin": 1.01758,
+      "abstained": false
+    },
+    {
+      "id": "holdout-accused-01-3",
+      "family": "holdout-accused-01",
+      "expected": "accused",
+      "predicted": "victim",
+      "raw_predicted": "victim",
+      "margin": 0.920432,
+      "abstained": false
+    },
+    {
+      "id": "holdout-accused-02-0",
+      "family": "holdout-accused-02",
+      "expected": "accused",
+      "predicted": "insufficient",
+      "raw_predicted": "accused",
+      "margin": 0.549572,
+      "abstained": true
+    },
+    {
+      "id": "holdout-accused-02-1",
+      "family": "holdout-accused-02",
+      "expected": "accused",
+      "predicted": "insufficient",
+      "raw_predicted": "accused",
+      "margin": 0.497521,
+      "abstained": true
+    },
+    {
+      "id": "holdout-accused-02-2",
+      "family": "holdout-accused-02",
+      "expected": "accused",
+      "predicted": "insufficient",
+      "raw_predicted": "accused",
+      "margin": 0.538077,
+      "abstained": true
+    },
+    {
+      "id": "holdout-accused-02-3",
+      "family": "holdout-accused-02",
+      "expected": "accused",
+      "predicted": "insufficient",
+      "raw_predicted": "accused",
+      "margin": 0.418028,
+      "abstained": true
+    },
+    {
+      "id": "holdout-accused-03-0",
+      "family": "holdout-accused-03",
+      "expected": "accused",
+      "predicted": "insufficient",
+      "raw_predicted": "accused",
+      "margin": 0.583928,
+      "abstained": true
+    },
+    {
+      "id": "holdout-accused-03-1",
+      "family": "holdout-accused-03",
+      "expected": "accused",
+      "predicted": "insufficient",
+      "raw_predicted": "accused",
+      "margin": 0.675966,
+      "abstained": true
+    },
+    {
+      "id": "holdout-accused-03-2",
+      "family": "holdout-accused-03",
+      "expected": "accused",
+      "predicted": "insufficient",
+      "raw_predicted": "accused",
+      "margin": 0.544663,
+      "abstained": true
+    },
+    {
+      "id": "holdout-accused-03-3",
+      "family": "holdout-accused-03",
+      "expected": "accused",
+      "predicted": "insufficient",
+      "raw_predicted": "accused",
+      "margin": 0.645678,
+      "abstained": true
+    },
+    {
+      "id": "holdout-victim-00-0",
+      "family": "holdout-victim-00",
+      "expected": "victim",
+      "predicted": "insufficient",
+      "raw_predicted": "victim",
+      "margin": 0.384418,
+      "abstained": true
+    },
+    {
+      "id": "holdout-victim-00-1",
+      "family": "holdout-victim-00",
+      "expected": "victim",
+      "predicted": "insufficient",
+      "raw_predicted": "victim",
+      "margin": 0.501849,
+      "abstained": true
+    },
+    {
+      "id": "holdout-victim-00-2",
+      "family": "holdout-victim-00",
+      "expected": "victim",
+      "predicted": "insufficient",
+      "raw_predicted": "victim",
+      "margin": 0.368368,
+      "abstained": true
+    },
+    {
+      "id": "holdout-victim-00-3",
+      "family": "holdout-victim-00",
+      "expected": "victim",
+      "predicted": "insufficient",
+      "raw_predicted": "victim",
+      "margin": 0.475021,
+      "abstained": true
+    },
+    {
+      "id": "holdout-victim-01-0",
+      "family": "holdout-victim-01",
+      "expected": "victim",
+      "predicted": "accused",
+      "raw_predicted": "accused",
+      "margin": 0.95526,
+      "abstained": false
+    },
+    {
+      "id": "holdout-victim-01-1",
+      "family": "holdout-victim-01",
+      "expected": "victim",
+      "predicted": "accused",
+      "raw_predicted": "accused",
+      "margin": 0.913682,
+      "abstained": false
+    },
+    {
+      "id": "holdout-victim-01-2",
+      "family": "holdout-victim-01",
+      "expected": "victim",
+      "predicted": "accused",
+      "raw_predicted": "accused",
+      "margin": 0.944577,
+      "abstained": false
+    },
+    {
+      "id": "holdout-victim-01-3",
+      "family": "holdout-victim-01",
+      "expected": "victim",
+      "predicted": "accused",
+      "raw_predicted": "accused",
+      "margin": 0.916832,
+      "abstained": false
+    },
+    {
+      "id": "holdout-victim-02-0",
+      "family": "holdout-victim-02",
+      "expected": "victim",
+      "predicted": "victim",
+      "raw_predicted": "victim",
+      "margin": 0.982623,
+      "abstained": false
+    },
+    {
+      "id": "holdout-victim-02-1",
+      "family": "holdout-victim-02",
+      "expected": "victim",
+      "predicted": "victim",
+      "raw_predicted": "victim",
+      "margin": 0.907412,
+      "abstained": false
+    },
+    {
+      "id": "holdout-victim-02-2",
+      "family": "holdout-victim-02",
+      "expected": "victim",
+      "predicted": "victim",
+      "raw_predicted": "victim",
+      "margin": 0.986196,
+      "abstained": false
+    },
+    {
+      "id": "holdout-victim-02-3",
+      "family": "holdout-victim-02",
+      "expected": "victim",
+      "predicted": "victim",
+      "raw_predicted": "victim",
+      "margin": 0.92818,
+      "abstained": false
+    },
+    {
+      "id": "holdout-victim-03-0",
+      "family": "holdout-victim-03",
+      "expected": "victim",
+      "predicted": "insufficient",
+      "raw_predicted": "resolved",
+      "margin": 0.289149,
+      "abstained": true
+    },
+    {
+      "id": "holdout-victim-03-1",
+      "family": "holdout-victim-03",
+      "expected": "victim",
+      "predicted": "insufficient",
+      "raw_predicted": "resolved",
+      "margin": 0.42193,
+      "abstained": true
+    },
+    {
+      "id": "holdout-victim-03-2",
+      "family": "holdout-victim-03",
+      "expected": "victim",
+      "predicted": "insufficient",
+      "raw_predicted": "resolved",
+      "margin": 0.184201,
+      "abstained": true
+    },
+    {
+      "id": "holdout-victim-03-3",
+      "family": "holdout-victim-03",
+      "expected": "victim",
+      "predicted": "insufficient",
+      "raw_predicted": "resolved",
+      "margin": 0.388783,
+      "abstained": true
+    },
+    {
+      "id": "holdout-complainant-00-0",
+      "family": "holdout-complainant-00",
+      "expected": "complainant",
+      "predicted": "insufficient",
+      "raw_predicted": "accused",
+      "margin": 0.093361,
+      "abstained": true
+    },
+    {
+      "id": "holdout-complainant-00-1",
+      "family": "holdout-complainant-00",
+      "expected": "complainant",
+      "predicted": "insufficient",
+      "raw_predicted": "accused",
+      "margin": 0.061481,
+      "abstained": true
+    },
+    {
+      "id": "holdout-complainant-00-2",
+      "family": "holdout-complainant-00",
+      "expected": "complainant",
+      "predicted": "insufficient",
+      "raw_predicted": "accused",
+      "margin": 0.114196,
+      "abstained": true
+    },
+    {
+      "id": "holdout-complainant-00-3",
+      "family": "holdout-complainant-00",
+      "expected": "complainant",
+      "predicted": "insufficient",
+      "raw_predicted": "accused",
+      "margin": 0.087002,
+      "abstained": true
+    },
+    {
+      "id": "holdout-complainant-01-0",
+      "family": "holdout-complainant-01",
+      "expected": "complainant",
+      "predicted": "complainant",
+      "raw_predicted": "complainant",
+      "margin": 1.424307,
+      "abstained": false
+    },
+    {
+      "id": "holdout-complainant-01-1",
+      "family": "holdout-complainant-01",
+      "expected": "complainant",
+      "predicted": "complainant",
+      "raw_predicted": "complainant",
+      "margin": 1.355452,
+      "abstained": false
+    },
+    {
+      "id": "holdout-complainant-01-2",
+      "family": "holdout-complainant-01",
+      "expected": "complainant",
+      "predicted": "complainant",
+      "raw_predicted": "complainant",
+      "margin": 1.455506,
+      "abstained": false
+    },
+    {
+      "id": "holdout-complainant-01-3",
+      "family": "holdout-complainant-01",
+      "expected": "complainant",
+      "predicted": "complainant",
+      "raw_predicted": "complainant",
+      "margin": 1.401732,
+      "abstained": false
+    },
+    {
+      "id": "holdout-complainant-02-0",
+      "family": "holdout-complainant-02",
+      "expected": "complainant",
+      "predicted": "insufficient",
+      "raw_predicted": "indirect",
+      "margin": 0.162422,
+      "abstained": true
+    },
+    {
+      "id": "holdout-complainant-02-1",
+      "family": "holdout-complainant-02",
+      "expected": "complainant",
+      "predicted": "insufficient",
+      "raw_predicted": "indirect",
+      "margin": 0.016479,
+      "abstained": true
+    },
+    {
+      "id": "holdout-complainant-02-2",
+      "family": "holdout-complainant-02",
+      "expected": "complainant",
+      "predicted": "insufficient",
+      "raw_predicted": "indirect",
+      "margin": 0.170402,
+      "abstained": true
+    },
+    {
+      "id": "holdout-complainant-02-3",
+      "family": "holdout-complainant-02",
+      "expected": "complainant",
+      "predicted": "insufficient",
+      "raw_predicted": "accused",
+      "margin": 0.002135,
+      "abstained": true
+    },
+    {
+      "id": "holdout-complainant-03-0",
+      "family": "holdout-complainant-03",
+      "expected": "complainant",
+      "predicted": "insufficient",
+      "raw_predicted": "complainant",
+      "margin": 0.440116,
+      "abstained": true
+    },
+    {
+      "id": "holdout-complainant-03-1",
+      "family": "holdout-complainant-03",
+      "expected": "complainant",
+      "predicted": "insufficient",
+      "raw_predicted": "complainant",
+      "margin": 0.44723,
+      "abstained": true
+    },
+    {
+      "id": "holdout-complainant-03-2",
+      "family": "holdout-complainant-03",
+      "expected": "complainant",
+      "predicted": "insufficient",
+      "raw_predicted": "complainant",
+      "margin": 0.433099,
+      "abstained": true
+    },
+    {
+      "id": "holdout-complainant-03-3",
+      "family": "holdout-complainant-03",
+      "expected": "complainant",
+      "predicted": "insufficient",
+      "raw_predicted": "complainant",
+      "margin": 0.453909,
+      "abstained": true
+    },
+    {
+      "id": "holdout-incidental-00-0",
+      "family": "holdout-incidental-00",
+      "expected": "incidental",
+      "predicted": "insufficient",
+      "raw_predicted": "incidental",
+      "margin": 0.47347,
+      "abstained": true
+    },
+    {
+      "id": "holdout-incidental-00-1",
+      "family": "holdout-incidental-00",
+      "expected": "incidental",
+      "predicted": "insufficient",
+      "raw_predicted": "incidental",
+      "margin": 0.320287,
+      "abstained": true
+    },
+    {
+      "id": "holdout-incidental-00-2",
+      "family": "holdout-incidental-00",
+      "expected": "incidental",
+      "predicted": "insufficient",
+      "raw_predicted": "incidental",
+      "margin": 0.507032,
+      "abstained": true
+    },
+    {
+      "id": "holdout-incidental-00-3",
+      "family": "holdout-incidental-00",
+      "expected": "incidental",
+      "predicted": "insufficient",
+      "raw_predicted": "incidental",
+      "margin": 0.368656,
+      "abstained": true
+    },
+    {
+      "id": "holdout-incidental-01-0",
+      "family": "holdout-incidental-01",
+      "expected": "incidental",
+      "predicted": "insufficient",
+      "raw_predicted": "incidental",
+      "margin": 0.494869,
+      "abstained": true
+    },
+    {
+      "id": "holdout-incidental-01-1",
+      "family": "holdout-incidental-01",
+      "expected": "incidental",
+      "predicted": "incidental",
+      "raw_predicted": "incidental",
+      "margin": 0.754423,
+      "abstained": false
+    },
+    {
+      "id": "holdout-incidental-01-2",
+      "family": "holdout-incidental-01",
+      "expected": "incidental",
+      "predicted": "insufficient",
+      "raw_predicted": "incidental",
+      "margin": 0.58866,
+      "abstained": true
+    },
+    {
+      "id": "holdout-incidental-01-3",
+      "family": "holdout-incidental-01",
+      "expected": "incidental",
+      "predicted": "incidental",
+      "raw_predicted": "incidental",
+      "margin": 0.754552,
+      "abstained": false
+    },
+    {
+      "id": "holdout-incidental-02-0",
+      "family": "holdout-incidental-02",
+      "expected": "incidental",
+      "predicted": "incidental",
+      "raw_predicted": "incidental",
+      "margin": 1.068342,
+      "abstained": false
+    },
+    {
+      "id": "holdout-incidental-02-1",
+      "family": "holdout-incidental-02",
+      "expected": "incidental",
+      "predicted": "incidental",
+      "raw_predicted": "incidental",
+      "margin": 0.977139,
+      "abstained": false
+    },
+    {
+      "id": "holdout-incidental-02-2",
+      "family": "holdout-incidental-02",
+      "expected": "incidental",
+      "predicted": "incidental",
+      "raw_predicted": "incidental",
+      "margin": 1.048774,
+      "abstained": false
+    },
+    {
+      "id": "holdout-incidental-02-3",
+      "family": "holdout-incidental-02",
+      "expected": "incidental",
+      "predicted": "incidental",
+      "raw_predicted": "incidental",
+      "margin": 0.904679,
+      "abstained": false
+    },
+    {
+      "id": "holdout-incidental-03-0",
+      "family": "holdout-incidental-03",
+      "expected": "incidental",
+      "predicted": "insufficient",
+      "raw_predicted": "insufficient",
+      "margin": 0.633671,
+      "abstained": true
+    },
+    {
+      "id": "holdout-incidental-03-1",
+      "family": "holdout-incidental-03",
+      "expected": "incidental",
+      "predicted": "insufficient",
+      "raw_predicted": "insufficient",
+      "margin": 0.901385,
+      "abstained": true
+    },
+    {
+      "id": "holdout-incidental-03-2",
+      "family": "holdout-incidental-03",
+      "expected": "incidental",
+      "predicted": "insufficient",
+      "raw_predicted": "insufficient",
+      "margin": 0.481358,
+      "abstained": true
+    },
+    {
+      "id": "holdout-incidental-03-3",
+      "family": "holdout-incidental-03",
+      "expected": "incidental",
+      "predicted": "insufficient",
+      "raw_predicted": "insufficient",
+      "margin": 0.867983,
+      "abstained": true
+    },
+    {
+      "id": "holdout-negated-00-0",
+      "family": "holdout-negated-00",
+      "expected": "negated",
+      "predicted": "insufficient",
+      "raw_predicted": "resolved",
+      "margin": 0.102126,
+      "abstained": true
+    },
+    {
+      "id": "holdout-negated-00-1",
+      "family": "holdout-negated-00",
+      "expected": "negated",
+      "predicted": "insufficient",
+      "raw_predicted": "resolved",
+      "margin": 0.070156,
+      "abstained": true
+    },
+    {
+      "id": "holdout-negated-00-2",
+      "family": "holdout-negated-00",
+      "expected": "negated",
+      "predicted": "insufficient",
+      "raw_predicted": "resolved",
+      "margin": 0.084477,
+      "abstained": true
+    },
+    {
+      "id": "holdout-negated-00-3",
+      "family": "holdout-negated-00",
+      "expected": "negated",
+      "predicted": "insufficient",
+      "raw_predicted": "resolved",
+      "margin": 0.06595,
+      "abstained": true
+    },
+    {
+      "id": "holdout-negated-01-0",
+      "family": "holdout-negated-01",
+      "expected": "negated",
+      "predicted": "insufficient",
+      "raw_predicted": "negated",
+      "margin": 0.129035,
+      "abstained": true
+    },
+    {
+      "id": "holdout-negated-01-1",
+      "family": "holdout-negated-01",
+      "expected": "negated",
+      "predicted": "insufficient",
+      "raw_predicted": "incidental",
+      "margin": 0.079916,
+      "abstained": true
+    },
+    {
+      "id": "holdout-negated-01-2",
+      "family": "holdout-negated-01",
+      "expected": "negated",
+      "predicted": "insufficient",
+      "raw_predicted": "negated",
+      "margin": 0.115419,
+      "abstained": true
+    },
+    {
+      "id": "holdout-negated-01-3",
+      "family": "holdout-negated-01",
+      "expected": "negated",
+      "predicted": "insufficient",
+      "raw_predicted": "incidental",
+      "margin": 0.068173,
+      "abstained": true
+    },
+    {
+      "id": "holdout-negated-02-0",
+      "family": "holdout-negated-02",
+      "expected": "negated",
+      "predicted": "indirect",
+      "raw_predicted": "indirect",
+      "margin": 0.853201,
+      "abstained": false
+    },
+    {
+      "id": "holdout-negated-02-1",
+      "family": "holdout-negated-02",
+      "expected": "negated",
+      "predicted": "indirect",
+      "raw_predicted": "indirect",
+      "margin": 0.89313,
+      "abstained": false
+    },
+    {
+      "id": "holdout-negated-02-2",
+      "family": "holdout-negated-02",
+      "expected": "negated",
+      "predicted": "indirect",
+      "raw_predicted": "indirect",
+      "margin": 0.831049,
+      "abstained": false
+    },
+    {
+      "id": "holdout-negated-02-3",
+      "family": "holdout-negated-02",
+      "expected": "negated",
+      "predicted": "indirect",
+      "raw_predicted": "indirect",
+      "margin": 0.91449,
+      "abstained": false
+    },
+    {
+      "id": "holdout-negated-03-0",
+      "family": "holdout-negated-03",
+      "expected": "negated",
+      "predicted": "insufficient",
+      "raw_predicted": "negated",
+      "margin": 0.58134,
+      "abstained": true
+    },
+    {
+      "id": "holdout-negated-03-1",
+      "family": "holdout-negated-03",
+      "expected": "negated",
+      "predicted": "insufficient",
+      "raw_predicted": "negated",
+      "margin": 0.626179,
+      "abstained": true
+    },
+    {
+      "id": "holdout-negated-03-2",
+      "family": "holdout-negated-03",
+      "expected": "negated",
+      "predicted": "insufficient",
+      "raw_predicted": "negated",
+      "margin": 0.55984,
+      "abstained": true
+    },
+    {
+      "id": "holdout-negated-03-3",
+      "family": "holdout-negated-03",
+      "expected": "negated",
+      "predicted": "insufficient",
+      "raw_predicted": "negated",
+      "margin": 0.596962,
+      "abstained": true
+    },
+    {
+      "id": "holdout-resolved-00-0",
+      "family": "holdout-resolved-00",
+      "expected": "resolved",
+      "predicted": "resolved",
+      "raw_predicted": "resolved",
+      "margin": 0.937538,
+      "abstained": false
+    },
+    {
+      "id": "holdout-resolved-00-1",
+      "family": "holdout-resolved-00",
+      "expected": "resolved",
+      "predicted": "resolved",
+      "raw_predicted": "resolved",
+      "margin": 0.788969,
+      "abstained": false
+    },
+    {
+      "id": "holdout-resolved-00-2",
+      "family": "holdout-resolved-00",
+      "expected": "resolved",
+      "predicted": "resolved",
+      "raw_predicted": "resolved",
+      "margin": 0.916373,
+      "abstained": false
+    },
+    {
+      "id": "holdout-resolved-00-3",
+      "family": "holdout-resolved-00",
+      "expected": "resolved",
+      "predicted": "resolved",
+      "raw_predicted": "resolved",
+      "margin": 0.819481,
+      "abstained": false
+    },
+    {
+      "id": "holdout-resolved-01-0",
+      "family": "holdout-resolved-01",
+      "expected": "resolved",
+      "predicted": "resolved",
+      "raw_predicted": "resolved",
+      "margin": 0.967566,
+      "abstained": false
+    },
+    {
+      "id": "holdout-resolved-01-1",
+      "family": "holdout-resolved-01",
+      "expected": "resolved",
+      "predicted": "resolved",
+      "raw_predicted": "resolved",
+      "margin": 1.146677,
+      "abstained": false
+    },
+    {
+      "id": "holdout-resolved-01-2",
+      "family": "holdout-resolved-01",
+      "expected": "resolved",
+      "predicted": "resolved",
+      "raw_predicted": "resolved",
+      "margin": 1.019441,
+      "abstained": false
+    },
+    {
+      "id": "holdout-resolved-01-3",
+      "family": "holdout-resolved-01",
+      "expected": "resolved",
+      "predicted": "resolved",
+      "raw_predicted": "resolved",
+      "margin": 1.15634,
+      "abstained": false
+    },
+    {
+      "id": "holdout-resolved-02-0",
+      "family": "holdout-resolved-02",
+      "expected": "resolved",
+      "predicted": "insufficient",
+      "raw_predicted": "resolved",
+      "margin": 0.585416,
+      "abstained": true
+    },
+    {
+      "id": "holdout-resolved-02-1",
+      "family": "holdout-resolved-02",
+      "expected": "resolved",
+      "predicted": "insufficient",
+      "raw_predicted": "resolved",
+      "margin": 0.618713,
+      "abstained": true
+    },
+    {
+      "id": "holdout-resolved-02-2",
+      "family": "holdout-resolved-02",
+      "expected": "resolved",
+      "predicted": "insufficient",
+      "raw_predicted": "resolved",
+      "margin": 0.591716,
+      "abstained": true
+    },
+    {
+      "id": "holdout-resolved-02-3",
+      "family": "holdout-resolved-02",
+      "expected": "resolved",
+      "predicted": "insufficient",
+      "raw_predicted": "resolved",
+      "margin": 0.593656,
+      "abstained": true
+    },
+    {
+      "id": "holdout-resolved-03-0",
+      "family": "holdout-resolved-03",
+      "expected": "resolved",
+      "predicted": "resolved",
+      "raw_predicted": "resolved",
+      "margin": 1.429062,
+      "abstained": false
+    },
+    {
+      "id": "holdout-resolved-03-1",
+      "family": "holdout-resolved-03",
+      "expected": "resolved",
+      "predicted": "resolved",
+      "raw_predicted": "resolved",
+      "margin": 1.366388,
+      "abstained": false
+    },
+    {
+      "id": "holdout-resolved-03-2",
+      "family": "holdout-resolved-03",
+      "expected": "resolved",
+      "predicted": "resolved",
+      "raw_predicted": "resolved",
+      "margin": 1.40172,
+      "abstained": false
+    },
+    {
+      "id": "holdout-resolved-03-3",
+      "family": "holdout-resolved-03",
+      "expected": "resolved",
+      "predicted": "resolved",
+      "raw_predicted": "resolved",
+      "margin": 1.344922,
+      "abstained": false
+    },
+    {
+      "id": "holdout-insufficient-00-0",
+      "family": "holdout-insufficient-00",
+      "expected": "insufficient",
+      "predicted": "incidental",
+      "raw_predicted": "incidental",
+      "margin": 1.044081,
+      "abstained": false
+    },
+    {
+      "id": "holdout-insufficient-00-1",
+      "family": "holdout-insufficient-00",
+      "expected": "insufficient",
+      "predicted": "incidental",
+      "raw_predicted": "incidental",
+      "margin": 1.044081,
+      "abstained": false
+    },
+    {
+      "id": "holdout-insufficient-00-2",
+      "family": "holdout-insufficient-00",
+      "expected": "insufficient",
+      "predicted": "incidental",
+      "raw_predicted": "incidental",
+      "margin": 1.044081,
+      "abstained": false
+    },
+    {
+      "id": "holdout-insufficient-00-3",
+      "family": "holdout-insufficient-00",
+      "expected": "insufficient",
+      "predicted": "incidental",
+      "raw_predicted": "incidental",
+      "margin": 1.044081,
+      "abstained": false
+    },
+    {
+      "id": "holdout-insufficient-01-0",
+      "family": "holdout-insufficient-01",
+      "expected": "insufficient",
+      "predicted": "insufficient",
+      "raw_predicted": "incidental",
+      "margin": 0.301118,
+      "abstained": true
+    },
+    {
+      "id": "holdout-insufficient-01-1",
+      "family": "holdout-insufficient-01",
+      "expected": "insufficient",
+      "predicted": "insufficient",
+      "raw_predicted": "incidental",
+      "margin": 0.301118,
+      "abstained": true
+    },
+    {
+      "id": "holdout-insufficient-01-2",
+      "family": "holdout-insufficient-01",
+      "expected": "insufficient",
+      "predicted": "insufficient",
+      "raw_predicted": "incidental",
+      "margin": 0.301118,
+      "abstained": true
+    },
+    {
+      "id": "holdout-insufficient-01-3",
+      "family": "holdout-insufficient-01",
+      "expected": "insufficient",
+      "predicted": "insufficient",
+      "raw_predicted": "incidental",
+      "margin": 0.301118,
+      "abstained": true
+    },
+    {
+      "id": "holdout-insufficient-02-0",
+      "family": "holdout-insufficient-02",
+      "expected": "insufficient",
+      "predicted": "insufficient",
+      "raw_predicted": "victim",
+      "margin": 0.353201,
+      "abstained": true
+    },
+    {
+      "id": "holdout-insufficient-02-1",
+      "family": "holdout-insufficient-02",
+      "expected": "insufficient",
+      "predicted": "insufficient",
+      "raw_predicted": "victim",
+      "margin": 0.353201,
+      "abstained": true
+    },
+    {
+      "id": "holdout-insufficient-02-2",
+      "family": "holdout-insufficient-02",
+      "expected": "insufficient",
+      "predicted": "insufficient",
+      "raw_predicted": "victim",
+      "margin": 0.353201,
+      "abstained": true
+    },
+    {
+      "id": "holdout-insufficient-02-3",
+      "family": "holdout-insufficient-02",
+      "expected": "insufficient",
+      "predicted": "insufficient",
+      "raw_predicted": "victim",
+      "margin": 0.353201,
+      "abstained": true
+    },
+    {
+      "id": "holdout-insufficient-03-0",
+      "family": "holdout-insufficient-03",
+      "expected": "insufficient",
+      "predicted": "insufficient",
+      "raw_predicted": "insufficient",
+      "margin": 1.372345,
+      "abstained": true
+    },
+    {
+      "id": "holdout-insufficient-03-1",
+      "family": "holdout-insufficient-03",
+      "expected": "insufficient",
+      "predicted": "insufficient",
+      "raw_predicted": "insufficient",
+      "margin": 1.372345,
+      "abstained": true
+    },
+    {
+      "id": "holdout-insufficient-03-2",
+      "family": "holdout-insufficient-03",
+      "expected": "insufficient",
+      "predicted": "insufficient",
+      "raw_predicted": "insufficient",
+      "margin": 1.372345,
+      "abstained": true
+    },
+    {
+      "id": "holdout-insufficient-03-3",
+      "family": "holdout-insufficient-03",
+      "expected": "insufficient",
+      "predicted": "insufficient",
+      "raw_predicted": "insufficient",
+      "margin": 1.372345,
+      "abstained": true
+    },
+    {
+      "id": "holdout-indirect-00-0",
+      "family": "holdout-indirect-00",
+      "expected": "indirect",
+      "predicted": "insufficient",
+      "raw_predicted": "accused",
+      "margin": 0.079663,
+      "abstained": true
+    },
+    {
+      "id": "holdout-indirect-00-1",
+      "family": "holdout-indirect-00",
+      "expected": "indirect",
+      "predicted": "insufficient",
+      "raw_predicted": "accused",
+      "margin": 0.181797,
+      "abstained": true
+    },
+    {
+      "id": "holdout-indirect-00-2",
+      "family": "holdout-indirect-00",
+      "expected": "indirect",
+      "predicted": "insufficient",
+      "raw_predicted": "accused",
+      "margin": 0.083755,
+      "abstained": true
+    },
+    {
+      "id": "holdout-indirect-00-3",
+      "family": "holdout-indirect-00",
+      "expected": "indirect",
+      "predicted": "insufficient",
+      "raw_predicted": "accused",
+      "margin": 0.149105,
+      "abstained": true
+    },
+    {
+      "id": "holdout-indirect-01-0",
+      "family": "holdout-indirect-01",
+      "expected": "indirect",
+      "predicted": "indirect",
+      "raw_predicted": "indirect",
+      "margin": 0.910623,
+      "abstained": false
+    },
+    {
+      "id": "holdout-indirect-01-1",
+      "family": "holdout-indirect-01",
+      "expected": "indirect",
+      "predicted": "indirect",
+      "raw_predicted": "indirect",
+      "margin": 1.035946,
+      "abstained": false
+    },
+    {
+      "id": "holdout-indirect-01-2",
+      "family": "holdout-indirect-01",
+      "expected": "indirect",
+      "predicted": "indirect",
+      "raw_predicted": "indirect",
+      "margin": 0.946294,
+      "abstained": false
+    },
+    {
+      "id": "holdout-indirect-01-3",
+      "family": "holdout-indirect-01",
+      "expected": "indirect",
+      "predicted": "indirect",
+      "raw_predicted": "indirect",
+      "margin": 1.000235,
+      "abstained": false
+    },
+    {
+      "id": "holdout-indirect-02-0",
+      "family": "holdout-indirect-02",
+      "expected": "indirect",
+      "predicted": "insufficient",
+      "raw_predicted": "accused",
+      "margin": 0.446232,
+      "abstained": true
+    },
+    {
+      "id": "holdout-indirect-02-1",
+      "family": "holdout-indirect-02",
+      "expected": "indirect",
+      "predicted": "insufficient",
+      "raw_predicted": "accused",
+      "margin": 0.467445,
+      "abstained": true
+    },
+    {
+      "id": "holdout-indirect-02-2",
+      "family": "holdout-indirect-02",
+      "expected": "indirect",
+      "predicted": "insufficient",
+      "raw_predicted": "accused",
+      "margin": 0.429208,
+      "abstained": true
+    },
+    {
+      "id": "holdout-indirect-02-3",
+      "family": "holdout-indirect-02",
+      "expected": "indirect",
+      "predicted": "insufficient",
+      "raw_predicted": "accused",
+      "margin": 0.470899,
+      "abstained": true
+    },
+    {
+      "id": "holdout-indirect-03-0",
+      "family": "holdout-indirect-03",
+      "expected": "indirect",
+      "predicted": "indirect",
+      "raw_predicted": "indirect",
+      "margin": 1.932638,
+      "abstained": false
+    },
+    {
+      "id": "holdout-indirect-03-1",
+      "family": "holdout-indirect-03",
+      "expected": "indirect",
+      "predicted": "indirect",
+      "raw_predicted": "indirect",
+      "margin": 1.936319,
+      "abstained": false
+    },
+    {
+      "id": "holdout-indirect-03-2",
+      "family": "holdout-indirect-03",
+      "expected": "indirect",
+      "predicted": "indirect",
+      "raw_predicted": "indirect",
+      "margin": 1.963995,
+      "abstained": false
+    },
+    {
+      "id": "holdout-indirect-03-3",
+      "family": "holdout-indirect-03",
+      "expected": "indirect",
+      "predicted": "indirect",
+      "raw_predicted": "indirect",
+      "margin": 1.933903,
+      "abstained": false
+    }
+  ]
+}

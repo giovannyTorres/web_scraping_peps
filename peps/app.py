@@ -97,6 +97,15 @@ def create_server(engine, port=0):
                         self.reply({'error': 'Entidad inexistente'}, 404)
                     else:
                         self.reply({'entity': entity, 'evidence': engine.store.evidence(entity_id, 200), 'evidence_limit': 200})
+                elif path == '/api/explanation':
+                    entity_id = query.get('id', [''])[0]
+                    if not engine.store.get_entity(entity_id):
+                        self.reply({'error': 'Entidad inexistente'}, 404)
+                    else:
+                        self.reply(engine.explanation(entity_id, query.get('run_id', [None])[0]))
+                elif path == '/api/run-evidence':
+                    item = engine.store.run_evidence(query.get('run_id', [''])[0], query.get('id', [''])[0])
+                    self.reply(item if item else {'error': 'Evidencia inexistente en esta evaluación'}, 200 if item else 404)
                 elif path == '/api/sources':
                     self.reply(engine.sources())
                 elif path == '/api/audit':
@@ -150,8 +159,13 @@ def create_server(engine, port=0):
                 elif self.path == '/api/source':
                     engine.set_source(data['id'], data['enabled'], data['terms_approved'])
                 elif self.path == '/api/review':
-                    entity_id = engine.store.review(data['id'], data['status'], data['actor'], data['reason'], data.get('event_id'), data.get('identity_spans'))
+                    if not data.get('expected_run_id'):
+                        raise ValueError('Abra la evaluación actual antes de registrar una revisión')
+                    entity_id = engine.store.review(data['id'], data['status'], data['actor'], data['reason'], data.get('event_id'), data.get('identity_spans'), expected_run_id=data['expected_run_id'])
                     engine.rescore(entity_id)
+                elif self.path == '/api/replay':
+                    self.reply(engine.replay_score(str(data['run_id'])))
+                    return
                 elif self.path == '/api/news-acquire':
                     engine.online = bool(data.get('online'))
                     if not engine.online:

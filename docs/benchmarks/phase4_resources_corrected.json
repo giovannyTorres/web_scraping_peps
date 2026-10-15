@@ -1,0 +1,180 @@
+{
+  "generated_at": "2026-10-15T08:57:53.557664+00:00",
+  "scope": "RSS_correction_only_no_quality_latency_training_or_threshold_changes",
+  "reason": "Linux ru_maxrss may retain parent preexec high-water mark; /proc VmHWM measures current address space.",
+  "source_report": "/workspace/web_scraping_peps/docs/benchmarks/phase4_comparison.json",
+  "source_report_sha256": "7e58d81f782e87a7a3a5ca77c42790a4adcf46f56bb7cc0db5ff10ec3dcccb11",
+  "replaces_field": "methods.<baseline|discriminative|advanced|hybrid>.performance.peak_rss",
+  "preserved": "All original quality, predictions, timings and Laya psutil observed RSS remain unchanged.",
+  "evaluator_sha256": "b299acce0538e61e197474ddc5528db6461a54539268588fa7c1da43646f87b8",
+  "methods": {
+    "baseline": {
+      "method": "baseline",
+      "pid": 5155,
+      "dataset_sha256": "8425c256e6dcc97a1664577b6aa593b09a75123fc28adf6f07cc20f16e36816a",
+      "notes_processed_once": 72,
+      "compact_predictions_retained": 72,
+      "before_model_load": {
+        "peak_rss_bytes": 13066240,
+        "current_rss_bytes": 13066240,
+        "method": "proc_self_status_VmHWM_current_address_space"
+      },
+      "after_model_load": {
+        "peak_rss_bytes": 13193216,
+        "current_rss_bytes": 13193216,
+        "method": "proc_self_status_VmHWM_current_address_space"
+      },
+      "after_single_inference_pass": {
+        "peak_rss_bytes": 13553664,
+        "current_rss_bytes": 13553664,
+        "method": "proc_self_status_VmHWM_current_address_space"
+      },
+      "model_info": {
+        "baseline": {
+          "model_version": "es-gazetteer-rules-1.0.0",
+          "artifact_sha256": null,
+          "model_hash": null,
+          "config_hash": "d8f0568477cefc0e5ebb0ea3a286e964e4553010abbefb5973b37881bab08b34",
+          "runtime_config_hash": null,
+          "implementation_sha256": "f7e5ed8cbcf844139314a294932c511a4049802caadec64a4e14e70ea24daadf"
+        }
+      },
+      "network_guard": "all_Python_socket_connect_and_DNS_calls_denied",
+      "environment": {
+        "python": "3.12.14",
+        "platform": "Linux-6.18.44-x86_64-with-glibc2.41",
+        "executable": "/workspace/scratch/nlp-env/bin/python",
+        "gpu_used": false,
+        "math_threads": 1
+      }
+    },
+    "discriminative": {
+      "method": "discriminative",
+      "pid": 5157,
+      "dataset_sha256": "8425c256e6dcc97a1664577b6aa593b09a75123fc28adf6f07cc20f16e36816a",
+      "notes_processed_once": 72,
+      "compact_predictions_retained": 72,
+      "before_model_load": {
+        "peak_rss_bytes": 13070336,
+        "current_rss_bytes": 13070336,
+        "method": "proc_self_status_VmHWM_current_address_space"
+      },
+      "after_model_load": {
+        "peak_rss_bytes": 19030016,
+        "current_rss_bytes": 17199104,
+        "method": "proc_self_status_VmHWM_current_address_space"
+      },
+      "after_single_inference_pass": {
+        "peak_rss_bytes": 19030016,
+        "current_rss_bytes": 17698816,
+        "method": "proc_self_status_VmHWM_current_address_space"
+      },
+      "model_info": {
+        "discriminative": {
+          "model_version": "es-context-discriminative-1.0.0",
+          "artifact_sha256": "ba227bc782936a1e19901f8a1464618e160a5e525593c71affd1705f45a8f563",
+          "model_hash": null,
+          "config_hash": "cfc5174ed6b5d764d58fad885ff3f979b33e402b0ac8d7f10f36e28eeee80544",
+          "runtime_config_hash": "8806813034f55e34f35cc1846dfb089f46ada08c05d02dc1e3fc1363b624f37f",
+          "implementation_sha256": "ada181d47cc0bd45c4bb3124db9920ee52fdb4e7115643a582c05f56de30a59b"
+        }
+      },
+      "network_guard": "all_Python_socket_connect_and_DNS_calls_denied",
+      "environment": {
+        "python": "3.12.14",
+        "platform": "Linux-6.18.44-x86_64-with-glibc2.41",
+        "executable": "/workspace/scratch/nlp-env/bin/python",
+        "gpu_used": false,
+        "math_threads": 1
+      }
+    },
+    "advanced": {
+      "method": "advanced",
+      "pid": 5159,
+      "dataset_sha256": "8425c256e6dcc97a1664577b6aa593b09a75123fc28adf6f07cc20f16e36816a",
+      "notes_processed_once": 72,
+      "compact_predictions_retained": 72,
+      "before_model_load": {
+        "peak_rss_bytes": 13062144,
+        "current_rss_bytes": 13062144,
+        "method": "proc_self_status_VmHWM_current_address_space"
+      },
+      "after_model_load": {
+        "peak_rss_bytes": 157622272,
+        "current_rss_bytes": 157622272,
+        "method": "proc_self_status_VmHWM_current_address_space"
+      },
+      "after_single_inference_pass": {
+        "peak_rss_bytes": 161222656,
+        "current_rss_bytes": 161222656,
+        "method": "proc_self_status_VmHWM_current_address_space"
+      },
+      "model_info": {
+        "advanced": {
+          "model_version": "es-spacy-dependency-1.0.1",
+          "artifact_sha256": null,
+          "model_hash": "7865f338f184df1b62d97a7137d7521b7e2758da5274dc8b41d1130af38265ec",
+          "config_hash": "d4fcb54329137e6d92afb156cc661716dc33b741a0d9edd1105a77dd32de7483",
+          "runtime_config_hash": null,
+          "implementation_sha256": "1ac3b13daeaef6b76da4f553bfe367604790c04d670d0f4a6418d0f2fbb547cc"
+        }
+      },
+      "network_guard": "all_Python_socket_connect_and_DNS_calls_denied",
+      "environment": {
+        "python": "3.12.14",
+        "platform": "Linux-6.18.44-x86_64-with-glibc2.41",
+        "executable": "/workspace/scratch/nlp-env/bin/python",
+        "gpu_used": false,
+        "math_threads": 1
+      }
+    },
+    "hybrid": {
+      "method": "hybrid",
+      "pid": 5161,
+      "dataset_sha256": "8425c256e6dcc97a1664577b6aa593b09a75123fc28adf6f07cc20f16e36816a",
+      "notes_processed_once": 72,
+      "compact_predictions_retained": 72,
+      "before_model_load": {
+        "peak_rss_bytes": 13066240,
+        "current_rss_bytes": 13066240,
+        "method": "proc_self_status_VmHWM_current_address_space"
+      },
+      "after_model_load": {
+        "peak_rss_bytes": 159428608,
+        "current_rss_bytes": 159428608,
+        "method": "proc_self_status_VmHWM_current_address_space"
+      },
+      "after_single_inference_pass": {
+        "peak_rss_bytes": 163024896,
+        "current_rss_bytes": 163024896,
+        "method": "proc_self_status_VmHWM_current_address_space"
+      },
+      "model_info": {
+        "discriminative": {
+          "model_version": "es-context-discriminative-1.0.0",
+          "artifact_sha256": "ba227bc782936a1e19901f8a1464618e160a5e525593c71affd1705f45a8f563",
+          "model_hash": null,
+          "config_hash": "cfc5174ed6b5d764d58fad885ff3f979b33e402b0ac8d7f10f36e28eeee80544",
+          "runtime_config_hash": "8806813034f55e34f35cc1846dfb089f46ada08c05d02dc1e3fc1363b624f37f",
+          "implementation_sha256": "ada181d47cc0bd45c4bb3124db9920ee52fdb4e7115643a582c05f56de30a59b"
+        },
+        "advanced": {
+          "model_version": "es-spacy-dependency-1.0.1",
+          "artifact_sha256": null,
+          "model_hash": "7865f338f184df1b62d97a7137d7521b7e2758da5274dc8b41d1130af38265ec",
+          "config_hash": "d4fcb54329137e6d92afb156cc661716dc33b741a0d9edd1105a77dd32de7483",
+          "runtime_config_hash": null,
+          "implementation_sha256": "1ac3b13daeaef6b76da4f553bfe367604790c04d670d0f4a6418d0f2fbb547cc"
+        }
+      },
+      "network_guard": "all_Python_socket_connect_and_DNS_calls_denied",
+      "environment": {
+        "python": "3.12.14",
+        "platform": "Linux-6.18.44-x86_64-with-glibc2.41",
+        "executable": "/workspace/scratch/nlp-env/bin/python",
+        "gpu_used": false,
+        "math_threads": 1
+      }
+    }
+  }
+}

@@ -1,0 +1,260 @@
+{
+  "phase": 3,
+  "executed_at": "2026-10-15T08:39:52.897627+00:00",
+  "candidate": "es-spacy-dependency-1.0.1",
+  "reason": "Bug identified by independent code inspection before challenge access: negated resolution/denial cannot establish resolution or a new adverse fact. Fixed after phase4_initial_v1 was saved; no tuning to challenge metrics.",
+  "previous_implementation_sha256": "e12fe3cbcfe6c85e15b839050dbb26920a0b9bd20e843fcd5a0f749a8ad72c6c",
+  "implementation_sha256": "1ac3b13daeaef6b76da4f553bfe367604790c04d670d0f4a6418d0f2fbb547cc",
+  "model_info": {
+    "available": true,
+    "spacy_version": "3.8.11",
+    "pipeline_version": "3.8.0",
+    "pipeline": [
+      "tok2vec",
+      "morphologizer",
+      "parser",
+      "attribute_ruler",
+      "lemmatizer",
+      "ner"
+    ],
+    "license": "GNU GPL 3.0",
+    "model_hash": "7865f338f184df1b62d97a7137d7521b7e2758da5274dc8b41d1130af38265ec",
+    "model_wheel_sha256": "e451a83d6df79b87e9eed0cb553f03e99e36a3bab18a7b79f0dcfd1fdf875e12",
+    "model_bytes": 16227299,
+    "vectors": {
+      "width": 0,
+      "vectors": 0,
+      "keys": 0,
+      "name": null,
+      "mode": "default"
+    },
+    "method": "spacy",
+    "model_version": "es-spacy-dependency-1.0.1",
+    "config_hash": "d4fcb54329137e6d92afb156cc661716dc33b741a0d9edd1105a77dd32de7483",
+    "config": {
+      "max_chars": 80000,
+      "max_findings": 80,
+      "max_dependency_hops": 4,
+      "model": "es_core_news_sm",
+      "model_version": "3.8.0",
+      "spacy_version": "3.8.11"
+    }
+  },
+  "initial_benchmark_preserved": "docs/benchmarks/phase4_initial_v1.json",
+  "development_examples": 8,
+  "development_roles_correct": 8,
+  "cases": [
+    {
+      "text": "Empresa Aurora Ficticia no fue absuelta del fraude.",
+      "expected_role": "insufficient",
+      "role": "insufficient",
+      "abstained": true,
+      "events": [
+        {
+          "text": "absuelta",
+          "start": 31,
+          "end": 39,
+          "lemma": "absolver",
+          "status": "negated_resolution_does_not_establish_adverse_fact",
+          "negated": true,
+          "hypothetical": false,
+          "method": "dependency_rule"
+        }
+      ],
+      "warnings": [
+        "Identidad sin verificar: coincidencia de nombre o alias; posible homónimo.",
+        "Negación de una resolución o de una negativa: se requiere revisión; no acredita absolución ni constituye un nuevo hecho adverso."
+      ],
+      "score_effect": "auxiliary_only",
+      "latency_ms": 704.554281000128
+    },
+    {
+      "text": "Empresa Aurora Ficticia nunca fue exonerada de la acusación de fraude.",
+      "expected_role": "insufficient",
+      "role": "insufficient",
+      "abstained": true,
+      "events": [
+        {
+          "text": "exonerada",
+          "start": 34,
+          "end": 43,
+          "lemma": "exonerar",
+          "status": "negated_resolution_does_not_establish_adverse_fact",
+          "negated": true,
+          "hypothetical": false,
+          "method": "dependency_rule"
+        }
+      ],
+      "warnings": [
+        "Identidad sin verificar: coincidencia de nombre o alias; posible homónimo.",
+        "Negación de una resolución o de una negativa: se requiere revisión; no acredita absolución ni constituye un nuevo hecho adverso."
+      ],
+      "score_effect": "auxiliary_only",
+      "latency_ms": 3.9973079999526817
+    },
+    {
+      "text": "Empresa Aurora Ficticia no negó las acusaciones de fraude.",
+      "expected_role": "insufficient",
+      "role": "insufficient",
+      "abstained": true,
+      "events": [
+        {
+          "text": "negó",
+          "start": 27,
+          "end": 31,
+          "lemma": "negar",
+          "status": "negated_denial_does_not_establish_adverse_fact",
+          "negated": true,
+          "hypothetical": false,
+          "method": "dependency_rule"
+        }
+      ],
+      "warnings": [
+        "Identidad sin verificar: coincidencia de nombre o alias; posible homónimo.",
+        "Negación de una resolución o de una negativa: se requiere revisión; no acredita absolución ni constituye un nuevo hecho adverso."
+      ],
+      "score_effect": "auxiliary_only",
+      "latency_ms": 4.3314349998127
+    },
+    {
+      "text": "Empresa Aurora Ficticia no rechazó las acusaciones de fraude.",
+      "expected_role": "insufficient",
+      "role": "insufficient",
+      "abstained": true,
+      "events": [
+        {
+          "text": "rechazó",
+          "start": 27,
+          "end": 34,
+          "lemma": "rechazar",
+          "status": "negated_denial_does_not_establish_adverse_fact",
+          "negated": true,
+          "hypothetical": false,
+          "method": "dependency_rule"
+        }
+      ],
+      "warnings": [
+        "Identidad sin verificar: coincidencia de nombre o alias; posible homónimo.",
+        "Negación de una resolución o de una negativa: se requiere revisión; no acredita absolución ni constituye un nuevo hecho adverso."
+      ],
+      "score_effect": "auxiliary_only",
+      "latency_ms": 3.4331499998643267
+    },
+    {
+      "text": "Empresa Aurora Ficticia no desmintió su participación en fraude.",
+      "expected_role": "insufficient",
+      "role": "insufficient",
+      "abstained": true,
+      "events": [
+        {
+          "text": "desmintió",
+          "start": 27,
+          "end": 36,
+          "lemma": "desmentir",
+          "status": "negated_denial_does_not_establish_adverse_fact",
+          "negated": true,
+          "hypothetical": false,
+          "method": "dependency_rule"
+        }
+      ],
+      "warnings": [
+        "Identidad sin verificar: coincidencia de nombre o alias; posible homónimo.",
+        "Negación de una resolución o de una negativa: se requiere revisión; no acredita absolución ni constituye un nuevo hecho adverso."
+      ],
+      "score_effect": "auxiliary_only",
+      "latency_ms": 3.7184840000463737
+    },
+    {
+      "text": "No se descartó que Empresa Aurora Ficticia cometiera fraude.",
+      "expected_role": "insufficient",
+      "role": "insufficient",
+      "abstained": true,
+      "events": [
+        {
+          "text": "descartó",
+          "start": 6,
+          "end": 14,
+          "lemma": "descartar",
+          "status": "negated_denial_does_not_establish_adverse_fact",
+          "negated": true,
+          "hypothetical": false,
+          "method": "dependency_rule"
+        },
+        {
+          "text": "cometiera",
+          "start": 43,
+          "end": 52,
+          "lemma": "cometer",
+          "status": "negated_denial_does_not_establish_adverse_fact",
+          "negated": false,
+          "hypothetical": false,
+          "method": "dependency_rule"
+        }
+      ],
+      "warnings": [
+        "Identidad sin verificar: coincidencia de nombre o alias; posible homónimo.",
+        "Negación de una resolución o de una negativa: se requiere revisión; no acredita absolución ni constituye un nuevo hecho adverso."
+      ],
+      "score_effect": "auxiliary_only",
+      "latency_ms": 5.0326820000918815
+    },
+    {
+      "text": "La Fiscalía no exoneró a Empresa Aurora Ficticia del fraude.",
+      "expected_role": "insufficient",
+      "role": "insufficient",
+      "abstained": true,
+      "events": [
+        {
+          "text": "exoneró",
+          "start": 15,
+          "end": 22,
+          "lemma": "exonerar",
+          "status": "negated_resolution_does_not_establish_adverse_fact",
+          "negated": true,
+          "hypothetical": false,
+          "method": "dependency_rule"
+        }
+      ],
+      "warnings": [
+        "Identidad sin verificar: coincidencia de nombre o alias; posible homónimo.",
+        "Negación de una resolución o de una negativa: se requiere revisión; no acredita absolución ni constituye un nuevo hecho adverso."
+      ],
+      "score_effect": "auxiliary_only",
+      "latency_ms": 4.85189400001218
+    },
+    {
+      "text": "No se desmintió que Empresa Aurora Ficticia cometiera fraude.",
+      "expected_role": "insufficient",
+      "role": "insufficient",
+      "abstained": true,
+      "events": [
+        {
+          "text": "desmintió",
+          "start": 6,
+          "end": 15,
+          "lemma": "desmentir",
+          "status": "negated_denial_does_not_establish_adverse_fact",
+          "negated": true,
+          "hypothetical": false,
+          "method": "dependency_rule"
+        },
+        {
+          "text": "cometiera",
+          "start": 44,
+          "end": 53,
+          "lemma": "cometer",
+          "status": "negated_denial_does_not_establish_adverse_fact",
+          "negated": false,
+          "hypothetical": false,
+          "method": "dependency_rule"
+        }
+      ],
+      "warnings": [
+        "Identidad sin verificar: coincidencia de nombre o alias; posible homónimo.",
+        "Negación de una resolución o de una negativa: se requiere revisión; no acredita absolución ni constituye un nuevo hecho adverso."
+      ],
+      "score_effect": "auxiliary_only",
+      "latency_ms": 4.631127000038759
+    }
+  ]
+}

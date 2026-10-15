@@ -1,0 +1,75 @@
+{
+  "generated_at": "2026-10-15T08:54:01.098547+00:00",
+  "scope": "synthetic_local_end_to_end_not_web_coverage",
+  "machine": {
+    "platform": "Linux-6.18.44-x86_64-with-glibc2.41",
+    "python": "3.12.14 (main, Aug 25 2026, 14:00:49) [Clang 22.1.3 ]",
+    "cpu_count": 5
+  },
+  "entities": 1000,
+  "timings_seconds": {
+    "import_entities": 0.018237,
+    "indexed_linkage": 0.008449,
+    "persist_analyze_documents": 0.455454,
+    "score_entities": 2.441939,
+    "four_process_queue_1000": 2.603799,
+    "verify_audit": 0.397067
+  },
+  "module_sha256": {
+    "nlp": "f7e5ed8cbcf844139314a294932c511a4049802caadec64a4e14e70ea24daadf",
+    "scoring": "6f7b2d87c54b1cef1ece91e28372d659466a4b8a4ace2833eeb491956984638a"
+  },
+  "model_version": "review-priority-1.2.0",
+  "parameters_hash": "e768fc15d654e8af7fd64c41d093a0697e5983fe71f9fb69f1da2f8a44055fbe",
+  "database_bytes": 31551488,
+  "throughput_documents_per_second": 2195.61,
+  "throughput_scores_per_second": 409.51,
+  "queue_process_counts": [
+    583,
+    51,
+    194,
+    172
+  ],
+  "queue_unique_done": 1000,
+  "scoring_fixture": {
+    "expected_positives": 100,
+    "observed_positives": 100,
+    "mismatches": [],
+    "validated_without_review": 0
+  },
+  "stats": {
+    "entities": 1000,
+    "documents": 1000,
+    "evidence": 1000,
+    "scores": 1000,
+    "audit": 4001,
+    "jobs": {
+      "done": 1000
+    },
+    "recent_errors": []
+  },
+  "audit": {
+    "ok": true,
+    "checked": 4001,
+    "head_hash": "a008b8f660b6700911006fc5d2d8d7cbf91a9cd79a7bf4dbc274f6c000bb1c9f",
+    "score_runs_checked": 1000,
+    "scope": "event_chain_document_content_current_scores_and_historical_score_runs_with_document_metadata",
+    "limitation": "Una reescritura completa requiere detectar con un hash o respaldo externo."
+  },
+  "capacity_model": {
+    "entities": 1000,
+    "discovery_requests": 2000,
+    "unique_article_requests": 2500.0,
+    "estimated_days_sequential_upper_model": 0.145,
+    "search_days_lower_bound": 0.116,
+    "assumptions": {
+      "queries_per_entity": 2,
+      "seconds_per_search_host": 5,
+      "articles_per_entity": 5,
+      "aggregate_article_rps": 1,
+      "deduplication_ratio": 0.5
+    },
+    "qualification": "Modelo de capacidad, no SLA. No incluye bloqueos, revisiones humanas ni falta de cobertura."
+  },
+  "pass": true
+}

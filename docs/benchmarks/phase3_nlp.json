@@ -1,0 +1,1996 @@
+{
+  "phase": 3,
+  "executed_at": "2026-10-15T08:35:19.351045+00:00",
+  "protocol": "Development smoke, nine invented contrastive cases (not heldout accuracy). Executed after completed phase2; no challenge read or tuning. Frozen configuration for subsequent phase4 evaluation. Five repeats per note, warm latency excludes model load.",
+  "dataset_source": "synthetic_development_not_real_project_notes",
+  "model_info": {
+    "available": true,
+    "spacy_version": "3.8.11",
+    "pipeline_version": "3.8.0",
+    "pipeline": [
+      "tok2vec",
+      "morphologizer",
+      "parser",
+      "attribute_ruler",
+      "lemmatizer",
+      "ner"
+    ],
+    "license": "GNU GPL 3.0",
+    "model_hash": "7865f338f184df1b62d97a7137d7521b7e2758da5274dc8b41d1130af38265ec",
+    "model_wheel_sha256": "e451a83d6df79b87e9eed0cb553f03e99e36a3bab18a7b79f0dcfd1fdf875e12",
+    "model_bytes": 16227299,
+    "vectors": {
+      "width": 0,
+      "vectors": 0,
+      "keys": 0,
+      "name": null,
+      "mode": "default"
+    },
+    "method": "spacy",
+    "model_version": "es-spacy-dependency-1.0.0",
+    "config_hash": "cb9e753de1db14cf3ae7ca2db6ef200c21ececadf83fb035abc715509955d08a",
+    "config": {
+      "max_chars": 80000,
+      "max_findings": 80,
+      "max_dependency_hops": 4,
+      "model": "es_core_news_sm",
+      "model_version": "3.8.0",
+      "spacy_version": "3.8.11"
+    }
+  },
+  "implementation_sha256": "e12fe3cbcfe6c85e15b839050dbb26920a0b9bd20e843fcd5a0f749a8ad72c6c",
+  "environment": {
+    "python": "3.12.14",
+    "platform": "Linux-6.18.44-x86_64-with-glibc2.41",
+    "gpu_used": false
+  },
+  "measurements": {
+    "development_roles_correct": 9,
+    "development_examples": 9,
+    "load_ms": 782.3007790000247,
+    "warm_latency_p50_ms": 3.2049820000565887,
+    "warm_latency_max_ms": 7.658318000039799,
+    "warm_latency_mean_ms": 3.3574626222212425,
+    "rss_process_peak_mib": 157.43359375,
+    "cpu_seconds": 0.15191595699999993,
+    "wall_seconds": 0.15336015700006556
+  },
+  "known_errors": [
+    "Small NER labels Empresa Aurora Ficticia as MISC and Fiscalía as PER; parser coordination can misattach arguments.",
+    "No human-reviewed news notes were available; this development smoke is not a deployment quality estimate."
+  ],
+  "cases": [
+    {
+      "text": "Empresa Aurora Ficticia fue acusada de fraude por la Fiscalía.",
+      "expected_role": "accused",
+      "predicted_role": "accused",
+      "latency_ms": [
+        7.658318000039799,
+        3.6536419999038117,
+        3.378508999958285,
+        3.313644999934695,
+        3.275189999953909
+      ],
+      "result": {
+        "method": "spacy",
+        "model_version": "es-spacy-dependency-1.0.0",
+        "model_hash": "7865f338f184df1b62d97a7137d7521b7e2758da5274dc8b41d1130af38265ec",
+        "config_hash": "cb9e753de1db14cf3ae7ca2db6ef200c21ececadf83fb035abc715509955d08a",
+        "model_info": {
+          "available": true,
+          "spacy_version": "3.8.11",
+          "pipeline_version": "3.8.0",
+          "pipeline": [
+            "tok2vec",
+            "morphologizer",
+            "parser",
+            "attribute_ruler",
+            "lemmatizer",
+            "ner"
+          ],
+          "license": "GNU GPL 3.0",
+          "model_hash": "7865f338f184df1b62d97a7137d7521b7e2758da5274dc8b41d1130af38265ec",
+          "model_wheel_sha256": "e451a83d6df79b87e9eed0cb553f03e99e36a3bab18a7b79f0dcfd1fdf875e12",
+          "model_bytes": 16227299,
+          "vectors": {
+            "width": 0,
+            "vectors": 0,
+            "keys": 0,
+            "name": null,
+            "mode": "default"
+          }
+        },
+        "content_hash": "da87d256218783b1ab4df715c79104138d278fadb0af71259418e095fa9aff62",
+        "entity_signature": "633d2f133308cc95ea3f35e325a34c2644ca6733c303fc48886876025eaa6c40",
+        "score_effect": "auxiliary_only",
+        "source_kind": "news",
+        "analyzed_chars": 62,
+        "truncated": false,
+        "mentions": [
+          {
+            "start": 0,
+            "end": 23,
+            "text": "Empresa Aurora Ficticia",
+            "entity_id": "demo-aurora",
+            "matched_alias": "Empresa Aurora Ficticia"
+          }
+        ],
+        "limitations": [
+          "NER y dependencias estadísticos pueden equivocarse; las relaciones son hipótesis de revisión.",
+          "Un alias exacto no verifica identidad ni resuelve homónimos o correferencias.",
+          "El modelo pequeño no incluye vectores semánticos; la similitud expuesta es léxica de lemas.",
+          "Negaciones, citas atribuidas, cronología y relaciones complejas requieren revisión humana.",
+          "Una acusación o una negativa reportada no acreditan culpabilidad ni inocencia.",
+          "Este análisis auxiliar no altera ni reconstruye los factores numéricos del scoring."
+        ],
+        "available": true,
+        "role": "accused",
+        "predicted_role": "accused",
+        "relevance": "direct_adverse_candidate",
+        "abstained": false,
+        "competing_roles": [
+          "accused"
+        ],
+        "findings": [
+          {
+            "role": "accused",
+            "predicted_role": "accused",
+            "relevance": "direct_adverse_candidate",
+            "abstained": false,
+            "quote": "Empresa Aurora Ficticia fue acusada de fraude por la Fiscalía.",
+            "start": 0,
+            "end": 62,
+            "mentions": [
+              {
+                "start": 0,
+                "end": 23,
+                "text": "Empresa Aurora Ficticia",
+                "entity_id": "demo-aurora",
+                "matched_alias": "Empresa Aurora Ficticia"
+              }
+            ],
+            "entities": [
+              {
+                "text": "Empresa Aurora Ficticia",
+                "start": 0,
+                "end": 23,
+                "label": "MISC",
+                "detector": "statistical_ner"
+              },
+              {
+                "text": "Fiscalía",
+                "start": 53,
+                "end": 61,
+                "label": "PER",
+                "detector": "statistical_ner"
+              }
+            ],
+            "events": [
+              {
+                "text": "acusada",
+                "start": 28,
+                "end": 35,
+                "lemma": "acusar",
+                "status": "reported_allegation_not_proven",
+                "negated": false,
+                "hypothetical": false,
+                "method": "dependency_rule"
+              }
+            ],
+            "relations": [
+              {
+                "entity_id": "demo-aurora",
+                "mention": {
+                  "start": 0,
+                  "end": 23,
+                  "text": "Empresa Aurora Ficticia",
+                  "entity_id": "demo-aurora",
+                  "matched_alias": "Empresa Aurora Ficticia"
+                },
+                "event": {
+                  "text": "acusada",
+                  "start": 28,
+                  "end": 35,
+                  "lemma": "acusar"
+                },
+                "role": "accused",
+                "status": "reported_allegation_not_proven",
+                "argument": "nsubj",
+                "passive": true,
+                "dependency_path": [
+                  {
+                    "text": "Empresa",
+                    "start": 0,
+                    "end": 7,
+                    "lemma": "empresa",
+                    "dependency": "nsubj"
+                  },
+                  {
+                    "text": "acusada",
+                    "start": 28,
+                    "end": 35,
+                    "lemma": "acusar",
+                    "dependency": "ROOT"
+                  }
+                ],
+                "method": "dependency_rule",
+                "identity_status": "exact_alias_candidate_not_identity_verification"
+              }
+            ],
+            "lexical_context_similarity": null,
+            "evidence_status": "exact_input_quote_not_fact_verification"
+          }
+        ],
+        "entities": [
+          {
+            "text": "Empresa Aurora Ficticia",
+            "start": 0,
+            "end": 23,
+            "label": "MISC",
+            "detector": "statistical_ner"
+          },
+          {
+            "text": "Fiscalía",
+            "start": 53,
+            "end": 61,
+            "label": "PER",
+            "detector": "statistical_ner"
+          }
+        ],
+        "relations": [
+          {
+            "entity_id": "demo-aurora",
+            "mention": {
+              "start": 0,
+              "end": 23,
+              "text": "Empresa Aurora Ficticia",
+              "entity_id": "demo-aurora",
+              "matched_alias": "Empresa Aurora Ficticia"
+            },
+            "event": {
+              "text": "acusada",
+              "start": 28,
+              "end": 35,
+              "lemma": "acusar"
+            },
+            "role": "accused",
+            "status": "reported_allegation_not_proven",
+            "argument": "nsubj",
+            "passive": true,
+            "dependency_path": [
+              {
+                "text": "Empresa",
+                "start": 0,
+                "end": 7,
+                "lemma": "empresa",
+                "dependency": "nsubj"
+              },
+              {
+                "text": "acusada",
+                "start": 28,
+                "end": 35,
+                "lemma": "acusar",
+                "dependency": "ROOT"
+              }
+            ],
+            "method": "dependency_rule",
+            "identity_status": "exact_alias_candidate_not_identity_verification"
+          }
+        ],
+        "events": [
+          {
+            "text": "acusada",
+            "start": 28,
+            "end": 35,
+            "lemma": "acusar",
+            "status": "reported_allegation_not_proven",
+            "negated": false,
+            "hypothetical": false,
+            "method": "dependency_rule"
+          }
+        ],
+        "warnings": [
+          "Identidad sin verificar: coincidencia de nombre o alias; posible homónimo."
+        ]
+      }
+    },
+    {
+      "text": "Empresa Aurora Ficticia denunció un fraude ante la Fiscalía.",
+      "expected_role": "complainant",
+      "predicted_role": "complainant",
+      "latency_ms": [
+        3.643057999966004,
+        3.022849999979371,
+        3.109734999952707,
+        3.1756439999526265,
+        3.396048000013252
+      ],
+      "result": {
+        "method": "spacy",
+        "model_version": "es-spacy-dependency-1.0.0",
+        "model_hash": "7865f338f184df1b62d97a7137d7521b7e2758da5274dc8b41d1130af38265ec",
+        "config_hash": "cb9e753de1db14cf3ae7ca2db6ef200c21ececadf83fb035abc715509955d08a",
+        "model_info": {
+          "available": true,
+          "spacy_version": "3.8.11",
+          "pipeline_version": "3.8.0",
+          "pipeline": [
+            "tok2vec",
+            "morphologizer",
+            "parser",
+            "attribute_ruler",
+            "lemmatizer",
+            "ner"
+          ],
+          "license": "GNU GPL 3.0",
+          "model_hash": "7865f338f184df1b62d97a7137d7521b7e2758da5274dc8b41d1130af38265ec",
+          "model_wheel_sha256": "e451a83d6df79b87e9eed0cb553f03e99e36a3bab18a7b79f0dcfd1fdf875e12",
+          "model_bytes": 16227299,
+          "vectors": {
+            "width": 0,
+            "vectors": 0,
+            "keys": 0,
+            "name": null,
+            "mode": "default"
+          }
+        },
+        "content_hash": "6611b715e67a642a3578f99a7e6eb102866acc000758c1911047d7373f94be55",
+        "entity_signature": "633d2f133308cc95ea3f35e325a34c2644ca6733c303fc48886876025eaa6c40",
+        "score_effect": "auxiliary_only",
+        "source_kind": "news",
+        "analyzed_chars": 60,
+        "truncated": false,
+        "mentions": [
+          {
+            "start": 0,
+            "end": 23,
+            "text": "Empresa Aurora Ficticia",
+            "entity_id": "demo-aurora",
+            "matched_alias": "Empresa Aurora Ficticia"
+          }
+        ],
+        "limitations": [
+          "NER y dependencias estadísticos pueden equivocarse; las relaciones son hipótesis de revisión.",
+          "Un alias exacto no verifica identidad ni resuelve homónimos o correferencias.",
+          "El modelo pequeño no incluye vectores semánticos; la similitud expuesta es léxica de lemas.",
+          "Negaciones, citas atribuidas, cronología y relaciones complejas requieren revisión humana.",
+          "Una acusación o una negativa reportada no acreditan culpabilidad ni inocencia.",
+          "Este análisis auxiliar no altera ni reconstruye los factores numéricos del scoring."
+        ],
+        "available": true,
+        "role": "complainant",
+        "predicted_role": "complainant",
+        "relevance": "reporter_context",
+        "abstained": false,
+        "competing_roles": [
+          "complainant"
+        ],
+        "findings": [
+          {
+            "role": "complainant",
+            "predicted_role": "complainant",
+            "relevance": "reporter_context",
+            "abstained": false,
+            "quote": "Empresa Aurora Ficticia denunció un fraude ante la Fiscalía.",
+            "start": 0,
+            "end": 60,
+            "mentions": [
+              {
+                "start": 0,
+                "end": 23,
+                "text": "Empresa Aurora Ficticia",
+                "entity_id": "demo-aurora",
+                "matched_alias": "Empresa Aurora Ficticia"
+              }
+            ],
+            "entities": [
+              {
+                "text": "Empresa Aurora Ficticia",
+                "start": 0,
+                "end": 23,
+                "label": "MISC",
+                "detector": "statistical_ner"
+              },
+              {
+                "text": "Fiscalía",
+                "start": 51,
+                "end": 59,
+                "label": "PER",
+                "detector": "statistical_ner"
+              }
+            ],
+            "events": [
+              {
+                "text": "denunció",
+                "start": 24,
+                "end": 32,
+                "lemma": "denunciar",
+                "status": "reported_statement_or_complaint",
+                "negated": false,
+                "hypothetical": false,
+                "method": "dependency_rule"
+              }
+            ],
+            "relations": [
+              {
+                "entity_id": "demo-aurora",
+                "mention": {
+                  "start": 0,
+                  "end": 23,
+                  "text": "Empresa Aurora Ficticia",
+                  "entity_id": "demo-aurora",
+                  "matched_alias": "Empresa Aurora Ficticia"
+                },
+                "event": {
+                  "text": "denunció",
+                  "start": 24,
+                  "end": 32,
+                  "lemma": "denunciar"
+                },
+                "role": "complainant",
+                "status": "reported_statement_or_complaint",
+                "argument": "nsubj",
+                "passive": false,
+                "dependency_path": [
+                  {
+                    "text": "Empresa",
+                    "start": 0,
+                    "end": 7,
+                    "lemma": "empresa",
+                    "dependency": "nsubj"
+                  },
+                  {
+                    "text": "denunció",
+                    "start": 24,
+                    "end": 32,
+                    "lemma": "denunciar",
+                    "dependency": "ROOT"
+                  }
+                ],
+                "method": "dependency_rule",
+                "identity_status": "exact_alias_candidate_not_identity_verification"
+              }
+            ],
+            "lexical_context_similarity": null,
+            "evidence_status": "exact_input_quote_not_fact_verification"
+          }
+        ],
+        "entities": [
+          {
+            "text": "Empresa Aurora Ficticia",
+            "start": 0,
+            "end": 23,
+            "label": "MISC",
+            "detector": "statistical_ner"
+          },
+          {
+            "text": "Fiscalía",
+            "start": 51,
+            "end": 59,
+            "label": "PER",
+            "detector": "statistical_ner"
+          }
+        ],
+        "relations": [
+          {
+            "entity_id": "demo-aurora",
+            "mention": {
+              "start": 0,
+              "end": 23,
+              "text": "Empresa Aurora Ficticia",
+              "entity_id": "demo-aurora",
+              "matched_alias": "Empresa Aurora Ficticia"
+            },
+            "event": {
+              "text": "denunció",
+              "start": 24,
+              "end": 32,
+              "lemma": "denunciar"
+            },
+            "role": "complainant",
+            "status": "reported_statement_or_complaint",
+            "argument": "nsubj",
+            "passive": false,
+            "dependency_path": [
+              {
+                "text": "Empresa",
+                "start": 0,
+                "end": 7,
+                "lemma": "empresa",
+                "dependency": "nsubj"
+              },
+              {
+                "text": "denunció",
+                "start": 24,
+                "end": 32,
+                "lemma": "denunciar",
+                "dependency": "ROOT"
+              }
+            ],
+            "method": "dependency_rule",
+            "identity_status": "exact_alias_candidate_not_identity_verification"
+          }
+        ],
+        "events": [
+          {
+            "text": "denunció",
+            "start": 24,
+            "end": 32,
+            "lemma": "denunciar",
+            "status": "reported_statement_or_complaint",
+            "negated": false,
+            "hypothetical": false,
+            "method": "dependency_rule"
+          }
+        ],
+        "warnings": [
+          "Identidad sin verificar: coincidencia de nombre o alias; posible homónimo."
+        ]
+      }
+    },
+    {
+      "text": "Empresa Aurora Ficticia fue víctima de fraude.",
+      "expected_role": "victim",
+      "predicted_role": "victim",
+      "latency_ms": [
+        3.0301630000622026,
+        3.0299139999669933,
+        3.0651110000690096,
+        3.344631000004483,
+        3.016791000050034
+      ],
+      "result": {
+        "method": "spacy",
+        "model_version": "es-spacy-dependency-1.0.0",
+        "model_hash": "7865f338f184df1b62d97a7137d7521b7e2758da5274dc8b41d1130af38265ec",
+        "config_hash": "cb9e753de1db14cf3ae7ca2db6ef200c21ececadf83fb035abc715509955d08a",
+        "model_info": {
+          "available": true,
+          "spacy_version": "3.8.11",
+          "pipeline_version": "3.8.0",
+          "pipeline": [
+            "tok2vec",
+            "morphologizer",
+            "parser",
+            "attribute_ruler",
+            "lemmatizer",
+            "ner"
+          ],
+          "license": "GNU GPL 3.0",
+          "model_hash": "7865f338f184df1b62d97a7137d7521b7e2758da5274dc8b41d1130af38265ec",
+          "model_wheel_sha256": "e451a83d6df79b87e9eed0cb553f03e99e36a3bab18a7b79f0dcfd1fdf875e12",
+          "model_bytes": 16227299,
+          "vectors": {
+            "width": 0,
+            "vectors": 0,
+            "keys": 0,
+            "name": null,
+            "mode": "default"
+          }
+        },
+        "content_hash": "d08fb253ead1958cc4e75b7166396c7d7679817161cd67cf5d2e25cb94211bde",
+        "entity_signature": "633d2f133308cc95ea3f35e325a34c2644ca6733c303fc48886876025eaa6c40",
+        "score_effect": "auxiliary_only",
+        "source_kind": "news",
+        "analyzed_chars": 46,
+        "truncated": false,
+        "mentions": [
+          {
+            "start": 0,
+            "end": 23,
+            "text": "Empresa Aurora Ficticia",
+            "entity_id": "demo-aurora",
+            "matched_alias": "Empresa Aurora Ficticia"
+          }
+        ],
+        "limitations": [
+          "NER y dependencias estadísticos pueden equivocarse; las relaciones son hipótesis de revisión.",
+          "Un alias exacto no verifica identidad ni resuelve homónimos o correferencias.",
+          "El modelo pequeño no incluye vectores semánticos; la similitud expuesta es léxica de lemas.",
+          "Negaciones, citas atribuidas, cronología y relaciones complejas requieren revisión humana.",
+          "Una acusación o una negativa reportada no acreditan culpabilidad ni inocencia.",
+          "Este análisis auxiliar no altera ni reconstruye los factores numéricos del scoring."
+        ],
+        "available": true,
+        "role": "victim",
+        "predicted_role": "victim",
+        "relevance": "victim_context",
+        "abstained": false,
+        "competing_roles": [
+          "victim"
+        ],
+        "findings": [
+          {
+            "role": "victim",
+            "predicted_role": "victim",
+            "relevance": "victim_context",
+            "abstained": false,
+            "quote": "Empresa Aurora Ficticia fue víctima de fraude.",
+            "start": 0,
+            "end": 46,
+            "mentions": [
+              {
+                "start": 0,
+                "end": 23,
+                "text": "Empresa Aurora Ficticia",
+                "entity_id": "demo-aurora",
+                "matched_alias": "Empresa Aurora Ficticia"
+              }
+            ],
+            "entities": [
+              {
+                "text": "Empresa Aurora Ficticia",
+                "start": 0,
+                "end": 23,
+                "label": "MISC",
+                "detector": "statistical_ner"
+              }
+            ],
+            "events": [
+              {
+                "text": "víctima",
+                "start": 28,
+                "end": 35,
+                "lemma": "victima",
+                "status": "reported_victim_context",
+                "negated": false,
+                "hypothetical": false,
+                "method": "dependency_rule"
+              }
+            ],
+            "relations": [
+              {
+                "entity_id": "demo-aurora",
+                "mention": {
+                  "start": 0,
+                  "end": 23,
+                  "text": "Empresa Aurora Ficticia",
+                  "entity_id": "demo-aurora",
+                  "matched_alias": "Empresa Aurora Ficticia"
+                },
+                "event": {
+                  "text": "víctima",
+                  "start": 28,
+                  "end": 35,
+                  "lemma": "victima"
+                },
+                "role": "victim",
+                "status": "reported_victim_context",
+                "argument": "nsubj",
+                "passive": false,
+                "dependency_path": [
+                  {
+                    "text": "Empresa",
+                    "start": 0,
+                    "end": 7,
+                    "lemma": "empresa",
+                    "dependency": "nsubj"
+                  },
+                  {
+                    "text": "víctima",
+                    "start": 28,
+                    "end": 35,
+                    "lemma": "victima",
+                    "dependency": "ROOT"
+                  }
+                ],
+                "method": "dependency_rule",
+                "identity_status": "exact_alias_candidate_not_identity_verification"
+              }
+            ],
+            "lexical_context_similarity": null,
+            "evidence_status": "exact_input_quote_not_fact_verification"
+          }
+        ],
+        "entities": [
+          {
+            "text": "Empresa Aurora Ficticia",
+            "start": 0,
+            "end": 23,
+            "label": "MISC",
+            "detector": "statistical_ner"
+          }
+        ],
+        "relations": [
+          {
+            "entity_id": "demo-aurora",
+            "mention": {
+              "start": 0,
+              "end": 23,
+              "text": "Empresa Aurora Ficticia",
+              "entity_id": "demo-aurora",
+              "matched_alias": "Empresa Aurora Ficticia"
+            },
+            "event": {
+              "text": "víctima",
+              "start": 28,
+              "end": 35,
+              "lemma": "victima"
+            },
+            "role": "victim",
+            "status": "reported_victim_context",
+            "argument": "nsubj",
+            "passive": false,
+            "dependency_path": [
+              {
+                "text": "Empresa",
+                "start": 0,
+                "end": 7,
+                "lemma": "empresa",
+                "dependency": "nsubj"
+              },
+              {
+                "text": "víctima",
+                "start": 28,
+                "end": 35,
+                "lemma": "victima",
+                "dependency": "ROOT"
+              }
+            ],
+            "method": "dependency_rule",
+            "identity_status": "exact_alias_candidate_not_identity_verification"
+          }
+        ],
+        "events": [
+          {
+            "text": "víctima",
+            "start": 28,
+            "end": 35,
+            "lemma": "victima",
+            "status": "reported_victim_context",
+            "negated": false,
+            "hypothetical": false,
+            "method": "dependency_rule"
+          }
+        ],
+        "warnings": [
+          "Identidad sin verificar: coincidencia de nombre o alias; posible homónimo."
+        ]
+      }
+    },
+    {
+      "text": "Empresa Aurora Ficticia no fue acusada de fraude.",
+      "expected_role": "negated",
+      "predicted_role": "negated",
+      "latency_ms": [
+        3.2457679999424727,
+        3.1332810000321842,
+        3.1954890000633895,
+        3.051324000011846,
+        3.2582410000259188
+      ],
+      "result": {
+        "method": "spacy",
+        "model_version": "es-spacy-dependency-1.0.0",
+        "model_hash": "7865f338f184df1b62d97a7137d7521b7e2758da5274dc8b41d1130af38265ec",
+        "config_hash": "cb9e753de1db14cf3ae7ca2db6ef200c21ececadf83fb035abc715509955d08a",
+        "model_info": {
+          "available": true,
+          "spacy_version": "3.8.11",
+          "pipeline_version": "3.8.0",
+          "pipeline": [
+            "tok2vec",
+            "morphologizer",
+            "parser",
+            "attribute_ruler",
+            "lemmatizer",
+            "ner"
+          ],
+          "license": "GNU GPL 3.0",
+          "model_hash": "7865f338f184df1b62d97a7137d7521b7e2758da5274dc8b41d1130af38265ec",
+          "model_wheel_sha256": "e451a83d6df79b87e9eed0cb553f03e99e36a3bab18a7b79f0dcfd1fdf875e12",
+          "model_bytes": 16227299,
+          "vectors": {
+            "width": 0,
+            "vectors": 0,
+            "keys": 0,
+            "name": null,
+            "mode": "default"
+          }
+        },
+        "content_hash": "18dd21ce7a37be6adb5069b679af0b0bbab1509037fed631699b9e115f76612e",
+        "entity_signature": "633d2f133308cc95ea3f35e325a34c2644ca6733c303fc48886876025eaa6c40",
+        "score_effect": "auxiliary_only",
+        "source_kind": "news",
+        "analyzed_chars": 49,
+        "truncated": false,
+        "mentions": [
+          {
+            "start": 0,
+            "end": 23,
+            "text": "Empresa Aurora Ficticia",
+            "entity_id": "demo-aurora",
+            "matched_alias": "Empresa Aurora Ficticia"
+          }
+        ],
+        "limitations": [
+          "NER y dependencias estadísticos pueden equivocarse; las relaciones son hipótesis de revisión.",
+          "Un alias exacto no verifica identidad ni resuelve homónimos o correferencias.",
+          "El modelo pequeño no incluye vectores semánticos; la similitud expuesta es léxica de lemas.",
+          "Negaciones, citas atribuidas, cronología y relaciones complejas requieren revisión humana.",
+          "Una acusación o una negativa reportada no acreditan culpabilidad ni inocencia.",
+          "Este análisis auxiliar no altera ni reconstruye los factores numéricos del scoring."
+        ],
+        "available": true,
+        "role": "negated",
+        "predicted_role": "negated",
+        "relevance": "negated_claim",
+        "abstained": false,
+        "competing_roles": [
+          "negated"
+        ],
+        "findings": [
+          {
+            "role": "negated",
+            "predicted_role": "negated",
+            "relevance": "negated_claim",
+            "abstained": false,
+            "quote": "Empresa Aurora Ficticia no fue acusada de fraude.",
+            "start": 0,
+            "end": 49,
+            "mentions": [
+              {
+                "start": 0,
+                "end": 23,
+                "text": "Empresa Aurora Ficticia",
+                "entity_id": "demo-aurora",
+                "matched_alias": "Empresa Aurora Ficticia"
+              }
+            ],
+            "entities": [
+              {
+                "text": "Empresa Aurora Ficticia",
+                "start": 0,
+                "end": 23,
+                "label": "MISC",
+                "detector": "statistical_ner"
+              }
+            ],
+            "events": [
+              {
+                "text": "acusada",
+                "start": 31,
+                "end": 38,
+                "lemma": "acusar",
+                "status": "negated_event",
+                "negated": true,
+                "hypothetical": false,
+                "method": "dependency_rule"
+              }
+            ],
+            "relations": [
+              {
+                "entity_id": "demo-aurora",
+                "mention": {
+                  "start": 0,
+                  "end": 23,
+                  "text": "Empresa Aurora Ficticia",
+                  "entity_id": "demo-aurora",
+                  "matched_alias": "Empresa Aurora Ficticia"
+                },
+                "event": {
+                  "text": "acusada",
+                  "start": 31,
+                  "end": 38,
+                  "lemma": "acusar"
+                },
+                "role": "negated",
+                "status": "negated_event",
+                "argument": "nsubj",
+                "passive": true,
+                "dependency_path": [
+                  {
+                    "text": "Empresa",
+                    "start": 0,
+                    "end": 7,
+                    "lemma": "empresa",
+                    "dependency": "nsubj"
+                  },
+                  {
+                    "text": "acusada",
+                    "start": 31,
+                    "end": 38,
+                    "lemma": "acusar",
+                    "dependency": "ROOT"
+                  }
+                ],
+                "method": "dependency_rule",
+                "identity_status": "exact_alias_candidate_not_identity_verification"
+              }
+            ],
+            "lexical_context_similarity": null,
+            "evidence_status": "exact_input_quote_not_fact_verification"
+          }
+        ],
+        "entities": [
+          {
+            "text": "Empresa Aurora Ficticia",
+            "start": 0,
+            "end": 23,
+            "label": "MISC",
+            "detector": "statistical_ner"
+          }
+        ],
+        "relations": [
+          {
+            "entity_id": "demo-aurora",
+            "mention": {
+              "start": 0,
+              "end": 23,
+              "text": "Empresa Aurora Ficticia",
+              "entity_id": "demo-aurora",
+              "matched_alias": "Empresa Aurora Ficticia"
+            },
+            "event": {
+              "text": "acusada",
+              "start": 31,
+              "end": 38,
+              "lemma": "acusar"
+            },
+            "role": "negated",
+            "status": "negated_event",
+            "argument": "nsubj",
+            "passive": true,
+            "dependency_path": [
+              {
+                "text": "Empresa",
+                "start": 0,
+                "end": 7,
+                "lemma": "empresa",
+                "dependency": "nsubj"
+              },
+              {
+                "text": "acusada",
+                "start": 31,
+                "end": 38,
+                "lemma": "acusar",
+                "dependency": "ROOT"
+              }
+            ],
+            "method": "dependency_rule",
+            "identity_status": "exact_alias_candidate_not_identity_verification"
+          }
+        ],
+        "events": [
+          {
+            "text": "acusada",
+            "start": 31,
+            "end": 38,
+            "lemma": "acusar",
+            "status": "negated_event",
+            "negated": true,
+            "hypothetical": false,
+            "method": "dependency_rule"
+          }
+        ],
+        "warnings": [
+          "Identidad sin verificar: coincidencia de nombre o alias; posible homónimo."
+        ]
+      }
+    },
+    {
+      "text": "Empresa Aurora Ficticia patrocinó el concierto donde se discutió un fraude ajeno.",
+      "expected_role": "incidental",
+      "predicted_role": "incidental",
+      "latency_ms": [
+        3.966029000025628,
+        3.522134999911941,
+        3.2726949999641874,
+        3.299884999933056,
+        3.3942769999839584
+      ],
+      "result": {
+        "method": "spacy",
+        "model_version": "es-spacy-dependency-1.0.0",
+        "model_hash": "7865f338f184df1b62d97a7137d7521b7e2758da5274dc8b41d1130af38265ec",
+        "config_hash": "cb9e753de1db14cf3ae7ca2db6ef200c21ececadf83fb035abc715509955d08a",
+        "model_info": {
+          "available": true,
+          "spacy_version": "3.8.11",
+          "pipeline_version": "3.8.0",
+          "pipeline": [
+            "tok2vec",
+            "morphologizer",
+            "parser",
+            "attribute_ruler",
+            "lemmatizer",
+            "ner"
+          ],
+          "license": "GNU GPL 3.0",
+          "model_hash": "7865f338f184df1b62d97a7137d7521b7e2758da5274dc8b41d1130af38265ec",
+          "model_wheel_sha256": "e451a83d6df79b87e9eed0cb553f03e99e36a3bab18a7b79f0dcfd1fdf875e12",
+          "model_bytes": 16227299,
+          "vectors": {
+            "width": 0,
+            "vectors": 0,
+            "keys": 0,
+            "name": null,
+            "mode": "default"
+          }
+        },
+        "content_hash": "6c67af354baff4dc6ba40994e3852e7cd0d1c1e94f59ef8fdcc0cb4564828405",
+        "entity_signature": "633d2f133308cc95ea3f35e325a34c2644ca6733c303fc48886876025eaa6c40",
+        "score_effect": "auxiliary_only",
+        "source_kind": "news",
+        "analyzed_chars": 81,
+        "truncated": false,
+        "mentions": [
+          {
+            "start": 0,
+            "end": 23,
+            "text": "Empresa Aurora Ficticia",
+            "entity_id": "demo-aurora",
+            "matched_alias": "Empresa Aurora Ficticia"
+          }
+        ],
+        "limitations": [
+          "NER y dependencias estadísticos pueden equivocarse; las relaciones son hipótesis de revisión.",
+          "Un alias exacto no verifica identidad ni resuelve homónimos o correferencias.",
+          "El modelo pequeño no incluye vectores semánticos; la similitud expuesta es léxica de lemas.",
+          "Negaciones, citas atribuidas, cronología y relaciones complejas requieren revisión humana.",
+          "Una acusación o una negativa reportada no acreditan culpabilidad ni inocencia.",
+          "Este análisis auxiliar no altera ni reconstruye los factores numéricos del scoring."
+        ],
+        "available": true,
+        "role": "incidental",
+        "predicted_role": "incidental",
+        "relevance": "incidental",
+        "abstained": false,
+        "competing_roles": [],
+        "findings": [
+          {
+            "role": "incidental",
+            "predicted_role": "incidental",
+            "relevance": "incidental",
+            "abstained": false,
+            "quote": "Empresa Aurora Ficticia patrocinó el concierto donde se discutió un fraude ajeno.",
+            "start": 0,
+            "end": 81,
+            "mentions": [
+              {
+                "start": 0,
+                "end": 23,
+                "text": "Empresa Aurora Ficticia",
+                "entity_id": "demo-aurora",
+                "matched_alias": "Empresa Aurora Ficticia"
+              }
+            ],
+            "entities": [
+              {
+                "text": "Empresa Aurora Ficticia",
+                "start": 0,
+                "end": 23,
+                "label": "MISC",
+                "detector": "statistical_ner"
+              }
+            ],
+            "events": [],
+            "relations": [],
+            "lexical_context_similarity": null,
+            "evidence_status": "exact_input_quote_not_fact_verification"
+          }
+        ],
+        "entities": [
+          {
+            "text": "Empresa Aurora Ficticia",
+            "start": 0,
+            "end": 23,
+            "label": "MISC",
+            "detector": "statistical_ner"
+          }
+        ],
+        "relations": [],
+        "events": [],
+        "warnings": [
+          "Identidad sin verificar: coincidencia de nombre o alias; posible homónimo."
+        ]
+      }
+    },
+    {
+      "text": "El hermano de Empresa Aurora Ficticia fue acusado de fraude.",
+      "expected_role": "indirect",
+      "predicted_role": "indirect",
+      "latency_ms": [
+        3.510274999939611,
+        3.2609579999416383,
+        3.1695290000470777,
+        3.1883849999303493,
+        3.2892500000798464
+      ],
+      "result": {
+        "method": "spacy",
+        "model_version": "es-spacy-dependency-1.0.0",
+        "model_hash": "7865f338f184df1b62d97a7137d7521b7e2758da5274dc8b41d1130af38265ec",
+        "config_hash": "cb9e753de1db14cf3ae7ca2db6ef200c21ececadf83fb035abc715509955d08a",
+        "model_info": {
+          "available": true,
+          "spacy_version": "3.8.11",
+          "pipeline_version": "3.8.0",
+          "pipeline": [
+            "tok2vec",
+            "morphologizer",
+            "parser",
+            "attribute_ruler",
+            "lemmatizer",
+            "ner"
+          ],
+          "license": "GNU GPL 3.0",
+          "model_hash": "7865f338f184df1b62d97a7137d7521b7e2758da5274dc8b41d1130af38265ec",
+          "model_wheel_sha256": "e451a83d6df79b87e9eed0cb553f03e99e36a3bab18a7b79f0dcfd1fdf875e12",
+          "model_bytes": 16227299,
+          "vectors": {
+            "width": 0,
+            "vectors": 0,
+            "keys": 0,
+            "name": null,
+            "mode": "default"
+          }
+        },
+        "content_hash": "d0921fe8e68944282578cc84100d0869f98f3cf3913803c6ef7e85e10313253d",
+        "entity_signature": "633d2f133308cc95ea3f35e325a34c2644ca6733c303fc48886876025eaa6c40",
+        "score_effect": "auxiliary_only",
+        "source_kind": "news",
+        "analyzed_chars": 60,
+        "truncated": false,
+        "mentions": [
+          {
+            "start": 14,
+            "end": 37,
+            "text": "Empresa Aurora Ficticia",
+            "entity_id": "demo-aurora",
+            "matched_alias": "Empresa Aurora Ficticia"
+          }
+        ],
+        "limitations": [
+          "NER y dependencias estadísticos pueden equivocarse; las relaciones son hipótesis de revisión.",
+          "Un alias exacto no verifica identidad ni resuelve homónimos o correferencias.",
+          "El modelo pequeño no incluye vectores semánticos; la similitud expuesta es léxica de lemas.",
+          "Negaciones, citas atribuidas, cronología y relaciones complejas requieren revisión humana.",
+          "Una acusación o una negativa reportada no acreditan culpabilidad ni inocencia.",
+          "Este análisis auxiliar no altera ni reconstruye los factores numéricos del scoring."
+        ],
+        "available": true,
+        "role": "indirect",
+        "predicted_role": "indirect",
+        "relevance": "indirect_only",
+        "abstained": false,
+        "competing_roles": [
+          "indirect"
+        ],
+        "findings": [
+          {
+            "role": "indirect",
+            "predicted_role": "indirect",
+            "relevance": "indirect_only",
+            "abstained": false,
+            "quote": "El hermano de Empresa Aurora Ficticia fue acusado de fraude.",
+            "start": 0,
+            "end": 60,
+            "mentions": [
+              {
+                "start": 14,
+                "end": 37,
+                "text": "Empresa Aurora Ficticia",
+                "entity_id": "demo-aurora",
+                "matched_alias": "Empresa Aurora Ficticia"
+              }
+            ],
+            "entities": [
+              {
+                "text": "Empresa Aurora Ficticia",
+                "start": 14,
+                "end": 37,
+                "label": "MISC",
+                "detector": "statistical_ner"
+              }
+            ],
+            "events": [
+              {
+                "text": "acusado",
+                "start": 42,
+                "end": 49,
+                "lemma": "acusar",
+                "status": "third_party_event",
+                "negated": false,
+                "hypothetical": false,
+                "method": "dependency_rule"
+              }
+            ],
+            "relations": [
+              {
+                "entity_id": "demo-aurora",
+                "mention": {
+                  "start": 14,
+                  "end": 37,
+                  "text": "Empresa Aurora Ficticia",
+                  "entity_id": "demo-aurora",
+                  "matched_alias": "Empresa Aurora Ficticia"
+                },
+                "event": {
+                  "text": "acusado",
+                  "start": 42,
+                  "end": 49,
+                  "lemma": "acusar"
+                },
+                "role": "indirect",
+                "status": "third_party_event",
+                "argument": "nsubj",
+                "passive": true,
+                "dependency_path": [
+                  {
+                    "text": "Empresa",
+                    "start": 14,
+                    "end": 21,
+                    "lemma": "empresa",
+                    "dependency": "nmod"
+                  },
+                  {
+                    "text": "hermano",
+                    "start": 3,
+                    "end": 10,
+                    "lemma": "hermano",
+                    "dependency": "nsubj"
+                  },
+                  {
+                    "text": "acusado",
+                    "start": 42,
+                    "end": 49,
+                    "lemma": "acusar",
+                    "dependency": "ROOT"
+                  }
+                ],
+                "method": "dependency_rule",
+                "identity_status": "exact_alias_candidate_not_identity_verification"
+              }
+            ],
+            "lexical_context_similarity": null,
+            "evidence_status": "exact_input_quote_not_fact_verification"
+          }
+        ],
+        "entities": [
+          {
+            "text": "Empresa Aurora Ficticia",
+            "start": 14,
+            "end": 37,
+            "label": "MISC",
+            "detector": "statistical_ner"
+          }
+        ],
+        "relations": [
+          {
+            "entity_id": "demo-aurora",
+            "mention": {
+              "start": 14,
+              "end": 37,
+              "text": "Empresa Aurora Ficticia",
+              "entity_id": "demo-aurora",
+              "matched_alias": "Empresa Aurora Ficticia"
+            },
+            "event": {
+              "text": "acusado",
+              "start": 42,
+              "end": 49,
+              "lemma": "acusar"
+            },
+            "role": "indirect",
+            "status": "third_party_event",
+            "argument": "nsubj",
+            "passive": true,
+            "dependency_path": [
+              {
+                "text": "Empresa",
+                "start": 14,
+                "end": 21,
+                "lemma": "empresa",
+                "dependency": "nmod"
+              },
+              {
+                "text": "hermano",
+                "start": 3,
+                "end": 10,
+                "lemma": "hermano",
+                "dependency": "nsubj"
+              },
+              {
+                "text": "acusado",
+                "start": 42,
+                "end": 49,
+                "lemma": "acusar",
+                "dependency": "ROOT"
+              }
+            ],
+            "method": "dependency_rule",
+            "identity_status": "exact_alias_candidate_not_identity_verification"
+          }
+        ],
+        "events": [
+          {
+            "text": "acusado",
+            "start": 42,
+            "end": 49,
+            "lemma": "acusar",
+            "status": "third_party_event",
+            "negated": false,
+            "hypothetical": false,
+            "method": "dependency_rule"
+          }
+        ],
+        "warnings": [
+          "Identidad sin verificar: coincidencia de nombre o alias; posible homónimo."
+        ]
+      }
+    },
+    {
+      "text": "Empresa Aurora Ficticia fue absuelta del fraude.",
+      "expected_role": "resolved",
+      "predicted_role": "resolved",
+      "latency_ms": [
+        3.2049820000565887,
+        2.976417000013498,
+        2.976487000069028,
+        3.256210000017745,
+        3.192991999981132
+      ],
+      "result": {
+        "method": "spacy",
+        "model_version": "es-spacy-dependency-1.0.0",
+        "model_hash": "7865f338f184df1b62d97a7137d7521b7e2758da5274dc8b41d1130af38265ec",
+        "config_hash": "cb9e753de1db14cf3ae7ca2db6ef200c21ececadf83fb035abc715509955d08a",
+        "model_info": {
+          "available": true,
+          "spacy_version": "3.8.11",
+          "pipeline_version": "3.8.0",
+          "pipeline": [
+            "tok2vec",
+            "morphologizer",
+            "parser",
+            "attribute_ruler",
+            "lemmatizer",
+            "ner"
+          ],
+          "license": "GNU GPL 3.0",
+          "model_hash": "7865f338f184df1b62d97a7137d7521b7e2758da5274dc8b41d1130af38265ec",
+          "model_wheel_sha256": "e451a83d6df79b87e9eed0cb553f03e99e36a3bab18a7b79f0dcfd1fdf875e12",
+          "model_bytes": 16227299,
+          "vectors": {
+            "width": 0,
+            "vectors": 0,
+            "keys": 0,
+            "name": null,
+            "mode": "default"
+          }
+        },
+        "content_hash": "97a0f278b5943f9d460cd2738ee6ef444708df48e6bed236cd850c64cf0dabc7",
+        "entity_signature": "633d2f133308cc95ea3f35e325a34c2644ca6733c303fc48886876025eaa6c40",
+        "score_effect": "auxiliary_only",
+        "source_kind": "news",
+        "analyzed_chars": 48,
+        "truncated": false,
+        "mentions": [
+          {
+            "start": 0,
+            "end": 23,
+            "text": "Empresa Aurora Ficticia",
+            "entity_id": "demo-aurora",
+            "matched_alias": "Empresa Aurora Ficticia"
+          }
+        ],
+        "limitations": [
+          "NER y dependencias estadísticos pueden equivocarse; las relaciones son hipótesis de revisión.",
+          "Un alias exacto no verifica identidad ni resuelve homónimos o correferencias.",
+          "El modelo pequeño no incluye vectores semánticos; la similitud expuesta es léxica de lemas.",
+          "Negaciones, citas atribuidas, cronología y relaciones complejas requieren revisión humana.",
+          "Una acusación o una negativa reportada no acreditan culpabilidad ni inocencia.",
+          "Este análisis auxiliar no altera ni reconstruye los factores numéricos del scoring."
+        ],
+        "available": true,
+        "role": "resolved",
+        "predicted_role": "resolved",
+        "relevance": "reported_resolution",
+        "abstained": false,
+        "competing_roles": [
+          "resolved"
+        ],
+        "findings": [
+          {
+            "role": "resolved",
+            "predicted_role": "resolved",
+            "relevance": "reported_resolution",
+            "abstained": false,
+            "quote": "Empresa Aurora Ficticia fue absuelta del fraude.",
+            "start": 0,
+            "end": 48,
+            "mentions": [
+              {
+                "start": 0,
+                "end": 23,
+                "text": "Empresa Aurora Ficticia",
+                "entity_id": "demo-aurora",
+                "matched_alias": "Empresa Aurora Ficticia"
+              }
+            ],
+            "entities": [
+              {
+                "text": "Empresa Aurora Ficticia",
+                "start": 0,
+                "end": 23,
+                "label": "MISC",
+                "detector": "statistical_ner"
+              }
+            ],
+            "events": [
+              {
+                "text": "absuelta",
+                "start": 28,
+                "end": 36,
+                "lemma": "absolver",
+                "status": "reported_resolution_not_verified",
+                "negated": false,
+                "hypothetical": false,
+                "method": "dependency_rule"
+              }
+            ],
+            "relations": [
+              {
+                "entity_id": "demo-aurora",
+                "mention": {
+                  "start": 0,
+                  "end": 23,
+                  "text": "Empresa Aurora Ficticia",
+                  "entity_id": "demo-aurora",
+                  "matched_alias": "Empresa Aurora Ficticia"
+                },
+                "event": {
+                  "text": "absuelta",
+                  "start": 28,
+                  "end": 36,
+                  "lemma": "absolver"
+                },
+                "role": "resolved",
+                "status": "reported_resolution_not_verified",
+                "argument": "nsubj",
+                "passive": true,
+                "dependency_path": [
+                  {
+                    "text": "Empresa",
+                    "start": 0,
+                    "end": 7,
+                    "lemma": "empresa",
+                    "dependency": "nsubj"
+                  },
+                  {
+                    "text": "absuelta",
+                    "start": 28,
+                    "end": 36,
+                    "lemma": "absolver",
+                    "dependency": "ROOT"
+                  }
+                ],
+                "method": "dependency_rule",
+                "identity_status": "exact_alias_candidate_not_identity_verification"
+              }
+            ],
+            "lexical_context_similarity": null,
+            "evidence_status": "exact_input_quote_not_fact_verification"
+          }
+        ],
+        "entities": [
+          {
+            "text": "Empresa Aurora Ficticia",
+            "start": 0,
+            "end": 23,
+            "label": "MISC",
+            "detector": "statistical_ner"
+          }
+        ],
+        "relations": [
+          {
+            "entity_id": "demo-aurora",
+            "mention": {
+              "start": 0,
+              "end": 23,
+              "text": "Empresa Aurora Ficticia",
+              "entity_id": "demo-aurora",
+              "matched_alias": "Empresa Aurora Ficticia"
+            },
+            "event": {
+              "text": "absuelta",
+              "start": 28,
+              "end": 36,
+              "lemma": "absolver"
+            },
+            "role": "resolved",
+            "status": "reported_resolution_not_verified",
+            "argument": "nsubj",
+            "passive": true,
+            "dependency_path": [
+              {
+                "text": "Empresa",
+                "start": 0,
+                "end": 7,
+                "lemma": "empresa",
+                "dependency": "nsubj"
+              },
+              {
+                "text": "absuelta",
+                "start": 28,
+                "end": 36,
+                "lemma": "absolver",
+                "dependency": "ROOT"
+              }
+            ],
+            "method": "dependency_rule",
+            "identity_status": "exact_alias_candidate_not_identity_verification"
+          }
+        ],
+        "events": [
+          {
+            "text": "absuelta",
+            "start": 28,
+            "end": 36,
+            "lemma": "absolver",
+            "status": "reported_resolution_not_verified",
+            "negated": false,
+            "hypothetical": false,
+            "method": "dependency_rule"
+          }
+        ],
+        "warnings": [
+          "Identidad sin verificar: coincidencia de nombre o alias; posible homónimo."
+        ]
+      }
+    },
+    {
+      "text": "La Fiscalía acusó a Empresa Aurora Ficticia de fraude.",
+      "expected_role": "accused",
+      "predicted_role": "accused",
+      "latency_ms": [
+        3.347462000078849,
+        3.1564669999397665,
+        3.08334700002888,
+        3.1160419999878286,
+        3.2124250000151733
+      ],
+      "result": {
+        "method": "spacy",
+        "model_version": "es-spacy-dependency-1.0.0",
+        "model_hash": "7865f338f184df1b62d97a7137d7521b7e2758da5274dc8b41d1130af38265ec",
+        "config_hash": "cb9e753de1db14cf3ae7ca2db6ef200c21ececadf83fb035abc715509955d08a",
+        "model_info": {
+          "available": true,
+          "spacy_version": "3.8.11",
+          "pipeline_version": "3.8.0",
+          "pipeline": [
+            "tok2vec",
+            "morphologizer",
+            "parser",
+            "attribute_ruler",
+            "lemmatizer",
+            "ner"
+          ],
+          "license": "GNU GPL 3.0",
+          "model_hash": "7865f338f184df1b62d97a7137d7521b7e2758da5274dc8b41d1130af38265ec",
+          "model_wheel_sha256": "e451a83d6df79b87e9eed0cb553f03e99e36a3bab18a7b79f0dcfd1fdf875e12",
+          "model_bytes": 16227299,
+          "vectors": {
+            "width": 0,
+            "vectors": 0,
+            "keys": 0,
+            "name": null,
+            "mode": "default"
+          }
+        },
+        "content_hash": "9bf4dedffb86218a00338eb29bca5f71f3a32f65ea0769b7ef0006231223ec84",
+        "entity_signature": "633d2f133308cc95ea3f35e325a34c2644ca6733c303fc48886876025eaa6c40",
+        "score_effect": "auxiliary_only",
+        "source_kind": "news",
+        "analyzed_chars": 54,
+        "truncated": false,
+        "mentions": [
+          {
+            "start": 20,
+            "end": 43,
+            "text": "Empresa Aurora Ficticia",
+            "entity_id": "demo-aurora",
+            "matched_alias": "Empresa Aurora Ficticia"
+          }
+        ],
+        "limitations": [
+          "NER y dependencias estadísticos pueden equivocarse; las relaciones son hipótesis de revisión.",
+          "Un alias exacto no verifica identidad ni resuelve homónimos o correferencias.",
+          "El modelo pequeño no incluye vectores semánticos; la similitud expuesta es léxica de lemas.",
+          "Negaciones, citas atribuidas, cronología y relaciones complejas requieren revisión humana.",
+          "Una acusación o una negativa reportada no acreditan culpabilidad ni inocencia.",
+          "Este análisis auxiliar no altera ni reconstruye los factores numéricos del scoring."
+        ],
+        "available": true,
+        "role": "accused",
+        "predicted_role": "accused",
+        "relevance": "direct_adverse_candidate",
+        "abstained": false,
+        "competing_roles": [
+          "accused"
+        ],
+        "findings": [
+          {
+            "role": "accused",
+            "predicted_role": "accused",
+            "relevance": "direct_adverse_candidate",
+            "abstained": false,
+            "quote": "La Fiscalía acusó a Empresa Aurora Ficticia de fraude.",
+            "start": 0,
+            "end": 54,
+            "mentions": [
+              {
+                "start": 20,
+                "end": 43,
+                "text": "Empresa Aurora Ficticia",
+                "entity_id": "demo-aurora",
+                "matched_alias": "Empresa Aurora Ficticia"
+              }
+            ],
+            "entities": [
+              {
+                "text": "La Fiscalía",
+                "start": 0,
+                "end": 11,
+                "label": "PER",
+                "detector": "statistical_ner"
+              },
+              {
+                "text": "Empresa Aurora Ficticia",
+                "start": 20,
+                "end": 43,
+                "label": "PER",
+                "detector": "statistical_ner"
+              }
+            ],
+            "events": [
+              {
+                "text": "acusó",
+                "start": 12,
+                "end": 17,
+                "lemma": "acusar",
+                "status": "reported_allegation_not_proven",
+                "negated": false,
+                "hypothetical": false,
+                "method": "dependency_rule"
+              }
+            ],
+            "relations": [
+              {
+                "entity_id": "demo-aurora",
+                "mention": {
+                  "start": 20,
+                  "end": 43,
+                  "text": "Empresa Aurora Ficticia",
+                  "entity_id": "demo-aurora",
+                  "matched_alias": "Empresa Aurora Ficticia"
+                },
+                "event": {
+                  "text": "acusó",
+                  "start": 12,
+                  "end": 17,
+                  "lemma": "acusar"
+                },
+                "role": "accused",
+                "status": "reported_allegation_not_proven",
+                "argument": "iobj",
+                "passive": false,
+                "dependency_path": [
+                  {
+                    "text": "Empresa",
+                    "start": 20,
+                    "end": 27,
+                    "lemma": "empresa",
+                    "dependency": "iobj"
+                  },
+                  {
+                    "text": "acusó",
+                    "start": 12,
+                    "end": 17,
+                    "lemma": "acusar",
+                    "dependency": "ROOT"
+                  }
+                ],
+                "method": "dependency_rule",
+                "identity_status": "exact_alias_candidate_not_identity_verification"
+              }
+            ],
+            "lexical_context_similarity": null,
+            "evidence_status": "exact_input_quote_not_fact_verification"
+          }
+        ],
+        "entities": [
+          {
+            "text": "La Fiscalía",
+            "start": 0,
+            "end": 11,
+            "label": "PER",
+            "detector": "statistical_ner"
+          },
+          {
+            "text": "Empresa Aurora Ficticia",
+            "start": 20,
+            "end": 43,
+            "label": "PER",
+            "detector": "statistical_ner"
+          }
+        ],
+        "relations": [
+          {
+            "entity_id": "demo-aurora",
+            "mention": {
+              "start": 20,
+              "end": 43,
+              "text": "Empresa Aurora Ficticia",
+              "entity_id": "demo-aurora",
+              "matched_alias": "Empresa Aurora Ficticia"
+            },
+            "event": {
+              "text": "acusó",
+              "start": 12,
+              "end": 17,
+              "lemma": "acusar"
+            },
+            "role": "accused",
+            "status": "reported_allegation_not_proven",
+            "argument": "iobj",
+            "passive": false,
+            "dependency_path": [
+              {
+                "text": "Empresa",
+                "start": 20,
+                "end": 27,
+                "lemma": "empresa",
+                "dependency": "iobj"
+              },
+              {
+                "text": "acusó",
+                "start": 12,
+                "end": 17,
+                "lemma": "acusar",
+                "dependency": "ROOT"
+              }
+            ],
+            "method": "dependency_rule",
+            "identity_status": "exact_alias_candidate_not_identity_verification"
+          }
+        ],
+        "events": [
+          {
+            "text": "acusó",
+            "start": 12,
+            "end": 17,
+            "lemma": "acusar",
+            "status": "reported_allegation_not_proven",
+            "negated": false,
+            "hypothetical": false,
+            "method": "dependency_rule"
+          }
+        ],
+        "warnings": [
+          "Identidad sin verificar: coincidencia de nombre o alias; posible homónimo."
+        ]
+      }
+    },
+    {
+      "text": "Si Empresa Aurora Ficticia cometiera fraude, sería investigada.",
+      "expected_role": "insufficient",
+      "predicted_role": "insufficient",
+      "latency_ms": [
+        4.283823000037046,
+        3.1535730000769036,
+        3.0319119999830946,
+        3.057581999996728,
+        3.1653270000333578
+      ],
+      "result": {
+        "method": "spacy",
+        "model_version": "es-spacy-dependency-1.0.0",
+        "model_hash": "7865f338f184df1b62d97a7137d7521b7e2758da5274dc8b41d1130af38265ec",
+        "config_hash": "cb9e753de1db14cf3ae7ca2db6ef200c21ececadf83fb035abc715509955d08a",
+        "model_info": {
+          "available": true,
+          "spacy_version": "3.8.11",
+          "pipeline_version": "3.8.0",
+          "pipeline": [
+            "tok2vec",
+            "morphologizer",
+            "parser",
+            "attribute_ruler",
+            "lemmatizer",
+            "ner"
+          ],
+          "license": "GNU GPL 3.0",
+          "model_hash": "7865f338f184df1b62d97a7137d7521b7e2758da5274dc8b41d1130af38265ec",
+          "model_wheel_sha256": "e451a83d6df79b87e9eed0cb553f03e99e36a3bab18a7b79f0dcfd1fdf875e12",
+          "model_bytes": 16227299,
+          "vectors": {
+            "width": 0,
+            "vectors": 0,
+            "keys": 0,
+            "name": null,
+            "mode": "default"
+          }
+        },
+        "content_hash": "76d4694084eaddd79af73caa1d1f64dadd844b332ad5bcae01e1a5f69ce2bec9",
+        "entity_signature": "633d2f133308cc95ea3f35e325a34c2644ca6733c303fc48886876025eaa6c40",
+        "score_effect": "auxiliary_only",
+        "source_kind": "news",
+        "analyzed_chars": 63,
+        "truncated": false,
+        "mentions": [
+          {
+            "start": 3,
+            "end": 26,
+            "text": "Empresa Aurora Ficticia",
+            "entity_id": "demo-aurora",
+            "matched_alias": "Empresa Aurora Ficticia"
+          }
+        ],
+        "limitations": [
+          "NER y dependencias estadísticos pueden equivocarse; las relaciones son hipótesis de revisión.",
+          "Un alias exacto no verifica identidad ni resuelve homónimos o correferencias.",
+          "El modelo pequeño no incluye vectores semánticos; la similitud expuesta es léxica de lemas.",
+          "Negaciones, citas atribuidas, cronología y relaciones complejas requieren revisión humana.",
+          "Una acusación o una negativa reportada no acreditan culpabilidad ni inocencia.",
+          "Este análisis auxiliar no altera ni reconstruye los factores numéricos del scoring."
+        ],
+        "available": true,
+        "role": "insufficient",
+        "predicted_role": "insufficient",
+        "relevance": "insufficient",
+        "abstained": true,
+        "competing_roles": [],
+        "findings": [
+          {
+            "role": "insufficient",
+            "predicted_role": "insufficient",
+            "relevance": "insufficient",
+            "abstained": true,
+            "quote": "Si Empresa Aurora Ficticia cometiera fraude, sería investigada.",
+            "start": 0,
+            "end": 63,
+            "mentions": [
+              {
+                "start": 3,
+                "end": 26,
+                "text": "Empresa Aurora Ficticia",
+                "entity_id": "demo-aurora",
+                "matched_alias": "Empresa Aurora Ficticia"
+              }
+            ],
+            "entities": [
+              {
+                "text": "Empresa Aurora Ficticia",
+                "start": 3,
+                "end": 26,
+                "label": "MISC",
+                "detector": "statistical_ner"
+              }
+            ],
+            "events": [
+              {
+                "text": "cometiera",
+                "start": 27,
+                "end": 36,
+                "lemma": "cometer",
+                "status": "hypothetical_event",
+                "negated": false,
+                "hypothetical": true,
+                "method": "dependency_rule"
+              }
+            ],
+            "relations": [
+              {
+                "entity_id": "demo-aurora",
+                "mention": {
+                  "start": 3,
+                  "end": 26,
+                  "text": "Empresa Aurora Ficticia",
+                  "entity_id": "demo-aurora",
+                  "matched_alias": "Empresa Aurora Ficticia"
+                },
+                "event": {
+                  "text": "cometiera",
+                  "start": 27,
+                  "end": 36,
+                  "lemma": "cometer"
+                },
+                "role": "insufficient",
+                "status": "hypothetical_event",
+                "argument": "nsubj",
+                "passive": false,
+                "dependency_path": [
+                  {
+                    "text": "Empresa",
+                    "start": 3,
+                    "end": 10,
+                    "lemma": "empresa",
+                    "dependency": "nsubj"
+                  },
+                  {
+                    "text": "cometiera",
+                    "start": 27,
+                    "end": 36,
+                    "lemma": "cometer",
+                    "dependency": "advcl"
+                  }
+                ],
+                "method": "dependency_rule",
+                "identity_status": "exact_alias_candidate_not_identity_verification"
+              }
+            ],
+            "lexical_context_similarity": null,
+            "evidence_status": "exact_input_quote_not_fact_verification"
+          }
+        ],
+        "entities": [
+          {
+            "text": "Empresa Aurora Ficticia",
+            "start": 3,
+            "end": 26,
+            "label": "MISC",
+            "detector": "statistical_ner"
+          }
+        ],
+        "relations": [
+          {
+            "entity_id": "demo-aurora",
+            "mention": {
+              "start": 3,
+              "end": 26,
+              "text": "Empresa Aurora Ficticia",
+              "entity_id": "demo-aurora",
+              "matched_alias": "Empresa Aurora Ficticia"
+            },
+            "event": {
+              "text": "cometiera",
+              "start": 27,
+              "end": 36,
+              "lemma": "cometer"
+            },
+            "role": "insufficient",
+            "status": "hypothetical_event",
+            "argument": "nsubj",
+            "passive": false,
+            "dependency_path": [
+              {
+                "text": "Empresa",
+                "start": 3,
+                "end": 10,
+                "lemma": "empresa",
+                "dependency": "nsubj"
+              },
+              {
+                "text": "cometiera",
+                "start": 27,
+                "end": 36,
+                "lemma": "cometer",
+                "dependency": "advcl"
+              }
+            ],
+            "method": "dependency_rule",
+            "identity_status": "exact_alias_candidate_not_identity_verification"
+          }
+        ],
+        "events": [
+          {
+            "text": "cometiera",
+            "start": 27,
+            "end": 36,
+            "lemma": "cometer",
+            "status": "hypothetical_event",
+            "negated": false,
+            "hypothetical": true,
+            "method": "dependency_rule"
+          }
+        ],
+        "warnings": [
+          "Identidad sin verificar: coincidencia de nombre o alias; posible homónimo."
+        ]
+      }
+    }
+  ]
+}
