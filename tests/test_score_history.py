@@ -373,9 +373,13 @@ class ScoreHistoryTests(unittest.TestCase):
 
     def test_old_scores_migrate_without_inventing_past_snapshots(self):
         path = Path(self.temp.name) / 'old.sqlite3'
-        with sqlite3.connect(path) as con:
-            con.executescript('CREATE TABLE scores(entity_id TEXT PRIMARY KEY,result TEXT NOT NULL,computed_at TEXT NOT NULL);')
-            con.execute('INSERT INTO scores VALUES(?,?,?)', ('legacy', '{"score":0}', AS_OF))
+        con = sqlite3.connect(path)
+        try:
+            with con:
+                con.executescript('CREATE TABLE scores(entity_id TEXT PRIMARY KEY,result TEXT NOT NULL,computed_at TEXT NOT NULL);')
+                con.execute('INSERT INTO scores VALUES(?,?,?)', ('legacy', '{"score":0}', AS_OF))
+        finally:
+            con.close()
         migrated = Store(path)
         self.assertEqual(migrated.get_score('legacy'), {'score': 0})
         self.assertIsNone(migrated.latest_score_run('legacy'))

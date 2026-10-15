@@ -204,7 +204,8 @@ def make_fixtures():
                         "template": template,
                         "masked_text": text.replace(name, " ENTITY_TARGET ")})
         destination = ROOT / "tests" / "data" / f"context_{split}.jsonl"
-        destination.write_text("".join(json.dumps(row, ensure_ascii=False, sort_keys=True) + "\n" for row in rows), encoding="utf-8")
+        # Artifact/corpus hashes must survive Windows text-mode newline handling.
+        destination.write_bytes("".join(json.dumps(row, ensure_ascii=False, sort_keys=True) + "\n" for row in rows).encode("utf-8"))
 
 
 def train():
