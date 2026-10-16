@@ -647,13 +647,17 @@ class SafeFetcher:
             for _ in range(max(0, min(int(self.config.get("max_redirects", 4)), 8)) + 1):
                 if session_deadline is not None and time.monotonic() >= session_deadline:
                     return exhausted()
-                normalized, host, addresses = self._validate_url(current, source)
+                # Syntax and source scope are checked before reading state.
+                # Resolve DNS only if this host may actually be requested.
+                normalized, host, _ = self._validate_url(current, source, resolve=False)
                 if normalized in seen:
                     raise CollectionError("Redirect loop")
                 seen.add(normalized)
                 with self._db() as db:
                     redirect = db.execute("SELECT target FROM redirects WHERE url=? AND expires_at>?", (normalized, self._clock())).fetchone()
                 if redirect:
+                    # Preserve validation of both ends of a cached redirect.
+                    self._validate_url(normalized, source)
                     target = redirect["target"]
                     self._validate_url(target, source)
                     if check_redirect_robots and source.get("robots_required", True):
@@ -669,6 +673,9 @@ class SafeFetcher:
                     return self._result(url, denied, error=reason, retry_at=_iso(retry),
                                         error_code="host_interval" if denied == "deferred" else "host_circuit",
                                         request_attempted=False), normalized, None, {}, b""
+                # The atomic host reservation is still mandatory. Pin the
+                # following transport to the freshly validated public answer.
+                normalized, host, addresses = self._validate_url(normalized, source)
                 self._local.max_wire_bytes = max(1, min(int(source.get("max_wire_bytes", max_bytes)), max_bytes))
                 request_timeout = timeout
                 if session_deadline is not None:
@@ -964,6 +971,19 @@ class SafeFetcher:
                                 content_type=response_headers.get('content-type', ''),
                                 sha256=hashlib.sha256(raw).hexdigest())
         if status != 200:
+            # DDG can return a bounded HTML challenge with HTTP 202. A status
+            # alone is not proof: require the configured DDG adapter, HTML MIME
+            # and an explicit existing challenge marker before opening a
+            # manual-review circuit. Never switch endpoints after a challenge.
+            if (status == 202 and source.get('kind') in ('duckduckgo_html', 'duckduckgo_lite')
+                    and response_headers.get('content-type', '').split(';', 1)[0].strip().lower()
+                    in ('text/html', 'application/xhtml+xml')
+                    and self._captcha(raw[:100_000].decode('utf-8', errors='replace'))):
+                final_host = urlsplit(final_url).hostname
+                retry = self._backoff(final_host, response_headers, True, "CAPTCHA or access challenge")
+                return self._result(normalized, "blocked", http_status=status,
+                                    error="CAPTCHA or access challenge; manual review required",
+                                    error_code="access_challenge", retry_at=_iso(retry), final_url=final_url)
             return self._result(normalized, "error", http_status=status, error="Unexpected HTTP status")
         content_type = response_headers.get("content-type", "text/plain")
         mime = content_type.split(";", 1)[0].strip().lower()

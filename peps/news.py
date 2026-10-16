@@ -33,7 +33,10 @@ from .store import canonical, digest, now
 TRACKING = {'fbclid', 'gclid', 'dclid', 'msclkid', 'mc_cid', 'mc_eid', '_ga', 'igshid'}
 UNRESERVED = frozenset('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~')
 SUPERSEDED_PLAN = 'Plan sustituido (superseded_news_plan): '
-ARTICLE_EXTRACTION_VERSION = 'article-main-4'
+ARTICLE_EXTRACTION_VERSION = 'article-main-5'
+_ARTICLE_LINK_START = '\ufff0editorial-link-start\ufff1'
+_ARTICLE_LINK_END = '\ufff0editorial-link-end\ufff1'
+_ARTICLE_LINK_MARKERS = frozenset((_ARTICLE_LINK_START, _ARTICLE_LINK_END))
 
 
 class _InsufficientArticleText(ValueError):
@@ -183,6 +186,11 @@ class _ArticleText(HTMLParser):
         hidden = hidden or attrs.get('aria-hidden') == 'true' or 'hidden' in attrs
         hidden = hidden or bool(re.search(r'\b(?:advert|related|social-share|cookie|menu|sidebar)\b', attrs.get('class', ''), re.I))
         classes = set(attrs.get('class', '').lower().split())
+        # Milenio's inline recommendation has neither a related-content class
+        # nor an aside tag. Its recirculation attribute and exact component
+        # class distinguish this navigation from genuine editorial prose.
+        hidden = hidden or ('nd-text-highlights-detail-bold' in classes
+                            and 'data-mrf-recirculation' in attrs)
         # Elementor and other WordPress themes render the real story in a div,
         # while using <article> for sidebar cards. Those cards must not replace
         # the story just because their semantic tag looks more promising.
@@ -195,7 +203,7 @@ class _ArticleText(HTMLParser):
                                        'elementor-widget-theme-post-content'})
                     or attrs.get('data-widget_type', '').split('.', 1)[0] == 'theme-post-content')
         hidden = hidden or (card and not explicit)
-        parent = self.stack[-1][1] if self.stack else (False, False, None, None)
+        parent = self.stack[-1][1] if self.stack else (False, False, None, None, False)
         article = parent[2]
         if tag == 'article' or attrs.get('itemprop') == 'articleBody':
             article = len(self.article)
@@ -205,11 +213,13 @@ class _ArticleText(HTMLParser):
             editorial = len(self.editorial)
             self.editorial.append([])
         state = (hidden or parent[0], parent[1] or tag == 'main' or attrs.get('role') == 'main',
-                 article, editorial)
+                 article, editorial, tag == 'a' and bool(attrs.get('href')))
         if tag in ('p', 'div', 'section', 'article', 'main', 'blockquote', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'hr'):
             self._boundary(state, '\n\n')
         elif tag == 'br':
             self._boundary(state, '\n')
+        if state[4]:
+            self._boundary(state, _ARTICLE_LINK_START)
         if tag == 'a' and 'tag' in attrs.get('rel', '').lower().split():
             self._boundary(state, '\ufff0tag-link\ufff1')
         if tag not in ('meta', 'link', 'img', 'br', 'hr', 'input', 'source', 'wbr', 'area', 'base', 'embed', 'param', 'track'):
@@ -218,6 +228,8 @@ class _ArticleText(HTMLParser):
     def handle_endtag(self, tag):
         for index in range(len(self.stack) - 1, -1, -1):
             if self.stack[index][0] == tag:
+                if self.stack[index][1][4]:
+                    self._boundary(self.stack[index][1], _ARTICLE_LINK_END)
                 if tag in ('p', 'div', 'section', 'article', 'main', 'blockquote', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'):
                     self._boundary(self.stack[index][1], '\n\n')
                 del self.stack[index:]
@@ -247,12 +259,53 @@ class _ArticleText(HTMLParser):
                 self.editorial[state[3]].append(value)
 
 
+def _plain_editorial_paragraph(paragraph):
+    for marker in _ARTICLE_LINK_MARKERS:
+        paragraph = paragraph.replace(marker, '')
+    return re.sub(r'[^\S\n]+', ' ', paragraph).strip()
+
+
+def _only_editorial_links(paragraph):
+    # Only actual anchors with a nonempty href qualify. A paragraph containing
+    # ordinary prose around a link must remain editorial text.
+    paragraph, position, seen = paragraph.strip(), 0, False
+    while paragraph.startswith(_ARTICLE_LINK_START, position):
+        start = position + len(_ARTICLE_LINK_START)
+        end = paragraph.find(_ARTICLE_LINK_END, start)
+        if end < 0:
+            return False
+        inside = paragraph[start:end]
+        if not inside.strip() or _ARTICLE_LINK_START in inside:
+            return False
+        seen, position = True, end + len(_ARTICLE_LINK_END)
+        while position < len(paragraph) and paragraph[position].isspace():
+            position += 1
+    return seen and position == len(paragraph)
+
+
 def _editorial_text(parts):
     text = re.sub(r'[^\S\n]+', ' ', ' '.join(parts))
     text = re.sub(r' *\n *', '\n', text)
     text = re.sub(r'\n{3,}', '\n\n', text).strip()
-    kept = []
-    for paragraph in text.split('\n\n'):
+    paragraphs = text.split('\n\n')
+    kept, index = [], 0
+    while index < len(paragraphs):
+        marked = paragraphs[index]
+        paragraph = _plain_editorial_paragraph(marked)
+        index += 1
+        if not paragraph:
+            continue
+        # Heraldo renders an unclassified navigation label followed by one or
+        # more all-link paragraphs. Require that exact structure; mentions of
+        # "seguir leyendo" in genuine prose and the next editorial paragraph
+        # are retained. A standalone label without linked paragraphs stays.
+        if re.fullmatch(r'seguir leyendo\s*:', paragraph, re.I):
+            end = index
+            while end < len(paragraphs) and _only_editorial_links(paragraphs[end]):
+                end += 1
+            if end > index:
+                index = end
+                continue
         # Some publishers place these links inside the editorial container,
         # without a related-content class. The lead-in and its linked headline
         # form navigation, not another claim in this article. Preserve ordinary
@@ -266,17 +319,22 @@ def _editorial_text(parts):
     return '\n\n'.join(kept).strip()
 
 
+def _editorial_size(parts):
+    # Internal link markers must not make a tiny card win the body selection.
+    return len(' '.join(part for part in parts if part not in _ARTICLE_LINK_MARKERS))
+
+
 def article_text(html):
     parser = _ArticleText()
     parser.feed(html)
     # An explicit but empty/paywalled story remains insufficient text. Falling
     # back to related cards would silently attach another article's body.
     if parser.editorial:
-        chosen = max(parser.editorial, key=lambda parts: len(' '.join(parts)))
+        chosen = max(parser.editorial, key=_editorial_size)
         return _editorial_text(chosen)
     # A tiny <article> card is not sufficient to discard the actual main text.
-    article = max(parser.article, key=lambda parts: len(' '.join(parts)), default=[])
-    chosen = article if len(' '.join(article)) >= 100 else parser.main if parser.main else parser.all
+    article = max(parser.article, key=_editorial_size, default=[])
+    chosen = article if _editorial_size(article) >= 100 else parser.main if parser.main else parser.all
     return _editorial_text(chosen)
 
 
@@ -1283,7 +1341,7 @@ class NewsAcquirer:
                 "JOIN documents d ON d.id=n.document_id LEFT JOIN news_extraction_receipts r "
                 "ON r.article_id=n.id AND r.document_id=n.document_id WHERE n.scope='full_article' "
                 "AND COALESCE(r.version,json_extract(d.metadata,'$.extraction_version'),'') "
-                "IN ('article-main-1','article-main-2','article-main-3') ORDER BY n.id LIMIT ?",
+                "IN ('article-main-1','article-main-2','article-main-3','article-main-4') ORDER BY n.id LIMIT ?",
                 (-1 if maximum is None else maximum,)).fetchall()
         total = len(rows)
         if total:

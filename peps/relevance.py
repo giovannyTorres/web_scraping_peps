@@ -3,6 +3,8 @@
 A literal name is enough to retrieve a candidate article, never to validate its
 identity or an adverse fact. Personal aliases need a nearby bank context hint;
 distinct corporate names also retrieve candidates without asserting identity.
+One bounded shortening of a long personal name requires nearby distinctive
+geography and remains a retrieval lead, never an alias in the identity bank.
 No offence keywords are needed: victim, denial and neutral stories remain retrievable.
 """
 from __future__ import annotations
@@ -13,11 +15,44 @@ from dataclasses import dataclass
 
 from .identity import COMPANY_KINDS, GENERIC_CONTEXT, LEGAL_SUFFIXES, STOP, _fold, _sequence, _tokens
 
-MODEL_VERSION = 'metadata-relevance-1.1.0'
+MODEL_VERSION = 'metadata-relevance-1.2.0'
 
 _GENERIC_COMPANY_WORDS = STOP | GENERIC_CONTEXT | frozenset({
     'grupo', 'sociedad', 'corporacion', 'compania', 'holding', 'holdings',
 }) | frozenset(token for suffix in LEGAL_SUFFIXES for token in suffix)
+
+_GENERIC_GEOGRAPHY_WORDS = STOP | GENERIC_CONTEXT | frozenset({
+    'mexico', 'mexicano', 'mexicana', 'republica', 'nacional', 'gobierno',
+    'estado', 'municipio', 'municipal', 'municipalidad', 'ciudad', 'alcaldia',
+    'federal', 'centro', 'norte', 'sur', 'oriente', 'poniente', 'san', 'santa', 'santo',
+    'presidente', 'presidenta', 'alcalde', 'alcaldesa', 'notario', 'notaria',
+})
+
+
+def _distinct_geography(sequence):
+    # Full geographic labels such as Ciudad de México are useful context;
+    # México alone and generic administrative/directional words are not.
+    return (sequence in (('ciudad', 'de', 'mexico'), ('estado', 'de', 'mexico'))
+            or any(word.isalpha() and len(word) >= 3 and word not in _GENERIC_GEOGRAPHY_WORDS
+                   for word in sequence))
+
+
+def _person_name_variant(value, sequence):
+    """One retrieval lead, never a bank alias or an identity variant.
+
+    Only drop the second significant token from a long canonical personal
+    name. Preserve all remaining tokens, particles, order and Spanish ñ.
+    Do not guess which surname belongs to which person or shorten recursively.
+    """
+    significant = [index for index, word in enumerate(sequence) if word not in STOP]
+    if len(significant) < 4 or not all(sequence[index].isalpha() and len(sequence[index]) >= 2
+                                       for index in significant):
+        return None
+    omitted = significant[1]
+    tokens = _tokens(value)
+    shortened = sequence[:omitted] + sequence[omitted + 1:]
+    text = (value[:tokens[omitted].start].rstrip() + ' ' + value[tokens[omitted].end:].lstrip()).strip()
+    return text, shortened
 
 
 @dataclass(frozen=True)
@@ -41,7 +76,7 @@ class RelevanceIndex:
             entity_id = str(entity['id'])
             company = _fold(entity.get('kind', 'person')) in COMPANY_KINDS
             context = entity.get('context') or {}
-            hints = []
+            hints, geography = [], []
             if isinstance(context, dict):
                 for key in ('state', 'municipality', 'city', 'role', 'position', 'cargo', 'organization', 'employer'):
                     values = context.get(key) or []
@@ -50,6 +85,8 @@ class RelevanceIndex:
                             value = value.get('value') or value.get('name')
                         if isinstance(value, str) and (sequence := _sequence(value)) and sequence not in (('mexico',), ('gobierno',), ('persona',)):
                             hints.append(sequence)
+                            if key in ('state', 'municipality', 'city') and _distinct_geography(sequence):
+                                geography.append(sequence)
             variants = [(entity.get('name'), 'name')]
             variants.extend((alias, 'alias') for alias in entity.get('aliases') or [])
             if isinstance(context, dict):
@@ -60,10 +97,13 @@ class RelevanceIndex:
                     if not isinstance(values, list):
                         values = [values]
                     variants.extend((value, 'alias') for value in values)
-            seen = set()
+            seen, rejected_aliases, retrieval_variant = set(), set(), None
             for value, kind in variants:
                 if isinstance(value, dict):
                     if value.get('verified') is False or value.get('validated') is False or value.get('status') in ('rejected', 'revoked'):
+                        rejected = value.get('name') or value.get('value') or value.get('alias')
+                        if isinstance(rejected, str):
+                            rejected_aliases.add(_sequence(rejected))
                         continue
                     value = value.get('name') or value.get('value') or value.get('alias')
                 if not isinstance(value, str) or not (sequence := _sequence(value)) or len(sequence) > 32 or sequence in seen:
@@ -79,6 +119,8 @@ class RelevanceIndex:
                             end = _tokens(value)[len(core) - 1].end
                             forms.append((value[:end], core))
                             break
+                elif kind == 'name' and geography and (variant := _person_name_variant(value, sequence)):
+                    retrieval_variant = (*variant, sequence)
                 for phrase_text, phrase_tokens in forms:
                     if phrase_tokens in seen:
                         continue
@@ -95,7 +137,14 @@ class RelevanceIndex:
                         (kind == 'name' and (token is None or (distinctive and len(token) >= 2 and not token.isdigit())))
                         or (kind == 'alias' and alias_letters >= 4))
                     phrases.append(_Phrase(entity_id, phrase_text, phrase_tokens, kind, tuple(hints),
-                                           sequence, corporate_candidate, phrase_tokens != sequence))
+                                           sequence, corporate_candidate, company and phrase_tokens != sequence))
+            # Explicit bank aliases keep their established retrieval policy;
+            # a generated lead never replaces or weakens one of those entries.
+            if retrieval_variant is not None:
+                phrase_text, phrase_tokens, original = retrieval_variant
+                if phrase_tokens not in seen and phrase_tokens not in rejected_aliases:
+                    phrases.append(_Phrase(entity_id, phrase_text, phrase_tokens, 'name_variant', tuple(geography),
+                                           original, False, False))
         frequency = Counter(token for phrase in phrases for token in set(phrase.tokens))
         anchors = defaultdict(list)
         for phrase in phrases:
@@ -134,13 +183,13 @@ class RelevanceIndex:
                     supported = any(any(local[offset:offset + len(hint)] == hint
                                          and (nearby[offset + len(hint) - 1].end <= global_start or nearby[offset].start >= global_end)
                                          for offset in range(len(local) - len(hint) + 1)) for hint in phrase.context)
-                    if (phrase.kind == 'alias' or len(phrase.tokens) == 1) and not supported and not phrase.corporate_candidate:
+                    if (phrase.kind in ('alias', 'name_variant') or len(phrase.tokens) == 1) and not supported and not phrase.corporate_candidate:
                         uncorroborated_alias = True
                         continue
                     matches.append({'entity_id': phrase.entity_id, 'phrase': phrase.text, 'kind': phrase.kind,
                                     'part': part, 'start': char_start, 'end': char_end,
                                     'text': text[char_start:char_end], 'context_supported': supported,
-                                    'corporate_core': phrase.corporate_core})
+                                    'corporate_core': phrase.corporate_core, 'retrieval_only': True})
         matches.sort(key=lambda match: (match['part'] != 'title', match['start'], match['entity_id'], match['kind']))
         identities = sorted({match['entity_id'] for match in matches})
         priority = max(((80 if match['part'] == 'title' else 60) if match['corporate_core'] else

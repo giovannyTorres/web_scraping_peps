@@ -1,6 +1,7 @@
 """Public-search adapters are metadata only; all strings are neutral fixtures."""
 import json
 from pathlib import Path
+from collections import Counter
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -8,8 +9,8 @@ from urllib.parse import parse_qs, urlencode, urlsplit
 
 from peps.engine import Engine
 from peps.news import NewsAcquirer
-from peps.news_search import build_search_plan, normalize_search_config, query_url
-from peps.public_search import public_search_links, public_search_url, safe_result_url
+from peps.news_search import SearchPlanningStopped, build_search_plan, normalize_search_config, query_url
+from peps.public_search import public_queries, public_search_links, public_search_url, safe_result_url
 from peps.sources import build_search_url, parse_results
 
 
@@ -159,6 +160,49 @@ class PublicPlanningTests(unittest.TestCase):
         self.assertEqual(plan['queries_required'], 300)
         self.assertTrue(plan['truncated'])
 
+    def test_300_names_are_assigned_across_providers_before_second_nominal_sweep(self):
+        entities = [dict(ENTITY, id=str(i), name=f'Persona Pública Ejemplo {i}',
+                         aliases=[f'Alias Público Ejemplo {i}']) for i in range(300)]
+        second = dict(SOURCE, id='second', kind='duckduckgo_html',
+                      url='https://html.duckduckgo.com/html/')
+        for mode in ('quick', 'extended'):
+            settings = {'strategy': 'public', 'max_queries': 300, 'execution_mode': mode,
+                        'preset': 'adverse', 'use_context': False}
+            plan = build_search_plan(entities, [SOURCE, second], settings)
+            queries = plan['queries']
+            self.assertEqual(plan['entities_planned'], 300)
+            self.assertEqual(len(queries), 300)
+            self.assertEqual(Counter(query['source_id'] for query in queries),
+                             {'public': 150, 'second': 150})
+            self.assertEqual([query['entity_ids'] for query in queries], [[str(i)] for i in range(300)])
+            self.assertTrue(all(query['query_type'] == 'identity' for query in queries))
+            self.assertTrue(plan['truncated'])
+            expanded = build_search_plan(entities, [SOURCE, second], dict(settings, max_queries=600))
+            self.assertEqual(Counter(query['source_id'] for query in expanded['queries']),
+                             {'public': 300, 'second': 300})
+            self.assertEqual(len({(query['source_id'], query['query']) for query in expanded['queries']}), 600)
+            self.assertTrue(all(query['query_type'] == 'identity' for query in expanded['queries']))
+            self.assertEqual(plan['queries'], expanded['queries'][:300])
+
+    def test_primary_provider_assignment_keeps_homonyms_and_cooperative_stop(self):
+        entities = [dict(ENTITY, id=str(i), name=f'Persona Pública Ejemplo {i // 2}') for i in range(300)]
+        second = dict(SOURCE, id='second', kind='duckduckgo_html',
+                      url='https://html.duckduckgo.com/html/')
+        plan = build_search_plan(entities, [SOURCE, second], {'strategy': 'public', 'max_queries': 150,
+                                                          'use_context': False})
+        self.assertEqual(plan['entities_planned'], 300)
+        self.assertEqual(len(plan['queries']), 150)
+        self.assertEqual(Counter(query['source_id'] for query in plan['queries']),
+                         {'public': 75, 'second': 75})
+        checks = 0
+        def stop():
+            nonlocal checks
+            checks += 1
+            return checks > 3000
+        with self.assertRaises(SearchPlanningStopped):
+            build_search_plan(entities, [SOURCE, second], {'strategy': 'public', 'max_queries': 1000},
+                              should_stop=stop)
+
     def test_focus_presets_follow_nominal_sweep_before_aliases_without_boolean_or_year_expansion(self):
         entities = [dict(ENTITY, id='one', aliases=['Persona Pública Alternativa']),
                     dict(ENTITY, id='two', name='Otra Persona Pública Ejemplo')]
@@ -196,6 +240,35 @@ class PublicPlanningTests(unittest.TestCase):
         self.assertEqual(focused['queries_required'], 3)
         self.assertTrue(focused['truncated'])
         self.assertEqual([q['query_type'] for q in focused['queries']], ['identity', 'focus'])
+
+    def test_context_is_secondary_bounded_and_respects_the_nominal_sweep_and_switch(self):
+        entities = [dict(ENTITY, id=str(i), name=f'Persona Pública Ejemplo {i}',
+                         context={'municipality': 'Municipio Ejemplo', 'state': 'Estado Ejemplo',
+                                  'role': 'presidente municipal'}) for i in range(300)]
+        second = dict(SOURCE, id='second', kind='duckduckgo_html',
+                      url='https://html.duckduckgo.com/html/')
+        settings = {'strategy': 'public', 'use_context': True, 'include_aliases': False, 'max_queries': 300}
+        nominal = build_search_plan(entities, [SOURCE, second], settings)
+        self.assertEqual(nominal['entities_planned'], 300)
+        self.assertTrue(all(query['query_type'] == 'identity' for query in nominal['queries']))
+        self.assertEqual(nominal['queries_required'], 1200)
+        extended = build_search_plan(entities, [SOURCE, second], dict(settings, max_queries=1000))
+        self.assertTrue(all(query['query_type'] == 'identity' for query in extended['queries'][:600]))
+        self.assertEqual(extended['queries'][600]['query_type'], 'context')
+        self.assertEqual(extended['queries'][600]['query'], entities[0]['name'] + ' Municipio Ejemplo')
+        plain = build_search_plan(entities, [SOURCE, second], dict(settings, use_context=False, max_queries=1000))
+        self.assertEqual(plain['query_count'], 600)
+        self.assertTrue(all(query['query_type'] == 'identity' for query in plain['queries']))
+
+    def test_public_context_accepts_imported_hint_shapes_and_skips_oversized_hints(self):
+        entity = dict(ENTITY, context={'municipality': [{'value': 'Municipio\nEjemplo'}], 'state': 'Estado'})
+        queries = public_queries(entity, {'use_context': True}, [ENTITY['name']])
+        self.assertEqual([query['query_type'] for query in queries], ['identity', 'context'])
+        self.assertEqual(queries[1]['context_hint'], 'Municipio Ejemplo')
+        oversized = dict(ENTITY, context={'municipality': 'M' * 500, 'state': 'Estado'})
+        self.assertEqual(public_queries(oversized, {'use_context': True}, [ENTITY['name']])[1]['context_hint'], 'Estado')
+        invalid = dict(ENTITY, context={'municipality': {'unrecognized': ['municipio']}})
+        self.assertEqual(len(public_queries(invalid, {'use_context': True}, [ENTITY['name']])), 1)
 
     def test_only_one_duckduckgo_format_per_plan_no_automatic_fallback(self):
         html = dict(SOURCE, id='html', kind='duckduckgo_html', url='https://html.duckduckgo.com/html/')

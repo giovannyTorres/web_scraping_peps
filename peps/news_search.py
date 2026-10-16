@@ -347,6 +347,54 @@ class SearchPlanningStopped(Exception):
     """The caller stopped local planning before a complete plan was published."""
 
 
+def _fair_primary_queries(templates, entities, check):
+    """Assign the first nominal sweep before spending on another provider.
+
+    The assignment is made offline and never changes in response to a block.
+    Batches and homonyms may cover several identities with the same request.
+    Remaining provider/name combinations follow the first distinct-name sweep.
+    """
+    groups, lookups = [], []
+    for source, windows, queries in templates:
+        check()
+        primary = [query for query in queries if query['rank'] == 0]
+        if not primary or not windows:
+            continue
+        lookup = {}
+        for index, query in enumerate(primary):
+            check()
+            for identifier in query['entity_ids']:
+                lookup.setdefault(identifier, index)
+        groups.append((source, windows, primary))
+        lookups.append(lookup)
+    used, covered = set(), set()
+    assignment = 0
+    for entity in entities:
+        check()
+        identifier = str(entity['id'])
+        if identifier in covered:
+            continue
+        for offset in range(len(groups)):
+            provider = (assignment + offset) % len(groups)
+            index = lookups[provider].get(identifier)
+            if index is None or (provider, index) in used:
+                continue
+            source, windows, primary = groups[provider]
+            query = primary[index]
+            used.add((provider, index))
+            covered.update(query['entity_ids'])
+            assignment += 1
+            yield source, windows, query
+            break
+    # Retain every configured provider combination when the budget allows it;
+    # interleave providers so a bounded preview cannot imply a fallback chain.
+    for index in range(max((len(queries) for _, _, queries in groups), default=0)):
+        for provider, (source, windows, queries) in enumerate(groups):
+            check()
+            if index < len(queries) and (provider, index) not in used:
+                yield source, windows, queries[index]
+
+
 def build_search_plan(entities, sources, config=None, *, start=None, end=None, now=None, should_stop=None):
     def check():
         if should_stop is not None and should_stop():
@@ -520,24 +568,23 @@ def build_search_plan(entities, sources, config=None, *, start=None, end=None, n
                 check()
                 if len(plan['queries']) >= config['max_queries']:
                     break
-                for source, windows, queries in templates:
+                if window_index == 0 and rank == 0:
+                    scheduled = _fair_primary_queries(templates, entities, check)
+                else:
+                    scheduled = ((source, windows, query) for source, windows, queries in templates
+                                 if window_index < len(windows) for query in queries if query['rank'] == rank)
+                for source, windows, query in scheduled:
+                    check()
                     if len(plan['queries']) >= config['max_queries']:
                         break
-                    if window_index >= len(windows):
-                        continue
                     a, b = windows[window_index]
-                    for query in checked(queries):
-                        if query['rank'] != rank:
-                            continue
-                        if len(plan['queries']) >= config['max_queries']:
-                            break
-                        payload = {key: value for key, value in query.items() if key != 'rank'}
-                        payload.update(source_id=source['id'], kind='news_query', start=a.strftime('%Y%m%d%H%M%S'),
-                                       end=b.strftime('%Y%m%d%H%M%S'), result_limit=int(source.get('search_max_records', source.get('max_records', 100 if source.get('search_kind') == 'google_news_rss' else 250))),
-                                       split_policy='defer' if quick else 'expand')
-                        payload['url'] = query_url(source, payload)
-                        plan['queries'].append(payload)
-                        planned_ids.update(payload['entity_ids'])
+                    payload = {key: value for key, value in query.items() if key != 'rank'}
+                    payload.update(source_id=source['id'], kind='news_query', start=a.strftime('%Y%m%d%H%M%S'),
+                                   end=b.strftime('%Y%m%d%H%M%S'), result_limit=int(source.get('search_max_records', source.get('max_records', 100 if source.get('search_kind') == 'google_news_rss' else 250))),
+                                   split_policy='defer' if quick else 'expand')
+                    payload['url'] = query_url(source, payload)
+                    plan['queries'].append(payload)
+                    planned_ids.update(payload['entity_ids'])
         plan['truncated'] = required > len(plan['queries'])
     else:
         required = shared_required
