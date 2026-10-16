@@ -440,10 +440,15 @@ class SyntheticLoadHarnessReview(unittest.TestCase):
         self.assertFalse(result['passed'])
         self.assertFalse(result['checks']['cold_phase_completed'])
         self.assertFalse(result['checks']['warm_phase_completed'])
-        self.assertFalse(result['checks']['no_pending_jobs'])
+        # Preparation itself now obeys the budget. No queue has been published,
+        # which must remain an incomplete acquisition rather than a false pass.
+        self.assertTrue(result['checks']['no_pending_jobs'])
         for phase in (result['cold'], result['warm']):
             self.assertFalse(phase['completed'])
-            self.assertGreater(phase['pending_jobs'], 0)
+            self.assertTrue(phase['preparation_incomplete'])
+            self.assertFalse(phase['queue_complete'])
+            self.assertEqual(phase['pending_jobs'], 0)
+            self.assertEqual(phase['stop_reason'], 'time_limit')
             self.assertIsNone(phase['unique_articles_per_local_second'])
 
 

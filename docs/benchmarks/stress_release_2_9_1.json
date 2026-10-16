@@ -1,0 +1,1573 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-10-16T06:14:20.291900+00:00",
+  "version": "2.9.1",
+  "baseline_commit": "580eed32c020791277c5c96b6677d8de31ad6839",
+  "method": "Individual completed offline cases plus an explicitly incomplete capacity probe; public HTTP sampled separately. No real web load stress.",
+  "source_sha256": {
+    "peps/__init__.py": "8d9e3463f9f9b85243c9b8f96c2a659db05469f9f158538545c0cc0b69f91233",
+    "peps/__main__.py": "3129adff95e0f38b87ab34cddfc27082c7892bcaec267ff5d40f160fdf55b44a",
+    "peps/acquisition_coverage.py": "12c9119db1e35a7fac0b375e318a61c29be0481143ff5b97913b870e5b59b50c",
+    "peps/advanced_nlp.py": "1ac3b13daeaef6b76da4f553bfe367604790c04d670d0f4a6418d0f2fbb547cc",
+    "peps/app.py": "af1808d589d17ebd70823edfe5e690ec0810573ce56efb7ef968ee6421d7e669",
+    "peps/cli.py": "857805ccadf39ef6bedf6c808283b17805ea9274d65df8bd8952c0eeb39dbf31",
+    "peps/collector.py": "c6a53cabaf3460f23ae58ad4fd3f2eccc6a0e0cb0941b82eec0b284c43701e05",
+    "peps/context_model.py": "ada181d47cc0bd45c4bb3124db9920ee52fdb4e7115643a582c05f56de30a59b",
+    "peps/contextual.py": "7713ec854c309e1f4ca807fb31f2b464af5495fbd05e4f77ca42865e4baa40d8",
+    "peps/engine.py": "cb198049f2bb7b2e1d80c77e47835b24c33ab79593165e1ea9405033ae06bfe5",
+    "peps/explainability.py": "5556420200f2d97436313af04c7d7303fbf008752bea4e38bc940838961b3b4e",
+    "peps/identity.py": "f05524947d5b1d765803da6faa145f3b422a61a10971a1caca3c6983f3436d2f",
+    "peps/importing.py": "54fc447531cecb986c3e4be4570d0d3f2280a4f86d5dd50e60c0109bf008e310",
+    "peps/news.py": "f99372019c180151fc417746822d8468e5743fd103fa137bf8f6f7589eb66eb7",
+    "peps/news_projection.py": "e41de0275891fba72d872ef3205826a990c4adb8b89da9b46a4d6ee4b60527b5",
+    "peps/news_search.py": "de52b9a98f314e75ab25f097b31feb12bcfc42b4503598b2c5b5b201223c5723",
+    "peps/news_session.py": "bb82278e198245df66e127902fad03655caad5447e080cc1db155ab681b8ac90",
+    "peps/nlp.py": "9b947a8ec53446fed346fc1ca3efbf2bb07224cb37640a2396fbbeb10cab6196",
+    "peps/official.py": "c864c512d84b06a1caf3b458c1cadf5820b805a2be7dc6f1c4c59cae0cfb66cf",
+    "peps/public_search.py": "2080a01091098ee3edb4e3235fe0d93ce44159c56f47ba9f68e20e17a1fec8c8",
+    "peps/relevance.py": "2c2fc48a62b5b88c0c7633486ef4f10010da17d9a6cd5fdac3a867078d2b9ebc",
+    "peps/robots_policy.py": "33293cbaa7ca859ce37ae3104b8e84ab9478fb60e867d7643d88830513c2e453",
+    "peps/scoring.py": "ff4e9e9f19cb0c781f02c06b68c2e2eaa00ee08f22dd8f71219fa5042879fe7e",
+    "peps/shared_crawl.py": "84644aba7017989031360e86598da0f4eb282fecfcd7f0cbe251fbe2fb842d3e",
+    "peps/shared_discovery.py": "9b192dbb3dea8a0595a97109a877ef1443d1c8739510087172e3ee84a60a9fe2",
+    "peps/social_discovery.py": "e3420915e1c649020e291fb5a05ac66e52f0b2b206c4ad842fafed675e4d8892",
+    "peps/sources.py": "f24351c8d22a194eef1cad8572e7fe33224bfb8b4e0cf2e4614f941b4814fc5d",
+    "peps/store.py": "ca55cea501a3f4f32a6b57838497c6348f1ab6bd2095f88833514c80e9fd0e47",
+    "peps/workflow.py": "a170a761b4fc9396aefe8e55e26cefdc1be4c614b40ae1082a0520bf801d4a6c"
+  },
+  "source_files_match_release": false,
+  "unit_tests": {
+    "executed": 783,
+    "passed": 776,
+    "skipped_optional_nlp": 7
+  },
+  "wheel": {
+    "ok": true,
+    "commands": 15,
+    "resources": 16,
+    "sha256": "0b03985bb7ada68216df5697f6054f7644b86e5f0f3e4c44883cabada827ffb1",
+    "report": "wheel-validation-windows-fix.json",
+    "report_sha256": "e09f19383e4ed8c1e032d5834ac7229afce2a43efb10fe4c99ce5803242d417f",
+    "scope": "Final distribution wheel, separately revalidated after the Windows _iso fix."
+  },
+  "limits": [
+    "Synthetic timing is not public-web throughput or relevance.",
+    "Worker peak RSS includes fixture generation.",
+    "The 90001 unique-metadata capacity probe did NOT complete in120seconds; only its bounded stop, preserved history and audit passed.",
+    "Exploratory and final timing samples vary; input shapes and source hashes are retained."
+  ],
+  "offline_cases": {
+    "acquisition": {
+      "completed": true,
+      "expected_outcome": "complete_and_correct",
+      "worker": {
+        "exit_code": 0,
+        "error": null,
+        "wall_seconds": 121.04063875400607,
+        "cpu_seconds": 128.383381203,
+        "peak_process_rss_bytes": 331616256,
+        "blocked_real_network_attempts": 0
+      },
+      "result": {
+        "generated_at": "2026-10-16T06:05:19.089457+00:00",
+        "benchmark_kind": "local_pipeline_with_simulated_http_not_real_web",
+        "platform": "Linux-6.18.44-x86_64-with-glibc2.41",
+        "python": "3.12.14",
+        "network_access": false,
+        "configured_requests_per_second_per_host": 5,
+        "max_job_budget": 60000,
+        "all_passed": true,
+        "cases": [
+          {
+            "urls": 10000,
+            "entity_bank": 40000,
+            "workers": 32,
+            "bank_import_seconds": 0.839013,
+            "cold": {
+              "wall_seconds": 107.479038,
+              "processed_jobs": 10026,
+              "completed": true,
+              "stop_reason": "completed",
+              "preparation_incomplete": false,
+              "queue_complete": true,
+              "pending_jobs": 0,
+              "job_status_counts": {
+                "done": 10026
+              },
+              "unique_articles_per_local_second": 93.041,
+              "throughput_basis": "retained articles per local phase second, only when every phase job completed; warm uses cached metadata, not body downloads",
+              "simulated_http_requests": 10028,
+              "article_requests": 10000,
+              "wire_bytes": 2092490,
+              "decoded_bytes": 9905605
+            },
+            "warm": {
+              "wall_seconds": 12.420283,
+              "processed_jobs": 26,
+              "completed": true,
+              "stop_reason": "completed",
+              "preparation_incomplete": false,
+              "queue_complete": true,
+              "pending_jobs": 0,
+              "job_status_counts": {
+                "done": 10052
+              },
+              "unique_articles_per_local_second": 805.135,
+              "throughput_basis": "retained articles per local phase second, only when every phase job completed; warm uses cached metadata, not body downloads",
+              "simulated_http_requests": 0,
+              "article_requests": 0,
+              "wire_bytes": 0,
+              "decoded_bytes": 0
+            },
+            "bank": {
+              "articles": 10000,
+              "observations": 11000,
+              "identity_links": 0,
+              "status": {
+                "fetched": 10000
+              },
+              "scopes": {
+                "full_article": 10000
+              },
+              "identity_status": {},
+              "publishers": 2,
+              "content_clusters": 1000,
+              "query_windows": {},
+              "truncated_feed_runs": 0
+            },
+            "documents": 2000,
+            "expected_documents": 2000,
+            "expected_content_clusters": 1000,
+            "virtual_clock_elapsed_seconds": 2132.1987,
+            "minimum_virtual_request_spacing_seconds": 0.20097565650939941,
+            "metrics": {
+              "network_requests": 10028,
+              "wire_bytes": 2092490,
+              "decoded_bytes": 9905605,
+              "elapsed_seconds": 7.919929102448805,
+              "cache_hits": 10054,
+              "reused_connections": 9962,
+              "by_kind": {
+                "content": {
+                  "network_requests": 10026,
+                  "wire_bytes": 2092404,
+                  "decoded_bytes": 9905559,
+                  "elapsed_seconds": 7.919078742444981,
+                  "cache_hits": 26,
+                  "reused_connections": 9962
+                },
+                "robots": {
+                  "network_requests": 2,
+                  "wire_bytes": 86,
+                  "decoded_bytes": 46,
+                  "elapsed_seconds": 0.0008503600038238801,
+                  "cache_hits": 10028,
+                  "reused_connections": 0
+                }
+              },
+              "status_counts": {
+                "200": 10028
+              },
+              "wire_bytes_definition": "HTTP body bytes, excluding headers and TLS framing"
+            },
+            "checks": {
+              "all_distinct_urls_retained": true,
+              "all_full_articles_fetched": true,
+              "same_publisher_content_deduplicated": true,
+              "cross_publisher_documents_preserved": true,
+              "shared_content_clusters": true,
+              "warm_downloads_zero": true,
+              "cold_phase_completed": true,
+              "warm_phase_completed": true,
+              "no_pending_jobs": true,
+              "no_failed_jobs": true,
+              "virtual_host_rate_respected": true,
+              "request_metrics_match_fixture": true,
+              "wire_metrics_match_fixture": true,
+              "decoded_metrics_match_fixture": true,
+              "audit_chain_valid": true
+            },
+            "passed": true,
+            "database_bytes": 74768384,
+            "snapshot_files": 1000
+          }
+        ],
+        "seconds_per_phase_budget": 300.0,
+        "clock_model": "real monotonic elapsed seconds plus 0.200001 synthetic seconds per fetch; no real HTTP",
+        "source_sha256_at_process_start": {
+          "collector": "c6a53cabaf3460f23ae58ad4fd3f2eccc6a0e0cb0941b82eec0b284c43701e05",
+          "news": "f99372019c180151fc417746822d8468e5743fd103fa137bf8f6f7589eb66eb7",
+          "store": "ca55cea501a3f4f32a6b57838497c6348f1ab6bd2095f88833514c80e9fd0e47",
+          "identity": "f05524947d5b1d765803da6faa145f3b422a61a10971a1caca3c6983f3436d2f",
+          "sources": "f24351c8d22a194eef1cad8572e7fe33224bfb8b4e0cf2e4614f941b4814fc5d",
+          "engine": "cb198049f2bb7b2e1d80c77e47835b24c33ab79593165e1ea9405033ae06bfe5",
+          "scoring": "ff4e9e9f19cb0c781f02c06b68c2e2eaa00ee08f22dd8f71219fa5042879fe7e"
+        },
+        "script_sha256": "93fb51020a30710099bc078d40bb1570571b6143a5b63f0ac0780421af2c4637",
+        "limitations": [
+          "Synthetic fetch time removes network waiting; monotonic time still advances queued courtesy deadlines. Measured seconds only describe local ingestion.",
+          "DNS/TLS endpoints and HTTP payloads are synthetic fixtures, not evidence of web throughput or coverage.",
+          "Distinct publisher copies survive; repeated normalized content within a publisher shares one document.",
+          "This run exercises acquisition only; identity attribution and reputational scoring are separate."
+        ]
+      }
+    },
+    "queue": {
+      "completed": true,
+      "expected_outcome": "complete_and_correct",
+      "worker": {
+        "exit_code": 0,
+        "error": null,
+        "wall_seconds": 7.836989741997968,
+        "cpu_seconds": 8.077572406,
+        "peak_process_rss_bytes": 118894592,
+        "blocked_real_network_attempts": 0
+      },
+      "result": {
+        "schema_version": 1,
+        "label": "working-tree",
+        "created_at": "2026-10-16T06:05:19.459348+00:00",
+        "python": "3.12.14",
+        "platform": "Linux-6.18.44-x86_64-with-glibc2.41",
+        "source_hashes_before": {
+          "peps/news.py": "f99372019c180151fc417746822d8468e5743fd103fa137bf8f6f7589eb66eb7",
+          "peps/news_search.py": "de52b9a98f314e75ab25f097b31feb12bcfc42b4503598b2c5b5b201223c5723",
+          "peps/engine.py": "cb198049f2bb7b2e1d80c77e47835b24c33ab79593165e1ea9405033ae06bfe5",
+          "peps/store.py": "ca55cea501a3f4f32a6b57838497c6348f1ab6bd2095f88833514c80e9fd0e47",
+          "peps/identity.py": "f05524947d5b1d765803da6faa145f3b422a61a10971a1caca3c6983f3436d2f",
+          "peps/collector.py": "c6a53cabaf3460f23ae58ad4fd3f2eccc6a0e0cb0941b82eec0b284c43701e05"
+        },
+        "script_sha256": "a1dd5c78adb1a80a06994a0f0cf8b391d09559c2826d1c04225f0e24fc2358db",
+        "fixture": {
+          "now": "2026-10-15T12:00:00+00:00",
+          "source": {
+            "id": "synthetic-publisher",
+            "source_name": "Synthetic publisher",
+            "kind": "rss",
+            "search_kind": "wordpress_rss",
+            "search_url": "https://publisher.invalid/",
+            "base_url": "https://publisher.invalid/",
+            "allowed_hosts": [
+              "publisher.invalid"
+            ],
+            "enabled": true,
+            "terms_approved": true,
+            "search_max_records": 10,
+            "min_interval_seconds": 5,
+            "min_window_seconds": 86400
+          },
+          "settings": {
+            "strategy": "targeted",
+            "start": "2016-01-01",
+            "end": "2026-10-15",
+            "max_queries": 10000,
+            "include_aliases": true,
+            "use_context": true
+          },
+          "entity_sizes": [
+            300,
+            10000
+          ],
+          "queue_sizes": [
+            100000
+          ],
+          "max_processed": 1000,
+          "workers": 32,
+          "preview_entities": 10000
+        },
+        "plans": [
+          {
+            "entities": 300,
+            "seconds": 0.3055559069980518,
+            "queries": 10000,
+            "required": 13200
+          },
+          {
+            "entities": 10000,
+            "seconds": 0.6419419430021662,
+            "queries": 10000,
+            "required": 440000
+          }
+        ],
+        "homonyms": [
+          {
+            "entities": 300,
+            "seconds": 0.005079773996840231,
+            "queries": 12,
+            "query_links": 300
+          },
+          {
+            "entities": 10000,
+            "seconds": 0.1007787130001816,
+            "queries": 12,
+            "query_links": 10000
+          }
+        ],
+        "scheduler": [
+          {
+            "queue": 100000,
+            "processed": 1000,
+            "seconds": 3.781077011997695,
+            "snapshots": 14,
+            "events": 2002,
+            "pending": 99000,
+            "stop_reason": "job_limit"
+          }
+        ],
+        "limitations": [
+          "Synthetic SQLite tasks completed without HTTP or article extraction.",
+          "Wall time varies with CPU, storage and antivirus; no latency thresholds.",
+          "Timing excludes fixture setup; no claim about coverage, identity or ETA accuracy.",
+          "Compare source hashes as well as Git HEAD when the checkout is dirty."
+        ],
+        "preview": {
+          "entities": 10000,
+          "cold_seconds": 0.8000259149994235,
+          "warm_seconds": 0.0011196870036656037,
+          "queries": 10000,
+          "same_result": true
+        },
+        "source_hashes_after": {
+          "peps/news.py": "f99372019c180151fc417746822d8468e5743fd103fa137bf8f6f7589eb66eb7",
+          "peps/news_search.py": "de52b9a98f314e75ab25f097b31feb12bcfc42b4503598b2c5b5b201223c5723",
+          "peps/engine.py": "cb198049f2bb7b2e1d80c77e47835b24c33ab79593165e1ea9405033ae06bfe5",
+          "peps/store.py": "ca55cea501a3f4f32a6b57838497c6348f1ab6bd2095f88833514c80e9fd0e47",
+          "peps/identity.py": "f05524947d5b1d765803da6faa145f3b422a61a10971a1caca3c6983f3436d2f",
+          "peps/collector.py": "c6a53cabaf3460f23ae58ad4fd3f2eccc6a0e0cb0941b82eec0b284c43701e05"
+        },
+        "source_unchanged_during_measurement": true
+      }
+    },
+    "transport": {
+      "completed": true,
+      "expected_outcome": "complete_and_correct",
+      "worker": {
+        "exit_code": 0,
+        "error": null,
+        "wall_seconds": 1.6576495759945828,
+        "cpu_seconds": 1.6681132330000001,
+        "peak_process_rss_bytes": 49094656,
+        "blocked_real_network_attempts": 0
+      },
+      "result": {
+        "schema_version": 1,
+        "generated_at": "2026-10-16T06:05:27.717819+00:00",
+        "synthetic": true,
+        "external_network_requests": 0,
+        "method": "Temporary SQLite; production HTTP/parser/cache paths; injected HTTP; real DNS/TCP forbidden.",
+        "limits": [
+          "Elapsed times describe local processing, not internet throughput.",
+          "No latency threshold determines success."
+        ],
+        "python": "3.12.14",
+        "platform": "Linux-6.18.44-x86_64-with-glibc2.41",
+        "script_sha256": "4a739e06c3e6900d29e8fdbd274932531292608b57f51370dd864aa19f2704bc",
+        "source_sha256": {
+          "peps/collector.py": "c6a53cabaf3460f23ae58ad4fd3f2eccc6a0e0cb0941b82eec0b284c43701e05",
+          "peps/public_search.py": "2080a01091098ee3edb4e3235fe0d93ce44159c56f47ba9f68e20e17a1fec8c8",
+          "peps/social_discovery.py": "e3420915e1c649020e291fb5a05ac66e52f0b2b206c4ad842fafed675e4d8892",
+          "peps/robots_policy.py": "33293cbaa7ca859ce37ae3104b8e84ab9478fb60e867d7643d88830513c2e453"
+        },
+        "cases": [
+          {
+            "case": "html_unmatched_1000",
+            "seconds": 0.012135041004512459,
+            "bytes": 13074,
+            "opened_tags": 1000,
+            "unmatched_closing_tags": 1000,
+            "passed": true
+          },
+          {
+            "case": "html_unmatched_5000",
+            "seconds": 0.05846391199884238,
+            "bytes": 65074,
+            "opened_tags": 5000,
+            "unmatched_closing_tags": 5000,
+            "passed": true
+          },
+          {
+            "case": "html_unmatched_10000",
+            "seconds": 0.07133166999847163,
+            "bytes": 130074,
+            "opened_tags": 10000,
+            "unmatched_closing_tags": 10000,
+            "passed": true
+          },
+          {
+            "case": "html_unmatched_150000",
+            "seconds": 0.8850361250006245,
+            "bytes": 1950074,
+            "opened_tags": 150000,
+            "unmatched_closing_tags": 150000,
+            "passed": true
+          },
+          {
+            "case": "gzip_20_megabyte_expansion",
+            "seconds": 0.061234911998326425,
+            "wire_bytes": 19465,
+            "unbounded_decoded_bytes": 20000000,
+            "decoded_bytes_allocated": 32769,
+            "cache_rows": 0,
+            "passed": true
+          },
+          {
+            "case": "concurrent_cache_reuse",
+            "seconds": 0.5271228869969491,
+            "requests": 2048,
+            "workers": 64,
+            "reuse_seconds": 0.5124577289971057,
+            "extra_dns": 0,
+            "extra_http": 0,
+            "cache_rows": 1,
+            "audit_rows": 2049,
+            "passed": true
+          }
+        ],
+        "checks": {
+          "html_unmatched_1000.visible_result_preserved": true,
+          "html_unmatched_1000.result_is_discovery_only": true,
+          "html_unmatched_5000.visible_result_preserved": true,
+          "html_unmatched_5000.result_is_discovery_only": true,
+          "html_unmatched_10000.visible_result_preserved": true,
+          "html_unmatched_10000.result_is_discovery_only": true,
+          "html_unmatched_150000.visible_result_preserved": true,
+          "html_unmatched_150000.result_is_discovery_only": true,
+          "gzip_20_megabyte_expansion.expansion_rejected": true,
+          "gzip_20_megabyte_expansion.decoded_output_bounded": true,
+          "gzip_20_megabyte_expansion.socket_closed": true,
+          "gzip_20_megabyte_expansion.no_body_returned": true,
+          "gzip_20_megabyte_expansion.no_cache_entry": true,
+          "concurrent_cache_reuse.initial_fetch_succeeded": true,
+          "concurrent_cache_reuse.all_reused": true,
+          "concurrent_cache_reuse.no_extra_http": true,
+          "concurrent_cache_reuse.no_dns_for_reuse": true,
+          "concurrent_cache_reuse.one_cached_copy": true,
+          "concurrent_cache_reuse.all_accesses_audited": true,
+          "no_real_network_attempts": true,
+          "source_files_unchanged": true
+        },
+        "network_guard": {
+          "blocked_operations": 0
+        },
+        "passed": true
+      }
+    },
+    "projection": {
+      "completed": true,
+      "expected_outcome": "complete_and_correct",
+      "worker": {
+        "exit_code": 0,
+        "error": null,
+        "wall_seconds": 10.308861700999842,
+        "cpu_seconds": 10.300433993999999,
+        "peak_process_rss_bytes": 42524672,
+        "blocked_real_network_attempts": 0
+      },
+      "result": {
+        "schema_version": 1,
+        "synthetic": true,
+        "network_requests": 0,
+        "fixture": {
+          "deterministic": true,
+          "timestamp": "2026-01-01T00:00:00+00:00",
+          "entities": 10000,
+          "refs": 90001,
+          "unique_metadata": false,
+          "summary_repeat": 10,
+          "hot_urls": 100,
+          "observations_per_hot_url": 100,
+          "mentions": "Every tenth reference; target IDs concentrated on at most 50 entities.",
+          "metadata": "Repeated neutral excerpt, with an exact name in relevant observation titles."
+        },
+        "budgets": {
+          "projection_seconds": 60,
+          "short_deadline_seconds": 0.05,
+          "cancel_after_seconds": 0.05,
+          "max_rss_mib": 256
+        },
+        "python": "3.12.14",
+        "script_sha256": "4d3c3eb1431988520ca0616e2f9b5b21b0c7e4239f9efba0d731ce6e0d7b8021",
+        "source_sha256": {
+          "peps/news_projection.py": "e41de0275891fba72d872ef3205826a990c4adb8b89da9b46a4d6ee4b60527b5",
+          "peps/acquisition_coverage.py": "12c9119db1e35a7fac0b375e318a61c29be0481143ff5b97913b870e5b59b50c",
+          "peps/news.py": "f99372019c180151fc417746822d8468e5743fd103fa137bf8f6f7589eb66eb7",
+          "peps/relevance.py": "2c2fc48a62b5b88c0c7633486ef4f10010da17d9a6cd5fdac3a867078d2b9ebc"
+        },
+        "setup_seconds": 3.5533419889979996,
+        "initial_counts": {
+          "entities": 10000,
+          "news_articles": 90001,
+          "news_observations": 100001,
+          "audit": 1
+        },
+        "raw_before_sha256": {
+          "news_articles": "ef0fdfac971d65bf8f01c8082ed04e72b9c78394e864a4f2ac4071feab48d73c",
+          "news_observations": "2d47a567432654fe05bc5b3d8dfe7c454b7c15188f0c1bd1f8c5624bd78ef784"
+        },
+        "projection": {
+          "ready": true,
+          "elapsed_seconds": 2.3653596470030607,
+          "peak_rss_kib": 41528,
+          "rss_peak_delta_kib": 8704
+        },
+        "coverage": {
+          "entities_total": 10000,
+          "entities_queried": 0,
+          "entities_with_candidates": 5,
+          "entities_with_bodies": 0,
+          "body_articles": 0,
+          "relevant_articles": 9001,
+          "metadata_only_articles": 9001,
+          "excluded_records": 0,
+          "shared_pages_read": 0,
+          "shared_records_checked": 0,
+          "entities_checked_locally": 0,
+          "shared_pages_pending": 0,
+          "shared_pages_limited": 0,
+          "local_documents": 0,
+          "local_entities_with_bodies": 0,
+          "permissions": {
+            "prepared_sources": 0,
+            "body_authorized_sources": 0,
+            "discovery_only_sources": 0
+          },
+          "current_bank_index_ready": true,
+          "current_bank_revision": "1",
+          "session_matches_bank": null,
+          "session": null
+        },
+        "coverage_first_seconds": 0.07562274799420265,
+        "coverage_cached_mean_seconds": 0.0004749311300111003,
+        "after_counts": {
+          "entities": 10000,
+          "news_articles": 90001,
+          "news_observations": 100001,
+          "news_current_candidates": 9001,
+          "audit": 2
+        },
+        "rebuild_audit": {
+          "articles_checked": 90001,
+          "bank_revision": "1",
+          "candidate_pairs": 9001,
+          "identity_verified": false,
+          "projection_version": "all-history-1",
+          "relevance_cache": {
+            "accounted_bytes": 47232,
+            "entries": 9,
+            "hits": 99293,
+            "maximum_bytes": 8388608,
+            "maximum_entries": 1024,
+            "misses": 9
+          },
+          "relevance_version": "metadata-relevance-1.1.0",
+          "score_effect": "none"
+        },
+        "after_bank_change": {
+          "entities_total": 10000,
+          "entities_queried": 0,
+          "entities_with_candidates": 0,
+          "entities_with_bodies": 0,
+          "body_articles": 0,
+          "relevant_articles": 0,
+          "metadata_only_articles": 0,
+          "excluded_records": 0,
+          "shared_pages_read": 0,
+          "shared_records_checked": 0,
+          "entities_checked_locally": 0,
+          "shared_pages_pending": 0,
+          "shared_pages_limited": 0,
+          "local_documents": 0,
+          "local_entities_with_bodies": 0,
+          "permissions": {
+            "prepared_sources": 0,
+            "body_authorized_sources": 0,
+            "discovery_only_sources": 0
+          },
+          "current_bank_index_ready": false,
+          "current_bank_revision": "2",
+          "session_matches_bank": null,
+          "session": null
+        },
+        "short_deadline": {
+          "ready": false,
+          "elapsed_seconds": 0.050350060999335255
+        },
+        "already_cancelled": {
+          "ready": false,
+          "elapsed_seconds": 0.0005411840029410087
+        },
+        "inflight_cancel": {
+          "ready": false,
+          "elapsed_seconds": 0.05180448299506679,
+          "requested_after_seconds": 0.05136499899526825,
+          "response_after_request_seconds": 0.00043948399979854
+        },
+        "rollback_counts": {
+          "news_articles": 90001,
+          "news_observations": 100001,
+          "news_current_candidates": 9001
+        },
+        "raw_after_sha256": {
+          "news_articles": "ef0fdfac971d65bf8f01c8082ed04e72b9c78394e864a4f2ac4071feab48d73c",
+          "news_observations": "2d47a567432654fe05bc5b3d8dfe7c454b7c15188f0c1bd1f8c5624bd78ef784"
+        },
+        "ready_after_abort": false,
+        "history_preserved": true,
+        "audit_valid": true,
+        "db_bytes": 285982720,
+        "elapsed_total_seconds": 10.26311928799987,
+        "completed": true,
+        "checks": {
+          "fixture_counts_correct": true,
+          "projection_completed": true,
+          "projection_counts_correct": true,
+          "bounded_deadline_respected": true,
+          "short_deadline_respected": true,
+          "already_cancelled_no_work": true,
+          "inflight_cancellation_respected": true,
+          "aborted_rebuild_not_published": true,
+          "rollback_keeps_previous_projection": true,
+          "history_preserved": true,
+          "audit_valid": true,
+          "memory_within_budget": true,
+          "cache_limits_respected": true
+        },
+        "passed": true
+      }
+    },
+    "unique_projection": {
+      "completed": false,
+      "expected_outcome": "capacity_reached_with_controlled_stop",
+      "worker": {
+        "exit_code": 1,
+        "error": null,
+        "wall_seconds": 130.3013870520008,
+        "cpu_seconds": 130.240991344,
+        "peak_process_rss_bytes": 44552192,
+        "blocked_real_network_attempts": 0
+      },
+      "result": {
+        "schema_version": 1,
+        "synthetic": true,
+        "network_requests": 0,
+        "fixture": {
+          "deterministic": true,
+          "timestamp": "2026-01-01T00:00:00+00:00",
+          "entities": 10000,
+          "refs": 90001,
+          "unique_metadata": true,
+          "summary_repeat": 10,
+          "hot_urls": 100,
+          "observations_per_hot_url": 100,
+          "mentions": "Every tenth reference; target IDs concentrated on at most 50 entities.",
+          "metadata": "Repeated neutral excerpt, with an exact name in relevant observation titles."
+        },
+        "budgets": {
+          "projection_seconds": 120.0,
+          "short_deadline_seconds": 0.05,
+          "cancel_after_seconds": 0.05,
+          "max_rss_mib": 256
+        },
+        "python": "3.12.14",
+        "script_sha256": "4d3c3eb1431988520ca0616e2f9b5b21b0c7e4239f9efba0d731ce6e0d7b8021",
+        "source_sha256": {
+          "peps/news_projection.py": "e41de0275891fba72d872ef3205826a990c4adb8b89da9b46a4d6ee4b60527b5",
+          "peps/acquisition_coverage.py": "12c9119db1e35a7fac0b375e318a61c29be0481143ff5b97913b870e5b59b50c",
+          "peps/news.py": "f99372019c180151fc417746822d8468e5743fd103fa137bf8f6f7589eb66eb7",
+          "peps/relevance.py": "2c2fc48a62b5b88c0c7633486ef4f10010da17d9a6cd5fdac3a867078d2b9ebc"
+        },
+        "setup_seconds": 3.301315336000698,
+        "initial_counts": {
+          "entities": 10000,
+          "news_articles": 90001,
+          "news_observations": 100001,
+          "audit": 1
+        },
+        "raw_before_sha256": {
+          "news_articles": "5361a98e52c57c9729166981e70559b95223743b6e9a92ef45984b2b0ff2d306",
+          "news_observations": "cf17e8ec50e7a7b92b40db257000d6eb3e218c8ae812eadbf05104e1b1706c9b"
+        },
+        "projection": {
+          "ready": false,
+          "elapsed_seconds": 120.02977787300188,
+          "peak_rss_kib": 43508,
+          "rss_peak_delta_kib": 10112
+        },
+        "coverage": {
+          "entities_total": 10000,
+          "entities_queried": 0,
+          "entities_with_candidates": 0,
+          "entities_with_bodies": 0,
+          "body_articles": 0,
+          "relevant_articles": 0,
+          "metadata_only_articles": 0,
+          "excluded_records": 0,
+          "shared_pages_read": 0,
+          "shared_records_checked": 0,
+          "entities_checked_locally": 0,
+          "shared_pages_pending": 0,
+          "shared_pages_limited": 0,
+          "local_documents": 0,
+          "local_entities_with_bodies": 0,
+          "permissions": {
+            "prepared_sources": 0,
+            "body_authorized_sources": 0,
+            "discovery_only_sources": 0
+          },
+          "current_bank_index_ready": false,
+          "current_bank_revision": "1",
+          "session_matches_bank": null,
+          "session": null
+        },
+        "coverage_first_seconds": 0.13700843299739063,
+        "coverage_cached_mean_seconds": 0.001285968590018456,
+        "after_counts": {
+          "entities": 10000,
+          "news_articles": 90001,
+          "news_observations": 100001,
+          "news_current_candidates": 0,
+          "audit": 1
+        },
+        "rebuild_audit": null,
+        "after_bank_change": {
+          "entities_total": 10000,
+          "entities_queried": 0,
+          "entities_with_candidates": 0,
+          "entities_with_bodies": 0,
+          "body_articles": 0,
+          "relevant_articles": 0,
+          "metadata_only_articles": 0,
+          "excluded_records": 0,
+          "shared_pages_read": 0,
+          "shared_records_checked": 0,
+          "entities_checked_locally": 0,
+          "shared_pages_pending": 0,
+          "shared_pages_limited": 0,
+          "local_documents": 0,
+          "local_entities_with_bodies": 0,
+          "permissions": {
+            "prepared_sources": 0,
+            "body_authorized_sources": 0,
+            "discovery_only_sources": 0
+          },
+          "current_bank_index_ready": false,
+          "current_bank_revision": "2",
+          "session_matches_bank": null,
+          "session": null
+        },
+        "short_deadline": {
+          "ready": false,
+          "elapsed_seconds": 0.05055592200369574
+        },
+        "already_cancelled": {
+          "ready": false,
+          "elapsed_seconds": 0.0005546840038732626
+        },
+        "inflight_cancel": {
+          "ready": false,
+          "elapsed_seconds": 0.051378875999944285,
+          "requested_after_seconds": 0.05054072100028861,
+          "response_after_request_seconds": 0.0008381549996556714
+        },
+        "rollback_counts": {
+          "news_articles": 90001,
+          "news_observations": 100001,
+          "news_current_candidates": 0
+        },
+        "raw_after_sha256": {
+          "news_articles": "5361a98e52c57c9729166981e70559b95223743b6e9a92ef45984b2b0ff2d306",
+          "news_observations": "cf17e8ec50e7a7b92b40db257000d6eb3e218c8ae812eadbf05104e1b1706c9b"
+        },
+        "ready_after_abort": false,
+        "history_preserved": true,
+        "audit_valid": true,
+        "db_bytes": 284696576,
+        "elapsed_total_seconds": 130.22428952100017,
+        "completed": false,
+        "checks": {
+          "fixture_counts_correct": true,
+          "projection_completed": false,
+          "projection_counts_correct": false,
+          "bounded_deadline_respected": true,
+          "short_deadline_respected": true,
+          "already_cancelled_no_work": true,
+          "inflight_cancellation_respected": true,
+          "aborted_rebuild_not_published": true,
+          "rollback_keeps_previous_projection": true,
+          "history_preserved": true,
+          "audit_valid": true,
+          "memory_within_budget": true,
+          "cache_limits_respected": null
+        },
+        "passed": false
+      }
+    },
+    "rescue": {
+      "completed": true,
+      "expected_outcome": "complete_and_correct",
+      "worker": {
+        "exit_code": 0,
+        "error": null,
+        "wall_seconds": 77.34217044999968,
+        "cpu_seconds": 77.30144024100001,
+        "peak_process_rss_bytes": 61554688,
+        "blocked_real_network_attempts": 0
+      },
+      "result": {
+        "at": "2026-10-16T06:07:50.581969+00:00",
+        "synthetic": true,
+        "public_network": false,
+        "source_sha256": {
+          "peps/news.py": "f99372019c180151fc417746822d8468e5743fd103fa137bf8f6f7589eb66eb7",
+          "peps/news_projection.py": "e41de0275891fba72d872ef3205826a990c4adb8b89da9b46a4d6ee4b60527b5",
+          "peps/acquisition_coverage.py": "12c9119db1e35a7fac0b375e318a61c29be0481143ff5b97913b870e5b59b50c",
+          "peps/relevance.py": "2c2fc48a62b5b88c0c7633486ef4f10010da17d9a6cd5fdac3a867078d2b9ebc"
+        },
+        "measurements": [
+          {
+            "name": "projection",
+            "seconds": 30.337152848995174,
+            "rss_before": 31240192,
+            "rss_after": 35799040,
+            "cpu_seconds": 30.326349035000003,
+            "peak_rss": 35471360,
+            "result": true
+          },
+          {
+            "name": "rescue_bounded",
+            "seconds": 38.20090253200033,
+            "rss_before": 35799040,
+            "rss_after": 61689856,
+            "cpu_seconds": 38.183040646,
+            "peak_rss": 61554688,
+            "result": {
+              "body_skipped_budget": 21490,
+              "body_queued": 300
+            }
+          },
+          {
+            "name": "rescue_cancel_after_250ms",
+            "seconds": 0.26825768200069433,
+            "rss_before": 61734912,
+            "rss_after": 61743104,
+            "cpu_seconds": 0.2683605249999914,
+            "peak_rss": 61554688,
+            "result": {
+              "body_skipped_budget": 0
+            }
+          },
+          {
+            "name": "rescue_expired",
+            "seconds": 2.0211999071761966e-05,
+            "rss_before": 61743104,
+            "rss_after": 61743104,
+            "cpu_seconds": 3.9903000001118016e-05,
+            "peak_rss": 61554688,
+            "result": {}
+          }
+        ],
+        "method": "Real SQLite, varied positive metadata, repeated negative templates and 50000 observations on one URL.",
+        "limits": [
+          "The bank and articles are synthetic.",
+          "Local preparation time is not public-web throughput.",
+          "Peak RSS includes fixture setup; RSS fields are null where the platform cannot measure them."
+        ],
+        "setup_seconds": 3.2807598389990744,
+        "fixture": {
+          "entities": 3000,
+          "news_articles": 90000,
+          "news_observations": 68948
+        },
+        "fixture_reused": false,
+        "history_sha256_before": "cf094c59d6118be6716dfb036f345f988288522b47cb269ce1f5af482e7ab384",
+        "jobs_before": 0,
+        "jobs_after_bounded": 300,
+        "cancel_response_seconds": 0.011983085998508614,
+        "hot_url_candidate_count": 24,
+        "history_sha256_after": "cf094c59d6118be6716dfb036f345f988288522b47cb269ce1f5af482e7ab384",
+        "audit_ok": true,
+        "source_sha256_after": {
+          "peps/news.py": "f99372019c180151fc417746822d8468e5743fd103fa137bf8f6f7589eb66eb7",
+          "peps/news_projection.py": "e41de0275891fba72d872ef3205826a990c4adb8b89da9b46a4d6ee4b60527b5",
+          "peps/acquisition_coverage.py": "12c9119db1e35a7fac0b375e318a61c29be0481143ff5b97913b870e5b59b50c",
+          "peps/relevance.py": "2c2fc48a62b5b88c0c7633486ef4f10010da17d9a6cd5fdac3a867078d2b9ebc"
+        },
+        "checks": {
+          "completed_within_budget": true,
+          "projection_completed": true,
+          "requested_shape": true,
+          "historical_leads_recovered": true,
+          "body_budget_preserved": true,
+          "cancellation_acknowledged": true,
+          "expired_deadline_respected": true,
+          "history_preserved": true,
+          "audit_valid": true,
+          "code_unchanged": true
+        },
+        "passed": true
+      }
+    },
+    "mixed_300_complete": {
+      "completed": true,
+      "expected_outcome": "complete_backend_pipeline_with_explicitly_limited_search_coverage",
+      "measurement_commit": "e3236e16b9527c2c770a77589113245def5f752b",
+      "source_report": "runtime/stress-2-9-1/release-complete-controls-cases/mixed.json",
+      "source_report_sha256": "38bb293fdab3e75e5073d868800119acaf786ad9f9dd9fc03f341388616ff5a8",
+      "script_sha256": "800fa20900d51fd8e1063dbb8412c4ccbb26535d8a99b5a1c7b3bdd5fd652a24",
+      "source_hashes_before": {
+        "peps/__init__.py": "8d9e3463f9f9b85243c9b8f96c2a659db05469f9f158538545c0cc0b69f91233",
+        "peps/__main__.py": "3129adff95e0f38b87ab34cddfc27082c7892bcaec267ff5d40f160fdf55b44a",
+        "peps/acquisition_coverage.py": "12c9119db1e35a7fac0b375e318a61c29be0481143ff5b97913b870e5b59b50c",
+        "peps/advanced_nlp.py": "1ac3b13daeaef6b76da4f553bfe367604790c04d670d0f4a6418d0f2fbb547cc",
+        "peps/app.py": "af1808d589d17ebd70823edfe5e690ec0810573ce56efb7ef968ee6421d7e669",
+        "peps/cli.py": "857805ccadf39ef6bedf6c808283b17805ea9274d65df8bd8952c0eeb39dbf31",
+        "peps/collector.py": "c6a53cabaf3460f23ae58ad4fd3f2eccc6a0e0cb0941b82eec0b284c43701e05",
+        "peps/context_model.py": "ada181d47cc0bd45c4bb3124db9920ee52fdb4e7115643a582c05f56de30a59b",
+        "peps/contextual.py": "7713ec854c309e1f4ca807fb31f2b464af5495fbd05e4f77ca42865e4baa40d8",
+        "peps/engine.py": "cb198049f2bb7b2e1d80c77e47835b24c33ab79593165e1ea9405033ae06bfe5",
+        "peps/explainability.py": "5556420200f2d97436313af04c7d7303fbf008752bea4e38bc940838961b3b4e",
+        "peps/identity.py": "f05524947d5b1d765803da6faa145f3b422a61a10971a1caca3c6983f3436d2f",
+        "peps/importing.py": "54fc447531cecb986c3e4be4570d0d3f2280a4f86d5dd50e60c0109bf008e310",
+        "peps/news.py": "f99372019c180151fc417746822d8468e5743fd103fa137bf8f6f7589eb66eb7",
+        "peps/news_projection.py": "e41de0275891fba72d872ef3205826a990c4adb8b89da9b46a4d6ee4b60527b5",
+        "peps/news_search.py": "de52b9a98f314e75ab25f097b31feb12bcfc42b4503598b2c5b5b201223c5723",
+        "peps/news_session.py": "bb82278e198245df66e127902fad03655caad5447e080cc1db155ab681b8ac90",
+        "peps/nlp.py": "9b947a8ec53446fed346fc1ca3efbf2bb07224cb37640a2396fbbeb10cab6196",
+        "peps/official.py": "c864c512d84b06a1caf3b458c1cadf5820b805a2be7dc6f1c4c59cae0cfb66cf",
+        "peps/public_search.py": "2080a01091098ee3edb4e3235fe0d93ce44159c56f47ba9f68e20e17a1fec8c8",
+        "peps/relevance.py": "2c2fc48a62b5b88c0c7633486ef4f10010da17d9a6cd5fdac3a867078d2b9ebc",
+        "peps/robots_policy.py": "33293cbaa7ca859ce37ae3104b8e84ab9478fb60e867d7643d88830513c2e453",
+        "peps/scoring.py": "ff4e9e9f19cb0c781f02c06b68c2e2eaa00ee08f22dd8f71219fa5042879fe7e",
+        "peps/shared_crawl.py": "84644aba7017989031360e86598da0f4eb282fecfcd7f0cbe251fbe2fb842d3e",
+        "peps/shared_discovery.py": "9b192dbb3dea8a0595a97109a877ef1443d1c8739510087172e3ee84a60a9fe2",
+        "peps/social_discovery.py": "e3420915e1c649020e291fb5a05ac66e52f0b2b206c4ad842fafed675e4d8892",
+        "peps/sources.py": "f24351c8d22a194eef1cad8572e7fe33224bfb8b4e0cf2e4614f941b4814fc5d",
+        "peps/store.py": "ca55cea501a3f4f32a6b57838497c6348f1ab6bd2095f88833514c80e9fd0e47",
+        "peps/workflow.py": "a170a761b4fc9396aefe8e55e26cefdc1be4c614b40ae1082a0520bf801d4a6c"
+      },
+      "source_hashes_after": {
+        "peps/__init__.py": "8d9e3463f9f9b85243c9b8f96c2a659db05469f9f158538545c0cc0b69f91233",
+        "peps/__main__.py": "3129adff95e0f38b87ab34cddfc27082c7892bcaec267ff5d40f160fdf55b44a",
+        "peps/acquisition_coverage.py": "12c9119db1e35a7fac0b375e318a61c29be0481143ff5b97913b870e5b59b50c",
+        "peps/advanced_nlp.py": "1ac3b13daeaef6b76da4f553bfe367604790c04d670d0f4a6418d0f2fbb547cc",
+        "peps/app.py": "af1808d589d17ebd70823edfe5e690ec0810573ce56efb7ef968ee6421d7e669",
+        "peps/cli.py": "857805ccadf39ef6bedf6c808283b17805ea9274d65df8bd8952c0eeb39dbf31",
+        "peps/collector.py": "c6a53cabaf3460f23ae58ad4fd3f2eccc6a0e0cb0941b82eec0b284c43701e05",
+        "peps/context_model.py": "ada181d47cc0bd45c4bb3124db9920ee52fdb4e7115643a582c05f56de30a59b",
+        "peps/contextual.py": "7713ec854c309e1f4ca807fb31f2b464af5495fbd05e4f77ca42865e4baa40d8",
+        "peps/engine.py": "cb198049f2bb7b2e1d80c77e47835b24c33ab79593165e1ea9405033ae06bfe5",
+        "peps/explainability.py": "5556420200f2d97436313af04c7d7303fbf008752bea4e38bc940838961b3b4e",
+        "peps/identity.py": "f05524947d5b1d765803da6faa145f3b422a61a10971a1caca3c6983f3436d2f",
+        "peps/importing.py": "54fc447531cecb986c3e4be4570d0d3f2280a4f86d5dd50e60c0109bf008e310",
+        "peps/news.py": "f99372019c180151fc417746822d8468e5743fd103fa137bf8f6f7589eb66eb7",
+        "peps/news_projection.py": "e41de0275891fba72d872ef3205826a990c4adb8b89da9b46a4d6ee4b60527b5",
+        "peps/news_search.py": "de52b9a98f314e75ab25f097b31feb12bcfc42b4503598b2c5b5b201223c5723",
+        "peps/news_session.py": "bb82278e198245df66e127902fad03655caad5447e080cc1db155ab681b8ac90",
+        "peps/nlp.py": "9b947a8ec53446fed346fc1ca3efbf2bb07224cb37640a2396fbbeb10cab6196",
+        "peps/official.py": "c864c512d84b06a1caf3b458c1cadf5820b805a2be7dc6f1c4c59cae0cfb66cf",
+        "peps/public_search.py": "2080a01091098ee3edb4e3235fe0d93ce44159c56f47ba9f68e20e17a1fec8c8",
+        "peps/relevance.py": "2c2fc48a62b5b88c0c7633486ef4f10010da17d9a6cd5fdac3a867078d2b9ebc",
+        "peps/robots_policy.py": "33293cbaa7ca859ce37ae3104b8e84ab9478fb60e867d7643d88830513c2e453",
+        "peps/scoring.py": "ff4e9e9f19cb0c781f02c06b68c2e2eaa00ee08f22dd8f71219fa5042879fe7e",
+        "peps/shared_crawl.py": "84644aba7017989031360e86598da0f4eb282fecfcd7f0cbe251fbe2fb842d3e",
+        "peps/shared_discovery.py": "9b192dbb3dea8a0595a97109a877ef1443d1c8739510087172e3ee84a60a9fe2",
+        "peps/social_discovery.py": "e3420915e1c649020e291fb5a05ac66e52f0b2b206c4ad842fafed675e4d8892",
+        "peps/sources.py": "f24351c8d22a194eef1cad8572e7fe33224bfb8b4e0cf2e4614f941b4814fc5d",
+        "peps/store.py": "ca55cea501a3f4f32a6b57838497c6348f1ab6bd2095f88833514c80e9fd0e47",
+        "peps/workflow.py": "a170a761b4fc9396aefe8e55e26cefdc1be4c614b40ae1082a0520bf801d4a6c"
+      },
+      "source_unchanged_during_measurement": true,
+      "fixture": {
+        "source": {
+          "id": "benchmark-300-source",
+          "source_name": "Fuente sintética de 300 identidades",
+          "publisher_id": "benchmark-300-publisher",
+          "kind": "rss",
+          "search_kind": "wordpress_rss",
+          "search_url": "https://benchmark-300.invalid/",
+          "base_url": "https://benchmark-300.invalid/",
+          "allowed_hosts": [
+            "benchmark-300.invalid"
+          ],
+          "enabled": true,
+          "terms_approved": true,
+          "download_articles": true,
+          "article_terms_approved": true,
+          "robots_required": true,
+          "search_max_records": 250,
+          "max_records": 250,
+          "max_items": 250,
+          "min_interval_seconds": 5,
+          "min_window_seconds": 86400,
+          "refresh_seconds": 86400,
+          "minimum_article_chars": 80,
+          "terms_url": "fixture:synthetic-no-network-permission"
+        },
+        "settings": {
+          "strategy": "targeted",
+          "preset": "identity",
+          "start": "2020-01-15",
+          "end": "2020-01-15",
+          "window": "year",
+          "max_queries": 10000,
+          "include_aliases": false,
+          "use_context": false
+        },
+        "entities": 300,
+        "polluted_records_per_query": 250,
+        "mixed_irrelevant_records_per_query": 249,
+        "workers": 16,
+        "acquisition_seconds_limit": 120.0,
+        "download_all": false,
+        "max_articles": 1000,
+        "relevant_only": "True only when the acquisition signature supports it; baseline unchanged",
+        "budget_clock": "real",
+        "identity_modes": [
+          "known",
+          "homonyms"
+        ],
+        "scenarios": [
+          "mixed_risk",
+          "polluted"
+        ],
+        "entity_pattern": "Persona Sintética Banco {index:05d}",
+        "body": "Neutral synthetic article, unique index, minimum 80 characters",
+        "mixed_risk_body": "Even indices: direct synthetic fraud arrest; odd indices: rotating neutral, negated arrest, victim. Discovery metadata repeats the same phrase; bodies carry verified synthetic role/state anchors."
+      },
+      "limits": [
+        "Synthetic local backend stages; no real network and no claim of this completion time on Internet.",
+        "The 300 query responses contain75000 record occurrences; 74700 are irrelevant and excluded before retention.",
+        "Only the mixed_risk/known case is embedded here; the original report and its hash retain all control cases.",
+        "All300 saturated query windows remain truncated; a completed backend run does not establish exhaustive archive coverage.",
+        "This direct backend fixture does not assert that the UI automatic-analysis gate accepts incomplete search coverage."
+      ],
+      "result": {
+        "scenario": "mixed_risk",
+        "identity_mode": "known",
+        "download_all": false,
+        "relevant_only_supported": true,
+        "relevant_only_requested": true,
+        "effective_search_config": {
+          "strategy": "targeted",
+          "preset": "identity",
+          "start": "2020-01-15",
+          "end": "2020-01-15",
+          "window": "year",
+          "max_queries": 10000,
+          "include_aliases": false,
+          "use_context": false,
+          "execution_mode": "quick",
+          "session_seconds": 120
+        },
+        "imported": 300,
+        "phases": {
+          "import": {
+            "wall_seconds": 0.007713487997534685,
+            "cpu_seconds": 0.007713024000000013
+          },
+          "queue": {
+            "wall_seconds": 0.03992015500261914,
+            "cpu_seconds": 0.03992064099999998
+          },
+          "acquire": {
+            "wall_seconds": 68.51472036400082,
+            "cpu_seconds": 65.469199918
+          },
+          "attribute": {
+            "wall_seconds": 1.7161341810060549,
+            "cpu_seconds": 1.7152503589999952
+          },
+          "rescore": {
+            "wall_seconds": 3.875779206005973,
+            "cpu_seconds": 3.873146951999999
+          }
+        },
+        "fixture_records_per_query": 250,
+        "fixture_relevant_records_per_query": 1,
+        "pipeline_wall_seconds": 74.14655390601547,
+        "pipeline_cpu_seconds": 71.09751786999999,
+        "queued": {
+          "tasks": 300,
+          "batched_queries": 300,
+          "search_plan": {
+            "config": {
+              "strategy": "targeted",
+              "preset": "identity",
+              "start": "2020-01-15",
+              "end": "2020-01-15",
+              "window": "year",
+              "max_queries": 10000,
+              "include_aliases": false,
+              "use_context": false,
+              "execution_mode": "quick",
+              "session_seconds": 120
+            },
+            "warnings": [
+              "benchmark-300-source: búsqueda del editor por frase y año/mes; RSS limitado y archivo no exhaustivo. Las fechas son filtros solicitados, no garantía de cobertura; se conservan las fechas reportadas.",
+              "Modo rápido: primero nombres canónicos; los lotes sólo se aplican a GDELT. Las respuestas saturadas quedan como cobertura incompleta sin expansión automática; alias y contexto siguen al primer barrido."
+            ],
+            "sources": [
+              {
+                "id": "benchmark-300-source",
+                "source_name": "Fuente sintética de 300 identidades",
+                "scope": "publisher_historical_search",
+                "start": "2020-01-15T00:00:00+00:00",
+                "end_exclusive": "2020-01-16T00:00:00+00:00",
+                "windows": 1,
+                "window_unit": "year",
+                "max_records_per_response": 250,
+                "historical": true,
+                "complete_archive": false,
+                "entities_planned": 300,
+                "estimated_entities_first_session": 24
+              }
+            ],
+            "truncated": false,
+            "requested_start": "2020-01-15T00:00:00+00:00",
+            "requested_end_exclusive": "2020-01-16T00:00:00+00:00",
+            "coverage": "best_effort_not_exhaustive",
+            "identity_policy": "Queries retrieve candidates; identity must be corroborated from the source.",
+            "entities_planned": 300,
+            "query_count": 300,
+            "execution": {
+              "mode": "quick",
+              "session_seconds": 120,
+              "scope_note": "El presupuesto es global para la sesión. Se conservan consultas pendientes; no garantiza consultar todas las entidades ni descargar todos sus artículos."
+            },
+            "entity_count_note": "Entidades planificadas no equivale a entidades consultadas ni a cobertura comprobada.",
+            "entities_covered": 300,
+            "entities_total": 300,
+            "queries_required": 300,
+            "estimated_entities_first_session": 24,
+            "first_session_estimate_note": "Límite orientativo de entidades distintas cuyas consultas podrían iniciarse según intervalos de host; excluye latencia, robots, fallos y descarga de cuerpos. No son consultas ejecutadas ni cobertura garantizada.",
+            "estimated_schedule_seconds": 1495.0,
+            "schedule_estimate_note": "Programación mínima orientativa por intervalos de host; excluye latencia, robots, reintentos y divisiones adicionales. No es un SLA ni ETA de finalización.",
+            "queries": [
+              {
+                "query": "\"Persona Sintética Banco 00000\"",
+                "query_type": "identity",
+                "entity_ids": [
+                  "synthetic-bank-00000"
+                ],
+                "names": [
+                  "Persona Sintética Banco 00000"
+                ],
+                "source_id": "benchmark-300-source",
+                "kind": "news_query",
+                "start": "20200115000000",
+                "end": "20200116000000",
+                "result_limit": 250,
+                "split_policy": "defer",
+                "url": "https://benchmark-300.invalid/?s=%22Persona+Sint%C3%A9tica+Banco+00000%22&feed=rss2&year=2020&monthnum=1&day=15"
+              },
+              {
+                "query": "\"Persona Sintética Banco 00001\"",
+                "query_type": "identity",
+                "entity_ids": [
+                  "synthetic-bank-00001"
+                ],
+                "names": [
+                  "Persona Sintética Banco 00001"
+                ],
+                "source_id": "benchmark-300-source",
+                "kind": "news_query",
+                "start": "20200115000000",
+                "end": "20200116000000",
+                "result_limit": 250,
+                "split_policy": "defer",
+                "url": "https://benchmark-300.invalid/?s=%22Persona+Sint%C3%A9tica+Banco+00001%22&feed=rss2&year=2020&monthnum=1&day=15"
+              },
+              {
+                "query": "\"Persona Sintética Banco 00002\"",
+                "query_type": "identity",
+                "entity_ids": [
+                  "synthetic-bank-00002"
+                ],
+                "names": [
+                  "Persona Sintética Banco 00002"
+                ],
+                "source_id": "benchmark-300-source",
+                "kind": "news_query",
+                "start": "20200115000000",
+                "end": "20200116000000",
+                "result_limit": 250,
+                "split_policy": "defer",
+                "url": "https://benchmark-300.invalid/?s=%22Persona+Sint%C3%A9tica+Banco+00002%22&feed=rss2&year=2020&monthnum=1&day=15"
+              }
+            ],
+            "queries_preview_truncated": true
+          },
+          "superseded": 0,
+          "reactivated": 0
+        },
+        "acquire": {
+          "processed": 624,
+          "completed": 600,
+          "pending": 0,
+          "stop_reason": "completed",
+          "failed": 0,
+          "blocked": 0,
+          "dead": 0,
+          "elapsed_seconds": 68.5107,
+          "discovery_records": 75000,
+          "relevant_records": 300,
+          "excluded_records": 74700,
+          "body_queued": 288,
+          "body_skipped_budget": 0,
+          "body_budget": 900,
+          "per_entity_body_limit": 3
+        },
+        "attribution": {
+          "articles_processed": 300,
+          "identity_links": {
+            "matched": 300
+          },
+          "entities_scored": 0,
+          "entities_affected": 300,
+          "pending": 0,
+          "cancelled": false,
+          "identity_module": "es-mx-identity-indexed-1.0.0",
+          "name_only_is_not_unique_identity": true,
+          "reextraction": {
+            "examined": 0
+          }
+        },
+        "scored": 300,
+        "counts": {
+          "entities": 300,
+          "query_jobs": 300,
+          "entities_queried": 300,
+          "body_jobs": 300,
+          "retrieved_articles": 300,
+          "discovered_articles": 300,
+          "discovery_observations": 300,
+          "discovery_runs": 300,
+          "query_record_occurrences": 75000,
+          "saturated_query_windows": 300,
+          "documents": 300,
+          "identity_links": 300,
+          "entities_with_candidates": 300,
+          "relevant_candidates": 300,
+          "evidence": 300,
+          "evidence_full_body": 300,
+          "evidence_metadata_only": 0,
+          "scores": 300,
+          "score_runs": 300,
+          "entities_unqueried": 0,
+          "entities_unqueried_percent": 0.0
+        },
+        "identity_statuses": {
+          "matched": 300
+        },
+        "jobs": [
+          {
+            "kind": "news_article",
+            "status": "done",
+            "count": 300,
+            "attempts": 300
+          },
+          {
+            "kind": "news_query",
+            "status": "done",
+            "count": 300,
+            "attempts": 324
+          }
+        ],
+        "score_audit_exclusions": {},
+        "scoring_probe": {
+          "positive_scores": 150,
+          "positive_entity_examples": [
+            "synthetic-bank-00000",
+            "synthetic-bank-00002",
+            "synthetic-bank-00004",
+            "synthetic-bank-00006",
+            "synthetic-bank-00008",
+            "synthetic-bank-00010",
+            "synthetic-bank-00012",
+            "synthetic-bank-00014",
+            "synthetic-bank-00016",
+            "synthetic-bank-00018"
+          ],
+          "minimum_positive_score": 5,
+          "maximum_positive_score": 5,
+          "matched_body_entities": 300,
+          "direct_adverse_matched_body_entities": 150,
+          "control_matched_body_entities": 150,
+          "body_variants_fetched": {
+            "neutral": 50,
+            "direct_adverse": 150,
+            "negated": 50,
+            "victim": 50
+          }
+        },
+        "query_window_statuses": [
+          {
+            "status": "truncated",
+            "count": 300
+          }
+        ],
+        "articles_before_attribute": {
+          "articles": 300,
+          "observations": 300,
+          "identity_links": 0,
+          "status": {
+            "fetched": 300
+          },
+          "scopes": {
+            "full_article": 300
+          },
+          "identity_status": {},
+          "publishers": 1,
+          "content_clusters": 300,
+          "query_windows": {
+            "truncated": 300
+          },
+          "truncated_feed_runs": 0
+        },
+        "fixture_requests": {
+          "query": 324,
+          "article": 300
+        },
+        "courtesy": {
+          "interval_seconds": 5,
+          "query_only_lower_bound_seconds": 1495,
+          "all_fixture_requests_lower_bound_seconds": 3115,
+          "virtual_advance_seconds": 3120.0,
+          "minimum_virtual_request_spacing_seconds": 5.0
+        },
+        "progress_events": {
+          "('download', 'start')": 1,
+          "('download', 'activity')": 1248,
+          "('download', 'progress')": 624,
+          "('download', 'finish')": 1,
+          "('attribution', 'start')": 1,
+          "('attribution', 'progress')": 300,
+          "('attribution', 'finish')": 1,
+          "('scoring', 'start')": 1,
+          "('scoring', 'progress')": 300,
+          "('scoring', 'finish')": 1
+        },
+        "checks": {
+          "audit_valid": true,
+          "all_bank_entities_scored": true,
+          "neutral_fixture_scores_zero": true,
+          "positive_requires_matched_full_body": true,
+          "only_direct_adverse_bodies_can_score": true,
+          "control_bodies_score_zero": true,
+          "known_risk_fixture_scores_positive": true,
+          "all_supported_direct_adverse_bodies_score": true,
+          "metadata_evidence_always_excluded": true,
+          "homonym_scores_zero": true,
+          "all_evidence_has_explicit_scope": true,
+          "unrelated_fixture_has_no_identity_links": true,
+          "homonyms_never_confirmed": true,
+          "known_fetched_fixture_has_supported_identity": true,
+          "virtual_spacing_respects_interval": true
+        },
+        "checks_passed": true,
+        "audit_valid": true
+      }
+    }
+  },
+  "public_http": {
+    "recorded_at": "2026-10-16T06:03:40.915237+00:00",
+    "method": {
+      "live_transport": true,
+      "response_substitution": false,
+      "public_examples_only": true,
+      "body_download": false,
+      "identity_or_prediction_quality_validated": false,
+      "local_phase": "Real downloaded cache, DNS/TCP guarded; no synthesized HTTP responses"
+    },
+    "cases": [
+      {
+        "id": "epn",
+        "name": "Enrique Peña Nieto",
+        "kind": "person"
+      },
+      {
+        "id": "pemex",
+        "name": "Pemex",
+        "kind": "company"
+      },
+      {
+        "id": "bimbo",
+        "name": "Grupo Bimbo",
+        "kind": "company"
+      }
+    ],
+    "sources": [
+      "duckduckgo_web",
+      "mwmbl_web"
+    ],
+    "checks": {
+      "actual_search_responses_observed": true,
+      "no_dns_in_local_mode": true,
+      "no_tcp_in_local_mode": true,
+      "local_mode_did_not_add_candidates": true,
+      "local_mode_did_not_duplicate_observations": true,
+      "no_article_bodies_or_evidence_created": true,
+      "canonical_urls_unique": true,
+      "audit_ok": true,
+      "production_unchanged_during_run": true
+    },
+    "timings_seconds": {
+      "live": 21.33841071400093,
+      "local": 0.2735974509996595
+    },
+    "http_status_counts": {
+      "200": 7,
+      "404": 1
+    },
+    "counts_before_local": {
+      "news_articles": 132,
+      "documents": 0,
+      "evidence": 0,
+      "news_observations": 135,
+      "score_runs": 0
+    },
+    "counts_after_local": {
+      "news_articles": 132,
+      "documents": 0,
+      "evidence": 0,
+      "news_observations": 135,
+      "score_runs": 0
+    },
+    "source_code_sha256": {
+      "relevance.py": "2c2fc48a62b5b88c0c7633486ef4f10010da17d9a6cd5fdac3a867078d2b9ebc",
+      "news_projection.py": "e41de0275891fba72d872ef3205826a990c4adb8b89da9b46a4d6ee4b60527b5",
+      "social_discovery.py": "e3420915e1c649020e291fb5a05ac66e52f0b2b206c4ad842fafed675e4d8892",
+      "news.py": "f99372019c180151fc417746822d8468e5743fd103fa137bf8f6f7589eb66eb7",
+      "collector.py": "c6a53cabaf3460f23ae58ad4fd3f2eccc6a0e0cb0941b82eec0b284c43701e05",
+      "news_session.py": "bb82278e198245df66e127902fad03655caad5447e080cc1db155ab681b8ac90",
+      "news_search.py": "de52b9a98f314e75ab25f097b31feb12bcfc42b4503598b2c5b5b201223c5723",
+      "official.py": "c864c512d84b06a1caf3b458c1cadf5820b805a2be7dc6f1c4c59cae0cfb66cf",
+      "identity.py": "f05524947d5b1d765803da6faa145f3b422a61a10971a1caca3c6983f3436d2f",
+      "sources.py": "f24351c8d22a194eef1cad8572e7fe33224bfb8b4e0cf2e4614f941b4814fc5d",
+      "importing.py": "54fc447531cecb986c3e4be4570d0d3f2280a4f86d5dd50e60c0109bf008e310",
+      "workflow.py": "a170a761b4fc9396aefe8e55e26cefdc1be4c614b40ae1082a0520bf801d4a6c",
+      "robots_policy.py": "33293cbaa7ca859ce37ae3104b8e84ab9478fb60e867d7643d88830513c2e453",
+      "contextual.py": "7713ec854c309e1f4ca807fb31f2b464af5495fbd05e4f77ca42865e4baa40d8",
+      "cli.py": "857805ccadf39ef6bedf6c808283b17805ea9274d65df8bd8952c0eeb39dbf31",
+      "nlp.py": "9b947a8ec53446fed346fc1ca3efbf2bb07224cb37640a2396fbbeb10cab6196",
+      "store.py": "ca55cea501a3f4f32a6b57838497c6348f1ab6bd2095f88833514c80e9fd0e47",
+      "advanced_nlp.py": "1ac3b13daeaef6b76da4f553bfe367604790c04d670d0f4a6418d0f2fbb547cc",
+      "__main__.py": "3129adff95e0f38b87ab34cddfc27082c7892bcaec267ff5d40f160fdf55b44a",
+      "public_search.py": "2080a01091098ee3edb4e3235fe0d93ce44159c56f47ba9f68e20e17a1fec8c8",
+      "scoring.py": "ff4e9e9f19cb0c781f02c06b68c2e2eaa00ee08f22dd8f71219fa5042879fe7e",
+      "engine.py": "cb198049f2bb7b2e1d80c77e47835b24c33ab79593165e1ea9405033ae06bfe5",
+      "explainability.py": "5556420200f2d97436313af04c7d7303fbf008752bea4e38bc940838961b3b4e",
+      "__init__.py": "8d9e3463f9f9b85243c9b8f96c2a659db05469f9f158538545c0cc0b69f91233",
+      "shared_crawl.py": "84644aba7017989031360e86598da0f4eb282fecfcd7f0cbe251fbe2fb842d3e",
+      "acquisition_coverage.py": "12c9119db1e35a7fac0b375e318a61c29be0481143ff5b97913b870e5b59b50c",
+      "app.py": "af1808d589d17ebd70823edfe5e690ec0810573ce56efb7ef968ee6421d7e669",
+      "context_model.py": "ada181d47cc0bd45c4bb3124db9920ee52fdb4e7115643a582c05f56de30a59b",
+      "shared_discovery.py": "9b192dbb3dea8a0595a97109a877ef1443d1c8739510087172e3ee84a60a9fe2"
+    }
+  },
+  "scheduler_baseline": [
+    {
+      "queue": 100000,
+      "processed": 1000,
+      "seconds": 110.52227036900149,
+      "snapshots": 1008,
+      "events": 2002,
+      "pending": 99000,
+      "stop_reason": "job_limit"
+    }
+  ],
+  "scheduler_after": [
+    {
+      "queue": 100000,
+      "processed": 1000,
+      "seconds": 3.781077011997695,
+      "snapshots": 14,
+      "events": 2002,
+      "pending": 99000,
+      "stop_reason": "job_limit"
+    }
+  ],
+  "measurement_commit": "e3236e16b9527c2c770a77589113245def5f752b",
+  "source_sha256_scope": "Production files used for the recorded massive measurements; matching e3236e1 before the later Windows UTC-formatting fix.",
+  "source_files_match_release_note": "The measured source_sha256 map is preserved unchanged. Only collector.py differs in the final distribution; its final hashes and separate validation are recorded below.",
+  "source_files_match_measured_revision": true,
+  "post_measurement_change": {
+    "scope": "One production function plus strengthened existing portability regression; no massive benchmark rerun.",
+    "production_file": "peps/collector.py",
+    "function": "_iso",
+    "change": "Format UTC as the Unix epoch plus timedelta instead of platform gmtime/fromtimestamp; preserve distant stored Retry-After dates on Windows.",
+    "measured_sha256": "c6a53cabaf3460f23ae58ad4fd3f2eccc6a0e0cb0941b82eec0b284c43701e05",
+    "final_sha256": "ac84c26b5b6b656dcb0c10b8f84d796125c786e71dd8d81f44eb00644f907dd8",
+    "regression_test_file": "tests/test_transport_stress.py",
+    "massive_benchmarks_repeated_after_change": false
+  },
+  "historical_wheel_before_windows_fix": {
+    "commands": 15,
+    "resources": 16,
+    "sha256": "7cee7378c4909edabd880b467bf229c6403f3ab601d0dfd54fb6f2dd122bdb9b",
+    "scope": "Historical validation before the Windows _iso fix; not the final distribution wheel."
+  },
+  "post_measurement_revalidation": {
+    "measurement_head": "e3236e16b9527c2c770a77589113245def5f752b",
+    "post_measurement_patch": "collector._iso formats UTC by epoch arithmetic instead of platform gmtime; strengthened existing portability regression",
+    "final_source_sha256": {
+      "peps/__init__.py": "8d9e3463f9f9b85243c9b8f96c2a659db05469f9f158538545c0cc0b69f91233",
+      "peps/__main__.py": "3129adff95e0f38b87ab34cddfc27082c7892bcaec267ff5d40f160fdf55b44a",
+      "peps/acquisition_coverage.py": "12c9119db1e35a7fac0b375e318a61c29be0481143ff5b97913b870e5b59b50c",
+      "peps/advanced_nlp.py": "1ac3b13daeaef6b76da4f553bfe367604790c04d670d0f4a6418d0f2fbb547cc",
+      "peps/app.py": "af1808d589d17ebd70823edfe5e690ec0810573ce56efb7ef968ee6421d7e669",
+      "peps/cli.py": "857805ccadf39ef6bedf6c808283b17805ea9274d65df8bd8952c0eeb39dbf31",
+      "peps/collector.py": "ac84c26b5b6b656dcb0c10b8f84d796125c786e71dd8d81f44eb00644f907dd8",
+      "peps/context_model.py": "ada181d47cc0bd45c4bb3124db9920ee52fdb4e7115643a582c05f56de30a59b",
+      "peps/contextual.py": "7713ec854c309e1f4ca807fb31f2b464af5495fbd05e4f77ca42865e4baa40d8",
+      "peps/engine.py": "cb198049f2bb7b2e1d80c77e47835b24c33ab79593165e1ea9405033ae06bfe5",
+      "peps/explainability.py": "5556420200f2d97436313af04c7d7303fbf008752bea4e38bc940838961b3b4e",
+      "peps/identity.py": "f05524947d5b1d765803da6faa145f3b422a61a10971a1caca3c6983f3436d2f",
+      "peps/importing.py": "54fc447531cecb986c3e4be4570d0d3f2280a4f86d5dd50e60c0109bf008e310",
+      "peps/news.py": "f99372019c180151fc417746822d8468e5743fd103fa137bf8f6f7589eb66eb7",
+      "peps/news_projection.py": "e41de0275891fba72d872ef3205826a990c4adb8b89da9b46a4d6ee4b60527b5",
+      "peps/news_search.py": "de52b9a98f314e75ab25f097b31feb12bcfc42b4503598b2c5b5b201223c5723",
+      "peps/news_session.py": "bb82278e198245df66e127902fad03655caad5447e080cc1db155ab681b8ac90",
+      "peps/nlp.py": "9b947a8ec53446fed346fc1ca3efbf2bb07224cb37640a2396fbbeb10cab6196",
+      "peps/official.py": "c864c512d84b06a1caf3b458c1cadf5820b805a2be7dc6f1c4c59cae0cfb66cf",
+      "peps/public_search.py": "2080a01091098ee3edb4e3235fe0d93ce44159c56f47ba9f68e20e17a1fec8c8",
+      "peps/relevance.py": "2c2fc48a62b5b88c0c7633486ef4f10010da17d9a6cd5fdac3a867078d2b9ebc",
+      "peps/robots_policy.py": "33293cbaa7ca859ce37ae3104b8e84ab9478fb60e867d7643d88830513c2e453",
+      "peps/scoring.py": "ff4e9e9f19cb0c781f02c06b68c2e2eaa00ee08f22dd8f71219fa5042879fe7e",
+      "peps/shared_crawl.py": "84644aba7017989031360e86598da0f4eb282fecfcd7f0cbe251fbe2fb842d3e",
+      "peps/shared_discovery.py": "9b192dbb3dea8a0595a97109a877ef1443d1c8739510087172e3ee84a60a9fe2",
+      "peps/social_discovery.py": "e3420915e1c649020e291fb5a05ac66e52f0b2b206c4ad842fafed675e4d8892",
+      "peps/sources.py": "f24351c8d22a194eef1cad8572e7fe33224bfb8b4e0cf2e4614f941b4814fc5d",
+      "peps/store.py": "ca55cea501a3f4f32a6b57838497c6348f1ab6bd2095f88833514c80e9fd0e47",
+      "peps/workflow.py": "a170a761b4fc9396aefe8e55e26cefdc1be4c614b40ae1082a0520bf801d4a6c"
+    },
+    "installed_modules_match_source": true,
+    "unit_tests": {
+      "executed": 783,
+      "passed": 776,
+      "skipped": 7,
+      "seconds": 40.439,
+      "report": "unit-windows-fix.log",
+      "sha256": "c0971a908919d62510e47e1db935008b5ec600e9769992ea185b3fc824a25cd9"
+    },
+    "transport": {
+      "passed": true,
+      "checks": 21,
+      "report": "transport-windows-fix.json",
+      "sha256": "e0575e74b66c2d68db39c2e8c2a557345d352435e62f804cbf4ef669d68328f4"
+    },
+    "wheel": {
+      "ok": true,
+      "commands": 15,
+      "resources": 16,
+      "sha256": "0b03985bb7ada68216df5697f6054f7644b86e5f0f3e4c44883cabada827ffb1",
+      "report": "wheel-validation-windows-fix.json",
+      "report_sha256": "e09f19383e4ed8c1e032d5834ac7229afce2a43efb10fe4c99ce5803242d417f"
+    },
+    "evidence_root": "runtime/stress-2-9-1",
+    "evidence_report": "post-windows-fix-validation.json",
+    "evidence_report_sha256": "88a62c5f281ed113391b818580de6396e53a2c159f721c90292a0cf0a643b01c",
+    "scope": "Local unit/transport/isolated-wheel revalidation after the single Windows UTC fix; not a repeat of the massive timing runs and not a Windows CI result."
+  },
+  "provenance_updated_at": "2026-10-16T06:30:31.898918+00:00"
+}

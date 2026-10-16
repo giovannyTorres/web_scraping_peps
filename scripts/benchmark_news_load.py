@@ -214,7 +214,10 @@ def run_case(size, workers, bank_size=40000, feed_size=400, seconds=1800):
         expected_clusters = (size + 9) // 10
         expected_documents = sum(len({i % 2 for i in range(start, min(start + 10, size))})
                                  for start in range(0, size, 10))
-        all_metrics = created[-1].metrics_snapshot()
+        # An expired preparation budget can stop before any fetcher exists.
+        # Keep that incomplete phase measurable instead of raising IndexError.
+        all_metrics = created[-1].metrics_snapshot() if created else {
+            'network_requests': 0, 'wire_bytes': 0, 'decoded_bytes': 0}
         request_by_host = {}
         for event in events:
             request_by_host.setdefault(event['host'], []).append(event['virtual_at'])
@@ -222,7 +225,8 @@ def run_case(size, workers, bank_size=40000, feed_size=400, seconds=1800):
                                for a, b in zip(values, values[1:])), default=None)
         def phase_completed(result, jobs):
             pending = sum(jobs.get(state, 0) for state in ('queued', 'running', 'deferred'))
-            return (result.get('stop_reason') == 'completed' and result.get('pending') == 0
+            return (not result.get('preparation_incomplete') and result.get('queue_complete') is True
+                    and result.get('stop_reason') == 'completed' and result.get('pending') == 0
                     and not pending and not result.get('failed') and not result.get('cancelled'))
         cold_complete = phase_completed(cold, cold_jobs)
         warm_complete = phase_completed(warm, warm_jobs)
@@ -245,6 +249,8 @@ def run_case(size, workers, bank_size=40000, feed_size=400, seconds=1800):
         phase = lambda result, wall, phase_events, jobs, complete: {
             'wall_seconds': round(wall, 6), 'processed_jobs': result['processed'],
             'completed': complete, 'stop_reason': result.get('stop_reason'),
+            'preparation_incomplete': bool(result.get('preparation_incomplete')),
+            'queue_complete': result.get('queue_complete'),
             'pending_jobs': sum(jobs.get(state, 0) for state in ('queued', 'running', 'deferred')),
             'job_status_counts': jobs,
             'unique_articles_per_local_second': round(size / wall, 3) if complete else None,

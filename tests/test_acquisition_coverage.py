@@ -221,6 +221,38 @@ class AcquisitionCoverageTests(unittest.TestCase):
         self.assertEqual(acquisition_coverage(self.store, self.sources), expected)
         self.assertEqual(self.store.stats(), before)
 
+    def test_unreadable_and_wrong_shape_discovery_json_preserves_queue_and_coverage(self):
+        self.search(['one'], excluded=2)
+        with self.store.connection() as con:
+            revision = con.execute("SELECT value FROM meta WHERE key='news_identity_revision'").fetchone()[0]
+        invalid_payloads = ['{broken', '[]', 'null', '"legacy"', '42',
+                            canonical({'bank_revision': revision, 'entity_ids': None}),
+                            canonical({'bank_revision': revision, 'entity_ids': {'one': 'two'}})]
+        invalid_metadata = ['{broken', '[]', 'null', '"legacy"', '42',
+                            canonical({'candidate_filter': {'excluded_records': True}}),
+                            canonical({'candidate_filter': {'excluded_records': '999'}})]
+        for index, payload in enumerate(invalid_payloads):
+            job = self.store.enqueue('news_query', {'entity_ids': []}, key=f'invalid-payload-{index}')
+            with self.store.connection() as con:
+                con.execute('UPDATE jobs SET payload=? WHERE id=?', (payload, job))
+                con.execute('INSERT INTO news_discovery_runs VALUES(?,?,?,?,?,?,?,?)',
+                            (job, 'synthetic', 'news_query', 'https://synthetic.invalid/search', 0,
+                             canonical({'candidate_filter': {'excluded_records': 999}}), 'hash', now()))
+        for index, metadata in enumerate(invalid_metadata):
+            job = self.store.enqueue('news_query', {'entity_ids': ['one'], 'bank_revision': revision}, key=f'invalid-metadata-{index}')
+            with self.store.connection() as con:
+                con.execute('INSERT INTO news_discovery_runs VALUES(?,?,?,?,?,?,?,?)',
+                            (job, 'synthetic', 'news_query', 'https://synthetic.invalid/search', 0, metadata, 'hash', now()))
+        with self.store.connection() as con:
+            before = [tuple(row) for row in con.execute('SELECT * FROM jobs ORDER BY id')]
+        expected = acquisition_coverage(self.store, self.sources)
+        self.assertEqual(expected['entities_queried'], 1)
+        self.assertEqual(expected['excluded_records'], 2)
+        self.store._audit_json = False
+        self.assertEqual(acquisition_coverage(self.store, self.sources), expected)
+        with self.store.connection() as con:
+            self.assertEqual([tuple(row) for row in con.execute('SELECT * FROM jobs ORDER BY id')], before)
+
     def test_older_sqlite_fallback_has_the_same_counts_and_reads_do_not_create_results(self):
         metadata = self.article()
         self.observe(metadata, ['one', 'two'])

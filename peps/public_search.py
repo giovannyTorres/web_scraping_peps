@@ -125,6 +125,7 @@ class _DuckResults(HTMLParser):
         super().__init__(convert_charrefs=True)
         self.base, self.records, self.current = base, [], None
         self.stack, self.capture, self.chunks = [], None, []
+        self._tag_positions = {}
         self.capture_chars = 0
         self.challenge, self.no_results, self.structure = False, False, False
         self.ignored = 0
@@ -143,6 +144,7 @@ class _DuckResults(HTMLParser):
         parent_hidden = self.stack[-1][1] if self.stack else False
         hidden = parent_hidden or tag in {'script', 'style', 'noscript', 'head', 'nav', 'footer'} or bool(classes & {'result--ad', 'result--ads', 'ads', 'advertisement'})
         if tag not in {'br', 'hr', 'img', 'input', 'meta', 'link', 'wbr', 'source', 'area', 'base', 'embed', 'param', 'track'}:
+            self._tag_positions.setdefault(tag, []).append(len(self.stack))
             self.stack.append((tag, hidden))
         if hidden:
             return
@@ -158,10 +160,19 @@ class _DuckResults(HTMLParser):
     def handle_endtag(self, tag):
         if self.capture is not None and tag == self.capture[1] and len(self.stack) == self.capture[2]:
             self._finish_capture()
-        for index in range(len(self.stack) - 1, -1, -1):
-            if self.stack[index][0] == tag:
-                del self.stack[index:]
-                break
+        positions = self._tag_positions.get(tag)
+        if not positions:
+            return
+        index = positions[-1]
+        # A scan for every unmatched closing tag becomes quadratic on a small
+        # malformed response. Indexed open tags skip misses in O(1); every
+        # matched stack entry is removed only once across the whole document.
+        for removed_tag, _ in self.stack[index:]:
+            opened = self._tag_positions[removed_tag]
+            opened.pop()
+            if not opened:
+                del self._tag_positions[removed_tag]
+        del self.stack[index:]
 
     def _finish_capture(self):
         if self.capture is not None and self.current is not None:
@@ -231,6 +242,11 @@ def parse_public_results(fetch_result, source):
         excerpt = record.get('text', record.get('content', ''))
         if not isinstance(excerpt, str):
             raise ValueError('Extracto de buscador inválido')
+        try:
+            record['title'].encode('utf-8')
+            excerpt.encode('utf-8')
+        except UnicodeError as exc:
+            raise ValueError('El buscador devolvió texto Unicode inválido') from exc
         result.append({'url': url, 'title': record['title'][:2000], 'text': excerpt[:2000],
             'published_at': None, 'source_kind': 'discovery', 'source_id': source.get('id', kind),
             'metadata': {'discovery_only': True, 'public_web_search': True, 'search_provider': kind,

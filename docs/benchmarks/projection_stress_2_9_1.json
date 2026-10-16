@@ -1,0 +1,326 @@
+{
+  "schema_version": 1,
+  "baseline_commit": "580eed32c020791277c5c96b6677d8de31ad6839",
+  "scope": "Offline generated metadata in real SQLite. No HTTP, editorial body extraction, NLP, identity attribution or web-coverage measurement.",
+  "script": {
+    "path": "scripts/stress_news_projection.py",
+    "sha256": "4d3c3eb1431988520ca0616e2f9b5b21b0c7e4239f9efba0d731ce6e0d7b8021"
+  },
+  "reproduce": {
+    "baseline_checkout": "git worktree add --detach runtime/stress-2-9-1/baseline 580eed32c020791277c5c96b6677d8de31ad6839",
+    "baseline": "python scripts/stress_news_projection.py --source-root runtime/stress-2-9-1/baseline --entities 10000 --refs 90001 --max-seconds 10 --output runtime/stress-2-9-1/projection-repro-before-10000.json",
+    "repeated_current": "python scripts/stress_news_projection.py --entities 10000 --refs 90001 --max-seconds 10 --output runtime/stress-2-9-1/projection-repro-after-10000.json",
+    "unique_short_budget_current": "python scripts/stress_news_projection.py --entities 10000 --refs 90001 --unique-metadata --max-seconds 5 --output runtime/stress-2-9-1/projection-repro-unique-10000.json",
+    "expected_exit_codes": {
+      "baseline": 1,
+      "repeated_current": 0,
+      "unique_short_budget_current": 1
+    }
+  },
+  "files": {
+    "baseline": {
+      "path": "runtime/stress-2-9-1/projection-repro-before-10000.json",
+      "sha256": "2f2ea17d5c89e8edb5011d6117d248c8e25ac65c53761d512c43a3c212ae8b3b"
+    },
+    "repeated_current": {
+      "path": "runtime/stress-2-9-1/release-limit-cases/projection.json",
+      "sha256": "37cff31153be44a28d9a36b8195da9ba68feb91aae5ca9972ed4653ff6d863c1"
+    },
+    "unique_short_budget_current": {
+      "path": "runtime/stress-2-9-1/projection-repro-unique-10000.json",
+      "sha256": "08007028823d085b5cff078d2f39941e56f756086a7010d46fd4b43a47f49d18"
+    }
+  },
+  "comparison_checks": {
+    "same_published_script": true,
+    "script_matches_workspace": true,
+    "repeated_input_exactly_identical": true,
+    "current_source_matches_workspace": true,
+    "baseline_is_negative_control": true,
+    "current_repeated_completed_and_passed": true,
+    "current_unique_is_explicitly_incomplete": true,
+    "all_raw_history_preserved": true
+  },
+  "comparison_integrity_passed": true,
+  "limitations": [
+    "The repeated fixture has nine distinct ranking inputs; its completion time must not be generalized to 90001 unique articles.",
+    "The distinct metadata profile explicitly remains incomplete at five seconds, exits 1, and verifies deadline/cancellation/history invariants.",
+    "Peak RSS is measured when resource.getrusage exists; it is null on unsupported platforms. A zero peak delta is measured, not a claim of zero memory.",
+    "Synthetic names and metadata are generated locally. This probe measures neither real news relevance nor network speed.",
+    "The current repeated sample was refreshed after the all-history-1 cache migration. It uses a60second cap but completed before the baseline10second cap; raw input hashes are identical.",
+    "The unique five-second sample is an earlier recorded source snapshot, not the final release fingerprint; its hashes remain explicit. The final release120second unique-metadata capacity result is recorded in stress_release_2_9_1.json."
+  ],
+  "cases": {
+    "baseline": {
+      "fixture": {
+        "deterministic": true,
+        "timestamp": "2026-01-01T00:00:00+00:00",
+        "entities": 10000,
+        "refs": 90001,
+        "unique_metadata": false,
+        "summary_repeat": 10,
+        "hot_urls": 100,
+        "observations_per_hot_url": 100,
+        "mentions": "Every tenth reference; target IDs concentrated on at most 50 entities.",
+        "metadata": "Repeated neutral excerpt, with an exact name in relevant observation titles."
+      },
+      "budgets": {
+        "projection_seconds": 10.0,
+        "short_deadline_seconds": 0.05,
+        "cancel_after_seconds": 0.05,
+        "max_rss_mib": 256
+      },
+      "source_sha256": {
+        "peps/news_projection.py": "a895637979de365e9e7ff8435445207c9fd4a803fab35c86c42335f1863f23ca",
+        "peps/acquisition_coverage.py": "bda454eb0de2f640378b9ca5802dbbdcbad066e7a7a3b742cbf1d2b65fedbf26",
+        "peps/news.py": "12103164950948bfc00f0d05a74938bbabdfc19228477242203475e2b3617780",
+        "peps/relevance.py": "2c2fc48a62b5b88c0c7633486ef4f10010da17d9a6cd5fdac3a867078d2b9ebc"
+      },
+      "initial_counts": {
+        "entities": 10000,
+        "news_articles": 90001,
+        "news_observations": 100001,
+        "audit": 1
+      },
+      "projection": {
+        "ready": false,
+        "elapsed_seconds": 10.003605901998526,
+        "peak_rss_kib": 42496,
+        "rss_peak_delta_kib": 1628
+      },
+      "coverage_first_seconds": 0.03704133100109175,
+      "coverage_cached_mean_seconds": 0.0004577208700357005,
+      "after_counts": {
+        "entities": 10000,
+        "news_articles": 90001,
+        "news_observations": 100001,
+        "news_current_candidates": 0,
+        "audit": 1
+      },
+      "rebuild_audit": null,
+      "short_deadline": {
+        "ready": false,
+        "elapsed_seconds": 0.7547548980001011
+      },
+      "inflight_cancel": {
+        "ready": false,
+        "elapsed_seconds": 0.5026793330034707,
+        "requested_after_seconds": 0.058994489001634065,
+        "response_after_request_seconds": 0.4436848440018366
+      },
+      "raw_before_sha256": {
+        "news_articles": "ef0fdfac971d65bf8f01c8082ed04e72b9c78394e864a4f2ac4071feab48d73c",
+        "news_observations": "2d47a567432654fe05bc5b3d8dfe7c454b7c15188f0c1bd1f8c5624bd78ef784"
+      },
+      "raw_after_sha256": {
+        "news_articles": "ef0fdfac971d65bf8f01c8082ed04e72b9c78394e864a4f2ac4071feab48d73c",
+        "news_observations": "2d47a567432654fe05bc5b3d8dfe7c454b7c15188f0c1bd1f8c5624bd78ef784"
+      },
+      "history_preserved": true,
+      "audit_valid": true,
+      "checks": {
+        "fixture_counts_correct": true,
+        "projection_completed": false,
+        "projection_counts_correct": false,
+        "bounded_deadline_respected": true,
+        "short_deadline_respected": false,
+        "already_cancelled_no_work": true,
+        "inflight_cancellation_respected": false,
+        "aborted_rebuild_not_published": true,
+        "rollback_keeps_previous_projection": true,
+        "history_preserved": true,
+        "audit_valid": true,
+        "memory_within_budget": true,
+        "cache_limits_respected": null
+      },
+      "completed": false,
+      "passed": false
+    },
+    "repeated_current": {
+      "fixture": {
+        "deterministic": true,
+        "timestamp": "2026-01-01T00:00:00+00:00",
+        "entities": 10000,
+        "refs": 90001,
+        "unique_metadata": false,
+        "summary_repeat": 10,
+        "hot_urls": 100,
+        "observations_per_hot_url": 100,
+        "mentions": "Every tenth reference; target IDs concentrated on at most 50 entities.",
+        "metadata": "Repeated neutral excerpt, with an exact name in relevant observation titles."
+      },
+      "budgets": {
+        "projection_seconds": 60,
+        "short_deadline_seconds": 0.05,
+        "cancel_after_seconds": 0.05,
+        "max_rss_mib": 256
+      },
+      "source_sha256": {
+        "peps/news_projection.py": "e41de0275891fba72d872ef3205826a990c4adb8b89da9b46a4d6ee4b60527b5",
+        "peps/acquisition_coverage.py": "12c9119db1e35a7fac0b375e318a61c29be0481143ff5b97913b870e5b59b50c",
+        "peps/news.py": "f99372019c180151fc417746822d8468e5743fd103fa137bf8f6f7589eb66eb7",
+        "peps/relevance.py": "2c2fc48a62b5b88c0c7633486ef4f10010da17d9a6cd5fdac3a867078d2b9ebc"
+      },
+      "initial_counts": {
+        "entities": 10000,
+        "news_articles": 90001,
+        "news_observations": 100001,
+        "audit": 1
+      },
+      "projection": {
+        "ready": true,
+        "elapsed_seconds": 2.3653596470030607,
+        "peak_rss_kib": 41528,
+        "rss_peak_delta_kib": 8704
+      },
+      "coverage_first_seconds": 0.07562274799420265,
+      "coverage_cached_mean_seconds": 0.0004749311300111003,
+      "after_counts": {
+        "entities": 10000,
+        "news_articles": 90001,
+        "news_observations": 100001,
+        "news_current_candidates": 9001,
+        "audit": 2
+      },
+      "rebuild_audit": {
+        "articles_checked": 90001,
+        "bank_revision": "1",
+        "candidate_pairs": 9001,
+        "identity_verified": false,
+        "projection_version": "all-history-1",
+        "relevance_cache": {
+          "accounted_bytes": 47232,
+          "entries": 9,
+          "hits": 99293,
+          "maximum_bytes": 8388608,
+          "maximum_entries": 1024,
+          "misses": 9
+        },
+        "relevance_version": "metadata-relevance-1.1.0",
+        "score_effect": "none"
+      },
+      "short_deadline": {
+        "ready": false,
+        "elapsed_seconds": 0.050350060999335255
+      },
+      "inflight_cancel": {
+        "ready": false,
+        "elapsed_seconds": 0.05180448299506679,
+        "requested_after_seconds": 0.05136499899526825,
+        "response_after_request_seconds": 0.00043948399979854
+      },
+      "raw_before_sha256": {
+        "news_articles": "ef0fdfac971d65bf8f01c8082ed04e72b9c78394e864a4f2ac4071feab48d73c",
+        "news_observations": "2d47a567432654fe05bc5b3d8dfe7c454b7c15188f0c1bd1f8c5624bd78ef784"
+      },
+      "raw_after_sha256": {
+        "news_articles": "ef0fdfac971d65bf8f01c8082ed04e72b9c78394e864a4f2ac4071feab48d73c",
+        "news_observations": "2d47a567432654fe05bc5b3d8dfe7c454b7c15188f0c1bd1f8c5624bd78ef784"
+      },
+      "history_preserved": true,
+      "audit_valid": true,
+      "checks": {
+        "fixture_counts_correct": true,
+        "projection_completed": true,
+        "projection_counts_correct": true,
+        "bounded_deadline_respected": true,
+        "short_deadline_respected": true,
+        "already_cancelled_no_work": true,
+        "inflight_cancellation_respected": true,
+        "aborted_rebuild_not_published": true,
+        "rollback_keeps_previous_projection": true,
+        "history_preserved": true,
+        "audit_valid": true,
+        "memory_within_budget": true,
+        "cache_limits_respected": true
+      },
+      "completed": true,
+      "passed": true
+    },
+    "unique_short_budget_current": {
+      "fixture": {
+        "deterministic": true,
+        "timestamp": "2026-01-01T00:00:00+00:00",
+        "entities": 10000,
+        "refs": 90001,
+        "unique_metadata": true,
+        "summary_repeat": 10,
+        "hot_urls": 100,
+        "observations_per_hot_url": 100,
+        "mentions": "Every tenth reference; target IDs concentrated on at most 50 entities.",
+        "metadata": "Repeated neutral excerpt, with an exact name in relevant observation titles."
+      },
+      "budgets": {
+        "projection_seconds": 5.0,
+        "short_deadline_seconds": 0.05,
+        "cancel_after_seconds": 0.05,
+        "max_rss_mib": 256
+      },
+      "source_sha256": {
+        "peps/news_projection.py": "f7e184560d0e018a0622037c55a13fba07037024177ebd8868ac16fef298a369",
+        "peps/acquisition_coverage.py": "12c9119db1e35a7fac0b375e318a61c29be0481143ff5b97913b870e5b59b50c",
+        "peps/news.py": "f6f467813d0e741871f954c2c8320c102eeab55eceb50feb4369d13ce024cfcf",
+        "peps/relevance.py": "2c2fc48a62b5b88c0c7633486ef4f10010da17d9a6cd5fdac3a867078d2b9ebc"
+      },
+      "initial_counts": {
+        "entities": 10000,
+        "news_articles": 90001,
+        "news_observations": 100001,
+        "audit": 1
+      },
+      "projection": {
+        "ready": false,
+        "elapsed_seconds": 5.003270267996413,
+        "peak_rss_kib": 40868,
+        "rss_peak_delta_kib": 0
+      },
+      "coverage_first_seconds": 0.03523904600297101,
+      "coverage_cached_mean_seconds": 0.0004900551799801178,
+      "after_counts": {
+        "entities": 10000,
+        "news_articles": 90001,
+        "news_observations": 100001,
+        "news_current_candidates": 0,
+        "audit": 1
+      },
+      "rebuild_audit": null,
+      "short_deadline": {
+        "ready": false,
+        "elapsed_seconds": 0.050331935002759565
+      },
+      "inflight_cancel": {
+        "ready": false,
+        "elapsed_seconds": 0.05665528700046707,
+        "requested_after_seconds": 0.05624820099910721,
+        "response_after_request_seconds": 0.0004070860013598576
+      },
+      "raw_before_sha256": {
+        "news_articles": "5361a98e52c57c9729166981e70559b95223743b6e9a92ef45984b2b0ff2d306",
+        "news_observations": "cf17e8ec50e7a7b92b40db257000d6eb3e218c8ae812eadbf05104e1b1706c9b"
+      },
+      "raw_after_sha256": {
+        "news_articles": "5361a98e52c57c9729166981e70559b95223743b6e9a92ef45984b2b0ff2d306",
+        "news_observations": "cf17e8ec50e7a7b92b40db257000d6eb3e218c8ae812eadbf05104e1b1706c9b"
+      },
+      "history_preserved": true,
+      "audit_valid": true,
+      "checks": {
+        "fixture_counts_correct": true,
+        "projection_completed": false,
+        "projection_counts_correct": false,
+        "bounded_deadline_respected": true,
+        "short_deadline_respected": true,
+        "already_cancelled_no_work": true,
+        "inflight_cancellation_respected": true,
+        "aborted_rebuild_not_published": true,
+        "rollback_keeps_previous_projection": true,
+        "history_preserved": true,
+        "audit_valid": true,
+        "memory_within_budget": true,
+        "cache_limits_respected": null
+      },
+      "completed": false,
+      "passed": false
+    }
+  }
+}

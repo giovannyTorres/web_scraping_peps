@@ -29,6 +29,11 @@ def digest(value):
     return hashlib.sha256(value.encode("utf-8")).hexdigest()
 
 
+def kind_prefix_pattern(prefix):
+    """SQL LIKE pattern for a literal job-kind prefix, including underscores."""
+    return (prefix or '').replace('\\', '\\\\').replace('%', '\\%').replace('_', '\\_') + '%'
+
+
 def _document_id(url, content_hash, source_kind, metadata):
     """Keep archival rows distinct from accepted evidence and from each other."""
     if source_kind == 'legacy' and isinstance(metadata.get('legacy_record'), dict):
@@ -88,6 +93,10 @@ class Store:
                 status TEXT NOT NULL,attempts INTEGER NOT NULL DEFAULT 0,due REAL NOT NULL,
                 lease_until REAL,owner TEXT,error TEXT,created_at TEXT NOT NULL,updated_at TEXT NOT NULL);
               CREATE INDEX IF NOT EXISTS jobs_ready ON jobs(status,due,lease_until);
+              CREATE INDEX IF NOT EXISTS jobs_claim_pending ON jobs(due,id)
+                WHERE attempts<5 AND status IN ('queued','deferred','running');
+              CREATE INDEX IF NOT EXISTS jobs_exhausted_pending ON jobs(attempts)
+                WHERE attempts>=5 AND status IN ('queued','deferred','running');
               CREATE TABLE IF NOT EXISTS audit(seq INTEGER PRIMARY KEY AUTOINCREMENT,at TEXT NOT NULL,
                 actor TEXT NOT NULL,action TEXT NOT NULL,payload TEXT NOT NULL,previous_hash TEXT NOT NULL,
                 event_hash TEXT NOT NULL);
@@ -767,6 +776,8 @@ class Store:
             return value
 
     def enqueue(self, kind, payload, key=None, due=None, connection=None):
+        if not isinstance(payload, dict):
+            raise ValueError('La tarea requiere un objeto JSON como payload')
         job_id = digest(key or kind + canonical(payload))
         with (nullcontext(connection) if connection is not None else self.connection()) as con:
             con.execute('INSERT OR IGNORE INTO jobs(id,kind,payload,status,due,created_at,updated_at) VALUES(?,?,?,\'queued\',?,?,?)',
@@ -775,11 +786,12 @@ class Store:
 
     def _reconcile_jobs(self, con, current, kind_prefix=None):
         """Retire exhausted persisted jobs; preserve every live worker lease."""
-        changed = con.execute("UPDATE jobs SET status='dead',lease_until=NULL,updated_at=?,"
+        changed = con.execute("UPDATE jobs INDEXED BY jobs_exhausted_pending SET status='dead',lease_until=NULL,updated_at=?,"
                               "error='Límite de cinco intentos; reintento manual disponible' "
-                              "WHERE attempts>=5 AND (? IS NULL OR kind LIKE ?) AND "
+                              "WHERE attempts>=5 AND status IN ('queued','deferred','running') "
+                              "AND (? IS NULL OR kind LIKE ? ESCAPE '\\') AND "
                               "(status IN ('queued','deferred') OR (status='running' AND COALESCE(lease_until,0)<=?))",
-                              (now(), kind_prefix, (kind_prefix or '') + '%', current)).rowcount
+                              (now(), kind_prefix, kind_prefix_pattern(kind_prefix), current)).rowcount
         if changed:
             self._audit(con, 'jobs_exhausted', {'count': changed, 'kind_prefix': kind_prefix})
         return changed
@@ -791,18 +803,41 @@ class Store:
 
     def claim(self, owner=None, lease_seconds=120, kind_prefix=None):
         owner = owner or uuid.uuid4().hex
-        current = time.time()
         with self.connection() as con:
             con.execute('BEGIN IMMEDIATE')
+            # Waiting for another SQLite writer must not consume a new lease.
+            current = time.time()
             self._reconcile_jobs(con, current, kind_prefix)
-            row = con.execute("SELECT * FROM jobs WHERE attempts<5 AND due<=? AND (? IS NULL OR kind LIKE ?) AND "
-                              "(status IN ('queued','deferred') OR (status='running' AND COALESCE(lease_until,0)<=?)) "
-                              "ORDER BY due,id LIMIT 1", (current, kind_prefix, (kind_prefix or '') + '%', current)).fetchone()
-            if not row:
-                return None
+            while True:
+                row = con.execute("SELECT * FROM jobs INDEXED BY jobs_claim_pending WHERE attempts<5 "
+                                  "AND status IN ('queued','deferred','running') AND due<=? "
+                                  "AND (? IS NULL OR kind LIKE ? ESCAPE '\\') AND "
+                                  "(status IN ('queued','deferred') OR (status='running' AND COALESCE(lease_until,0)<=?)) "
+                                  "ORDER BY due,id LIMIT 1", (current, kind_prefix, kind_prefix_pattern(kind_prefix), current)).fetchone()
+                if not row:
+                    return None
+                try:
+                    payload = json.loads(row['payload'])
+                except (ValueError, TypeError, RecursionError):
+                    reason = 'invalid_json'
+                else:
+                    reason = None if isinstance(payload, dict) else 'json_object_required'
+                if reason is None:
+                    break
+                # A malformed persisted row must not poison every subsequent
+                # worker claim or leave a 300-second lease with no worker.
+                # Preserve the raw payload for investigation; audit only its
+                # hash, never potentially sensitive embedded values.
+                con.execute("UPDATE jobs SET status='dead',owner=NULL,lease_until=NULL,error=?,updated_at=? WHERE id=?",
+                            ('job_payload_invalid: ' + reason, now(), row['id']))
+                raw = row['payload']
+                raw = raw if isinstance(raw, bytes) else str(raw).encode('utf-8', errors='surrogatepass')
+                self._audit(con, 'job_invalid_payload', {'id': row['id'], 'kind': row['kind'], 'reason': reason,
+                                                       'payload_sha256': hashlib.sha256(raw).hexdigest()})
+            lease_until = time.time() + lease_seconds
             con.execute("UPDATE jobs SET status='running',owner=?,lease_until=?,attempts=attempts+1,updated_at=? WHERE id=?",
-                        (owner, current + lease_seconds, now(), row['id']))
-            return dict(row, payload=json.loads(row['payload']), owner=owner, attempts=row['attempts'] + 1)
+                        (owner, lease_until, now(), row['id']))
+            return dict(row, payload=payload, owner=owner, attempts=row['attempts'] + 1, lease_until=lease_until)
 
     def finish(self, job, status='done', error='', retry_at=None, consume_attempt=True):
         if status not in ('done', 'deferred', 'dead', 'blocked'):
@@ -821,6 +856,7 @@ class Store:
 
     def renew(self, job, lease_seconds=300):
         with self.connection() as con:
+            con.execute('BEGIN IMMEDIATE')
             return bool(con.execute("UPDATE jobs SET lease_until=? WHERE id=? AND owner=? AND status='running'",
                                     (time.time() + lease_seconds, job['id'], job['owner'])).rowcount)
 
@@ -828,7 +864,7 @@ class Store:
         with self.connection() as con:
             row = con.execute("SELECT min(CASE WHEN status='running' THEN max(due,COALESCE(lease_until,0)) ELSE due END) "
                               "FROM jobs WHERE status IN ('queued','deferred','running') AND (attempts<5 OR status='running') "
-                              "AND (? IS NULL OR kind LIKE ?)", (kind_prefix, (kind_prefix or '') + '%')).fetchone()
+                              "AND (? IS NULL OR kind LIKE ? ESCAPE '\\')", (kind_prefix, kind_prefix_pattern(kind_prefix))).fetchone()
             return row[0]
 
     def queue_readiness(self, kind_prefix=None):
@@ -841,16 +877,17 @@ class Store:
                 "COALESCE(sum(status='running' AND lease_until>?),0) AS active_running,"
                 "min(CASE WHEN attempts<5 AND status IN ('queued','deferred') THEN due "
                 "WHEN status='running' THEN max(due,COALESCE(lease_until,0)) END) AS next_due "
-                "FROM jobs WHERE (? IS NULL OR kind LIKE ?)",
-                (current, current, current, kind_prefix, (kind_prefix or '') + '%')).fetchone()
+                "FROM jobs WHERE (? IS NULL OR kind LIKE ? ESCAPE '\\')",
+                (current, current, current, kind_prefix, kind_prefix_pattern(kind_prefix))).fetchone()
         return dict(row)
 
     def retry_failed(self):
         with self.connection() as con:
             con.execute('BEGIN IMMEDIATE')
-            n = con.execute("UPDATE jobs SET status='queued',attempts=0,due=?,error='' WHERE status IN ('dead','blocked')",
-                            (time.time(),)).rowcount
-            self._audit(con, 'jobs_requeued', {'count': n})
+            n = con.execute("UPDATE jobs SET status='queued',attempts=0,due=max(due,?),error='',"
+                            "lease_until=NULL,owner=NULL,updated_at=? WHERE status IN ('dead','blocked')",
+                            (time.time(), now())).rowcount
+            self._audit(con, 'jobs_requeued', {'count': n, 'transport_backoff_preserved': True})
             return n
 
     def retry_news_jobs(self, job_ids):

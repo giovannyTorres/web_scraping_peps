@@ -1,10 +1,12 @@
-# WebScope 2.9.0
+# WebScope 2.9.1
 
 Banco local de noticias y documentos públicos sobre personas, empresas y organizaciones mexicanas. Separa la adquisición de fuentes autorizadas de la atribución local de identidad, conserva procedencia y versiones, y ordena la revisión documental con una puntuación explicable.
 
 **WebScope** es el nuevo nombre de la herramienta de web scraping y análisis documental antes llamada PEPS MX. La interfaz combina azules marino y principal con acentos aqua, Lato para texto y controles y Source Serif 4 para títulos. Las fuentes se distribuyen con sus licencias y se cargan desde el propio paquete, sin servicios de tipografía externos. Tras instalar el wheel puede usar `webscope` o el comando compatible `peps`; el módulo Python y las rutas de datos existentes se conservan.
 
 La interfaz organiza el trabajo en cinco pasos: **cargar lista → preparar fuentes → descargar noticias → analizar y calcular → revisar resultados**. Puede guardar e iniciar desde la preparación y elegir analizar al terminar. La ejecución muestra actividad, caché, tareas pendientes y estimaciones cuando hay muestras suficientes. Una adquisición incompleta requiere la acción explícita **Analizar lo disponible**, que conserva sus limitaciones y pendientes. El servidor impide calcular mientras siga activa la descarga. Consulte [FLUJO_GUIADO.md](docs/FLUJO_GUIADO.md).
+
+La versión 2.9.1 corrige fallos reproducidos bajo estrés: colas grandes, tareas antiguas corruptas, interrupciones durante la preparación, escrituras concurrentes de métricas y respuestas web malformadas. Conserva las pausas de los proveedores, recupera menciones históricas y evita que una preparación incompleta habilite el scoring. El método, las cargas y los límites están en [VALIDACION_ESTRES_2_9_1.md](docs/VALIDACION_ESTRES_2_9_1.md).
 
 La versión 2.9 añade control de caché (**reutilizar, comprobar cambios o sólo local**), evita reatribuir cuerpos idénticos, conserva paginación al reutilizar respuestas y reduce el trabajo SQLite repetido al rescatar candidatos. Incorpora descubrimiento web sin claves mediante fuentes públicas y enlaces de búsqueda social; las capacidades comprobadas y sus límites están en [DESCUBRIMIENTO_PUBLICO.md](docs/DESCUBRIMIENTO_PUBLICO.md) y [FUENTES_SOCIALES_PUBLICAS.md](docs/FUENTES_SOCIALES_PUBLICAS.md). Los resultados de buscadores y publicaciones sociales sirven para localizar noticias originales y permanecen como metadatos de descubrimiento. La [validación 2.9.0](docs/VALIDACION_2_9_0.md) distingue pruebas reales, reproducción de capturas y rendimiento local masivo.
 

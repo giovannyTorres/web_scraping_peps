@@ -13,12 +13,18 @@ from . import relevance as relevance_model
 from .store import canonical
 
 _READY_KEY = 'news_projection_ready'
+PROJECTION_VERSION = 'all-history-1'
+
+
+class _IndexBuildStopped(Exception):
+    pass
 
 
 def projection_signature(con):
     row = con.execute("SELECT value FROM meta WHERE key='news_identity_revision'").fetchone()
     return {'bank_revision': str(row[0]) if row else '0',
-            'relevance_version': relevance_model.MODEL_VERSION}
+            'relevance_version': relevance_model.MODEL_VERSION,
+            'projection_version': PROJECTION_VERSION}
 
 
 def projection_ready(con):
@@ -117,8 +123,25 @@ def ensure_projection(news, relevance, deadline=None):
             con.rollback()
             return False
         signature = projection_signature(con)
-        current_index = relevance_model.RelevanceIndex([news.store.entity(row)
-                        for row in con.execute('SELECT * FROM entities ORDER BY id')])
+        if (str(getattr(relevance, 'bank_revision', None)) == signature['bank_revision']
+                and getattr(relevance, 'model_version', None) == signature['relevance_version']):
+            current_index = relevance
+        else:
+            def current_entities():
+                for row in con.execute('SELECT * FROM entities ORDER BY id'):
+                    if stopped():
+                        raise _IndexBuildStopped
+                    yield news.store.entity(row)
+            try:
+                current_index = relevance_model.RelevanceIndex(current_entities())
+            except _IndexBuildStopped:
+                con.rollback()
+                return False
+        if stopped():
+            con.rollback()
+            return False
+        from .news import _MetadataRelevanceCache, _MetadataScanStopped
+        current_index = _MetadataRelevanceCache(current_index)
         con.execute('DELETE FROM news_current_candidates')
         previous, articles, pairs = '', 0, 0
         while True:
@@ -130,7 +153,11 @@ def ensure_projection(news, relevance, deadline=None):
                 if stopped():
                     con.rollback()
                     return False
-                candidate = news._stored_candidate(row, current_index, connection=con)
+                try:
+                    candidate = news._stored_candidate(row, current_index, connection=con, should_stop=stopped)
+                except _MetadataScanStopped:
+                    con.rollback()
+                    return False
                 identifiers = sorted({str(value) for value in candidate.get('entity_ids', [])}) if candidate.get('relevant') else []
                 con.executemany('INSERT OR IGNORE INTO news_current_candidates VALUES(?,?,?,?)',
                                 ((row['id'], identifier, signature['bank_revision'], signature['relevance_version'])
@@ -145,5 +172,6 @@ def ensure_projection(news, relevance, deadline=None):
         _touch(con)
         news.store._audit(con, 'news_current_candidates_rebuilt',
                           dict(signature, articles_checked=articles, candidate_pairs=pairs,
+                               relevance_cache=current_index.stats(),
                                identity_verified=False, score_effect='none'))
         return True

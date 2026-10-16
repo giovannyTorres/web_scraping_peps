@@ -9,7 +9,7 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from urllib.parse import urlsplit
 
-from .store import Store, canonical, digest, now
+from .store import Store, canonical, digest, now, kind_prefix_pattern
 
 
 def _emit_progress(callback, phase, completed, total, unit, message, *, event='progress', **details):
@@ -29,12 +29,12 @@ def _job_progress(store, kind_prefix=None, unreported_ids=(), *, readiness=False
              "sum(status='running' AND lease_until>?) AS active_running,"
              "min(CASE WHEN attempts<5 AND status IN ('queued','deferred') THEN due "
              "WHEN status='running' THEN max(due,COALESCE(lease_until,0)) END) AS next_due,") if readiness else ''
-    parameters = ((current, current, current) if readiness else ()) + (kind_prefix, (kind_prefix or '') + '%')
+    parameters = ((current, current, current) if readiness else ()) + (kind_prefix, kind_prefix_pattern(kind_prefix))
     with store.connection() as con:
         con.execute('BEGIN')
         rows = con.execute("SELECT status,count(*) AS n," + extra +
                            "sum(kind IN ('discover','news_feed','news_query')) AS discovery "
-                           'FROM jobs WHERE (? IS NULL OR kind LIKE ?) GROUP BY status',
+                           "FROM jobs WHERE (? IS NULL OR kind LIKE ? ESCAPE '\\') GROUP BY status",
                            parameters).fetchall()
         jobs = {row['status']: row['n'] for row in rows}
         discovery_pending = sum(row['discovery'] for row in rows if row['status'] in ('queued', 'running', 'deferred'))
@@ -461,7 +461,7 @@ class Engine:
         fetcher = SafeFetcher(self.config(), self.data_dir, offline=False)
         self._news_acquirer, self._news_resolver = None, None
         with self.store.connection() as con:
-            has_news = con.execute("SELECT 1 FROM jobs WHERE kind LIKE 'news_%' AND status IN ('queued','deferred','running') LIMIT 1").fetchone()
+            has_news = con.execute("SELECT 1 FROM jobs WHERE kind GLOB 'news_*' AND status IN ('queued','deferred','running') LIMIT 1").fetchone()
         if has_news:
             from .news import NewsAcquirer
             from .identity import IdentityResolver

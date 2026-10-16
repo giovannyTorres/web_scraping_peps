@@ -17,6 +17,7 @@ class AcquisitionSession:
                            metadata_cache_hits=0, bodies_new=0, bodies_reused=0,
                            duplicate_candidates=0, excluded_records=0)
         self.new_bodies, self.reused_bodies, self.saved_at = set(), set(), -float('inf')
+        self._publication_failed = False
         self.save(force=True)
 
     def context(self, *, bank_revision, scope_hash):
@@ -34,7 +35,14 @@ class AcquisitionSession:
 
     def body(self, article_id, *, new=False):
         with self.lock:
-            (self.new_bodies if new else self.reused_bodies).add(article_id)
+            # An article belongs to one category. A real upgrade supersedes
+            # earlier reuse, so only that reclassification can lower reused;
+            # rediscovery after acquisition must not count the same body twice.
+            if new:
+                self.reused_bodies.discard(article_id)
+                self.new_bodies.add(article_id)
+            elif article_id not in self.new_bodies:
+                self.reused_bodies.add(article_id)
 
     def snapshot(self):
         with self.lock:
@@ -47,17 +55,27 @@ class AcquisitionSession:
             return
         try:
             with self.lock:
-                if not force and time.monotonic() - self.saved_at < 1:
+                if not force and not self._publication_failed and time.monotonic() - self.saved_at < 1:
                     return
-                self.saved_at = time.monotonic()
-                if finished:
-                    self.values['finished_at'] = now()
-                snapshot = dict(self.values, bodies_new=len(self.new_bodies), bodies_reused=len(self.reused_bodies))
+                finish = finished and self.values['finished_at'] is None
+                snapshot = dict(self.values, finished_at=now() if finish else self.values['finished_at'],
+                                bodies_new=len(self.new_bodies), bodies_reused=len(self.reused_bodies))
             with self.store.connection() as con:
                 con.execute('BEGIN IMMEDIATE')
                 con.execute("INSERT OR REPLACE INTO meta VALUES('news_last_session',?)", (canonical(snapshot),))
-                if finished:
+                if finish:
                     self.store._audit(con, 'news_acquisition_session_finished', snapshot)
+            # The context manager commits on exit. A failed write or commit
+            # must leave both the finish marker and throttle unconfirmed.
+            with self.lock:
+                self.saved_at = time.monotonic()
+                self._publication_failed = False
+                if finish:
+                    self.values['finished_at'] = snapshot['finished_at']
+        except BaseException:
+            with self.lock:
+                self._publication_failed = True
+            raise
         finally:
             self.save_lock.release()
 

@@ -9,7 +9,7 @@ from peps.acquisition_coverage import acquisition_coverage
 from peps.engine import Engine
 from peps.news import NewsAcquirer
 from peps.news_projection import ensure_projection, projection_ready, update_projection
-from peps.relevance import RelevanceIndex
+from peps.relevance import RelevanceIndex, MODEL_VERSION
 from peps.store import canonical, now
 
 
@@ -67,6 +67,30 @@ class NewsProjectionTests(unittest.TestCase):
         self.assertTrue(self.rebuild())
         self.assertTrue(self.coverage()['current_bank_index_ready'])
         self.assertEqual(self.coverage()['entities_with_candidates'], 0)
+
+    def test_upgrade_rebuilds_29_ready_marker_to_recover_a_lead_buried_under_90_observations(self):
+        article = self.article('Boletín general sin referencias nominales.')
+        self.observe(article, 'Primera Persona Sintética compareció.', update=False)
+        for _ in range(90):
+            self.observe(article, 'Actualización general sin nombres del banco.', update=False)
+        with self.store.connection() as con:
+            revision = con.execute("SELECT value FROM meta WHERE key='news_identity_revision'").fetchone()[0]
+            # 2.9 considered only the latest ten observations and could mark an
+            # empty projection as ready while the older lead remained in raw.
+            legacy = {'bank_revision': str(revision), 'relevance_version': MODEL_VERSION}
+            con.execute("INSERT OR REPLACE INTO meta VALUES('news_projection_ready',?)", (canonical(legacy),))
+            raw = [tuple(row) for row in con.execute('SELECT * FROM news_observations ORDER BY id')]
+            self.assertFalse(projection_ready(con))
+        self.assertFalse(self.coverage()['current_bank_index_ready'])
+        self.assertTrue(self.rebuild())
+        with self.store.connection() as con:
+            self.assertTrue(projection_ready(con))
+            marker = json.loads(con.execute("SELECT value FROM meta WHERE key='news_projection_ready'").fetchone()[0])
+            self.assertEqual(marker['projection_version'], 'all-history-1')
+            self.assertEqual([row[0] for row in con.execute('SELECT entity_id FROM news_current_candidates')], ['one'])
+            self.assertEqual([tuple(row) for row in con.execute('SELECT * FROM news_observations ORDER BY id')], raw)
+        self.assertEqual(self.coverage()['entities_with_candidates'], 1)
+        self.assertTrue(self.store.verify_audit()['ok'])
 
     def test_same_id_renamed_bank_drops_stale_candidates_and_preserves_raw_history(self):
         article = self.article()
@@ -171,6 +195,68 @@ class NewsProjectionTests(unittest.TestCase):
             self.assertEqual([row[0] for row in con.execute('SELECT entity_id FROM news_current_candidates')], ['two'])
         self.assertTrue(self.store.verify_audit()['ok'])
 
+    def test_rebuild_reuses_signed_index_but_never_an_unknown_model(self):
+        self.article()
+        index = self.index()
+        with self.store.connection() as con:
+            index.bank_revision = con.execute("SELECT value FROM meta WHERE key='news_identity_revision'").fetchone()[0]
+        from peps.relevance import MODEL_VERSION
+        index.model_version = MODEL_VERSION
+        with patch('peps.relevance.RelevanceIndex', side_effect=AssertionError('Duplicate bank indexing')):
+            self.assertTrue(ensure_projection(self.news, index))
+        self.store.import_entities([{'id': 'one', 'name': 'Persona Completamente Distinta'}])
+        with self.store.connection() as con:
+            index.bank_revision = con.execute("SELECT value FROM meta WHERE key='news_identity_revision'").fetchone()[0]
+        index.model_version = 'outdated-model'
+        with patch('peps.relevance.RelevanceIndex', wraps=RelevanceIndex) as rebuilt:
+            self.assertTrue(ensure_projection(self.news, index))
+            self.assertEqual(rebuilt.call_count, 1)
+        self.assertEqual(self.coverage()['entities_with_candidates'], 0)
+
+    def test_rebuild_memo_does_not_leak_observation_ids_between_identical_cards(self):
+        article = self.article('Información general', 'Resumen neutral repetido.')
+        self.observe(article, 'Primera Persona Sintética compareció.', update=False)
+        for _ in range(30):
+            self.article('Información general', 'Resumen neutral repetido.')
+        self.assertTrue(self.rebuild())
+        self.assertEqual(self.coverage()['relevant_articles'], 1)
+        with self.store.connection() as con:
+            payload = json.loads(con.execute("SELECT payload FROM audit WHERE action='news_current_candidates_rebuilt' "
+                                             'ORDER BY seq DESC LIMIT 1').fetchone()[0])
+        cache = payload['relevance_cache']
+        self.assertGreaterEqual(cache['hits'], 30)
+        self.assertLessEqual(cache['entries'], cache['maximum_entries'])
+        self.assertLessEqual(cache['accounted_bytes'], cache['maximum_bytes'])
+
+    def test_rebuild_recovers_old_relevant_snippet_after_many_new_unrelated_observations(self):
+        article = self.article('Información general')
+        self.observe(article, 'Primera Persona Sintética compareció.', update=False)
+        for index in range(100):
+            self.observe(article, f'Boletín neutral {index % 3}', update=False)
+        self.assertTrue(self.rebuild())
+        self.assertEqual(self.coverage()['relevant_articles'], 1)
+        self.assertEqual(self.coverage()['entities_with_candidates'], 1)
+
+    def test_cancel_during_one_articles_observation_scan_rolls_back_rebuild(self):
+        article = self.article('Información general')
+        for _ in range(20):
+            self.observe(article, 'Primera Persona Sintética compareció.', update=False)
+        original = self.news._stored_candidate
+        checks = [0]
+        def interrupted_scan(row, index, connection=None, *, should_stop=None):
+            def cancel_after_three():
+                checks[0] += 1
+                return checks[0] >= 3 or should_stop()
+            return original(row, index, connection=connection, should_stop=cancel_after_three)
+        with patch.object(self.news, '_stored_candidate', side_effect=interrupted_scan):
+            self.assertFalse(self.rebuild())
+        self.assertFalse(self.coverage()['current_bank_index_ready'])
+        with self.store.connection() as con:
+            self.assertEqual(con.execute('SELECT count(*) FROM news_current_candidates').fetchone()[0], 0)
+            self.assertEqual(con.execute('SELECT count(*) FROM news_observations').fetchone()[0], 20)
+        self.assertTrue(self.rebuild())
+        self.assertEqual(self.coverage()['relevant_articles'], 1)
+
     def test_rebuild_is_once_per_bank_and_relevance_model_version(self):
         self.article()
         with patch.object(self.news, '_stored_candidate', wraps=self.news._stored_candidate) as ranked:
@@ -214,6 +300,22 @@ class NewsProjectionTests(unittest.TestCase):
         with self.store.connection() as con:
             self.assertFalse(projection_ready(con))
             self.assertEqual(con.execute('SELECT count(*) FROM news_current_candidates').fetchone()[0], 0)
+
+    def test_deadline_interrupts_entity_index_construction_before_scanning_articles(self):
+        self.store.import_entities([{'id': f'bank-{i:04}', 'name': f'Persona Sintética Construcción {i:04}'} for i in range(80)])
+        self.article()
+        original = RelevanceIndex
+        clock = [0.0]
+        def expensive_index(entities):
+            def costly_entities():
+                for entity in entities:
+                    clock[0] += .01
+                    yield entity
+            return original(costly_entities())
+        with patch('peps.news_projection.time.monotonic', side_effect=lambda: clock[0]),              patch('peps.relevance.RelevanceIndex', side_effect=expensive_index),              patch.object(self.news, '_stored_candidate', side_effect=AssertionError('Article scan after deadline')):
+            self.assertFalse(ensure_projection(self.news, None, deadline=.05))
+        self.assertLessEqual(clock[0], .06)
+        self.assertFalse(self.coverage()['current_bank_index_ready'])
 
     def test_sqlite_writer_deadline_is_a_controlled_incomplete_rebuild(self):
         self.article()

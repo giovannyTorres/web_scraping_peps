@@ -129,6 +129,20 @@ class PipelineApiTests(unittest.TestCase):
         self.assertEqual(self.news.config_path.read_bytes(), before)
         self.assertFalse(self.get('/api/workflow')['sources_confirmed'])
 
+    def test_invalid_or_oversized_request_length_cannot_start_an_operation(self):
+        before = self.news.config_path.read_bytes()
+        audit_before = self.engine.store.stats()['audit']
+        with patch('peps.news.NewsAcquirer.acquire') as acquire:
+            for length, expected in (('0', 413), ('-1', 413), ('16000001', 413), ('invalid', 400)):
+                with self.subTest(length=length):
+                    status, _, _ = self.request('/api/workflow-run', 'POST', {},
+                                                headers={'Content-Length': length})
+                    self.assertEqual(status, expected)
+        acquire.assert_not_called()
+        self.assertFalse(self.get('/api/stats')['operation']['busy'])
+        self.assertEqual(self.news.config_path.read_bytes(), before)
+        self.assertEqual(self.engine.store.stats()['audit'], audit_before)
+
     def test_one_action_never_enables_a_source_or_approves_editorial_permissions(self):
         before = self.news.config_path.read_bytes()
         with patch('peps.news.NewsAcquirer.acquire') as acquire:
@@ -264,6 +278,25 @@ class PipelineApiTests(unittest.TestCase):
         self.assertEqual(self.engine.store.stats()['scores'], 1)
         self.assertTrue(self.get('/api/workflow')['analysis_current'])
 
+    def test_incomplete_preparation_pauses_zero_pending_pipeline_before_analysis(self):
+        self.authorize()
+        self.engine.store.add_document({'url': 'https://publisher.invalid/local', 'title': 'Synthetic source',
+                                       'text': 'A synthetic neutral source document.', 'source_kind': 'official'}, [], lambda *_: {})
+        report = {'processed': 0, 'completed': 0, 'pending': 0, 'failed': 0,
+                  'preparation_incomplete': True, 'queue_complete': False, 'status': 'paused'}
+        with patch('peps.news.NewsAcquirer.acquire', return_value=report), \
+             patch('peps.news.NewsAcquirer.attribute') as attribute, patch.object(self.engine, 'rescore') as score:
+            self.post('/api/workflow-run', {'online': True, 'analyze_after_download': True})
+            operation = self.wait_finished('paused')
+        attribute.assert_not_called()
+        score.assert_not_called()
+        workflow = self.get('/api/workflow')
+        self.assertEqual(workflow['coverage']['status'], 'paused')
+        self.assertFalse(workflow['actions']['analyze']['enabled'])
+        self.assertFalse(workflow['analysis_current'])
+        self.assertEqual(operation['result']['pending'], 0)
+        self.assertTrue(operation['result']['preparation_incomplete'])
+
     def test_explicit_analyze_available_archives_partial_consent_without_deleting_queue(self):
         job = self.seed_paused_acquisition()
         with self.engine.store.connection() as con:
@@ -397,6 +430,33 @@ class PipelineApiTests(unittest.TestCase):
         items = self.get('/api/news-tasks')['items']
         self.assertEqual([item['url'] for item in items if item['url']], ['https://publisher.invalid/public'])
         self.assertNotIn('synthetic-secret', json.dumps(items))
+
+    def test_task_pages_only_include_the_literal_news_namespace(self):
+        included = self.engine.store.enqueue('news_query', {'source_id': 'fixture'}, key='literal-news')
+        self.engine.store.enqueue('newsflash', {'source_id': 'fixture'}, key='not-news-namespace')
+        self.engine.store.enqueue('newsXarticle', {'source_id': 'fixture'}, key='not-news-underscore')
+        result = self.get('/api/news-tasks')
+        self.assertEqual(result['total'], 1)
+        self.assertEqual([row['id'] for row in result['items']], [included])
+
+    def test_unreadable_legacy_task_metadata_does_not_break_or_change_a_queue_page(self):
+        invalid = ('[]', 'null', 'true', '42', '"legacy"', '{broken', '{"source_id": []}')
+        with self.engine.store.connection() as con:
+            for index, raw in enumerate(invalid):
+                identifier = digest('legacy-task-' + str(index))
+                con.execute('INSERT INTO jobs(id,kind,payload,status,due,created_at,updated_at) VALUES(?,?,?,?,?,?,?)',
+                            (identifier, 'news_article', raw, 'blocked', time.time(), 'fixture', 'fixture'))
+            before = [tuple(row) for row in con.execute('SELECT * FROM jobs ORDER BY id')]
+        audit_before = self.engine.store.stats()['audit']
+        result = self.get('/api/news-tasks?status=blocked')
+        self.assertEqual(result['total'], len(invalid))
+        self.assertEqual(len(result['items']), len(invalid))
+        self.assertTrue(all(row['url'] == '' and row['source_id'] is None and row['metadata_warning']
+                            for row in result['items']))
+        self.assertEqual(self.get('/api/news-tasks?source_id=fixture')['total'], 0)
+        with self.engine.store.connection() as con:
+            self.assertEqual([tuple(row) for row in con.execute('SELECT * FROM jobs ORDER BY id')], before)
+        self.assertEqual(self.engine.store.stats()['audit'], audit_before)
 
     def test_new_routes_preserve_token_host_and_origin_protections(self):
         routes = (('/api/workflow-run', 'POST', {'online': True}),
