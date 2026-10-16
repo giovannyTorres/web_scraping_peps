@@ -17,6 +17,8 @@ jobs:
       - run: python scripts/test_workflow_ui.py
       - run: python scripts/test_download_recovery_ui.py
       - run: python scripts/test_acquisition_ui.py
+      - run: python scripts/test_shared_acquisition_ui.py
+      - run: python scripts/benchmark_shared_discovery.py --output runtime/shared-discovery-validation/benchmark.json
       - run: python scripts/benchmark_mass_acquisition.py --entities 300 --seconds 120 --output runtime/mass-acquisition-validation/benchmark.json
       - run: python scripts/benchmark_ui_polling.py --tab sources --duration 6 --assert-optimized
       - run: python scripts/test_import_ui.py
@@ -29,6 +31,8 @@ jobs:
             runtime/guided-ui-validation/
             runtime/download-recovery-ui-validation/
             runtime/acquisition-ui-validation/
+            runtime/shared-acquisition-ui-validation/
+            runtime/shared-discovery-validation/
             runtime/mass-acquisition-validation/
             runtime/ui-polling-validation/
             runtime/import-ui-validation/

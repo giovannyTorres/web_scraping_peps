@@ -116,6 +116,20 @@ def validate(executable=None):
             require(all(not item.get("enabled") and not item.get("terms_approved")
                 for item in config["sources"]), "Las fuentes deben iniciar desactivadas.")
 
+        # Plan the new adapter through the installed CLI (also in the frozen
+        # executable). This imports its modules without contacting a publisher.
+        shared_config = cwd / 'shared-news.json'
+        shared_config.write_text(json.dumps({'search': {'strategy': 'shared',
+            'start': '2020-01-01', 'end': '2020-12-31', 'execution_mode': 'quick', 'session_seconds': 120},
+            'sources': [{'id': 'installed-index', 'kind': 'wordpress_api',
+                'url': 'https://fixture.invalid/wp-json/wp/v2/posts', 'allowed_hosts': ['fixture.invalid'],
+                'enabled': True, 'terms_approved': True}]}), encoding='utf-8')
+        queued = command('news-queue', '--news-config', shared_config)
+        require(queued['tasks'] == 1 and queued['batched_queries'] == 0,
+                'El adaptador compartido no pudo planificarse desde el paquete instalado.')
+        require(queued['search_plan']['shared_discovery']['initial_pages'] == 1,
+                'El plan compartido instalado perdió su alcance.')
+
         # A separate installed-package run fails immediately on any DNS lookup
         # or TCP connection; the CLI subprocesses above use closed mode too.
         offline_guard = False

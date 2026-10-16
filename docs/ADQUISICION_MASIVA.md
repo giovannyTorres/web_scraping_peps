@@ -1,5 +1,12 @@
 # Listas grandes: descargar información pertinente
 
+Desde 2.7, empiece por **Índice compartido (listas grandes)** cuando disponga de
+archivos WordPress o sitemaps autorizados: cada página se coteja con toda la lista,
+sin una consulta de red por persona. La [guía de índices y crawlers](CRAWLERS_Y_DESCUBRIMIENTO.md)
+explica las fuentes gratuitas, el muestreo histórico, la caché y sus límites.
+Las consultas dirigidas descritas abajo siguen disponibles para profundizar en
+los huecos de cobertura.
+
 Para una lista de 300 entidades, el cuello de botella principal es el número de
 consultas y los límites de cada fuente. WebScope 2.6 filtra por menciones de las
 entidades antes de guardar resultados o solicitar cuerpos; las noticias ajenas
