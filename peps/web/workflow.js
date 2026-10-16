@@ -630,7 +630,9 @@ window.pepsWorkflow = (() => {
     }
     if(id&&id!==state.finishedOperation&&!op.busy&&op.status==='completed'&&state.observedOperation===id) {
       state.finishedOperation=id;
-      if(['pipeline','analysis'].includes(op.kind)&&action('view_results').enabled)navigate('bank').catch(error=>state.hooks.message(error.message,true));
+      // A final poll can arrive after the user has already opened Sources or
+      // another step. Advance only while they are following this operation.
+      if(['pipeline','analysis'].includes(op.kind)&&['news','analysis'].includes(state.current)&&action('view_results').enabled)navigate('bank').catch(error=>state.hooks.message(error.message,true));
       else if(state.current==='news'&&canOpenTab('analysis'))navigate('analysis').catch(error=>state.hooks.message(error.message,true));
       else if(state.current==='analysis'&&action('view_results').enabled)navigate('bank').catch(error=>state.hooks.message(error.message,true));
     }
