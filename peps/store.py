@@ -287,11 +287,23 @@ class Store:
                 yield self.entity(row)
             last = rows[-1]['id']
 
+    @staticmethod
+    def _legacy_list_assessment(score, documents, excluded):
+        if score != 0:
+            return None
+        sufficient = isinstance(documents, int) and documents > 0 and isinstance(excluded, int) and excluded < documents
+        return {'state': 'evaluated' if sufficient else 'insufficient_evidence',
+                'label': 'Evaluado: sin señales puntuables' if sufficient else 'Revisa cobertura e identidad',
+                'display_score': 0 if sufficient else None, 'reason_codes': ['legacy_summary'], 'zero_reasons': []}
+
     def list_entities(self, search='', limit=100, offset=0, summary=False):
         with self.connection() as con:
             if summary and self._audit_json:
                 rows = con.execute('SELECT e.id,e.name,e.kind,json_extract(s.result,\'$.score\') AS summary_score,'
                                    'json_extract(s.result,\'$.status\') AS summary_status,'
+                                   "json_extract(s.result,'$.explainability.assessment') AS assessment,"
+                                   "json_extract(s.result,'$.explainability.coverage.documents') AS assessment_documents,"
+                                   "json_extract(s.result,'$.explainability.coverage.excluded_documents') AS assessment_excluded,"
                                    's.result IS NOT NULL AS score_available FROM entities e '
                                    'LEFT JOIN scores s ON s.entity_id=e.id WHERE e.name LIKE ? '
                                    'ORDER BY e.name LIMIT ? OFFSET ?',
@@ -300,6 +312,14 @@ class Store:
                 for row in rows:
                     value = dict(row)
                     score, status = value.pop('summary_score'), value.pop('summary_status')
+                    documents, excluded = value.pop('assessment_documents'), value.pop('assessment_excluded')
+                    if value.get('assessment') is None:
+                        value.pop('assessment', None)
+                        assessment = self._legacy_list_assessment(score, documents, excluded)
+                        if assessment is not None:
+                            value['assessment'] = assessment
+                    else:
+                        value['assessment'] = json.loads(value['assessment'])
                     value['score_available'] = bool(value['score_available'])
                     value['score'] = {'score': score, 'status': status} if value['score_available'] else None
                     result.append(value)
@@ -314,6 +334,12 @@ class Store:
                     value.pop('result', None)
                     value['score_available'] = value['score'] is not None
                     if value['score_available']:
+                        explanation = value['score'].get('explainability', {})
+                        coverage = explanation.get('coverage', {})
+                        assessment = explanation.get('assessment') or self._legacy_list_assessment(
+                            value['score'].get('score'), coverage.get('documents'), coverage.get('excluded_documents'))
+                        if assessment is not None:
+                            value['assessment'] = assessment
                         value['score'] = {key: value['score'].get(key) for key in ('score', 'status')}
             return result
 

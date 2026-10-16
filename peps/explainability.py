@@ -117,7 +117,8 @@ def explain_score(result):
             warnings.append(f"{item['evidence_id']}: el scorer detectó una señal puntuable y el clasificador auxiliar sugiere otro papel contextual ({role}). Posible falso positivo: requiere revisión; el score no se modificó.")
     if 'accused' in roles and ('resolved' in roles or 'negated' in roles):
         warnings.append('Los análisis auxiliares muestran acusaciones y resoluciones o negativas en notas distintas. No se ha establecido que correspondan al mismo evento ni su cronología.')
-    return {'version': VERSION, 'interpretation': {
+    from .relevance import assessment_summary
+    return {'version': VERSION, 'assessment': assessment_summary(result), 'interpretation': {
         'title': f"Prioridad documental {result['label']}", 'score': result['score'],
         'meaning': 'Prioridad heurística de revisión documental; no es probabilidad ni culpabilidad.',
         'scale': {'minimum': 0, 'maximum': 95, 'display_denominator': 100},

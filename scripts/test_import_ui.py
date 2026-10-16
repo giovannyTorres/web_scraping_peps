@@ -102,7 +102,9 @@ def main():
                 page.get_by_role('row', name='Consultar Persona Sintética Estrella', exact=True).click()
                 page.get_by_role('heading', name='¿Por qué obtuvo este score?').wait_for()
                 checked('explicit_analysis_opens_real_auditable_explanation',
-                        page.locator('.score-number strong').inner_text() == '0' and
+                        page.locator('.score-number strong').inner_text() == '—' and
+                        engine.store.get_score(entity['id'])['score'] == 0 and
+                        'No hay evidencia atribuida' in page.locator('#detail').inner_text() and
                         'esto no acredita ausencia de riesgo' in page.locator('#detail').inner_text())
 
                 page.locator('.toolbar [data-import-open="csv"]').click()
@@ -222,8 +224,11 @@ def main():
                         page.locator('#search').input_value() == '')
                 page.get_by_role('row', name='Consultar Empresa Sintética Brisa', exact=True).click()
                 page.get_by_role('heading', name='¿Por qué obtuvo este score?').wait_for()
+                saved = engine.store.latest_score_run('csv-brisa')
+                shown = saved['result']['explainability']['assessment']['display_score']
                 checked('analyzed_imported_list_links_to_existing_score_audit',
-                        page.locator('.score-number strong').inner_text() == str(engine.explanation('csv-brisa')['result']['score']))
+                        page.locator('.score-number strong').inner_text() == ('—' if shown is None else str(shown)) and
+                        saved['entity_snapshot']['name'] in page.locator('#detail').inner_text())
                 checked('double_confirmation_click_submits_one_operation',
                         len([url for url in network if url.endswith('/api/import-confirm')]) == confirmations_before + 1)
 

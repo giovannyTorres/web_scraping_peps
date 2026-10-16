@@ -164,7 +164,8 @@ with tempfile.TemporaryDirectory() as tmp:
         restored_checkbox.wait_for()
         assert not restored_checkbox.is_checked()
         assert engine.store.evidence('identity')[0]['review']['identity_spans']==[]
-        assert page.locator('.score-number strong').inner_text()=='0'
+        assert page.locator('.score-number strong').inner_text()=='—'
+        assert 'Identidad pendiente' in page.locator('.score-summary').inner_text()
         results['checks']['explicit_empty_identity_selection_stays_unchecked_after_save']=True
         original_latest_score_run=engine.store.latest_score_run
         def delayed_latest_score_run(entity_id):

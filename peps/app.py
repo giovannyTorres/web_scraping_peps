@@ -9,6 +9,8 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
 
+from .acquisition_coverage import acquisition_coverage
+from .relevance import assessment_summary
 from .engine import capacity
 from .store import read_entities, now, canonical, digest
 from .workflow import GuidedWorkflow, OperationTracker, WorkflowError
@@ -74,8 +76,13 @@ def create_server(engine, port=0):
     def acquire_news(resume=False):
         workflow.mark_download(status='running', resume=resume,
                                details=None if resume else {'acquisition_context': {'search': news.search_config()}})
-        result = news.acquire(workers=4, seconds=900, max_articles=10000, queue=not resume,
-                              progress=tracker.update, reset_stop=False)
+        settings = news.search_config()
+        per_entity = 3 if settings['execution_mode'] == 'quick' else 10
+        with engine.store.connection() as con:
+            entities = con.execute('SELECT count(*) FROM entities').fetchone()[0]
+        result = news.acquire(workers=8, seconds=settings['session_seconds'], max_articles=10000, queue=not resume,
+                              progress=tracker.update, reset_stop=False, relevant_only=True,
+                              per_entity_body_limit=per_entity, body_budget=min(10000, per_entity * entities))
         incomplete = result.get('cancelled') or result.get('pending', 0) or result.get('failed', 0)
         workflow.mark_download(status='paused' if incomplete else 'completed', details=result)
         return dict(result, status='paused' if incomplete else result.get('status', 'ok'))
@@ -93,7 +100,9 @@ def create_server(engine, port=0):
                 'search': copy.deepcopy(archived.get('search')), 'search_plan': copy.deepcopy(coverage.get('search_plan')),
                 'planning_warnings': copy.deepcopy(coverage.get('plan_warnings', [])),
                 'planning_truncated': bool(coverage.get('plan_truncated')),
-                'limitations': copy.deepcopy(coverage.get('limitations', []))}
+                'limitations': copy.deepcopy(coverage.get('limitations', [])),
+                'observed': acquisition_coverage(engine.store, news.sources()),
+                'last_session_limits': copy.deepcopy(coverage.get('session_limits', {}))}
 
     def analyze_bank():
         workflow.mark_analysis(status='running')
@@ -119,7 +128,8 @@ def create_server(engine, port=0):
         return {'entity': run['entity_snapshot'], 'result': run['result'],
                 'explanation': run['result'].get('explainability', {}),
                 'run': {'id': run['id'], 'created_at': run['created_at'], 'historical': bool(run_id)},
-                'history': bundle['history'], 'evidence_count': len(run['evidence_manifest'])}
+                'history': bundle['history'], 'evidence_count': len(run['evidence_manifest']),
+                'assessment': run['result'].get('explainability', {}).get('assessment') or assessment_summary(run['result'])}
 
     def prune_imports(reserve_slot=False):
         cutoff = time.monotonic() - import_ttl
@@ -253,7 +263,7 @@ def create_server(engine, port=0):
                         'attribution': counts['articles'], 'scoring': counts['entities']
                     }) + tracker.estimate_phases('download', {'download': None})
                     self.reply(dict(engine.store.stats(), online=engine.online, operation=operation,
-                                    workflow=current_workflow, capacity=capacity()))
+                                    workflow=current_workflow, acquisition=acquisition_coverage(engine.store, news.sources()), capacity=capacity()))
                 elif path == '/api/workflow':
                     self.reply(workflow.snapshot(tracker.snapshot()))
                 elif path == '/api/import-status':
@@ -277,6 +287,7 @@ def create_server(engine, port=0):
                         row['score_current'] = current and row['score_available']
                         if not current:
                             row['score'] = None
+                            row.pop('assessment', None)
                     self.reply(rows)
                 elif path == '/api/entity':
                     entity_id = query.get('id', [''])[0]
@@ -299,7 +310,8 @@ def create_server(engine, port=0):
                 elif path == '/api/audit':
                     self.reply(engine.store.verify_audit())
                 elif path == '/api/news':
-                    value = {'stats': news.stats(), 'articles': news.articles()}
+                    value = {'stats': news.stats(), 'articles': news.articles(relevant_only=query.get('relevant', ['0'])[0] == '1'),
+                             'acquisition': acquisition_coverage(engine.store, news.sources())}
                     if query.get('summary', ['0'])[0] != '1':
                         value.update(sources=news.sources(), plan=news.plan())
                     self.reply(value)

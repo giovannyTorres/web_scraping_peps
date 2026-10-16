@@ -502,10 +502,18 @@ class SafeFetcher:
         current, seen = url, set()
         max_bytes = max(1, min(int(source.get("max_bytes", 2_000_000)), 20_000_000))
         timeout = max(1.0, min(float(source.get("timeout_seconds", 20)), 120.0))
+        session_deadline = source.get('_deadline_monotonic')
+
+        def exhausted():
+            return (self._result(url, 'deferred', error='Session budget expired before the next request',
+                                 retry_at=_iso(self._clock()), error_code='session_limit', request_attempted=False),
+                    current, None, {}, b'')
         request_headers = {"User-Agent": self.user_agent, "Accept": "text/html,application/json,application/rss+xml,application/xml,text/plain;q=0.8", "Accept-Encoding": "gzip, deflate"}
         request_headers.update(headers or {})
         try:
             for _ in range(max(0, min(int(self.config.get("max_redirects", 4)), 8)) + 1):
+                if session_deadline is not None and time.monotonic() >= session_deadline:
+                    return exhausted()
                 normalized, host, addresses = self._validate_url(current, source)
                 if normalized in seen:
                     raise CollectionError("Redirect loop")
@@ -529,7 +537,13 @@ class SafeFetcher:
                                         error_code="host_interval" if denied == "deferred" else "host_circuit",
                                         request_attempted=False), normalized, None, {}, b""
                 self._local.max_wire_bytes = max(1, min(int(source.get("max_wire_bytes", max_bytes)), max_bytes))
-                status, response_headers, data = self._network_request(normalized, request_headers, timeout, max_bytes, addresses, request_kind)
+                request_timeout = timeout
+                if session_deadline is not None:
+                    remaining = session_deadline - time.monotonic()
+                    if remaining <= 0:
+                        return exhausted()
+                    request_timeout = min(timeout, remaining)
+                status, response_headers, data = self._network_request(normalized, request_headers, request_timeout, max_bytes, addresses, request_kind)
                 response_headers = {str(key).lower(): str(value) for key, value in response_headers.items()}
                 if len(data) > max_bytes:
                     raise CollectionError("Response exceeds max_bytes")
@@ -564,6 +578,10 @@ class SafeFetcher:
                 return None, normalized, status, response_headers, data
             raise CollectionError("Redirect limit exceeded")
         except (OSError, http.client.HTTPException) as exc:
+            if session_deadline is not None and time.monotonic() >= session_deadline:
+                # Exhausting the operator's session allowance is not a server
+                # failure and must not create a new host penalty/backoff.
+                return exhausted()
             if "host" in locals():
                 retry = self._backoff(host, reason="Transient network failure")
                 return self._result(url, "deferred", error="Transient network failure: " + type(exc).__name__, retry_at=_iso(retry), error_code="network_failure", request_attempted=True), current, None, {}, b""

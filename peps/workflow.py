@@ -558,7 +558,8 @@ class GuidedWorkflow:
             return None
         fields = ('config', 'sources', 'warnings', 'truncated', 'queries_required', 'query_count',
                   'entities_planned', 'entities_covered', 'entities_total', 'coverage',
-                  'requested_start', 'requested_end_exclusive')
+                  'requested_start', 'requested_end_exclusive', 'execution',
+                  'estimated_entities_first_session', 'estimated_schedule_seconds')
         return {key: deepcopy(plan[key]) for key in fields if key in plan}
 
     def snapshot(self, operation=None):
@@ -585,6 +586,9 @@ class GuidedWorkflow:
         coverage['acquisition_context'] = deepcopy(download_details.get('acquisition_context')) if isinstance(download_details, dict) else None
         coverage['plan_truncated'] = bool(plan and plan.get('truncated'))
         coverage['plan_warnings'] = deepcopy(plan.get('warnings', [])) if plan else []
+        coverage['session_limits'] = {key: deepcopy(download_details[key]) for key in
+            ('session_seconds', 'body_budget', 'per_entity_body_limit', 'body_skipped_budget', 'body_skipped_irrelevant')
+            if key in download_details}
         limited_plan = bool(plan and (plan.get('coverage') == 'best_effort_not_exhaustive' or
                             any(source.get('complete_archive') is False for source in plan.get('sources', []) if isinstance(source, dict))))
         coverage['partial'] = bool(pending or coverage['failed'] or coverage['unfetched_articles'] or coverage['saturated_windows'] or coverage['insufficient_documents'] or coverage['plan_truncated'] or limited_plan)
