@@ -2,8 +2,9 @@
 
 Exercises the real SafeFetcher caps, compression, caching and HTTP parser, plus
 NewsAcquirer, SQLite jobs, provenance, deduplication and raw snapshots. DNS and
-TLS sockets are fixtures: no network call is possible. A virtual clock advances
-0.2 seconds per HTTP fetch, respecting a configured five requests/second/host.
+TLS sockets are fixtures: no network call is possible. A synthetic clock adds
+0.2 seconds per fetch to elapsed monotonic time, respecting five requests/second
+per host while allowing queued future jobs to become due even on cache hits.
 Wall times measure local ingestion only and must never be projected to web speed.
 """
 from __future__ import annotations
@@ -41,11 +42,12 @@ class VirtualClock:
     def __init__(self):
         self.value = REAL_TIME()
         self.start = self.value
+        self.real_started = time.monotonic()
         self.lock = threading.RLock()
 
     def now(self):
         with self.lock:
-            return self.value
+            return self.value + time.monotonic() - self.real_started
 
     def advance(self):
         with self.lock:
@@ -99,7 +101,9 @@ class FixtureConnection(http.client.HTTPSConnection):
 
 class FixtureFetcher(SafeFetcher):
     def __init__(self, config, state_dir, clock, offline=False):
-        super().__init__(config, state_dir, offline=offline)
+        # Synthetic sockets below replace the direct TLS connection only.
+        # Inherited runner proxies must never escape this no-network fixture.
+        super().__init__(dict(config, trust_env_proxy=False), state_dir, offline=offline)
         self.clock = clock
         self._clock = clock.now
         self._dns = lambda *args, **kwargs: PUBLIC_DNS
@@ -197,12 +201,14 @@ def run_case(size, workers, bank_size=40000, feed_size=400, seconds=1800):
                                 download_all=True, window='fixture-cold')
             cold_wall = time.perf_counter() - started
             cold_events = list(events[before_events:])
+            cold_jobs = dict(engine.store.stats()['jobs'])
             before_events = len(events)
             started = time.perf_counter()
             warm = news.acquire(workers=workers, seconds=seconds, max_articles=60000,
                                 download_all=True, window='fixture-warm')
             warm_wall = time.perf_counter() - started
             warm_events = list(events[before_events:])
+            warm_jobs = dict(engine.store.stats()['jobs'])
         stats = news.stats()
         durable = engine.store.stats()
         expected_clusters = (size + 9) // 10
@@ -214,28 +220,43 @@ def run_case(size, workers, bank_size=40000, feed_size=400, seconds=1800):
             request_by_host.setdefault(event['host'], []).append(event['virtual_at'])
         minimum_spacing = min((b - a for values in request_by_host.values()
                                for a, b in zip(values, values[1:])), default=None)
+        def phase_completed(result, jobs):
+            pending = sum(jobs.get(state, 0) for state in ('queued', 'running', 'deferred'))
+            return (result.get('stop_reason') == 'completed' and result.get('pending') == 0
+                    and not pending and not result.get('failed') and not result.get('cancelled'))
+        cold_complete = phase_completed(cold, cold_jobs)
+        warm_complete = phase_completed(warm, warm_jobs)
         checks = {'all_distinct_urls_retained': stats['articles'] == size,
                   'all_full_articles_fetched': stats['status'] == {'fetched': size},
                   'same_publisher_content_deduplicated': durable['documents'] == expected_documents,
                   'cross_publisher_documents_preserved': durable['documents'] == expected_documents,
                   'shared_content_clusters': stats['content_clusters'] == expected_clusters,
                   'warm_downloads_zero': len(warm_events) == 0,
+                  'cold_phase_completed': cold_complete,
+                  'warm_phase_completed': warm_complete,
+                  'no_pending_jobs': sum(durable['jobs'].get(state, 0)
+                                         for state in ('queued', 'running', 'deferred')) == 0,
                   'no_failed_jobs': durable['jobs'].get('dead', 0) + durable['jobs'].get('blocked', 0) + durable['jobs'].get('deferred', 0) == 0,
                   'virtual_host_rate_respected': minimum_spacing is not None and minimum_spacing >= .19999,
                   'request_metrics_match_fixture': all_metrics['network_requests'] == len(events),
                   'wire_metrics_match_fixture': all_metrics['wire_bytes'] == sum(e['wire_bytes'] for e in events),
                   'decoded_metrics_match_fixture': all_metrics['decoded_bytes'] == sum(e['decoded_bytes'] for e in events),
                   'audit_chain_valid': engine.store.verify_audit()['ok']}
-        phase = lambda result, wall, phase_events: {
+        phase = lambda result, wall, phase_events, jobs, complete: {
             'wall_seconds': round(wall, 6), 'processed_jobs': result['processed'],
-            'unique_articles_per_local_second': round(size / wall, 3),
+            'completed': complete, 'stop_reason': result.get('stop_reason'),
+            'pending_jobs': sum(jobs.get(state, 0) for state in ('queued', 'running', 'deferred')),
+            'job_status_counts': jobs,
+            'unique_articles_per_local_second': round(size / wall, 3) if complete else None,
+            'throughput_basis': 'retained articles per local phase second, only when every phase job completed; warm uses cached metadata, not body downloads',
             'simulated_http_requests': len(phase_events),
             'article_requests': sum('/article/' in e['url'] for e in phase_events),
             'wire_bytes': sum(e['wire_bytes'] for e in phase_events),
             'decoded_bytes': sum(e['decoded_bytes'] for e in phase_events)}
         return {'urls': size, 'entity_bank': bank_size, 'workers': workers,
-                'bank_import_seconds': round(bank_seconds, 6), 'cold': phase(cold, cold_wall, cold_events),
-                'warm': phase(warm, warm_wall, warm_events), 'bank': stats,
+                'bank_import_seconds': round(bank_seconds, 6),
+                'cold': phase(cold, cold_wall, cold_events, cold_jobs, cold_complete),
+                'warm': phase(warm, warm_wall, warm_events, warm_jobs, warm_complete), 'bank': stats,
                 'documents': durable['documents'], 'expected_documents': expected_documents,
                 'expected_content_clusters': expected_clusters,
                 'virtual_clock_elapsed_seconds': round(clock.now() - clock.start, 4),
@@ -267,8 +288,9 @@ def main():
                   'network_access': False, 'configured_requests_per_second_per_host': 5,
                   'max_job_budget': 60000, 'all_passed': all(c['passed'] for c in cases), 'cases': cases,
                   'seconds_per_phase_budget': args.seconds_per_phase,
+                  'clock_model': 'real monotonic elapsed seconds plus 0.200001 synthetic seconds per fetch; no real HTTP',
                   'source_sha256_at_process_start': SOURCE_HASHES, 'script_sha256': SCRIPT_HASH,
-                  'limitations': ['Virtual time removes network and courtesy waiting; measured seconds only describe local ingestion.',
+                  'limitations': ['Synthetic fetch time removes network waiting; monotonic time still advances queued courtesy deadlines. Measured seconds only describe local ingestion.',
                                   'DNS/TLS endpoints and HTTP payloads are synthetic fixtures, not evidence of web throughput or coverage.',
                                   'Distinct publisher copies survive; repeated normalized content within a publisher shares one document.',
                                   'This run exercises acquisition only; identity attribution and reputational scoring are separate.']}

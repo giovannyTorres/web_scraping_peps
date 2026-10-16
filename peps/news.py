@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import gzip
 import hashlib
+import heapq
 import json
 import math
 import re
@@ -31,6 +32,49 @@ from .store import canonical, digest, now
 TRACKING = {'fbclid', 'gclid', 'dclid', 'msclkid', 'mc_cid', 'mc_eid', '_ga', 'igshid'}
 UNRESERVED = frozenset('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~')
 SUPERSEDED_PLAN = 'Plan sustituido (superseded_news_plan): '
+ARTICLE_EXTRACTION_VERSION = 'article-main-4'
+
+
+class _InsufficientArticleText(ValueError):
+    pass
+REPLACED_BODY = 'Candidato sustituido antes de solicitar su cuerpo: mayor prioridad de lectura.'
+
+
+def _body_selection(title, summary, candidate, url=''):
+    """Prioritize useful source reading, never decide whether a claim is true.
+
+    Explicit procedural/incident metadata is more useful to review than an
+    incidental name in a video or newspaper roundup. Negations, victims and
+    exculpatory outcomes receive the same procedural priority: polarity belongs
+    to subsequent analysis, and every relevant metadata record is retained.
+    """
+    from .identity import _fold
+    process = re.compile(r'\b(?:investig\w*|denunci\w*|sancion\w*|acus\w*|soborn\w*|'
+                         r'fraude\w*|corrup\w*|lavado de dinero|desvi\w*|sentenci\w*|'
+                         r'conden\w*|deten\w*|absuelt\w*|exoner\w*|viol\w* derechos|'
+                         r'derechos humanos|procesos? penales?|reparacion del da[nñ]o)\b')
+    title, summary = str(title or ''), str(summary or '')
+    matches = (candidate or {}).get('matches') or []
+    title_matches = [match for match in matches if match['part'] == 'title']
+    summary_matches = [match for match in matches if match['part'] == 'summary']
+    nearby_title = any(process.search(_fold(title[max(0, match['start'] - 180):match['end'] + 180]))
+                       for match in title_matches)
+    nearby_summary = any(process.search(_fold(summary[max(0, match['start'] - 180):match['end'] + 180]))
+                         for match in summary_matches)
+    if title_matches and not nearby_summary:
+        nearby_summary = bool(process.search(_fold(summary[:500])))
+    signal = 3 if nearby_title else 2 if nearby_summary else 0
+    folded_title = _fold(title)
+    roundup = bool(re.search(r'\b(?:primeras planas|portadas|titulares|resumen de noticias|'
+                             r'lo mas (?:leido|destacado)|noticias del dia)\b', folded_title))
+    video = bool(re.search(r'\b(?:video|enterate|en vivo|podcast)\b', folded_title)
+                 or '/multimedia/' in str(url))
+    rank = int((candidate or {}).get('rank') or 0)
+    priority = signal * 1000 + rank * 2 + min(20, len(summary) // 30)
+    priority -= 1200 if roundup else 0
+    priority -= 500 if video else 0
+    return {'priority': priority, 'procedural_metadata': bool(signal), 'roundup': roundup, 'multimedia': video,
+            'policy': 'reading-priority-1', 'identity_verified': False, 'score_effect': 'none'}
 
 
 def source_policy(source):
@@ -69,7 +113,7 @@ def canonical_url(url):
 class _ArticleText(HTMLParser):
     def __init__(self):
         super().__init__(convert_charrefs=True)
-        self.stack, self.all, self.main, self.article = [], [], [], []
+        self.stack, self.all, self.main, self.article, self.editorial = [], [], [], [], []
 
     def handle_starttag(self, tag, attrs):
         attrs = dict(attrs)
@@ -81,38 +125,102 @@ class _ArticleText(HTMLParser):
                          'aside', 'footer', 'header', 'form', 'noscript', 'svg')
         hidden = hidden or attrs.get('aria-hidden') == 'true' or 'hidden' in attrs
         hidden = hidden or bool(re.search(r'\b(?:advert|related|social-share|cookie|menu|sidebar)\b', attrs.get('class', ''), re.I))
-        parent = self.stack[-1][1] if self.stack else (False, False, None)
+        classes = set(attrs.get('class', '').lower().split())
+        # Elementor and other WordPress themes render the real story in a div,
+        # while using <article> for sidebar cards. Those cards must not replace
+        # the story just because their semantic tag looks more promising.
+        card = bool(classes & {'elementor-post__card', 'elementor-portfolio-item',
+                               'post-card', 'article-card', 'news-card'})
+        card = card or (tag == 'article' and 'elementor-grid-item' in classes)
+        explicit = ('articleBody' in attrs.get('itemprop', '').split()
+                    or bool(classes & {'entry-content', 'post-content', 'article-content',
+                                       'article-body', 'story-body', 'td-post-content',
+                                       'elementor-widget-theme-post-content'})
+                    or attrs.get('data-widget_type', '').split('.', 1)[0] == 'theme-post-content')
+        hidden = hidden or (card and not explicit)
+        parent = self.stack[-1][1] if self.stack else (False, False, None, None)
         article = parent[2]
         if tag == 'article' or attrs.get('itemprop') == 'articleBody':
             article = len(self.article)
             self.article.append([])
-        state = (hidden or parent[0], parent[1] or tag == 'main', article)
+        editorial = parent[3]
+        if explicit and editorial is None and not (hidden or parent[0]):
+            editorial = len(self.editorial)
+            self.editorial.append([])
+        state = (hidden or parent[0], parent[1] or tag == 'main' or attrs.get('role') == 'main',
+                 article, editorial)
+        if tag in ('p', 'div', 'section', 'article', 'main', 'blockquote', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'hr'):
+            self._boundary(state, '\n\n')
+        elif tag == 'br':
+            self._boundary(state, '\n')
+        if tag == 'a' and 'tag' in attrs.get('rel', '').lower().split():
+            self._boundary(state, '\ufff0tag-link\ufff1')
         if tag not in ('meta', 'link', 'img', 'br', 'hr', 'input', 'source', 'wbr', 'area', 'base', 'embed', 'param', 'track'):
             self.stack.append((tag, state))
 
     def handle_endtag(self, tag):
         for index in range(len(self.stack) - 1, -1, -1):
             if self.stack[index][0] == tag:
+                if tag in ('p', 'div', 'section', 'article', 'main', 'blockquote', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'):
+                    self._boundary(self.stack[index][1], '\n\n')
                 del self.stack[index:]
                 return
 
+    def _boundary(self, state, separator):
+        if state[0]:
+            return
+        self.all.append(separator)
+        if state[1]:
+            self.main.append(separator)
+        if state[2] is not None:
+            self.article[state[2]].append(separator)
+        if state[3] is not None:
+            self.editorial[state[3]].append(separator)
+
     def handle_data(self, value):
-        state = self.stack[-1][1] if self.stack else (False, False, None)
+        state = self.stack[-1][1] if self.stack else (False, False, None, None)
         if not state[0] and value.strip():
-            self.all.append(value.strip())
+            value = re.sub(r'\s+', ' ', value).strip()
+            self.all.append(value)
             if state[1]:
-                self.main.append(value.strip())
+                self.main.append(value)
             if state[2] is not None:
-                self.article[state[2]].append(value.strip())
+                self.article[state[2]].append(value)
+            if state[3] is not None:
+                self.editorial[state[3]].append(value)
+
+
+def _editorial_text(parts):
+    text = re.sub(r'[^\S\n]+', ' ', ' '.join(parts))
+    text = re.sub(r' *\n *', '\n', text)
+    text = re.sub(r'\n{3,}', '\n\n', text).strip()
+    kept = []
+    for paragraph in text.split('\n\n'):
+        # Some publishers place these links inside the editorial container,
+        # without a related-content class. The lead-in and its linked headline
+        # form navigation, not another claim in this article. Preserve ordinary
+        # editorial links and all genuine paragraphs, including denials/victims.
+        if re.match(r'^(?:te puede interesar|lee tambi[eé]n|lea tambi[eé]n|lee m[aá]s|lea m[aá]s|'
+                    r'tambi[eé]n puedes leer|read also|related content)\s*[:»]', paragraph, re.I):
+            continue
+        if re.match(r'^(?:tags|etiquetas)\s*:', paragraph, re.I) and '\ufff0tag-link\ufff1' in paragraph:
+            break
+        kept.append(paragraph.replace('\ufff0tag-link\ufff1', '').strip())
+    return '\n\n'.join(kept).strip()
 
 
 def article_text(html):
     parser = _ArticleText()
     parser.feed(html)
+    # An explicit but empty/paywalled story remains insufficient text. Falling
+    # back to related cards would silently attach another article's body.
+    if parser.editorial:
+        chosen = max(parser.editorial, key=lambda parts: len(' '.join(parts)))
+        return _editorial_text(chosen)
     # A tiny <article> card is not sufficient to discard the actual main text.
     article = max(parser.article, key=lambda parts: len(' '.join(parts)), default=[])
     chosen = article if len(' '.join(article)) >= 100 else parser.main if parser.main else parser.all
-    return re.sub(r'\s+', ' ', ' '.join(chosen)).strip()
+    return _editorial_text(chosen)
 
 
 def news_fingerprint(text):
@@ -176,28 +284,55 @@ class _BodyBudget:
     def __init__(self, maximum=None, per_entity=None):
         self.maximum, self.per_entity = maximum, per_entity
         self.articles, self.by_entity, self.lock = set(), {}, threading.Lock()
+        self.priorities, self.protected = {}, set()
 
-    def reserve(self, article_id, entity_ids, *, existing=False):
+    def reserve(self, article_id, entity_ids, *, existing=False, priority=0, replace=None):
         with self.lock:
             if article_id in self.articles:
+                self.priorities[article_id] = max(priority, self.priorities.get(article_id, priority))
+                if existing:
+                    self.protected.add(article_id)
                 return True
             entity_ids = {str(value) for value in entity_ids}
             if not existing:
-                if self.maximum is not None and len(self.articles) >= self.maximum:
-                    return False
-                if self.per_entity is not None and not any(
-                        len(self.by_entity.get(value, ())) < self.per_entity for value in entity_ids):
-                    return False
+                def room(victim=None):
+                    total = len(self.articles) - int(victim is not None)
+                    return (self.maximum is None or total < self.maximum) and (
+                        self.per_entity is None or any(len(self.by_entity.get(value, ())) - int(
+                            victim in self.by_entity.get(value, ())) < self.per_entity for value in entity_ids))
+                if not room():
+                    if replace is None:
+                        return False
+                    for victim in sorted(self.articles - self.protected,
+                                         key=lambda value: (self.priorities.get(value, 0), value)):
+                        if self.priorities.get(victim, 0) < priority and room(victim):
+                            if replace(victim):
+                                self._release(victim)
+                                break
+                            # A lease, backoff or completed request cannot be
+                            # displaced later in this session either. Avoid a
+                            # repeated database scan for every new candidate.
+                            self.protected.add(victim)
+                    else:
+                        return False
             self.articles.add(article_id)
+            self.priorities[article_id] = priority
+            if existing:
+                self.protected.add(article_id)
             for value in entity_ids:
                 self.by_entity.setdefault(value, set()).add(article_id)
             return True
 
+    def _release(self, article_id):
+        self.articles.discard(article_id)
+        self.priorities.pop(article_id, None)
+        self.protected.discard(article_id)
+        for articles in self.by_entity.values():
+            articles.discard(article_id)
+
     def release(self, article_id):
         with self.lock:
-            self.articles.discard(article_id)
-            for articles in self.by_entity.values():
-                articles.discard(article_id)
+            self._release(article_id)
 
 
 class NewsAcquirer:
@@ -258,6 +393,9 @@ class NewsAcquirer:
               CREATE TABLE IF NOT EXISTS news_shared_queue(
                 scope TEXT NOT NULL,url TEXT NOT NULL,job_id TEXT NOT NULL,
                 PRIMARY KEY(scope,url));
+              CREATE TABLE IF NOT EXISTS news_extraction_receipts(
+                article_id TEXT PRIMARY KEY,document_id TEXT NOT NULL,version TEXT NOT NULL,
+                raw_snapshot_sha256 TEXT NOT NULL,checked_at TEXT NOT NULL);
             ''')
 
     def _migrate_disabled_catalogue(self, previous, current):
@@ -489,6 +627,22 @@ class NewsAcquirer:
                 candidate = alternative
         return candidate
 
+    def _replace_waiting_body(self, con, article_id):
+        jobs = con.execute("SELECT id,status,attempts FROM jobs WHERE kind='news_article' "
+                           "AND json_extract(payload,'$.article_id')=? AND status IN ('queued','running','deferred')",
+                           (article_id,)).fetchall()
+        # A live lease, Retry-After or any prior attempt is a commitment, never
+        # replaced or reset merely because a more interesting headline arrived.
+        if not jobs or any(job['status'] != 'queued' or job['attempts'] for job in jobs):
+            return False
+        for job in jobs:
+            con.execute("UPDATE jobs SET status='cancelled',error=?,updated_at=? WHERE id=? "
+                        "AND status='queued' AND attempts=0", (REPLACED_BODY, now(), job['id']))
+        self.store._audit(con, 'news_body_candidate_replaced', {'article_id': article_id,
+                          'jobs': [job['id'] for job in jobs], 'reason': REPLACED_BODY,
+                          'identity_verified': False, 'score_effect': 'none'})
+        return True
+
     def _observe(self, record, source, discovery_url, result, resolver, download_all=False, connection=None, all_sources=None,
                  candidate=None, body_budget=None):
         try:
@@ -500,10 +654,12 @@ class NewsAcquirer:
         publisher = publisher or (urlsplit(url).hostname or '').lower()
         stamp = result.get('retrieved_at') or now()
         title, summary = str(record.get('title') or ''), str(record.get('text') or '')
+        selection = _body_selection(title, summary, candidate, url)
         details = {'title': title, 'summary': summary, 'published_at': record.get('published_at'),
                    'discovered_at': record.get('discovered_at'), 'source_config_hash': digest(canonical(source)),
                    'terms_url': source.get('terms_url'), 'source_policy': source_policy(source), 'scope': 'discovery_metadata',
                    'raw_url': record['url'], 'cache_validated_at': result.get('validated_at')}
+        details['body_selection'] = selection
         if candidate is not None:
             # Retrieval relevance helps decide which bodies to request. It is
             # deliberately separate from subsequent identity attribution.
@@ -531,16 +687,22 @@ class NewsAcquirer:
         fresh = row['retrieved_at'] and (time.time() - self._epoch(row['retrieved_at'])) < float((body_source or {}).get('refresh_seconds', 86400))
         if eligible and body_source and not fresh:
             candidate_ids = candidate['entity_ids'] if candidate is not None else [r['entity_id'] for r in candidates]
-            if body_budget is not None and not body_budget.reserve(article_id, candidate_ids):
-                return {'status': 'body_budget_limited', 'id': article_id, 'candidates': candidate_count}
             period = int(time.time() // max(60, float(body_source.get('refresh_seconds', 86400))))
-            body_payload = {'article_id': article_id, 'source_id': body_source['id'], 'url': url}
+            body_payload = {'article_id': article_id, 'source_id': body_source['id'], 'url': url,
+                            'reading_priority': selection['priority'], 'body_selection': selection}
             if candidate is not None:
                 body_payload.update(candidate_entity_ids=candidate_ids, relevance_rank=candidate['rank'])
             with (nullcontext(connection) if connection is not None else self.store.connection()) as queue_con:
+                if not queue_con.in_transaction:
+                    queue_con.execute('BEGIN IMMEDIATE')
+                if body_budget is not None and not body_budget.reserve(article_id, candidate_ids,
+                        priority=selection['priority'], replace=lambda victim: self._replace_waiting_body(queue_con, victim)):
+                    return {'status': 'body_budget_limited', 'id': article_id, 'candidates': candidate_count}
                 before = queue_con.total_changes
-                self.store.enqueue('news_article', body_payload,
+                body_id = self.store.enqueue('news_article', body_payload,
                                    key='news_article:' + article_id + ':' + str(period), connection=queue_con)
+                queue_con.execute("UPDATE jobs SET status='queued',error='',updated_at=? WHERE id=? "
+                                  "AND status='cancelled' AND error=? AND attempts=0", (now(), body_id, REPLACED_BODY))
                 inserted = queue_con.total_changes > before
             return {'status': 'article_queued' if inserted else 'article_already_queued',
                     'id': article_id, 'candidates': candidate_count}
@@ -745,11 +907,14 @@ class NewsAcquirer:
                 relevance = RelevanceIndex(self.store.iter_entities())
             candidates = []
             for record in records:
-                if shared:
-                    from .shared_crawl import in_period
-                    if not in_period(record, payload):
+                if shared or job['kind'] == 'news_query':
+                    from .shared_crawl import publication_period_status
+                    period_status = publication_period_status(record, payload)
+                    if period_status == 'outside_period':
                         statuses['excluded_period'] += 1
                         continue
+                    if period_status != 'in_period':
+                        statuses[period_status] += 1
                 ranked = (relevance.rank(record.get('title', ''), record.get('text', ''),
                                          entity_ids=payload.get('entity_ids'), names=payload.get('names'))
                           if filtering else None)
@@ -759,8 +924,16 @@ class NewsAcquirer:
                     candidates.append((record, ranked))
             # Relevant candidates first, without promoting retrieval to an
             # identity match or changing the editorial permissions.
-            candidates.sort(key=lambda item: -(item[1]['rank'] if item[1] is not None else 0))
+            candidates.sort(key=lambda item: -_body_selection(item[0].get('title'), item[0].get('text'),
+                                                             item[1], item[0].get('url'))['priority'])
             parse_info = result.setdefault('parse_metadata', {})
+            if shared or job['kind'] == 'news_query':
+                parse_info['publication_period_filter'] = {
+                    'start': payload.get('start'), 'end_exclusive': payload.get('end'),
+                    'excluded_records': statuses['excluded_period'],
+                    'unknown_date_records': statuses['publication_date_unknown'],
+                    'unknown_bound_records': statuses['period_bounds_unknown'],
+                    'unknown_dates_are_candidates_not_verified_period_coverage': True}
             if shared:
                 from .shared_crawl import next_pages
                 continuation = self._queue_shared_children(job, source, next_pages(source, payload, parsed))
@@ -814,13 +987,21 @@ class NewsAcquirer:
         result = fetcher.fetch(payload['url'], article_source)
         if self._failure(job, result):
             return
+        self._conserve_article(payload, source, result)
+        self.store.finish(job)
+
+    def _conserve_article(self, payload, source, result, *, reextraction=None):
+        from .sources import parse_results
         # Parse metadata as an article, regardless of the source's RSS transport.
         page_source = dict(source, kind=source.get('document_kind', 'news'))
-        pages = parse_results(result, page_source)
-        page = pages[0] if pages else {}
+        if reextraction is None:
+            pages = parse_results(result, page_source)
+            page = pages[0] if pages else {}
+        else:
+            page = {'title': reextraction['title'], 'published_at': reextraction['published_at']}
         body = article_text(result['body'])
         if len(body) < int(source.get('minimum_article_chars', 80)):
-            raise ValueError('Cuerpo insuficiente; no se presenta como artículo leído')
+            raise _InsufficientArticleText('Cuerpo insuficiente; no se presenta como artículo leído')
         url = canonical_url(result.get('final_url') or result.get('url') or payload['url'])
         fingerprint = news_fingerprint(body)
         with self.store.connection() as con:
@@ -846,28 +1027,156 @@ class NewsAcquirer:
                     'content_cluster': fingerprint, 'scope': 'full_article', 'source_config_hash': digest(canonical(source)),
                     'terms_url': source.get('terms_url'), 'source_policy': source_policy(source), 'raw_snapshot_sha256': snapshot_hash,
                     'raw_snapshot_path': str(snapshot.relative_to(self.engine.data_dir)),
-                    'fetch_sha256': result.get('sha256'), 'extraction_version': 'article-main-2',
+                    'fetch_sha256': result.get('sha256'), 'extraction_version': ARTICLE_EXTRACTION_VERSION,
                     'etag': result.get('etag'), 'last_modified': result.get('last_modified')}
+        if reextraction is not None:
+            metadata = dict(reextraction['metadata'], extraction_version=ARTICLE_EXTRACTION_VERSION,
+                content_cluster=fingerprint, reextracted_at=now(),
+                reextracted_from_document_id=reextraction['id'], extraction_source='local_immutable_snapshot')
         with self.store.connection() as con:
             con.execute('BEGIN IMMEDIATE')
-            existing = con.execute('SELECT document_id FROM news_publisher_content WHERE publisher_id=? AND fingerprint=?',
+            previous_document = con.execute('SELECT document_id FROM news_articles WHERE id=?',
+                                            (row['id'],)).fetchone()[0]
+            if reextraction is not None and previous_document != reextraction['id']:
+                return {'status': 'concurrent_skip'}
+            existing = con.execute('SELECT p.document_id,d.content_hash FROM news_publisher_content p '
+                                   'JOIN documents d ON d.id=p.document_id WHERE p.publisher_id=? AND p.fingerprint=?',
                                    (row['publisher_id'], fingerprint)).fetchone()
+            # Paragraph boundaries matter to attribution even when normalized
+            # words (and therefore the syndication fingerprint) are identical.
+            if existing is not None and existing['content_hash'] != digest(body):
+                existing = None
             doc_id = existing[0] if existing else self.store.add_document({
                 'url': url, 'title': page.get('title') or row['title'], 'text': body,
                 'source_kind': source.get('document_kind', 'news'), 'source_id': source['id'],
                 'published_at': page.get('published_at') or row['published_at'],
                 'retrieved_at': result.get('retrieved_at') or now(), 'metadata': metadata}, [], lambda *_: {}, connection=con)
-            con.execute('INSERT OR IGNORE INTO news_publisher_content VALUES(?,?,?)', (row['publisher_id'], fingerprint, doc_id))
+            con.execute('INSERT INTO news_publisher_content VALUES(?,?,?) ON CONFLICT(publisher_id,fingerprint) '
+                        'DO UPDATE SET document_id=excluded.document_id', (row['publisher_id'], fingerprint, doc_id))
             topic = self._topic(con, row['id'], page.get('title') or row['title'])
             con.execute('UPDATE news_articles SET document_id=?,fingerprint=?,content_cluster=?,topic_id=?,title=?,published_at=?, '
                         "retrieved_at=?,scope='full_article',status='fetched',error='',attributed_signature=NULL WHERE id=?",
                         (doc_id, fingerprint, fingerprint, topic, page.get('title') or row['title'],
                          page.get('published_at') or row['published_at'], result.get('retrieved_at') or now(), row['id']))
+            if previous_document and previous_document != doc_id:
+                self._retire_replaced_document(con, previous_document, doc_id, row['id'])
+            con.execute('INSERT OR REPLACE INTO news_extraction_receipts VALUES(?,?,?,?,?)',
+                        (row['id'], doc_id, ARTICLE_EXTRACTION_VERSION, snapshot_hash, now()))
             self.store._audit(con, 'news_article_acquired', {'article_id': row['id'], 'document_id': doc_id,
                               'publisher': row['publisher_id'], 'same_publisher_duplicate': bool(existing),
                               'raw_snapshot_sha256': snapshot_hash, 'content_cluster': fingerprint,
-                              'topic_candidate': topic, 'canonical_response_url': url})
-        self.store.finish(job)
+                              'topic_candidate': topic, 'canonical_response_url': url,
+                              'local_reextraction': reextraction is not None})
+        return {'status': 'unchanged' if previous_document == doc_id else 'upgraded', 'document_id': doc_id}
+
+    def reextract_snapshots(self, limit=1000, *, progress=None, cancelable=False):
+        """Upgrade known old extractors from hashed local HTML; never use HTTP.
+
+        A receipt makes unchanged bodies idempotent without mutating immutable
+        document metadata. Replaced evidence/reviews remain in history.
+        """
+        from .engine import _emit_progress
+        counts = Counter()
+        maximum = None if limit is None else max(0, int(limit))
+        root = (self.engine.data_dir / 'news_snapshots').resolve()
+        sources = {source['id']: source for source in self.sources()}
+        with self.store.connection() as con:
+            rows = con.execute("SELECT n.id AS article_id,n.document_id,d.id,d.url,d.title,d.source_id,d.source_kind,"
+                "d.published_at,d.retrieved_at,d.metadata FROM news_articles n "
+                "JOIN documents d ON d.id=n.document_id LEFT JOIN news_extraction_receipts r "
+                "ON r.article_id=n.id AND r.document_id=n.document_id WHERE n.scope='full_article' "
+                "AND COALESCE(r.version,json_extract(d.metadata,'$.extraction_version'),'') "
+                "IN ('article-main-1','article-main-2','article-main-3') ORDER BY n.id LIMIT ?",
+                (-1 if maximum is None else maximum,)).fetchall()
+        total = len(rows)
+        if total:
+            _emit_progress(progress, 'attribution', 0, total, 'artículos',
+                           'Actualizando la extracción de textos guardados, sin descargar de nuevo.', event='start')
+        for index, row in enumerate(rows):
+            if cancelable and self.engine.stop_event.is_set():
+                counts['cancelled'] = 1
+                break
+            metadata = json.loads(row['metadata'])
+            try:
+                expected = metadata.get('raw_snapshot_sha256')
+                relative = metadata.get('raw_snapshot_path')
+                if not isinstance(expected, str) or not re.fullmatch(r'[0-9a-f]{64}', expected) or not isinstance(relative, str):
+                    raise ValueError('Falta procedencia de la captura original')
+                snapshot = (self.engine.data_dir / relative).resolve()
+                if not snapshot.is_relative_to(root) or snapshot.name != expected + '.html.gz':
+                    raise ValueError('Ruta de captura inválida')
+                with gzip.open(snapshot, 'rb') as stream:
+                    raw = stream.read(20_000_001)
+                if len(raw) > 20_000_000:
+                    raise ValueError('Captura descomprimida demasiado grande')
+                html = raw.decode('utf-8')
+                if digest(html) != expected:
+                    raise ValueError('Hash de captura inválido')
+            except (OSError, EOFError, ValueError, UnicodeError):
+                reason = 'No se pudo verificar la captura de una extracción antigua; requiere nueva adquisición.'
+                counts['unavailable_or_invalid_snapshot' if self._invalidate_snapshot_body(row, reason) else 'concurrent_skip'] += 1
+            else:
+                source = sources.get(row['source_id'], {'id': row['source_id']})
+                source = dict(source, document_kind=row['source_kind'])
+                payload = {'article_id': row['article_id'], 'url': row['url']}
+                result = {'url': row['url'], 'body': html, 'retrieved_at': row['retrieved_at'],
+                          'sha256': metadata.get('fetch_sha256')}
+                original = dict(row, metadata=metadata)
+                try:
+                    conserved = self._conserve_article(payload, source, result, reextraction=original)
+                    counts[conserved['status']] += 1
+                except _InsufficientArticleText:
+                    reason = 'La captura guardada no contiene un cuerpo editorial suficiente; requiere nueva adquisición.'
+                    counts['insufficient' if self._invalidate_snapshot_body(row, reason) else 'concurrent_skip'] += 1
+            _emit_progress(progress, 'attribution', index + 1, total, 'artículos',
+                           f'{index + 1} de {total} capturas comprobadas, sin solicitudes de red.')
+        counts['examined'] = sum(counts[key] for key in ('upgraded','unchanged','concurrent_skip','insufficient','unavailable_or_invalid_snapshot'))
+        if total:
+            _emit_progress(progress, 'attribution', counts['examined'], total, 'artículos',
+                           'Comprobación de capturas finalizada.', event='finish', **counts)
+        return dict(counts)
+
+    def _invalidate_snapshot_body(self, row, reason):
+        """An old unrepairable extraction cannot remain an assessed body."""
+        with self.store.connection() as con:
+            con.execute('BEGIN IMMEDIATE')
+            current = con.execute('SELECT document_id FROM news_articles WHERE id=?', (row['article_id'],)).fetchone()
+            if not current or current[0] != row['document_id']:
+                return False
+            con.execute("UPDATE news_articles SET document_id=NULL,retrieved_at=NULL,scope='feed_metadata_only',"
+                        "status='insufficient_body',error=?,attributed_signature=NULL WHERE id=?", (reason, row['article_id']))
+            self._retire_replaced_document(con, row['document_id'], None, row['article_id'])
+            self.store._audit(con, 'news_snapshot_insufficient', {'article_id': row['article_id'],
+                'document_id': row['document_id'], 'reason': reason})
+        return True
+
+    def _retire_replaced_document(self, con, previous_document, document_id, article_id):
+        """Keep replaced bodies/reviews in history, never as active evidence.
+
+        Same-publisher duplicates can share a document. Its evidence remains
+        current until the last article referencing that document is refreshed.
+        A review of the old text must not be transferred to different offsets.
+        """
+        if con.execute('SELECT 1 FROM news_articles WHERE document_id=? LIMIT 1',
+                       (previous_document,)).fetchone():
+            return
+        revision = int(con.execute("SELECT value FROM meta WHERE key='news_identity_revision'").fetchone()[0])
+        rows = con.execute('SELECT e.entity_id,e.analysis,e.review,n.resolution FROM evidence e '
+                           'LEFT JOIN news_identity_links n ON n.document_id=e.document_id AND n.entity_id=e.entity_id '
+                           'WHERE e.document_id=?', (previous_document,)).fetchall()
+        reason = 'El artículo tiene una nueva versión de texto; la evidencia y revisión anteriores quedan sólo en el historial.'
+        for old in rows:
+            history_id = digest(canonical(['article_body_replaced', previous_document, document_id,
+                                           old['entity_id'], old['resolution'], old['review'], revision]))
+            con.execute('INSERT OR IGNORE INTO news_identity_history VALUES(?,?,?,?,?,?,?,?)',
+                        (history_id, previous_document, old['entity_id'], old['resolution'] or '{}',
+                         old['analysis'], old['review'], now(), reason))
+            con.execute('DELETE FROM scores WHERE entity_id=?', (old['entity_id'],))
+            self.store._audit(con, 'news_replaced_evidence_retired', {'history_id': history_id,
+                'article_id': article_id, 'previous_document_id': previous_document,
+                'document_id': document_id, 'entity_id': old['entity_id'], 'reason': reason})
+        con.execute('DELETE FROM news_identity_links WHERE document_id=?', (previous_document,))
+        con.execute('DELETE FROM evidence WHERE document_id=?', (previous_document,))
 
     def _runtime_queue(self, active_tasks=0, unreported_ids=()):
         from .engine import _job_progress
@@ -910,10 +1219,11 @@ class NewsAcquirer:
                 previous = batch[-1]['id']
 
         source_ids = {source['id']: source for source in sources}
-        for reserve_existing in (True, False):
+
+        def eligible(reserve_existing):
             for row in rows():
                 if self.engine.stop_event.is_set() or (deadline is not None and time.monotonic() >= deadline):
-                    return counts
+                    return
                 source = self._source_for_article(row['canonical_url'], source_ids.get(row['source_id']), sources)
                 if not source:
                     continue
@@ -924,14 +1234,43 @@ class NewsAcquirer:
                 candidate = self._stored_candidate(row, relevance)
                 if not candidate['relevant']:
                     continue
-                if not budget.reserve(row['id'], candidate['entity_ids'], existing=existing):
+                selection = _body_selection(row['title'], row['summary'], candidate, row['canonical_url'])
+                yield row, source, candidate, selection
+
+        for row, _source, candidate, selection in eligible(True):
+            budget.reserve(row['id'], candidate['entity_ids'], existing=True, priority=selection['priority'])
+
+        def ranked_candidates():
+            # Keep only the best bounded frontier per entity, rather than sort
+            # the entire stored corpus in memory or let SHA order spend quotas.
+            limit = budget.per_entity if budget.per_entity is not None else budget.maximum
+            if limit is None:
+                yield from eligible(False)
+                return
+            heaps, considered = {}, 0
+            for row, source, candidate, selection in eligible(False):
+                considered += 1
+                item = (selection['priority'], row['id'], (row, source, candidate, selection))
+                for entity_id in candidate['entity_ids'] if budget.per_entity is not None else ('*',):
+                    heap = heaps.setdefault(entity_id, [])
+                    heapq.heappush(heap, item)
+                    if len(heap) > limit:
+                        heapq.heappop(heap)
+            selected = {item[1]: item for heap in heaps.values() for item in heap}
+            counts['body_skipped_budget'] += considered - len(selected)
+            for item in sorted(selected.values(), key=lambda value: (-value[0], value[1])):
+                yield item[2]
+
+        for row, source, candidate, selection in ranked_candidates():
+                if self.engine.stop_event.is_set() or (deadline is not None and time.monotonic() >= deadline):
+                    return counts
+                if not budget.reserve(row['id'], candidate['entity_ids'], priority=selection['priority']):
                     counts['body_skipped_budget'] += 1
-                    continue
-                if existing:
                     continue
                 period = int(time.time() // max(60, float(source.get('refresh_seconds', 86400))))
                 payload = {'article_id': row['id'], 'source_id': source['id'], 'url': row['canonical_url'],
-                           'candidate_entity_ids': candidate['entity_ids'], 'relevance_rank': candidate['rank']}
+                           'candidate_entity_ids': candidate['entity_ids'], 'relevance_rank': candidate['rank'],
+                           'reading_priority': selection['priority'], 'body_selection': selection}
                 with self.store.connection() as con:
                     con.execute('BEGIN IMMEDIATE')
                     job_id = self.store.enqueue('news_article', payload, key='news_article:' + row['id'] + ':' + str(period), connection=con)
@@ -941,6 +1280,10 @@ class NewsAcquirer:
                             'Fuente deshabilitada o condiciones sin revisar'):
                         con.execute("UPDATE jobs SET status='queued',attempts=0,due=?,lease_until=NULL,owner=NULL,error='',updated_at=? WHERE id=?",
                                     (time.time(), now(), job_id))
+                        job = dict(status='queued')
+                    if job['status'] == 'cancelled' and job['error'] == REPLACED_BODY:
+                        con.execute("UPDATE jobs SET status='queued',error='',updated_at=? WHERE id=? AND attempts=0",
+                                    (now(), job_id))
                         job = dict(status='queued')
                     if job['status'] in ('queued', 'running', 'deferred'):
                         self.store._audit(con, 'news_body_recovered', {'article_id': row['id'], 'source_id': source['id'],
@@ -1219,6 +1562,7 @@ class NewsAcquirer:
         from .engine import _emit_progress
         from .identity import IdentityResolver, entity_for_analysis, MODEL_VERSION, RULES_HASH
         from .nlp import analyze
+        reextraction = self.reextract_snapshots(limit, progress=progress, cancelable=cancelable)
         with self.store.connection() as con:
             # Read the entire identity universe and its revision in one snapshot.
             # A concurrent bank import must not lend a new revision to an old index.
@@ -1329,7 +1673,7 @@ class NewsAcquirer:
         return {'articles_processed': processed, 'identity_links': dict(counts), 'entities_scored': scored,
                 'entities_affected': len(affected), 'pending': pending, 'cancelled': cancelled,
                 'identity_module': MODEL_VERSION,
-                'name_only_is_not_unique_identity': True}
+                'name_only_is_not_unique_identity': True, 'reextraction': reextraction}
 
     def stats(self):
         with self.store.connection() as con:

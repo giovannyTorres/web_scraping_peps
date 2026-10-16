@@ -3,10 +3,14 @@
 No proxy rotation, browser fingerprint spoofing or CAPTCHA bypass is attempted.
 The direct TLS transport pins its socket to a previously validated public address,
 while retaining the original hostname for certificate verification and SNI.
+Inherited HTTP proxies use CONNECT to the approved hostname and verified TLS.
+Such a trusted gateway resolves the destination remotely; local public-DNS
+checks remain mandatory but are not end-to-end address pinning through a proxy.
 """
 from __future__ import annotations
 
 import hashlib
+import base64
 import http.client
 import ipaddress
 import io
@@ -23,7 +27,8 @@ from email.utils import parsedate_to_datetime
 from pathlib import Path
 from contextlib import contextmanager
 from typing import Iterator
-from urllib.parse import parse_qs, urljoin, urlsplit, urlunsplit
+from urllib.parse import parse_qs, unquote, urljoin, urlsplit, urlunsplit
+from urllib.request import getproxies_environment, proxy_bypass_environment
 from urllib.robotparser import RobotFileParser
 
 
@@ -97,11 +102,86 @@ class _PinnedHTTPSConnection(http.client.HTTPSConnection):
         raise CollectionError("TLS connection failed: " + type(last_error).__name__)
 
 
+class _ProxyHTTPSConnection(http.client.HTTPSConnection):
+    """An explicitly trusted HTTP gateway; never falls back to direct egress.
+
+    CONNECT uses the hostname so gateway domain policies and outbound identities
+    keep working. The proxy sees Basic credentials only in CONNECT headers;
+    publisher requests and exception messages never include those credentials.
+    """
+    def __init__(self, hostname: str, proxy: dict, timeout: float,
+                 context: ssl.SSLContext, destination_addresses: list[tuple]):
+        super().__init__(proxy['host'], port=proxy['port'], timeout=timeout, context=context)
+        headers = {'Host': hostname + ':443'}
+        if proxy.get('authorization'):
+            headers['Proxy-Authorization'] = proxy['authorization']
+        self.set_tunnel(hostname, port=443, headers=headers)
+        self._destination_hostname = hostname
+        # This marker validates pool reuse against the same locally checked DNS
+        # answer set. It does not claim that the gateway used this address.
+        self._peer_address = destination_addresses[0][4][0]
+
+    def connect(self) -> None:
+        deadline = time.monotonic() + self.timeout
+        raw_socket = None
+        try:
+            addresses = socket.getaddrinfo(self.host, self.port, type=socket.SOCK_STREAM)
+            for family, socktype, proto, _, sockaddr in addresses:
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    raise TimeoutError('Proxy connection deadline exceeded')
+                raw_socket = socket.socket(family, socktype, proto)
+                raw_socket.settimeout(remaining)
+                try:
+                    raw_socket.connect(sockaddr)
+                    break
+                except OSError:
+                    raw_socket.close()
+                    raw_socket = None
+            if raw_socket is None:
+                raise OSError('Proxy connection failed')
+            self.sock = raw_socket
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise TimeoutError('Proxy connection deadline exceeded')
+            self.sock.settimeout(remaining)
+            # _transport supplies a deadline-aware response class; this also
+            # bounds the CONNECT response headers against the request deadline.
+            self._tunnel()
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise TimeoutError('Proxy CONNECT deadline exceeded')
+            self.sock.settimeout(remaining)
+            self.sock = self._context.wrap_socket(self.sock, server_hostname=self._destination_hostname)
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise TimeoutError('Proxy TLS deadline exceeded')
+            self.sock.settimeout(remaining)
+        except (OSError, http.client.HTTPException, ValueError) as exc:
+            self.close()
+            if raw_socket is not None:
+                raw_socket.close()
+            # A gateway can echo credentials or signed URLs in its reason text.
+            # Keep transient exception categories so the request layer can
+            # distinguish an exhausted session from a retryable network fault.
+            message = 'Trusted proxy connection failed: ' + type(exc).__name__
+            if isinstance(exc, TimeoutError):
+                raise TimeoutError(message) from None
+            if isinstance(exc, OSError):
+                raise OSError(message) from None
+            if isinstance(exc, http.client.HTTPException):
+                raise http.client.HTTPException(message) from None
+            raise CollectionError(message) from None
+
+
 class SafeFetcher:
     """A fetch returns a decision; scheduling retries belongs to the durable queue.
 
     Config: user_agent (must identify the operator), cache_ttl_seconds,
     robots_ttl_seconds, circuit_seconds, max_redirects and optional ca_bundle.
+    trust_env_proxy defaults to True and honors HTTPS_PROXY/HTTP_PROXY/NO_PROXY
+    (lowercase takes precedence). HTTP gateways only; unsupported configured
+    proxy schemes fail closed, without a direct-connection fallback.
     Source hosts must be enumerated exactly. Only HTTPS port 443 is supported.
     Terms and robots are collection controls, not a legal opinion.
     """
@@ -267,24 +347,29 @@ class SafeFetcher:
         pool = getattr(self._local, "pool", None)
         if pool is None:
             pool = self._local.pool = {}
+        proxy = self._proxy_for_host(host)
+        pool_key = (host, proxy['key'] if proxy else '')
         now = time.monotonic()
         idle = max(1.0, min(float(self.config.get("keepalive_seconds", 30)), 120.0))
         allowed = {record[4][0] for record in addresses}
         for key, (connection, peer, used_at) in list(pool.items()):
-            if now - used_at > idle or (key == host and peer not in allowed):
+            if now - used_at > idle or (key == pool_key and peer not in allowed):
                 pool.pop(key)
                 self._discard_connection(connection)
-        entry = pool.pop(host, None)
+        entry = pool.pop(pool_key, None)
         if entry:
             connection, peer, _ = entry
-            # Socket remains TLS-authenticated to this host. DNS was revalidated by
-            # _request; changed answers cannot reuse a previously pinned address.
+            # The TLS session authenticates this exact destination hostname.
+            # A changed DNS answer cannot reuse a direct pinned connection (or
+            # the proxy connection's locally validated DNS marker).
             if connection.sock is not None and peer in allowed:
                 connection.timeout = timeout
                 connection.sock.settimeout(timeout)
                 return connection, True
             self._discard_connection(connection)
-        connection = _PinnedHTTPSConnection(host, addresses, timeout, self._tls_context)
+        connection = (_ProxyHTTPSConnection(host, proxy, timeout, self._tls_context, addresses)
+                      if proxy else _PinnedHTTPSConnection(host, addresses, timeout, self._tls_context))
+        connection._pool_key = pool_key
         with self._pool_lock:
             if self._closed:
                 connection.close()
@@ -302,7 +387,36 @@ class SafeFetcher:
         while len(pool) >= max_hosts:
             oldest = min(pool, key=lambda item: pool[item][2])
             self._discard_connection(pool.pop(oldest)[0])
-        pool[host] = (connection, peer, time.monotonic())
+        pool[getattr(connection, '_pool_key', (host, ''))] = (connection, peer, time.monotonic())
+
+    def _proxy_for_host(self, host: str) -> dict | None:
+        if self.config.get('trust_env_proxy', True) is False:
+            return None
+        proxies = getproxies_environment()
+        if proxy_bypass_environment(host, proxies):
+            return None
+        value = proxies.get('https') or proxies.get('http')
+        if not value:
+            return None
+        try:
+            parts = urlsplit(value)
+            if (parts.scheme.lower() != 'http' or not parts.hostname
+                    or parts.path not in ('', '/') or parts.query or parts.fragment
+                    or any(ord(char) < 33 or ord(char) == 127 for char in value)):
+                raise ValueError('Invalid proxy endpoint')
+            proxy_host = self._hostname(parts.hostname)
+            port = parts.port if parts.port is not None else 80
+            if not 1 <= port <= 65535:
+                raise ValueError('Invalid proxy port')
+            authorization = None
+            if parts.username is not None or parts.password is not None:
+                credentials = unquote(parts.username or '') + ':' + unquote(parts.password or '')
+                authorization = 'Basic ' + base64.b64encode(credentials.encode('utf-8')).decode('ascii')
+            # Avoid storing a credential-bearing proxy URL in pool keys or logs.
+            return dict(host=proxy_host, port=port, authorization=authorization,
+                        key=hashlib.sha256(value.encode('utf-8')).hexdigest())
+        except (ValueError, UnicodeError, TypeError):
+            raise CollectionError('Invalid or unsupported inherited HTTPS proxy configuration') from None
 
     @staticmethod
     def _hostname(value: str) -> str:
@@ -772,6 +886,16 @@ class SafeFetcher:
                 return self._result(normalized, "ok", http_status=400, body="[]", content_type="application/json",
                                     sha256=hashlib.sha256(raw).hexdigest(), final_url=final_url,
                                     pagination_end=True, error_code="publisher_pagination_end", pagination_headers={})
+        if status in (404, 410):
+            # A publisher search can return an HTML error page for an absent
+            # route. This is not an empty valid feed and retrying the same URL
+            # five times only repeats the error. Keep the actual HTTP status;
+            # block this resource for manual review without penalizing its host.
+            return self._result(normalized, 'blocked', http_status=status,
+                                error='HTTP resource not found; review the publisher URL before retrying',
+                                error_code='resource_not_found', final_url=final_url,
+                                content_type=response_headers.get('content-type', ''),
+                                sha256=hashlib.sha256(raw).hexdigest())
         if status != 200:
             return self._result(normalized, "error", http_status=status, error="Unexpected HTTP status")
         content_type = response_headers.get("content-type", "text/plain")

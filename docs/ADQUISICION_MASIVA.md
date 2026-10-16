@@ -27,6 +27,12 @@ ampliado permite profundizar en el período y los alias. Los bancos anteriores
 conservan su configuración y su límite de 900 segundos hasta que el usuario
 elija otra opción; las instalaciones nuevas comienzan con búsqueda adversa rápida.
 
+Desde 2.8, la ventana automática del modo rápido dirigido empieza por años para
+evitar multiplicar de entrada cada nombre por doce meses. Se respetan los límites
+exactos de publicación; la opción mensual explícita sigue disponible. Los cuerpos
+se priorizan por información útil para revisar, conservando también noticias
+neutras, negaciones y absoluciones. Una prioridad alta no agrega puntos al scoring.
+
 El límite controla la sesión y las solicitudes, incluidos robots y redirecciones.
 La resolución DNS y las esperas de disco dependen del sistema operativo. No es
 una promesa de consultar exhaustivamente las 300 entidades en dos minutos.
@@ -48,7 +54,7 @@ analizar**. Los índices y agregadores aportan enlaces; conservar un artículo
 requiere una fuente editorial habilitada y su permiso de texto. La interfaz
 advierte cuando la selección sólo podrá obtener referencias.
 
-Un nombre completo o un alias contextual permite recuperar candidatos. No
+Un nombre completo, un nombre comercial distintivo o un alias contextual permite recuperar candidatos. No
 corrobora identidad. Se conservan también notas neutras, negaciones y contexto
 de víctima; la relevancia de adquisición no agrega puntos al scoring. Un nombre
 que aparece únicamente en el cuerpo y no en los metadatos puede quedar fuera de
@@ -91,5 +97,11 @@ puntos. El cálculo numérico y su traza se conservan; no se aumentan scores par
 compensar falta de información. Abra un expediente para ver el motivo concreto,
 las citas, las exclusiones y las tareas de revisión.
 
-Los [resultados de validación](VALIDACION_2_6_0.md) separan las pruebas sintéticas
-con 300 entidades de las verificaciones públicas de acceso a fuentes.
+Al analizar un banco existente, 2.8 vuelve a extraer las capturas locales de los
+extractores anteriores conocidos, sin repetir HTTP. Conserva documentos y
+evaluaciones históricas y retira evidencia sustituida; no transfiere revisiones
+a nuevos fragmentos. Una captura inválida o sin cuerpo queda pendiente de nueva
+adquisición.
+
+Los [resultados de validación pública](VALIDACION_2_8_0.md) separan las pruebas
+sintéticas con 300 entidades de las sesiones reales con Peña Nieto y siete empresas.

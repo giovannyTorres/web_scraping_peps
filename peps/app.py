@@ -218,8 +218,14 @@ def create_server(engine, port=0):
             self.send_header('Referrer-Policy', 'no-referrer')
             self.send_header('Content-Security-Policy', "default-src 'self'; script-src 'self'; style-src 'self'; "
                              "img-src 'self' data:; font-src 'self'; connect-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'")
-            self.end_headers()
-            self.wfile.write(data)
+            try:
+                self.end_headers()
+                self.wfile.write(data)
+            except (BrokenPipeError, ConnectionResetError):
+                # Navigation and cancelled polling can close the browser socket
+                # after a response was computed. The operation itself remains
+                # tracked by the server; do not log a misleading worker crash.
+                self.close_connection = True
 
         def authorized(self, api=True):
             expected = f'127.0.0.1:{self.server.server_port}'
