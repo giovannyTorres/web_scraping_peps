@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import argparse
 from collections import Counter, defaultdict
-from contextlib import closing
+from contextlib import closing, nullcontext
 from copy import deepcopy
 import hashlib
 import json
@@ -27,17 +27,19 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from peps.acquisition_coverage import acquisition_coverage
-from peps.collector import SafeFetcher
+from peps.collector import SafeFetcher, _iso
 from peps.engine import Engine
-from peps.news import NewsAcquirer
+from peps.news import NewsAcquirer, canonical_url, source_policy, _body_selection
 from peps.public_search import parse_public_results
 from peps.relevance import assessment_summary
-from peps.store import digest, now
+from peps.sources import parse_results
+from peps.store import canonical, digest, now
 
 PUBLIC_SOURCES = {'mwmbl_web', 'duckduckgo_web'}
 BODY_SOURCES = {'contralinea_index', 'aristegui_index', 'desinformemonos_index'}
 GROUPS = {'municipal_president': 'municipal_president', 'municipal': 'municipal_president',
           'mayor': 'municipal_president', 'notary': 'notary', 'notario': 'notary'}
+KNOWN_METADATA_MIGRATIONS = {('metadata-relevance-1.1.0', 'metadata-relevance-1.2.0')}
 
 
 class _ValidationBudgetStopped(RuntimeError):
@@ -296,6 +298,172 @@ def copy_bank(source, target):
                 original.backup(copied)
 
 
+def corpus_snapshot(engine):
+    """Exact historical rows remain local; reports contain only their hashes."""
+    keys = {'news_articles': ('id',), 'news_observations': ('id',), 'documents': ('id',),
+            'evidence': ('id',), 'news_identity_links': ('document_id', 'entity_id'),
+            'scores': ('entity_id',), 'score_runs': ('id',), 'audit': ('seq',)}
+    with engine.store.connection() as con:
+        return {table: {canonical([row[key] for key in columns]): dict(row)
+                        for row in con.execute('SELECT * FROM ' + table)} for table, columns in keys.items()}
+
+
+def cached_snapshot(directory):
+    if not (directory / 'network.sqlite3').exists():
+        return {}
+    with closing(sqlite3.connect((directory / 'network.sqlite3').as_uri() + '?mode=ro', uri=True)) as con:
+        con.row_factory = sqlite3.Row
+        return {row['url']: digest(canonical(dict(row))) for row in con.execute('SELECT * FROM http_cache')}
+
+
+def public_cached_body_hash_matches(cached):
+    """Narrow public-adapter proof: a strict UTF-8/ASCII roundtrip, never lossy."""
+    encoding = 'utf-8'
+    for parameter in cached['content_type'].split(';')[1:]:
+        key, separator, value = parameter.partition('=')
+        if separator and key.strip().casefold() == 'charset':
+            label = value.strip().strip('\"\'').casefold()
+            if label not in ('utf-8', 'utf8', 'ascii', 'us-ascii'):
+                return False
+            encoding = 'ascii' if label in ('ascii', 'us-ascii') else 'utf-8'
+    try:
+        return hashlib.sha256(cached['body'].encode(encoding, errors='strict')).hexdigest() == cached['sha256']
+    except UnicodeError:
+        return False
+
+
+def verify_cache_enrichment(news, before, after, cached_before):
+    """Validate every new observation against unchanged cached bytes and policy.
+
+    A model migration can recover earlier rejected metadata and append versioned
+    observations. It cannot replace old rows, invent URLs, change permission,
+    create source bodies, or pass without a subsequent exact idempotence check.
+    """
+    from peps.relevance import RelevanceIndex, MODEL_VERSION
+    old_observations, observations = before['news_observations'], after['news_observations']
+    old_articles, articles = before['news_articles'], after['news_articles']
+    new_observations = [row for key, row in observations.items() if key not in old_observations]
+    new_articles = [row for key, row in articles.items() if key not in old_articles]
+    def lineage_key(row):
+        return tuple(row[key] for key in ('article_id', 'source_id', 'discovery_url', 'observed_url', 'retrieved_at', 'discovery_hash'))
+    ancestors = defaultdict(list)
+    for row in old_observations.values():
+        ancestors[lineage_key(row)].append(row)
+    def preserved(table):
+        return all(after[table].get(key) == value for key, value in before[table].items())
+    checks = {'historical_observations_byte_equal': preserved('news_observations'),
+              'historical_articles_byte_equal': preserved('news_articles'),
+              'historical_audit_is_unchanged_prefix': preserved('audit'),
+              'bodies_identity_scores_and_history_byte_equal': all(before[table] == after[table] for table in
+                  ('documents', 'evidence', 'news_identity_links', 'scores', 'score_runs')),
+              'cached_http_bytes_and_metadata_unchanged': cached_snapshot(news.engine.data_dir) == cached_before,
+              'canonical_urls_unique': len({row['canonical_url'] for row in articles.values()}) == len(articles)}
+    versions = Counter(json.loads(row['details']).get('retrieval_relevance', {}).get('model_version', 'unknown')
+                       for row in old_observations.values())
+    checks['older_model_present_if_metadata_grows'] = not new_observations or any(
+        (version, MODEL_VERSION) in KNOWN_METADATA_MIGRATIONS for version in versions)
+    fingerprints = []
+    for row in observations.values():
+        details = json.loads(row['details'])
+        relevance = details.get('retrieval_relevance') or {}
+        fingerprints.append((row['article_id'], row['source_id'], row['discovery_url'], row['observed_url'],
+                             row['discovery_hash'], details.get('source_config_hash'),
+                             relevance.get('model_version'), relevance.get('bank_revision')))
+    checks['no_same_model_snapshot_policy_observation_duplicates'] = len(fingerprints) == len(set(fingerprints))
+    checks['observation_ids_match_production_content_hash'] = all(row['id'] == digest(canonical([
+        row['article_id'], row['source_id'], row['discovery_url'], row['discovery_hash'], json.loads(row['details'])]))
+        for row in observations.values())
+    sources = {source['id']: source for source in news.sources()}
+    index = RelevanceIndex(news.store.iter_entities())
+    with news.store.connection() as con:
+        revision = con.execute("SELECT value FROM meta WHERE key='news_identity_revision'").fetchone()[0]
+    payloads = defaultdict(list)
+    for job in queue_receipt(news.store):
+        payload = json.loads(job['payload'])
+        if job['kind'] == 'news_query':
+            payloads[(payload.get('source_id'), payload.get('url'))].append(payload)
+    violations, verified_new, verified_versioned_lineages = [], [], []
+    parsed_cache = {}
+    with (closing(sqlite3.connect((news.engine.data_dir / 'network.sqlite3').as_uri() + '?mode=ro', uri=True))
+          if new_observations else nullcontext(None)) as con:
+        if con is not None:
+            con.row_factory = sqlite3.Row
+        for row in new_observations:
+            details = json.loads(row['details'])
+            source = sources.get(row['source_id'])
+            if not source or row['source_id'] not in PUBLIC_SOURCES:
+                violations.append({'id': row['id'], 'reason': 'New observations require a permitted public-search source.'})
+                continue
+            cached = con.execute('SELECT * FROM http_cache WHERE url=?', (row['discovery_url'],)).fetchone()
+            if (cached is None or row['discovery_url'] not in cached_before
+                    or cached['sha256'] != row['discovery_hash']):
+                violations.append({'id': row['id'], 'reason': 'No unchanged original HTTP snapshot matches this observation.'})
+                continue
+            if not public_cached_body_hash_matches(cached):
+                violations.append({'id': row['id'], 'reason': 'Cached public body does not losslessly reproduce its raw UTF-8/ASCII SHA256.'})
+                continue
+            cache_key = (row['source_id'], row['discovery_url'])
+            if cache_key not in parsed_cache:
+                try:
+                    parsed_cache[cache_key] = parse_results({'status': 'not_modified', 'body': cached['body'],
+                        'url': cached['url'], 'final_url': cached['final_url'] or cached['url']}, source)
+                except ValueError:
+                    parsed_cache[cache_key] = []
+            record = next((record for record in parsed_cache[cache_key] if record['url'] == row['observed_url']
+                           and record['title'] == details.get('title') and record.get('text', '') == details.get('summary')), None)
+            candidates = []
+            if record:
+                for payload in payloads.get(cache_key, []):
+                    candidate = index.rank(record['title'], record.get('text', ''),
+                                           entity_ids=payload.get('entity_ids'), names=payload.get('names'))
+                    candidate['bank_revision'] = revision
+                    candidates.append(candidate)
+            relevance = details.get('retrieval_relevance') or {}
+            expected_details = None
+            if record and relevance in candidates:
+                title, summary = str(record.get('title') or ''), str(record.get('text') or '')
+                expected_details = {'title': title, 'summary': summary, 'published_at': record.get('published_at'),
+                    'discovered_at': record.get('discovered_at'), 'source_config_hash': digest(canonical(source)),
+                    'terms_url': source.get('terms_url'), 'source_policy': source_policy(source), 'scope': 'discovery_metadata',
+                    'raw_url': record['url'], 'cache_validated_at': _iso(cached['fetched_at']),
+                    'body_selection': _body_selection(title, summary, relevance, canonical_url(record['url'])),
+                    'retrieval_relevance': relevance}
+                if record.get('metadata'):
+                    expected_details['discovery_metadata'] = record['metadata']
+            parents = ancestors.get(lineage_key(row), [])
+            base_details = {key: value for key, value in details.items() if key != 'retrieval_relevance'}
+            valid_versioned_lineage = not parents or any(
+                (json.loads(parent['details']).get('retrieval_relevance', {}).get('model_version'), MODEL_VERSION)
+                in KNOWN_METADATA_MIGRATIONS
+                and {key: value for key, value in json.loads(parent['details']).items() if key != 'retrieval_relevance'} == base_details
+                for parent in parents)
+            valid = (record is not None and relevance.get('model_version') == MODEL_VERSION
+                     and relevance.get('relevant') is True and relevance.get('identity_verified') is False
+                     and relevance.get('score_effect') == 'none' and relevance in candidates
+                     and details == expected_details and row['retrieved_at'] == cached['retrieved_at']
+                     and valid_versioned_lineage
+                     and details.get('source_config_hash') == digest(canonical(source))
+                     and details.get('source_policy') == source_policy(source)
+                     and row['article_id'] == digest(canonical_url(row['observed_url'])))
+            if not valid:
+                violations.append({'id': row['id'], 'reason': 'Cached metadata, exact current relevance, policy or canonical URL differs.'})
+            else:
+                verified_new.append(row['id'])
+                if parents:
+                    verified_versioned_lineages.append(row['id'])
+    checks['every_new_observation_reproduced_from_original_cache_current_model_and_policy'] = len(verified_new) == len(new_observations)
+    new_article_ids = {row['id'] for row in new_articles}
+    checks['every_new_url_has_verified_metadata_only_lineage'] = all(row['scope'] == 'feed_metadata_only'
+        and row['document_id'] is None and row['id'] in {observation['article_id'] for observation in new_observations
+                                                       if observation['id'] in set(verified_new)} for row in new_articles)
+    return {'passed': all(checks.values()), 'checks': checks, 'current_model': MODEL_VERSION,
+            'historical_model_counts': dict(versions), 'new_articles': len(new_article_ids),
+            'new_observations': len(new_observations), 'verified_new_observations': len(verified_new),
+            'verified_prior_model_lineages_with_identical_non_relevance_details': len(verified_versioned_lineages),
+            'violations': violations, 'raw_hash_proof_scope': 'Public adapters only; strict UTF-8/ASCII bytes must match original raw response SHA256; unsupported/lossy charsets fail.',
+            'first_pass_count_changes_are_not_called_idempotent': True}
+
+
 def make_observed_fetcher(engine, args, http_events, fetch_events, public_metadata, lock, deadline):
     class ObservedFetcher(SafeFetcher):
         def _transport(self, url, headers, timeout, max_bytes, addresses):
@@ -465,6 +633,8 @@ def validate(args):
     cold_counts, original_queue = db_counts(engine.store), queue_receipt(engine.store)
     original_network = network_state(directory)
     original_audit = engine.store.verify_audit()
+    corpus_before_local = corpus_snapshot(engine)
+    cache_before_local = cached_snapshot(directory)
     final_public_by_id = {job['id']: job for job in public_jobs}
     with engine.store.connection() as con:
         current_score_ids = {row[0] for row in con.execute('SELECT id FROM score_runs')}
@@ -481,6 +651,20 @@ def validate(args):
         local = local_news.acquire(workers=args.workers, seconds=args.local_seconds, queue=True,
             window='real-people-local-only', max_articles=10000, relevant_only=True,
             body_budget=args.body_budget, per_entity_body_limit=args.per_person_body, cache_mode='local')
+        corpus_after_first_local = corpus_snapshot(local_engine)
+        first_local_counts = db_counts(local_engine.store)
+        enrichment = verify_cache_enrichment(local_news, corpus_before_local, corpus_after_first_local, cache_before_local)
+        first_pass_strict_counts = {table: first_local_counts[table] == cold_counts[table]
+                                   for table in ('news_articles', 'news_observations', 'documents')}
+        repeated_local = local_news.acquire(workers=args.workers, seconds=args.local_seconds, queue=True,
+            window='real-people-local-current-model-repeat', max_articles=10000, relevant_only=True,
+            body_budget=args.body_budget, per_entity_body_limit=args.per_person_body, cache_mode='local')
+        corpus_after_repeated_local = corpus_snapshot(local_engine)
+    repeat_checks = {table: corpus_after_first_local[table] == corpus_after_repeated_local[table]
+                     for table in corpus_after_first_local if table != 'audit'}
+    repeat_checks['historical_audit_prefix_unchanged'] = all(corpus_after_repeated_local['audit'].get(key) == value
+        for key, value in corpus_after_first_local['audit'].items())
+    repeat_checks['cached_http_bytes_and_metadata_unchanged'] = cached_snapshot(local_directory) == cache_before_local
     timings['local_cache_copy_and_reuse'] = time.monotonic() - started
     timings['total'] = time.monotonic() - began
     local_counts = db_counts(local_engine.store)
@@ -497,11 +681,13 @@ def validate(args):
                                                      for identifier in previous_done_ids),
         'previous_score_history_preserved': previous_score_ids <= current_score_ids,
         'no_dns_in_local_phase': dns.call_count == 0, 'no_tcp_in_local_phase': tcp.call_count == 0,
-        'no_http_in_local_phase': local.get('session', {}).get('network_requests') == 0,
+        'no_http_in_local_phase': local.get('session', {}).get('network_requests') == 0 and repeated_local.get('session', {}).get('network_requests') == 0,
         'local_copy_audit_ok': local_engine.store.verify_audit()['ok'],
-        'local_cache_did_not_duplicate_candidates': local_counts['news_articles'] == cold_counts['news_articles'],
-        'local_cache_did_not_duplicate_observations': local_counts['news_observations'] == cold_counts['news_observations'],
-        'local_cache_did_not_duplicate_bodies': local_counts['documents'] == cold_counts['documents'],
+        'local_cache_enrichment_has_exact_model_snapshot_policy_lineage': enrichment['passed'],
+        'local_current_model_replay_is_exactly_idempotent': all(repeat_checks.values()),
+        'local_cache_did_not_duplicate_candidates': enrichment['checks']['canonical_urls_unique'] and repeat_checks['news_articles'],
+        'local_cache_did_not_duplicate_observations': enrichment['checks']['no_same_model_snapshot_policy_observation_duplicates'] and repeat_checks['news_observations'],
+        'local_cache_did_not_duplicate_bodies': first_pass_strict_counts['documents'] and repeat_checks['documents'],
         'cold_bank_counts_unchanged_by_local_copy': db_counts(engine.store) == cold_counts,
         'cold_queue_unchanged_by_local_copy': queue_receipt(engine.store) == original_queue,
         'cold_host_backoff_unchanged_by_local_copy': network_state(directory) == original_network,
@@ -552,6 +738,13 @@ def validate(args):
         'counts': cold_counts, 'public_jobs_before_fallback': public_jobs, 'final_jobs': original_queue,
         'articles': articles, 'people': rows, 'audit': original_audit, 'network_state': original_network,
         'local_acquisition': local, 'local_counts': local_counts,
+        'local_cache_verification': {'first_pass_strict_counts_equal_cold': first_pass_strict_counts,
+            'first_pass_counts': first_local_counts,
+            'first_pass_count_deltas': {table: first_local_counts[table] - cold_counts[table] for table in first_pass_strict_counts},
+            'enrichment_lineage': enrichment, 'second_pass': repeated_local, 'second_pass_exact_checks': repeat_checks,
+            'first_pass_row_sha256': {table: digest(canonical(value)) for table, value in corpus_after_first_local.items()},
+            'second_pass_row_sha256': {table: digest(canonical(value)) for table, value in corpus_after_repeated_local.items()},
+            'note': 'First-pass metadata growth is reported explicitly, never called idempotence. Only a verified version migration and an exact second replay can pass.'},
         'progress_event_count': len(progress_events), 'source_code_sha256': hashes,
         'limitations': ['Search names and top results are not verified identities or exhaustive history.',
             'Zero scores may mean insufficient source text, unresolved identity or no assessable findings.',

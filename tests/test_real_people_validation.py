@@ -1,5 +1,6 @@
 """The live harness must distinguish plans, requests, receipts and source bodies."""
 from copy import deepcopy
+from contextlib import closing
 import importlib.util
 import json
 from pathlib import Path
@@ -234,6 +235,111 @@ class RealPeopleValidationTests(unittest.TestCase):
             VALIDATION.copy_bank(engine.data_dir, self.root / 'copied')
         self.assertGreaterEqual(len(connections), 7)
         self.assertTrue(all(connection.explicitly_closed for connection in connections))
+
+    def migration_fixture(self):
+        from peps.relevance import RelevanceIndex
+        from peps.sources import parse_results
+        engine = Engine(self.root / 'migration')
+        engine.store.import_entities(self.people)
+        news = NewsAcquirer(engine)
+        config = VALIDATION.make_config(SimpleNamespace(sources='mwmbl_web', body_sources='',
+            start='2016-01-01', end='2026-01-01'), 2)
+        news.config_path.write_text(json.dumps(config))
+        news.queue('real-people-public')
+        source = next(source for source in news.sources() if source['id'] == 'mwmbl_web')
+        payload = next(json.loads(job['payload']) for job in VALIDATION.queue_receipt(engine.store)
+                       if json.loads(job['payload']).get('entity_ids') == ['one'])
+        body = json.dumps({'query': payload['query'], 'number_of_results': 1, 'results': [
+            {'url': 'https://public.example/original', 'title': 'Persona Sintética Uno: informe',
+             'text': 'Persona Sintética Uno presenta un informe p&uacute;blico &amp; documentado.'}]})
+        result = {'status': 'ok', 'url': payload['url'], 'body': body,
+                  'sha256': VALIDATION.digest(body), 'retrieved_at': '2026-01-01T00:00:00+00:00'}
+        fetched_at = time.time()
+        result['validated_at'] = VALIDATION._iso(fetched_at)
+        record = parse_results(dict(result), source)[0]
+        with VALIDATION.SafeFetcher({}, engine.data_dir):
+            pass
+        with closing(sqlite3.connect(engine.data_dir / 'network.sqlite3')) as con:
+            con.execute('INSERT INTO http_cache(url,body,content_type,sha256,retrieved_at,fetched_at,expires_at,final_url) '
+                        'VALUES(?,?,?,?,?,?,?,?)', (payload['url'], body, 'application/json', result['sha256'],
+                        result['retrieved_at'], fetched_at, time.time() + 60, payload['url']))
+            con.commit()
+        candidate = RelevanceIndex(engine.store.iter_entities()).rank(record['title'], record['text'],
+            entity_ids=payload['entity_ids'], names=payload['names'])
+        candidate['bank_revision'] = '1'
+        historical = deepcopy(candidate)
+        historical['model_version'] = 'metadata-relevance-1.1.0'
+        news._observe(record, source, payload['url'], result, None, candidate=historical)
+        before = VALIDATION.corpus_snapshot(engine)
+        cache = VALIDATION.cached_snapshot(engine.data_dir)
+        news._observe(record, source, payload['url'], result, None, candidate=candidate)
+        return engine, news, record, source, payload, result, candidate, before, cache
+
+    def test_versioned_cache_observation_requires_exact_lineage_and_repeat_idempotence(self):
+        engine, news, record, source, payload, result, candidate, before, cache = self.migration_fixture()
+        after = VALIDATION.corpus_snapshot(engine)
+        proof = VALIDATION.verify_cache_enrichment(news, before, after, cache)
+        self.assertTrue(proof['passed'], proof)
+        self.assertEqual(proof['new_observations'], 1)
+        self.assertEqual(proof['new_articles'], 0)
+        news._observe(record, source, payload['url'], result, None, candidate=candidate)
+        self.assertEqual(VALIDATION.corpus_snapshot(engine), after)
+        corrupted = deepcopy(after)
+        historical_key = next(iter(before['news_observations']))
+        corrupted['news_observations'][historical_key]['retrieved_at'] = 'changed'
+        self.assertFalse(VALIDATION.verify_cache_enrichment(news, before, corrupted, cache)['passed'])
+        unexplained = deepcopy(after)
+        key, row = next((key, row) for key, row in unexplained['news_observations'].items()
+                        if key not in before['news_observations'])
+        unexplained['news_observations'].pop(key)
+        details = json.loads(row['details'])
+        details['unexplained_nonce'] = 'invented-audit-field'
+        row['details'] = VALIDATION.canonical(details)
+        row['retrieved_at'] = '2099-01-01T00:00:00+00:00'
+        row['id'] = VALIDATION.digest(VALIDATION.canonical([row['article_id'], row['source_id'],
+            row['discovery_url'], row['discovery_hash'], details]))
+        unexplained['news_observations'][VALIDATION.canonical([row['id']])] = row
+        proof = VALIDATION.verify_cache_enrichment(news, before, unexplained, cache)
+        self.assertTrue(proof['checks']['observation_ids_match_production_content_hash'])
+        self.assertFalse(proof['passed'])
+        self.assertFalse(proof['checks']['every_new_observation_reproduced_from_original_cache_current_model_and_policy'])
+
+    def test_model_migration_does_not_excuse_same_model_duplicates_or_invented_cache(self):
+        engine, news, _record, _source, _payload, _result, _candidate, before, cache = self.migration_fixture()
+        after = VALIDATION.corpus_snapshot(engine)
+        extra = deepcopy(next(row for row in after['news_observations'].values()
+                              if json.loads(row['details'])['retrieval_relevance']['model_version'] != 'metadata-relevance-1.1.0'))
+        details = json.loads(extra['details'])
+        details['unexplained_nonce'] = 'duplicate'
+        extra['details'] = VALIDATION.canonical(details)
+        extra['id'] = VALIDATION.digest(VALIDATION.canonical([extra['article_id'], extra['source_id'],
+            extra['discovery_url'], extra['discovery_hash'], details]))
+        after['news_observations'][VALIDATION.canonical([extra['id']])] = extra
+        proof = VALIDATION.verify_cache_enrichment(news, before, after, cache)
+        self.assertFalse(proof['passed'])
+        self.assertFalse(proof['checks']['no_same_model_snapshot_policy_observation_duplicates'])
+        proof = VALIDATION.verify_cache_enrichment(news, before, VALIDATION.corpus_snapshot(engine), {})
+        self.assertFalse(proof['passed'])
+        self.assertFalse(proof['checks']['every_new_observation_reproduced_from_original_cache_current_model_and_policy'])
+        current_only_before = deepcopy(before)
+        current_only_before['news_observations'] = {}
+        current_only_before['news_articles'] = {}
+        current_only_after = VALIDATION.corpus_snapshot(engine)
+        current_only_after['news_observations'] = {key: row for key, row in current_only_after['news_observations'].items()
+            if json.loads(row['details'])['retrieval_relevance']['model_version'] != 'metadata-relevance-1.1.0'}
+        proof = VALIDATION.verify_cache_enrichment(news, current_only_before, current_only_after, cache)
+        self.assertTrue(proof['checks']['every_new_observation_reproduced_from_original_cache_current_model_and_policy'])
+        self.assertFalse(proof['checks']['older_model_present_if_metadata_grows'])
+        self.assertFalse(proof['passed'])
+        with closing(sqlite3.connect(engine.data_dir / 'network.sqlite3')) as con:
+            con.execute("UPDATE http_cache SET body=body||' '")
+            con.commit()
+        corrupted_cache = VALIDATION.cached_snapshot(engine.data_dir)
+        proof = VALIDATION.verify_cache_enrichment(news, before, VALIDATION.corpus_snapshot(engine), corrupted_cache)
+        self.assertTrue(proof['checks']['cached_http_bytes_and_metadata_unchanged'])
+        self.assertFalse(proof['passed'])
+        self.assertFalse(proof['checks']['every_new_observation_reproduced_from_original_cache_current_model_and_policy'])
+        self.assertTrue(any('raw UTF-8/ASCII SHA256' in violation['reason'] for violation in proof['violations']))
 
 
 if __name__ == '__main__':

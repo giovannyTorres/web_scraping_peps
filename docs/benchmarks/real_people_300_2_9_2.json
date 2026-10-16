@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "release": "2.9.2",
-  "documented_at_utc": "2026-10-16T07:21:57.315137+00:00",
-  "status": "Initial real-300 measurement complete; post-correction resume and release CI results pending.",
+  "documented_at_utc": "2026-10-16T07:53:57.958495+00:00",
+  "status": "Observed validation complete: 300 imported; 278 network-queried; 273 completed searches; zero original bodies; final integrity 23/23 passed; full live coverage failed correctly with exit 2.",
   "scope": "300 real public people, 150 municipal presidents and 150 notaries; counts and provenance only, no personal scores or full article text.",
   "roster": {
     "json_path": "examples/personas_publicas_mexico_300.json",
@@ -668,13 +668,244 @@
     "log_sha256": "daafc8c3efd4f3429d633190b9872881eba27f7cbca37bbeb0235c501b790b78",
     "scope": "Local run after corrections; not a release CI result."
   },
-  "resumed_real_300_measurement": null,
-  "release_ci": null,
-  "pending_evidence": [
-    "Resumed public search results with immutable completed-query preservation and cumulative coverage.",
-    "Final corrected-source hashes and exact release commit.",
-    "Release CI and portable artifact validation."
-  ],
+  "resumed_real_300_measurement": {
+    "recorded_at": "2026-10-16T07:34:22.429428+00:00",
+    "method": {
+      "real_transport": true,
+      "real_clock": true,
+      "responses_substituted": false,
+      "production_pipeline": true,
+      "synthetic_documents_imported": false,
+      "automatic_human_confirmations": false,
+      "partial_analysis_explicitly_audited": true,
+      "local_phase": "Independent SQLite/file copy; all DNS/TCP forbidden; cold queue and backoff preserved.",
+      "identity_accuracy_or_risk_prediction_validated": false,
+      "raw_bodies_exported": false
+    },
+    "parameters": {
+      "online": true,
+      "resume": true,
+      "sources": "mwmbl_web,duckduckgo_web",
+      "body_sources": "contralinea_index,aristegui_index,desinformemonos_index",
+      "seconds": 900.0,
+      "public_seconds": 900.0,
+      "fallback_seconds": 0.0,
+      "local_seconds": 60,
+      "max_requests": 500,
+      "workers": 8,
+      "body_budget": 90,
+      "per_person_body": 3,
+      "start": "2016-01-01",
+      "end": "2026-10-16",
+      "allow_small_roster": false
+    },
+    "checks": {
+      "source_unchanged_during_run": true,
+      "audit_ok": true,
+      "all_imported_people_scored": true,
+      "all_scores_replay": true,
+      "all_people_queries_planned": true,
+      "previous_done_public_queries_preserved": true,
+      "previous_score_history_preserved": true,
+      "no_dns_in_local_phase": true,
+      "no_tcp_in_local_phase": true,
+      "no_http_in_local_phase": true,
+      "local_copy_audit_ok": true,
+      "local_cache_did_not_duplicate_candidates": false,
+      "local_cache_did_not_duplicate_observations": false,
+      "local_cache_did_not_duplicate_bodies": true,
+      "cold_bank_counts_unchanged_by_local_copy": true,
+      "cold_queue_unchanged_by_local_copy": true,
+      "cold_host_backoff_unchanged_by_local_copy": true,
+      "canonical_urls_unique": true,
+      "same_publisher_body_content_deduplicated": true,
+      "metadata_not_reported_as_body": true,
+      "original_bodies_have_source_snapshots": true
+    },
+    "coverage_checks": {
+      "all_people_queried_over_network": false,
+      "all_people_search_completed": false,
+      "actual_local_http_cache_reuse_observed": true,
+      "at_least_one_original_body": false
+    },
+    "integrity_passed": false,
+    "complete_300_live_search_passed": false,
+    "summary": {
+      "people_imported": 300,
+      "people_network_queried": 271,
+      "people_network_queried_this_session": 103,
+      "cumulative_http_requests": 375,
+      "session_http_requests": 115,
+      "people_search_completed": 263,
+      "people_not_network_queried": 29,
+      "people_with_relevant_candidates": 140,
+      "people_with_relevant_full_bodies": 0,
+      "groups": {
+        "municipal_president": {
+          "imported": 150,
+          "network_queried": 139,
+          "search_completed": 136
+        },
+        "notary": {
+          "imported": 150,
+          "network_queried": 132,
+          "search_completed": 127
+        }
+      },
+      "score_zero": 300,
+      "score_nonzero": 0,
+      "assessment_states": {
+        "insufficient_evidence": 300
+      }
+    },
+    "timings_seconds": {
+      "import": 0.18122805900202366,
+      "public_acquisition": 900.0671589400008,
+      "attribution": 0.4044866609983728,
+      "scoring": 0.2503317259979667,
+      "score_replay": 26.31910486400011,
+      "local_cache_copy_and_reuse": 7.119763893999334,
+      "total": 934.8040812079998
+    },
+    "http_status_counts": {
+      "None": 15,
+      "200": 99,
+      "202": 1
+    },
+    "fetch_outcome_counts": {
+      "host_interval": 6268,
+      "ok": 99,
+      "network_failure": 14,
+      "access_challenge": 1,
+      "host_circuit": 26,
+      "session_limit": 1
+    },
+    "counts": {
+      "entities": 300,
+      "news_articles": 931,
+      "news_observations": 937,
+      "documents": 0,
+      "evidence": 0,
+      "news_identity_links": 0,
+      "scores": 300,
+      "score_runs": 600
+    },
+    "local_counts": {
+      "entities": 300,
+      "news_articles": 943,
+      "news_observations": 1784,
+      "documents": 0,
+      "evidence": 0,
+      "news_identity_links": 0,
+      "scores": 300,
+      "score_runs": 600
+    },
+    "resume": {
+      "enabled": true,
+      "previous_done_public_queries": 164,
+      "previous_http_requests": 260,
+      "same_nominal_window": "real-people-public",
+      "completed_queries_revalidated": false
+    },
+    "audit": {
+      "ok": true,
+      "checked": 15453,
+      "head_hash": "d0ffabaf1326d267adafeced816f7caf0cfe0745f9d85a93a01566d00a179e69",
+      "score_runs_checked": 600,
+      "scope": "event_chain_document_content_current_scores_and_historical_score_runs_with_document_metadata",
+      "limitation": "Una reescritura completa requiere detectar con un hash o respaldo externo."
+    },
+    "source_code_sha256": {
+      "peps/__init__.py": "19e0094f691ebcde9313b9812055e5ed7351d4eae525d3d85866619e0b093dcc",
+      "peps/__main__.py": "3129adff95e0f38b87ab34cddfc27082c7892bcaec267ff5d40f160fdf55b44a",
+      "peps/acquisition_coverage.py": "12c9119db1e35a7fac0b375e318a61c29be0481143ff5b97913b870e5b59b50c",
+      "peps/advanced_nlp.py": "1ac3b13daeaef6b76da4f553bfe367604790c04d670d0f4a6418d0f2fbb547cc",
+      "peps/app.py": "af1808d589d17ebd70823edfe5e690ec0810573ce56efb7ef968ee6421d7e669",
+      "peps/cli.py": "857805ccadf39ef6bedf6c808283b17805ea9274d65df8bd8952c0eeb39dbf31",
+      "peps/collector.py": "7788431d4981a1632ca43fcf550a1983002c07e6fecf9337fd134d96947fa0fc",
+      "peps/context_model.py": "ada181d47cc0bd45c4bb3124db9920ee52fdb4e7115643a582c05f56de30a59b",
+      "peps/contextual.py": "7713ec854c309e1f4ca807fb31f2b464af5495fbd05e4f77ca42865e4baa40d8",
+      "peps/engine.py": "cb198049f2bb7b2e1d80c77e47835b24c33ab79593165e1ea9405033ae06bfe5",
+      "peps/explainability.py": "5556420200f2d97436313af04c7d7303fbf008752bea4e38bc940838961b3b4e",
+      "peps/identity.py": "f05524947d5b1d765803da6faa145f3b422a61a10971a1caca3c6983f3436d2f",
+      "peps/importing.py": "54fc447531cecb986c3e4be4570d0d3f2280a4f86d5dd50e60c0109bf008e310",
+      "peps/news.py": "a866ac90e2b296a3e2a85c58622f14bc9782d8fb62b0b3c4b71755995ecb1c9e",
+      "peps/news_projection.py": "e41de0275891fba72d872ef3205826a990c4adb8b89da9b46a4d6ee4b60527b5",
+      "peps/news_search.py": "adf67eb1c4cafdd600e9b8d7591011d0f738b2978844279f95c0f4222083a4b1",
+      "peps/news_session.py": "bb82278e198245df66e127902fad03655caad5447e080cc1db155ab681b8ac90",
+      "peps/nlp.py": "9b947a8ec53446fed346fc1ca3efbf2bb07224cb37640a2396fbbeb10cab6196",
+      "peps/official.py": "c864c512d84b06a1caf3b458c1cadf5820b805a2be7dc6f1c4c59cae0cfb66cf",
+      "peps/public_search.py": "ead1a91faffc802d14e99e4238e3a6d26808c3bf1bced3f942b54dba55f21c89",
+      "peps/relevance.py": "2e8bd1fd4dfd3a246c3cc8cb6dea2527aaa8b91f307a3c08d7e575a1e84f6a76",
+      "peps/robots_policy.py": "33293cbaa7ca859ce37ae3104b8e84ab9478fb60e867d7643d88830513c2e453",
+      "peps/scoring.py": "ff4e9e9f19cb0c781f02c06b68c2e2eaa00ee08f22dd8f71219fa5042879fe7e",
+      "peps/shared_crawl.py": "84644aba7017989031360e86598da0f4eb282fecfcd7f0cbe251fbe2fb842d3e",
+      "peps/shared_discovery.py": "9b192dbb3dea8a0595a97109a877ef1443d1c8739510087172e3ee84a60a9fe2",
+      "peps/social_discovery.py": "e3420915e1c649020e291fb5a05ac66e52f0b2b206c4ad842fafed675e4d8892",
+      "peps/sources.py": "f24351c8d22a194eef1cad8572e7fe33224bfb8b4e0cf2e4614f941b4814fc5d",
+      "peps/store.py": "ca55cea501a3f4f32a6b57838497c6348f1ab6bd2095f88833514c80e9fd0e47",
+      "peps/workflow.py": "a170a761b4fc9396aefe8e55e26cefdc1be4c614b40ae1082a0520bf801d4a6c"
+    },
+    "process_exit_code": 1,
+    "integrity_checks_passed": 19,
+    "integrity_checks_total": 21,
+    "failed_checks": [
+      "local_cache_did_not_duplicate_candidates",
+      "local_cache_did_not_duplicate_observations"
+    ],
+    "public_phase": {
+      "completed": 99,
+      "pending": 10,
+      "jobs": {
+        "blocked": 27,
+        "cancelled": 17,
+        "deferred": 10,
+        "done": 306
+      },
+      "queue_complete": false,
+      "stop_reason": "time_limit",
+      "discovery_records": 578,
+      "relevant_records": 102,
+      "excluded_records": 476,
+      "body_queued": 0,
+      "elapsed_seconds": 900.0533
+    },
+    "local_phase": {
+      "new_dns_tcp_http": 0,
+      "http_cache_hits": 263,
+      "counts_before": {
+        "entities": 300,
+        "news_articles": 931,
+        "news_observations": 937,
+        "documents": 0,
+        "evidence": 0,
+        "news_identity_links": 0,
+        "scores": 300,
+        "score_runs": 600
+      },
+      "counts_after": {
+        "entities": 300,
+        "news_articles": 943,
+        "news_observations": 1784,
+        "documents": 0,
+        "evidence": 0,
+        "news_identity_links": 0,
+        "scores": 300,
+        "score_runs": 600
+      },
+      "cold_original_preserved": true,
+      "integrity_passed": false,
+      "diagnosis": "The two immutable strict first-replay failures reflect legitimate relevance-model migration, not canonical URL or same-version semantic duplication: 847 observations = 835 updated model-version receipts + 12 newly relevant candidate URLs. This diagnosis does not change the recorded exit 1 or integrity_passed=false. Independent second replay verified exact stability after enrichment."
+    },
+    "interpretation": "Immutable failed resumed measurement. Cumulative 271 people queried, not 300. This session made 115 HTTP attempts; cumulative 375 includes the initial 260. The cold original bank and its history were preserved. Two local-copy candidate/observation invariance checks failed.",
+    "source_snapshot_note": "Post-correction modules frozen during this resumed run, before any following harness or migration fixes. These hashes match the recorded local package proof; neither CI nor the later release is implied.",
+    "diagnosis_after_independent_audit": "The two immutable strict first-replay failures reflect legitimate relevance-model migration, not canonical URL or same-version semantic duplication: 847 observations = 835 updated model-version receipts + 12 newly relevant candidate URLs. This diagnosis does not change the recorded exit 1 or integrity_passed=false. Independent second replay verified exact stability after enrichment."
+  },
+  "release_ci": {
+    "scope": "Independent publication gate for the actual commit to integrate; not an outcome of this measurement report.",
+    "checks_url": "https://github.com/giovannyTorres/web_scraping_peps/pull/16/checks",
+    "requires": "All matrix, optional-NLP, guided-UI/stress and Windows-portable workflow jobs successful at the publication head."
+  },
   "artifacts_sha256": {
     "runtime/real-300/full.json": "b461d84e39672163324792447e4d7eed931c87bc8f7fa3ad673abf6cb85f759c",
     "runtime/real-300/pilot.json": "8a35b2cf0575f5a08905e84e40f05b2b6e37340d8151bc1a6fe4a84a5e286638",
@@ -688,15 +919,909 @@
     "runtime/real-300/transport-work/offline-audit-candidate.json": "a275c9e988e147f020210c8ffd6dfcb8589f0f9ee60cbedef28f3bdbee47ee78",
     "runtime/real-300/transport-work/candidate-test-report.json": "70de8a70d6711b5937f9906502edd18779d9a4ea63124a381eb3286df92af572",
     "runtime/real-300/search-audit/pilot-corpus-audit.json": "d9e5b96992edcf8adae29d482d04823a29cef1ad3aa73b11cb5117538786db99",
-    "runtime/real-300/unit-corrections.log": "daafc8c3efd4f3429d633190b9872881eba27f7cbca37bbeb0235c501b790b78"
+    "runtime/real-300/unit-corrections.log": "daafc8c3efd4f3429d633190b9872881eba27f7cbca37bbeb0235c501b790b78",
+    "runtime/real-300/resume-1.json": "66e12ae7e8234c21701829e022874fcf0d85bd81b1a238338241743ac68fa5a8",
+    "runtime/real-300/package-proof.json": "ff221d0e780208d4c6b803f24f6a119c5cb5c9a1da68485584052068e061ecc0",
+    "runtime/real-300/wheel-validation.json": "7fbc0c313b2e184b1ee5c934d19ce3e65d5de8739e5f8f04a6496e8edab1e860",
+    "runtime/real-300/resume-2.json": "15c40c5d3e0227cf424f340f19b6ee72de99b53506c456c385fae354a51f619a",
+    "runtime/real-300/warm-current-model-second-pass.json": "4bceeb05c8799e8d17c5848e36d56d5e293894f28c62fc445c4c9e87906d1bf3",
+    "runtime/real-300/model-migration-audit.json": "d449f1beee54342e410c1873b7c739e37db7a28d5c29ef217ee138165bb2f586",
+    "runtime/real-300/final-verifier.json": "6a75d66a8264eee8323982421db57e0b21cc5d37de5abf695aa27bb6246bce50",
+    "runtime/real-300/final-verifier-network-guard.json": "4a4b3241be9e0f1c7f5a5a94c8b533faf4e688c042ed4389176211e5e301f09c",
+    "runtime/real-300/unit-final.log": "f1cc7c66ffadbc39a271a966e536acbd113126efe8be2c6efe315d98db2d2de1"
   },
   "limitations": [
     "The initial 300-person live coverage gate failed and the script returned exit 2. Integrity passed separately.",
+    "The immutable first resumed measurement returned exit 1: 19 of 21 integrity checks passed, with local-copy candidate and observation invariance failures. Its larger query coverage does not make it an approved run.",
+    "The immutable second resumed measurement also returned exit 1 for the same two first-replay invariance checks. Its final live coverage remains incomplete: 278 network-queried, 273 completed, 22 never network-queried, zero original bodies, 27 blocked public queries.",
     "Discovery titles and summaries are not full article bodies or identity evidence.",
     "All 300 initial assessments were insufficient_evidence; internal numeric zeros do not establish absence of risk. No personal score table is published.",
     "Requested 2016-2026 dates do not make public search providers exhaustive historical archives; these providers do not guarantee date filtering.",
     "Publisher probe bodies are outside the 300-person bank and are never added to its body or evidence counts.",
     "No source restrictions, robots, access challenges or persisted provider backoff were bypassed.",
     "No successful 300-person end-to-end original-body analysis or two-minute real-web SLA is claimed."
-  ]
+  ],
+  "package_verification": {
+    "source_sha256": {
+      "peps/__init__.py": "19e0094f691ebcde9313b9812055e5ed7351d4eae525d3d85866619e0b093dcc",
+      "peps/__main__.py": "3129adff95e0f38b87ab34cddfc27082c7892bcaec267ff5d40f160fdf55b44a",
+      "peps/acquisition_coverage.py": "12c9119db1e35a7fac0b375e318a61c29be0481143ff5b97913b870e5b59b50c",
+      "peps/advanced_nlp.py": "1ac3b13daeaef6b76da4f553bfe367604790c04d670d0f4a6418d0f2fbb547cc",
+      "peps/app.py": "af1808d589d17ebd70823edfe5e690ec0810573ce56efb7ef968ee6421d7e669",
+      "peps/cli.py": "857805ccadf39ef6bedf6c808283b17805ea9274d65df8bd8952c0eeb39dbf31",
+      "peps/collector.py": "7788431d4981a1632ca43fcf550a1983002c07e6fecf9337fd134d96947fa0fc",
+      "peps/context_model.py": "ada181d47cc0bd45c4bb3124db9920ee52fdb4e7115643a582c05f56de30a59b",
+      "peps/contextual.py": "7713ec854c309e1f4ca807fb31f2b464af5495fbd05e4f77ca42865e4baa40d8",
+      "peps/engine.py": "cb198049f2bb7b2e1d80c77e47835b24c33ab79593165e1ea9405033ae06bfe5",
+      "peps/explainability.py": "5556420200f2d97436313af04c7d7303fbf008752bea4e38bc940838961b3b4e",
+      "peps/identity.py": "f05524947d5b1d765803da6faa145f3b422a61a10971a1caca3c6983f3436d2f",
+      "peps/importing.py": "54fc447531cecb986c3e4be4570d0d3f2280a4f86d5dd50e60c0109bf008e310",
+      "peps/news.py": "a866ac90e2b296a3e2a85c58622f14bc9782d8fb62b0b3c4b71755995ecb1c9e",
+      "peps/news_projection.py": "e41de0275891fba72d872ef3205826a990c4adb8b89da9b46a4d6ee4b60527b5",
+      "peps/news_search.py": "adf67eb1c4cafdd600e9b8d7591011d0f738b2978844279f95c0f4222083a4b1",
+      "peps/news_session.py": "bb82278e198245df66e127902fad03655caad5447e080cc1db155ab681b8ac90",
+      "peps/nlp.py": "9b947a8ec53446fed346fc1ca3efbf2bb07224cb37640a2396fbbeb10cab6196",
+      "peps/official.py": "c864c512d84b06a1caf3b458c1cadf5820b805a2be7dc6f1c4c59cae0cfb66cf",
+      "peps/public_search.py": "ead1a91faffc802d14e99e4238e3a6d26808c3bf1bced3f942b54dba55f21c89",
+      "peps/relevance.py": "2e8bd1fd4dfd3a246c3cc8cb6dea2527aaa8b91f307a3c08d7e575a1e84f6a76",
+      "peps/robots_policy.py": "33293cbaa7ca859ce37ae3104b8e84ab9478fb60e867d7643d88830513c2e453",
+      "peps/scoring.py": "ff4e9e9f19cb0c781f02c06b68c2e2eaa00ee08f22dd8f71219fa5042879fe7e",
+      "peps/shared_crawl.py": "84644aba7017989031360e86598da0f4eb282fecfcd7f0cbe251fbe2fb842d3e",
+      "peps/shared_discovery.py": "9b192dbb3dea8a0595a97109a877ef1443d1c8739510087172e3ee84a60a9fe2",
+      "peps/social_discovery.py": "e3420915e1c649020e291fb5a05ac66e52f0b2b206c4ad842fafed675e4d8892",
+      "peps/sources.py": "f24351c8d22a194eef1cad8572e7fe33224bfb8b4e0cf2e4614f941b4814fc5d",
+      "peps/store.py": "ca55cea501a3f4f32a6b57838497c6348f1ab6bd2095f88833514c80e9fd0e47",
+      "peps/workflow.py": "a170a761b4fc9396aefe8e55e26cefdc1be4c614b40ae1082a0520bf801d4a6c"
+    },
+    "installed_modules_match": true,
+    "wheel_sha256": "bb7549ddada93115bc03bdb993988be8f7d104969ac13879febb63c761268821",
+    "validation_sha256": "7fbc0c313b2e184b1ee5c934d19ce3e65d5de8739e5f8f04a6496e8edab1e860",
+    "commands": 15,
+    "resources": 16,
+    "unit_tests": {
+      "executed": 835,
+      "passed": 828,
+      "skipped": 7,
+      "seconds": 49.632,
+      "log_sha256": "daafc8c3efd4f3429d633190b9872881eba27f7cbca37bbeb0235c501b790b78"
+    },
+    "kind": "wheel",
+    "name": "peps_mx-2.9.2-py3-none-any.whl",
+    "validation_ok": true,
+    "commands_checked": [
+      "--help",
+      "peps --help",
+      "import-entities",
+      "import-documents",
+      "score",
+      "explain",
+      "replay",
+      "score-history",
+      "audit",
+      "stats",
+      "export",
+      "backup",
+      "news-stats",
+      "news-queue",
+      "ui --no-browser"
+    ],
+    "resources_sha256": {
+      "defaults/sources.json": "d687b2ed74a193ceaf80aeccc9c3ebaf25701302d3de50313650195b24320e8a",
+      "defaults/news_sources.json": "9658d03f4fd5893054dd224c36827a4e13f117e54ab49959a0228ac04be73c99",
+      "models/context-role-es-v1.json": "ba227bc782936a1e19901f8a1464618e160a5e525593c71affd1705f45a8f563",
+      "licenses/CONTEXT_MODEL_CODE.txt": "a16813d6a62abd0dc9287c55e432283deaac308e9896c24a8a8bf61dbb16ec85",
+      "licenses/CONTEXT_MODEL_DATA.txt": "1ad99d1281f8ea7ea0964d348b82245382979a8d3cf2d9a2dc70bac49dbc9ed4",
+      "web/index.html": "8589bcd662c153314b2565bc7ed569d3234d2414738a91c6943920b04940b555",
+      "web/app.js": "319d93f96bfbcc034f9ab7df49c3dafaba7c63804420842983c55db9c10022ae",
+      "web/import.js": "001462e226849b64e06b267700e8105faca8530cf673a35e32afa2db67d05726",
+      "web/workflow.js": "3241c40795d37dffebc4560830f30168175cae437b495c1b067fc49c2e8f51e7",
+      "web/style.css": "565aeb33296363efb0b63de162e829004a3b77b96b00ea07c01da5d49adf46f7",
+      "web/fonts/Lato-Regular.woff2": "d414a00ed3e47a8cc7462bd43975f0214a05c10b70b5f22686430beb6057ae2c",
+      "web/fonts/Lato-Bold.woff2": "898fe2248312995b4b089601fa76a0da61b47de58b95bb88291230f2a3db764d",
+      "web/fonts/SourceSerif4-Roman.woff2": "4453d73855919eb67a8291bf2bad07782ecaf8af0e4e363d58948ff993209d51",
+      "licenses/LATO_OFL.txt": "74ba064d03f1f1c4a952da936c3eb71866c34404916734de3cae73b34357e59e",
+      "licenses/SOURCE_SERIF_4_OFL.txt": "5f94c3fd3a23131a417ab5a0c8452de57e70c3cfb9f604d88241f7065ebf9fd9",
+      "licenses/FONT_SOURCES.txt": "2bd04ff61208bd77cfe4db490f3f167c614c4873218341f737cb75f834382e45"
+    },
+    "offline_socket_and_dns_guard": true,
+    "network_mode": "closed; disabled sources; HTTP smoke only on 127.0.0.1",
+    "scope": "Installed wheel matches all 29 final production modules. Harness/test changes are outside the installed package. Windows portable publication is checked independently in CI.",
+    "matches_final_production_modules": true
+  },
+  "ci_history": [
+    {
+      "run_id": 38867193403,
+      "url": "https://github.com/giovannyTorres/web_scraping_peps/actions/runs/38867193403",
+      "head_sha": "3a2f2afede46b404e3051fe881da31050f5858aa",
+      "tree_sha": "b242524205354eb8a1677a6fe01d09ca62e34e9c",
+      "conclusion": "failure",
+      "jobs": [
+        {
+          "name": "Ubuntu Python 3.10",
+          "id": 116862633304,
+          "conclusion": "success"
+        },
+        {
+          "name": "Ubuntu Python 3.12",
+          "id": 116862633341,
+          "conclusion": "success"
+        },
+        {
+          "name": "Windows Python 3.10",
+          "id": 116862633231,
+          "conclusion": "success"
+        },
+        {
+          "name": "Windows Python 3.12",
+          "id": 116862632891,
+          "conclusion": "failure",
+          "tests_executed": 835,
+          "errors": 4,
+          "assertion_failures": 0,
+          "skipped": 7,
+          "seconds": 373.579,
+          "cause": "New harness tests left temporary SQLite handles open during directory cleanup on Windows; the later cleanup fix and successful second CI are recorded separately."
+        },
+        {
+          "name": "Optional NLP",
+          "id": 116862633248,
+          "conclusion": "success"
+        },
+        {
+          "name": "Guided UI and quick stress",
+          "id": 116862633414,
+          "conclusion": "success"
+        },
+        {
+          "name": "Windows portable",
+          "id": 116864831683,
+          "conclusion": "skipped"
+        }
+      ],
+      "scope": "First CI attempt only. Failure retained; not final release approval."
+    },
+    {
+      "run_id": 38868706920,
+      "url": "https://github.com/giovannyTorres/web_scraping_peps/actions/runs/38868706920",
+      "head_sha": "a44722dbe8588cc7f75df12dacde045b54f8a000",
+      "conclusion": "success",
+      "successful_jobs": 7,
+      "windows_portable_job_id": 116869987465,
+      "scope": "Successful CI after Windows temporary SQLite cleanup; precedes final migration-harness closure. Not represented as CI approval of later code."
+    }
+  ],
+  "second_resumed_real_300_measurement": {
+    "recorded_at": "2026-10-16T07:41:59.775562+00:00",
+    "method": {
+      "real_transport": true,
+      "real_clock": true,
+      "responses_substituted": false,
+      "production_pipeline": true,
+      "synthetic_documents_imported": false,
+      "automatic_human_confirmations": false,
+      "partial_analysis_explicitly_audited": true,
+      "local_phase": "Independent SQLite/file copy; all DNS/TCP forbidden; cold queue and backoff preserved.",
+      "identity_accuracy_or_risk_prediction_validated": false,
+      "raw_bodies_exported": false
+    },
+    "parameters": {
+      "online": true,
+      "resume": true,
+      "sources": "mwmbl_web,duckduckgo_web",
+      "body_sources": "contralinea_index,aristegui_index,desinformemonos_index",
+      "seconds": 240.0,
+      "public_seconds": 240.0,
+      "fallback_seconds": 0.0,
+      "local_seconds": 60,
+      "max_requests": 50,
+      "workers": 8,
+      "body_budget": 90,
+      "per_person_body": 3,
+      "start": "2016-01-01",
+      "end": "2026-10-16",
+      "allow_small_roster": false
+    },
+    "checks": {
+      "source_unchanged_during_run": true,
+      "audit_ok": true,
+      "all_imported_people_scored": true,
+      "all_scores_replay": true,
+      "all_people_queries_planned": true,
+      "previous_done_public_queries_preserved": true,
+      "previous_score_history_preserved": true,
+      "no_dns_in_local_phase": true,
+      "no_tcp_in_local_phase": true,
+      "no_http_in_local_phase": true,
+      "local_copy_audit_ok": true,
+      "local_cache_did_not_duplicate_candidates": false,
+      "local_cache_did_not_duplicate_observations": false,
+      "local_cache_did_not_duplicate_bodies": true,
+      "cold_bank_counts_unchanged_by_local_copy": true,
+      "cold_queue_unchanged_by_local_copy": true,
+      "cold_host_backoff_unchanged_by_local_copy": true,
+      "canonical_urls_unique": true,
+      "same_publisher_body_content_deduplicated": true,
+      "metadata_not_reported_as_body": true,
+      "original_bodies_have_source_snapshots": true
+    },
+    "coverage_checks": {
+      "all_people_queried_over_network": false,
+      "all_people_search_completed": false,
+      "actual_local_http_cache_reuse_observed": true,
+      "at_least_one_original_body": false
+    },
+    "integrity_passed": false,
+    "complete_300_live_search_passed": false,
+    "summary": {
+      "people_imported": 300,
+      "people_network_queried": 278,
+      "people_network_queried_this_session": 10,
+      "cumulative_http_requests": 387,
+      "session_http_requests": 12,
+      "people_search_completed": 273,
+      "people_not_network_queried": 22,
+      "people_with_relevant_candidates": 142,
+      "people_with_relevant_full_bodies": 0,
+      "groups": {
+        "municipal_president": {
+          "imported": 150,
+          "network_queried": 142,
+          "search_completed": 141
+        },
+        "notary": {
+          "imported": 150,
+          "network_queried": 136,
+          "search_completed": 132
+        }
+      },
+      "score_zero": 300,
+      "score_nonzero": 0,
+      "assessment_states": {
+        "insufficient_evidence": 300
+      }
+    },
+    "timings_seconds": {
+      "import": 0.34661338099977,
+      "public_acquisition": 110.62288544199691,
+      "attribution": 0.06908350799494656,
+      "scoring": 0.21559730300214142,
+      "score_replay": 29.871503301001212,
+      "local_cache_copy_and_reuse": 6.9146560250010225,
+      "total": 148.66572982400248
+    },
+    "http_status_counts": {
+      "200": 10,
+      "None": 2
+    },
+    "fetch_outcome_counts": {
+      "host_interval": 59,
+      "ok": 10,
+      "network_failure": 2
+    },
+    "counts": {
+      "entities": 300,
+      "news_articles": 933,
+      "news_observations": 939,
+      "documents": 0,
+      "evidence": 0,
+      "news_identity_links": 0,
+      "scores": 300,
+      "score_runs": 900
+    },
+    "local_counts": {
+      "entities": 300,
+      "news_articles": 945,
+      "news_observations": 1786,
+      "documents": 0,
+      "evidence": 0,
+      "news_identity_links": 0,
+      "scores": 300,
+      "score_runs": 900
+    },
+    "resume": {
+      "enabled": true,
+      "previous_done_public_queries": 263,
+      "previous_http_requests": 375,
+      "same_nominal_window": "real-people-public",
+      "completed_queries_revalidated": false
+    },
+    "audit": {
+      "ok": true,
+      "checked": 16140,
+      "head_hash": "6ebf629b853c76a4ab0c2deb389c9be8ffb98b0e9364c5dc8c55b34d98d7e548",
+      "score_runs_checked": 900,
+      "scope": "event_chain_document_content_current_scores_and_historical_score_runs_with_document_metadata",
+      "limitation": "Una reescritura completa requiere detectar con un hash o respaldo externo."
+    },
+    "source_code_sha256": {
+      "peps/__init__.py": "19e0094f691ebcde9313b9812055e5ed7351d4eae525d3d85866619e0b093dcc",
+      "peps/__main__.py": "3129adff95e0f38b87ab34cddfc27082c7892bcaec267ff5d40f160fdf55b44a",
+      "peps/acquisition_coverage.py": "12c9119db1e35a7fac0b375e318a61c29be0481143ff5b97913b870e5b59b50c",
+      "peps/advanced_nlp.py": "1ac3b13daeaef6b76da4f553bfe367604790c04d670d0f4a6418d0f2fbb547cc",
+      "peps/app.py": "af1808d589d17ebd70823edfe5e690ec0810573ce56efb7ef968ee6421d7e669",
+      "peps/cli.py": "857805ccadf39ef6bedf6c808283b17805ea9274d65df8bd8952c0eeb39dbf31",
+      "peps/collector.py": "7788431d4981a1632ca43fcf550a1983002c07e6fecf9337fd134d96947fa0fc",
+      "peps/context_model.py": "ada181d47cc0bd45c4bb3124db9920ee52fdb4e7115643a582c05f56de30a59b",
+      "peps/contextual.py": "7713ec854c309e1f4ca807fb31f2b464af5495fbd05e4f77ca42865e4baa40d8",
+      "peps/engine.py": "cb198049f2bb7b2e1d80c77e47835b24c33ab79593165e1ea9405033ae06bfe5",
+      "peps/explainability.py": "5556420200f2d97436313af04c7d7303fbf008752bea4e38bc940838961b3b4e",
+      "peps/identity.py": "f05524947d5b1d765803da6faa145f3b422a61a10971a1caca3c6983f3436d2f",
+      "peps/importing.py": "54fc447531cecb986c3e4be4570d0d3f2280a4f86d5dd50e60c0109bf008e310",
+      "peps/news.py": "a866ac90e2b296a3e2a85c58622f14bc9782d8fb62b0b3c4b71755995ecb1c9e",
+      "peps/news_projection.py": "e41de0275891fba72d872ef3205826a990c4adb8b89da9b46a4d6ee4b60527b5",
+      "peps/news_search.py": "adf67eb1c4cafdd600e9b8d7591011d0f738b2978844279f95c0f4222083a4b1",
+      "peps/news_session.py": "bb82278e198245df66e127902fad03655caad5447e080cc1db155ab681b8ac90",
+      "peps/nlp.py": "9b947a8ec53446fed346fc1ca3efbf2bb07224cb37640a2396fbbeb10cab6196",
+      "peps/official.py": "c864c512d84b06a1caf3b458c1cadf5820b805a2be7dc6f1c4c59cae0cfb66cf",
+      "peps/public_search.py": "ead1a91faffc802d14e99e4238e3a6d26808c3bf1bced3f942b54dba55f21c89",
+      "peps/relevance.py": "2e8bd1fd4dfd3a246c3cc8cb6dea2527aaa8b91f307a3c08d7e575a1e84f6a76",
+      "peps/robots_policy.py": "33293cbaa7ca859ce37ae3104b8e84ab9478fb60e867d7643d88830513c2e453",
+      "peps/scoring.py": "ff4e9e9f19cb0c781f02c06b68c2e2eaa00ee08f22dd8f71219fa5042879fe7e",
+      "peps/shared_crawl.py": "84644aba7017989031360e86598da0f4eb282fecfcd7f0cbe251fbe2fb842d3e",
+      "peps/shared_discovery.py": "9b192dbb3dea8a0595a97109a877ef1443d1c8739510087172e3ee84a60a9fe2",
+      "peps/social_discovery.py": "e3420915e1c649020e291fb5a05ac66e52f0b2b206c4ad842fafed675e4d8892",
+      "peps/sources.py": "f24351c8d22a194eef1cad8572e7fe33224bfb8b4e0cf2e4614f941b4814fc5d",
+      "peps/store.py": "ca55cea501a3f4f32a6b57838497c6348f1ab6bd2095f88833514c80e9fd0e47",
+      "peps/workflow.py": "a170a761b4fc9396aefe8e55e26cefdc1be4c614b40ae1082a0520bf801d4a6c"
+    },
+    "process_exit_code": 1,
+    "integrity_checks_passed": 19,
+    "integrity_checks_total": 21,
+    "failed_checks": [
+      "local_cache_did_not_duplicate_candidates",
+      "local_cache_did_not_duplicate_observations"
+    ],
+    "public_phase": {
+      "completed": 10,
+      "pending": 0,
+      "jobs": {
+        "blocked": 27,
+        "cancelled": 17,
+        "done": 316
+      },
+      "queue_complete": true,
+      "stop_reason": "completed",
+      "discovery_records": 88,
+      "relevant_records": 2,
+      "excluded_records": 86,
+      "body_queued": 0,
+      "elapsed_seconds": 110.6089
+    },
+    "interpretation": "Immutable second resumed real measurement: cumulative 278 people network-queried, 273 completed searches, 22 never network-queried, zero original bodies. Ten remaining deferred queries completed. No pending tasks does not imply full coverage: 27 public-search tasks remain blocked. The same two strict first-copy invariance checks failed, and the process returned exit 1.",
+    "source_snapshot_note": "Same frozen production-module hashes as resume-1; subsequent validation-harness changes are not retroactively applied to this receipt.",
+    "diagnosis_after_independent_audit": "The two immutable strict first-replay failures reflect legitimate relevance-model migration, not canonical URL or same-version semantic duplication: 847 observations = 835 updated model-version receipts + 12 newly relevant candidate URLs. This diagnosis does not change the recorded exit 1 or integrity_passed=false. Independent second replay verified exact stability after enrichment."
+  },
+  "post_enrichment_exact_replay": {
+    "recorded_at": "2026-10-16T07:41:43.515995+00:00",
+    "method": "Independent copy of first local replay; second production acquisition with DNS/TCP blocked, unchanged real cached HTTP bodies, no response substitution.",
+    "checks": {
+      "news_articles_byte_equal": true,
+      "news_observations_byte_equal": true,
+      "documents_byte_equal": true,
+      "evidence_byte_equal": true,
+      "scores_byte_equal": true,
+      "score_runs_byte_equal": true,
+      "dns_forbidden": true,
+      "tcp_forbidden": true,
+      "zero_http": true,
+      "real_cache_reuse": true,
+      "audit_ok": true,
+      "source_original_unchanged": true
+    },
+    "counts_before": {
+      "news_articles": 943,
+      "news_observations": 1784,
+      "documents": 0,
+      "evidence": 0,
+      "scores": 300,
+      "score_runs": 600
+    },
+    "counts_after": {
+      "news_articles": 943,
+      "news_observations": 1784,
+      "documents": 0,
+      "evidence": 0,
+      "scores": 300,
+      "score_runs": 600
+    },
+    "table_content_sha256_before": {
+      "news_articles": "d0ecc98573619979dc6dea6c4fca01ea489f562f40a6d4481fc1aa39c276a165",
+      "news_observations": "71253ab44c6cd27ebcb75d67e657245bdeb554a9031ed349833c7e91fa4bedf1",
+      "documents": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "evidence": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "scores": "873610015ebe22285c232aada42592f26290a2fe4ed5a4fd8b17d563d06611ed",
+      "score_runs": "9bc4ddfb3e8863e020b4223a172e863508ee3eccad5b860f5c3b23da232934fa"
+    },
+    "table_content_sha256_after": {
+      "news_articles": "d0ecc98573619979dc6dea6c4fca01ea489f562f40a6d4481fc1aa39c276a165",
+      "news_observations": "71253ab44c6cd27ebcb75d67e657245bdeb554a9031ed349833c7e91fa4bedf1",
+      "documents": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "evidence": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "scores": "873610015ebe22285c232aada42592f26290a2fe4ed5a4fd8b17d563d06611ed",
+      "score_runs": "9bc4ddfb3e8863e020b4223a172e863508ee3eccad5b860f5c3b23da232934fa"
+    },
+    "seconds": 10.95609595499991,
+    "source_code_sha256": {
+      "peps/__init__.py": "19e0094f691ebcde9313b9812055e5ed7351d4eae525d3d85866619e0b093dcc",
+      "peps/__main__.py": "3129adff95e0f38b87ab34cddfc27082c7892bcaec267ff5d40f160fdf55b44a",
+      "peps/acquisition_coverage.py": "12c9119db1e35a7fac0b375e318a61c29be0481143ff5b97913b870e5b59b50c",
+      "peps/advanced_nlp.py": "1ac3b13daeaef6b76da4f553bfe367604790c04d670d0f4a6418d0f2fbb547cc",
+      "peps/app.py": "af1808d589d17ebd70823edfe5e690ec0810573ce56efb7ef968ee6421d7e669",
+      "peps/cli.py": "857805ccadf39ef6bedf6c808283b17805ea9274d65df8bd8952c0eeb39dbf31",
+      "peps/collector.py": "7788431d4981a1632ca43fcf550a1983002c07e6fecf9337fd134d96947fa0fc",
+      "peps/context_model.py": "ada181d47cc0bd45c4bb3124db9920ee52fdb4e7115643a582c05f56de30a59b",
+      "peps/contextual.py": "7713ec854c309e1f4ca807fb31f2b464af5495fbd05e4f77ca42865e4baa40d8",
+      "peps/engine.py": "cb198049f2bb7b2e1d80c77e47835b24c33ab79593165e1ea9405033ae06bfe5",
+      "peps/explainability.py": "5556420200f2d97436313af04c7d7303fbf008752bea4e38bc940838961b3b4e",
+      "peps/identity.py": "f05524947d5b1d765803da6faa145f3b422a61a10971a1caca3c6983f3436d2f",
+      "peps/importing.py": "54fc447531cecb986c3e4be4570d0d3f2280a4f86d5dd50e60c0109bf008e310",
+      "peps/news.py": "a866ac90e2b296a3e2a85c58622f14bc9782d8fb62b0b3c4b71755995ecb1c9e",
+      "peps/news_projection.py": "e41de0275891fba72d872ef3205826a990c4adb8b89da9b46a4d6ee4b60527b5",
+      "peps/news_search.py": "adf67eb1c4cafdd600e9b8d7591011d0f738b2978844279f95c0f4222083a4b1",
+      "peps/news_session.py": "bb82278e198245df66e127902fad03655caad5447e080cc1db155ab681b8ac90",
+      "peps/nlp.py": "9b947a8ec53446fed346fc1ca3efbf2bb07224cb37640a2396fbbeb10cab6196",
+      "peps/official.py": "c864c512d84b06a1caf3b458c1cadf5820b805a2be7dc6f1c4c59cae0cfb66cf",
+      "peps/public_search.py": "ead1a91faffc802d14e99e4238e3a6d26808c3bf1bced3f942b54dba55f21c89",
+      "peps/relevance.py": "2e8bd1fd4dfd3a246c3cc8cb6dea2527aaa8b91f307a3c08d7e575a1e84f6a76",
+      "peps/robots_policy.py": "33293cbaa7ca859ce37ae3104b8e84ab9478fb60e867d7643d88830513c2e453",
+      "peps/scoring.py": "ff4e9e9f19cb0c781f02c06b68c2e2eaa00ee08f22dd8f71219fa5042879fe7e",
+      "peps/shared_crawl.py": "84644aba7017989031360e86598da0f4eb282fecfcd7f0cbe251fbe2fb842d3e",
+      "peps/shared_discovery.py": "9b192dbb3dea8a0595a97109a877ef1443d1c8739510087172e3ee84a60a9fe2",
+      "peps/social_discovery.py": "e3420915e1c649020e291fb5a05ac66e52f0b2b206c4ad842fafed675e4d8892",
+      "peps/sources.py": "f24351c8d22a194eef1cad8572e7fe33224bfb8b4e0cf2e4614f941b4814fc5d",
+      "peps/store.py": "ca55cea501a3f4f32a6b57838497c6348f1ab6bd2095f88833514c80e9fd0e47",
+      "peps/workflow.py": "a170a761b4fc9396aefe8e55e26cefdc1be4c614b40ae1082a0520bf801d4a6c"
+    },
+    "http_cache_hits": 263,
+    "new_http_requests": 0,
+    "all_checks_passed": true,
+    "scope": "Second acquisition on an independent copy of the first already-enriched local replay. Preserves exact table rows and counts. This is neither a new internet search nor a correction of the immutable failed first-replay receipt."
+  },
+  "latest_observed_public_coverage": {
+    "people_imported": 300,
+    "people_network_queried": 278,
+    "people_network_queried_this_session": 10,
+    "cumulative_http_requests": 387,
+    "session_http_requests": 12,
+    "people_search_completed": 273,
+    "people_not_network_queried": 22,
+    "people_with_relevant_candidates": 142,
+    "people_with_relevant_full_bodies": 0,
+    "groups": {
+      "municipal_president": {
+        "imported": 150,
+        "network_queried": 142,
+        "search_completed": 141
+      },
+      "notary": {
+        "imported": 150,
+        "network_queried": 136,
+        "search_completed": 132
+      }
+    },
+    "score_zero": 300,
+    "score_nonzero": 0,
+    "assessment_states": {
+      "insufficient_evidence": 300
+    },
+    "scope": "Cumulative after two real resumed sessions; no extra network pass implied.",
+    "original_bank_counts": {
+      "entities": 300,
+      "news_articles": 933,
+      "news_observations": 939,
+      "documents": 0,
+      "evidence": 0,
+      "news_identity_links": 0,
+      "scores": 300,
+      "score_runs": 900
+    },
+    "blocked_public_queries": 27,
+    "pending_public_queries": 0,
+    "coverage_passed": false,
+    "all_assessments_insufficient_evidence": true
+  },
+  "independent_model_migration_audit": {
+    "schema_version": 1,
+    "recorded_at": "2026-10-16T07:45:27.526666+00:00",
+    "method": "Independent SQLite URI mode=ro with explicit read transactions. No Engine/acquire/network. Only this aggregate artifact written. No names, URLs, excerpts, body text or personal risk assertions.",
+    "inputs": {
+      "resume_1_report": {
+        "path": "runtime/real-300/resume-1.json",
+        "sha256": "66e12ae7e8234c21701829e022874fcf0d85bd81b1a238338241743ac68fa5a8",
+        "recorded_at": "2026-10-16T07:34:22.429428+00:00"
+      },
+      "initial_report": {
+        "path": "runtime/real-300/full.json",
+        "sha256": "b461d84e39672163324792447e4d7eed931c87bc8f7fa3ad673abf6cb85f759c"
+      },
+      "frozen_local_database": {
+        "path": "runtime/real-300/bank-full-local-resume-1/peps.sqlite3",
+        "snapshot_at": "2026-10-16T07:45:27.028115+00:00",
+        "logical_snapshot_sha256": "dc468e9550225538870786cd4ecdcaa807f94e764ab570cb63a36730cddad604",
+        "main_file_sha256": "f445c1741f493d63a3781262c45fe148d737d6143d4853287982d59478ac6562",
+        "wal_file_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "note": "Physical main hash excludes WAL; logical transaction snapshot is authoritative."
+      },
+      "active_original_database": {
+        "path": "runtime/real-300/bank-full/peps.sqlite3",
+        "snapshot_at": "2026-10-16T07:45:27.146835+00:00",
+        "physical_sha256": null,
+        "note": "Resume-2 active. No present file hash represented as earlier resume-1 baseline."
+      }
+    },
+    "baseline_provenance": {
+      "article_ids": "931 from preserved resume-1 report articles array.",
+      "observation_rows": "937 reconstructed from frozen local as 835 legacy 1.1 plus 102 current 1.2 without legacy counterpart. Earlier direct SQL comparison with original before resume-2 confirmed all original rows unchanged; exact earlier wall-clock timestamp not recorded. This artifact rechecks historical IDs against current original snapshot.",
+      "lineage_columns": [
+        "article_id",
+        "source_id",
+        "discovery_url",
+        "observed_url",
+        "retrieved_at",
+        "discovery_hash"
+      ],
+      "observation_id": "SHA256 canonical UTF-8 JSON [article_id,source_id,discovery_url,discovery_hash,parsed details]; sort_keys=true, ensure_ascii=false, compact separators.",
+      "row_digest": "SHA256 same canonical JSON of complete raw row dictionaries sorted by PK, retaining textual JSON fields byte-for-byte.",
+      "same_version_key": [
+        "article_id",
+        "source_id",
+        "discovery_url",
+        "observed_url",
+        "discovery_hash",
+        "details.source_config_hash",
+        "details.retrieval_relevance.model_version"
+      ]
+    },
+    "counts": {
+      "baseline_report": {
+        "entities": 300,
+        "news_articles": 931,
+        "news_observations": 937,
+        "documents": 0,
+        "evidence": 0,
+        "news_identity_links": 0,
+        "scores": 300,
+        "score_runs": 600
+      },
+      "frozen_local_report": {
+        "entities": 300,
+        "news_articles": 943,
+        "news_observations": 1784,
+        "documents": 0,
+        "evidence": 0,
+        "news_identity_links": 0,
+        "scores": 300,
+        "score_runs": 600
+      },
+      "baseline_models": {
+        "metadata-relevance-1.1.0": 835,
+        "metadata-relevance-1.2.0": 102
+      },
+      "local_models": {
+        "metadata-relevance-1.2.0": 949,
+        "metadata-relevance-1.1.0": 835
+      },
+      "new_observations": 847,
+      "version_upgrade_receipts": 835,
+      "new_canonical_articles": 12,
+      "new_article_observations": 12,
+      "same_version_duplicate_groups": 0,
+      "canonical_duplicate_groups": 0,
+      "new_candidate_people": 8,
+      "local_empty_counts": {
+        "documents": 0,
+        "evidence": 0,
+        "news_identity_links": 0
+      }
+    },
+    "historical_row_sha256": {
+      "news_articles": {
+        "local_sha256": "b65c6db53b6afcf22ce6250b894c267e3b5cf75e8fc30122e435a921c2e981cd",
+        "original_current_snapshot_sha256": "b65c6db53b6afcf22ce6250b894c267e3b5cf75e8fc30122e435a921c2e981cd",
+        "rows": 931
+      },
+      "news_observations": {
+        "local_sha256": "a1bf030f4682e533688e295d903dccc47e27a04c8d1c51086f339ba7593e1d5f",
+        "original_current_snapshot_sha256": "a1bf030f4682e533688e295d903dccc47e27a04c8d1c51086f339ba7593e1d5f",
+        "rows": 937
+      },
+      "audit_prefix": {
+        "local_sha256": "ae7b765f30a1ec53b8c446d69d572a86ac11c93c16a39cb1f3be9a82f7931f92",
+        "original_current_snapshot_sha256": "ae7b765f30a1ec53b8c446d69d572a86ac11c93c16a39cb1f3be9a82f7931f92",
+        "rows": 15453
+      }
+    },
+    "checks": {
+      "news_articles_historical_rows_present_unchanged": true,
+      "news_observations_historical_rows_present_unchanged": true,
+      "audit_prefix_unchanged_and_head_matches_report": true,
+      "835_source_fingerprints_unchanged": true,
+      "835_other_details_unchanged": true,
+      "835_lineage_pairs_unambiguous": true,
+      "no_same_version_semantic_duplicates": true,
+      "no_duplicate_canonical_urls": true,
+      "all_observation_ids_deterministic": true,
+      "new12_metadata_only_contextual_not_identity_or_scoring": true
+    },
+    "interpretation": {
+      "count_equality": "Two false strict equality checks in preserved resume-1 report are legitimate model-version enrichment, not canonical or same-version duplication. 847=835+12.",
+      "history": "Earlier direct comparison found all original article/observation rows, audit prefix, scores and score_runs unchanged. Current historical rows/audit rechecked here; active resume-2 global counts may have grown.",
+      "second_pass": "Independent auditor did not run acquisition; harness owner separately validates second current-model warm pass. Deterministic IDs alone do not claim an executed second pass.",
+      "scope": "Metadata candidates only; no verified identity, body coverage, adverse evidence or positive score inferred."
+    },
+    "pure_rank_comparison": {
+      "method": "Pure baseline/current RelevanceIndex, no Engine/HTTP/identity resolution.",
+      "baseline_relevant": 0,
+      "current_relevant": 12,
+      "entity_ids_match_receipts": true,
+      "exceptions": 0,
+      "baseline_source_sha256_from_initial_report": "2c2fc48a62b5b88c0c7633486ef4f10010da17d9a6cd5fdac3a867078d2b9ebc",
+      "current_source_sha256": "2e8bd1fd4dfd3a246c3cc8cb6dea2527aaa8b91f307a3c08d7e575a1e84f6a76",
+      "baseline_source_path": "runtime/real-300/baseline-2-9-1/peps/relevance.py",
+      "baseline_git_object": "580eed32c020791277c5c96b6677d8de31ad6839:peps/relevance.py",
+      "baseline_execution": "Full unmodified file loaded into temporary peps.readonly_relevance_before module; no monkeypatch or variant disabling.",
+      "baseline_source_sha256_confirmed": "2c2fc48a62b5b88c0c7633486ef4f10010da17d9a6cd5fdac3a867078d2b9ebc"
+    },
+    "all_checks_passed": true,
+    "artifact_sha256": "d449f1beee54342e410c1873b7c739e37db7a28d5c29ef217ee138165bb2f586"
+  },
+  "final_verification": {
+    "recorded_at": "2026-10-16T07:52:28.090737+00:00",
+    "method": {
+      "real_transport": true,
+      "real_clock": true,
+      "responses_substituted": false,
+      "production_pipeline": true,
+      "synthetic_documents_imported": false,
+      "automatic_human_confirmations": false,
+      "partial_analysis_explicitly_audited": true,
+      "local_phase": "Independent SQLite/file copy; all DNS/TCP forbidden; cold queue and backoff preserved.",
+      "identity_accuracy_or_risk_prediction_validated": false,
+      "raw_bodies_exported": false
+    },
+    "checks": {
+      "source_unchanged_during_run": true,
+      "audit_ok": true,
+      "all_imported_people_scored": true,
+      "all_scores_replay": true,
+      "all_people_queries_planned": true,
+      "previous_done_public_queries_preserved": true,
+      "previous_score_history_preserved": true,
+      "no_dns_in_local_phase": true,
+      "no_tcp_in_local_phase": true,
+      "no_http_in_local_phase": true,
+      "local_copy_audit_ok": true,
+      "local_cache_enrichment_has_exact_model_snapshot_policy_lineage": true,
+      "local_current_model_replay_is_exactly_idempotent": true,
+      "local_cache_did_not_duplicate_candidates": true,
+      "local_cache_did_not_duplicate_observations": true,
+      "local_cache_did_not_duplicate_bodies": true,
+      "cold_bank_counts_unchanged_by_local_copy": true,
+      "cold_queue_unchanged_by_local_copy": true,
+      "cold_host_backoff_unchanged_by_local_copy": true,
+      "canonical_urls_unique": true,
+      "same_publisher_body_content_deduplicated": true,
+      "metadata_not_reported_as_body": true,
+      "original_bodies_have_source_snapshots": true
+    },
+    "coverage_checks": {
+      "all_people_queried_over_network": false,
+      "all_people_search_completed": false,
+      "actual_local_http_cache_reuse_observed": true,
+      "at_least_one_original_body": false
+    },
+    "integrity_passed": true,
+    "complete_300_live_search_passed": false,
+    "summary": {
+      "people_imported": 300,
+      "people_network_queried": 278,
+      "people_network_queried_this_session": 0,
+      "cumulative_http_requests": 387,
+      "session_http_requests": 0,
+      "people_search_completed": 273,
+      "people_not_network_queried": 22,
+      "people_with_relevant_candidates": 142,
+      "people_with_relevant_full_bodies": 0,
+      "groups": {
+        "municipal_president": {
+          "imported": 150,
+          "network_queried": 142,
+          "search_completed": 141
+        },
+        "notary": {
+          "imported": 150,
+          "network_queried": 136,
+          "search_completed": 132
+        }
+      },
+      "score_zero": 300,
+      "score_nonzero": 0,
+      "assessment_states": {
+        "insufficient_evidence": 300
+      }
+    },
+    "timings_seconds": {
+      "import": 0.46766293599648634,
+      "public_acquisition": 0.16905324700201163,
+      "attribution": 0.05382653799460968,
+      "scoring": 0.21132143899740186,
+      "score_replay": 25.512789553999028,
+      "local_cache_copy_and_reuse": 13.902922011002374,
+      "total": 41.09627515899774
+    },
+    "counts": {
+      "entities": 300,
+      "news_articles": 933,
+      "news_observations": 939,
+      "documents": 0,
+      "evidence": 0,
+      "news_identity_links": 0,
+      "scores": 300,
+      "score_runs": 1500
+    },
+    "local_counts": {
+      "entities": 300,
+      "news_articles": 945,
+      "news_observations": 1786,
+      "documents": 0,
+      "evidence": 0,
+      "news_identity_links": 0,
+      "scores": 300,
+      "score_runs": 1500
+    },
+    "resume": {
+      "enabled": true,
+      "previous_done_public_queries": 273,
+      "previous_http_requests": 387,
+      "same_nominal_window": "real-people-public",
+      "completed_queries_revalidated": false
+    },
+    "audit": {
+      "ok": true,
+      "checked": 17348,
+      "head_hash": "2731371c1190d591dbfe01d304ae5f3084547d52c014e523eb5ad6c841d33795",
+      "score_runs_checked": 1500,
+      "scope": "event_chain_document_content_current_scores_and_historical_score_runs_with_document_metadata",
+      "limitation": "Una reescritura completa requiere detectar con un hash o respaldo externo."
+    },
+    "source_code_sha256": {
+      "peps/__init__.py": "19e0094f691ebcde9313b9812055e5ed7351d4eae525d3d85866619e0b093dcc",
+      "peps/__main__.py": "3129adff95e0f38b87ab34cddfc27082c7892bcaec267ff5d40f160fdf55b44a",
+      "peps/acquisition_coverage.py": "12c9119db1e35a7fac0b375e318a61c29be0481143ff5b97913b870e5b59b50c",
+      "peps/advanced_nlp.py": "1ac3b13daeaef6b76da4f553bfe367604790c04d670d0f4a6418d0f2fbb547cc",
+      "peps/app.py": "af1808d589d17ebd70823edfe5e690ec0810573ce56efb7ef968ee6421d7e669",
+      "peps/cli.py": "857805ccadf39ef6bedf6c808283b17805ea9274d65df8bd8952c0eeb39dbf31",
+      "peps/collector.py": "7788431d4981a1632ca43fcf550a1983002c07e6fecf9337fd134d96947fa0fc",
+      "peps/context_model.py": "ada181d47cc0bd45c4bb3124db9920ee52fdb4e7115643a582c05f56de30a59b",
+      "peps/contextual.py": "7713ec854c309e1f4ca807fb31f2b464af5495fbd05e4f77ca42865e4baa40d8",
+      "peps/engine.py": "cb198049f2bb7b2e1d80c77e47835b24c33ab79593165e1ea9405033ae06bfe5",
+      "peps/explainability.py": "5556420200f2d97436313af04c7d7303fbf008752bea4e38bc940838961b3b4e",
+      "peps/identity.py": "f05524947d5b1d765803da6faa145f3b422a61a10971a1caca3c6983f3436d2f",
+      "peps/importing.py": "54fc447531cecb986c3e4be4570d0d3f2280a4f86d5dd50e60c0109bf008e310",
+      "peps/news.py": "a866ac90e2b296a3e2a85c58622f14bc9782d8fb62b0b3c4b71755995ecb1c9e",
+      "peps/news_projection.py": "e41de0275891fba72d872ef3205826a990c4adb8b89da9b46a4d6ee4b60527b5",
+      "peps/news_search.py": "adf67eb1c4cafdd600e9b8d7591011d0f738b2978844279f95c0f4222083a4b1",
+      "peps/news_session.py": "bb82278e198245df66e127902fad03655caad5447e080cc1db155ab681b8ac90",
+      "peps/nlp.py": "9b947a8ec53446fed346fc1ca3efbf2bb07224cb37640a2396fbbeb10cab6196",
+      "peps/official.py": "c864c512d84b06a1caf3b458c1cadf5820b805a2be7dc6f1c4c59cae0cfb66cf",
+      "peps/public_search.py": "ead1a91faffc802d14e99e4238e3a6d26808c3bf1bced3f942b54dba55f21c89",
+      "peps/relevance.py": "2e8bd1fd4dfd3a246c3cc8cb6dea2527aaa8b91f307a3c08d7e575a1e84f6a76",
+      "peps/robots_policy.py": "33293cbaa7ca859ce37ae3104b8e84ab9478fb60e867d7643d88830513c2e453",
+      "peps/scoring.py": "ff4e9e9f19cb0c781f02c06b68c2e2eaa00ee08f22dd8f71219fa5042879fe7e",
+      "peps/shared_crawl.py": "84644aba7017989031360e86598da0f4eb282fecfcd7f0cbe251fbe2fb842d3e",
+      "peps/shared_discovery.py": "9b192dbb3dea8a0595a97109a877ef1443d1c8739510087172e3ee84a60a9fe2",
+      "peps/social_discovery.py": "e3420915e1c649020e291fb5a05ac66e52f0b2b206c4ad842fafed675e4d8892",
+      "peps/sources.py": "f24351c8d22a194eef1cad8572e7fe33224bfb8b4e0cf2e4614f941b4814fc5d",
+      "peps/store.py": "ca55cea501a3f4f32a6b57838497c6348f1ab6bd2095f88833514c80e9fd0e47",
+      "peps/workflow.py": "a170a761b4fc9396aefe8e55e26cefdc1be4c614b40ae1082a0520bf801d4a6c"
+    },
+    "local_cache_verification": {
+      "first_pass_strict_counts_equal_cold": {
+        "news_articles": false,
+        "news_observations": false,
+        "documents": true
+      },
+      "first_pass_counts": {
+        "entities": 300,
+        "news_articles": 945,
+        "news_observations": 1786,
+        "documents": 0,
+        "evidence": 0,
+        "news_identity_links": 0,
+        "scores": 300,
+        "score_runs": 1500
+      },
+      "first_pass_count_deltas": {
+        "news_articles": 12,
+        "news_observations": 847,
+        "documents": 0
+      },
+      "enrichment_lineage": {
+        "passed": true,
+        "checks": {
+          "historical_observations_byte_equal": true,
+          "historical_articles_byte_equal": true,
+          "historical_audit_is_unchanged_prefix": true,
+          "bodies_identity_scores_and_history_byte_equal": true,
+          "cached_http_bytes_and_metadata_unchanged": true,
+          "canonical_urls_unique": true,
+          "older_model_present_if_metadata_grows": true,
+          "no_same_model_snapshot_policy_observation_duplicates": true,
+          "observation_ids_match_production_content_hash": true,
+          "every_new_observation_reproduced_from_original_cache_current_model_and_policy": true,
+          "every_new_url_has_verified_metadata_only_lineage": true
+        },
+        "current_model": "metadata-relevance-1.2.0",
+        "historical_model_counts": {
+          "metadata-relevance-1.1.0": 835,
+          "metadata-relevance-1.2.0": 104
+        },
+        "new_articles": 12,
+        "new_observations": 847,
+        "verified_new_observations": 847,
+        "verified_prior_model_lineages_with_identical_non_relevance_details": 835,
+        "violations": [],
+        "raw_hash_proof_scope": "Public adapters only; strict UTF-8/ASCII bytes must match original raw response SHA256; unsupported/lossy charsets fail.",
+        "first_pass_count_changes_are_not_called_idempotent": true
+      },
+      "second_pass_exact_checks": {
+        "news_articles": true,
+        "news_observations": true,
+        "documents": true,
+        "evidence": true,
+        "news_identity_links": true,
+        "scores": true,
+        "score_runs": true,
+        "historical_audit_prefix_unchanged": true,
+        "cached_http_bytes_and_metadata_unchanged": true
+      },
+      "first_pass_row_sha256": {
+        "news_articles": "7c6026f01aca678ff13e9ece81ac54110ed0c293a6292e698d3efccb91903369",
+        "news_observations": "8a61024104b48d1a727f44f3fcba2ad4ca9d3654b69f8442f02d874b2bdce436",
+        "documents": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+        "evidence": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+        "news_identity_links": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+        "scores": "ff21e32ee5cb1e0336b825d8eae3a0de3bb17e8c575d110dec35ec7d82b2c3e5",
+        "score_runs": "f49a438857b8d83396b181ba22ff46fc2cba1a1ef365adf6084272f7aff7f64c",
+        "audit": "093993212506eb529d5175e4fb9f5355db688f6b4a68be938f32d8ba00574770"
+      },
+      "second_pass_row_sha256": {
+        "news_articles": "7c6026f01aca678ff13e9ece81ac54110ed0c293a6292e698d3efccb91903369",
+        "news_observations": "8a61024104b48d1a727f44f3fcba2ad4ca9d3654b69f8442f02d874b2bdce436",
+        "documents": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+        "evidence": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+        "news_identity_links": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+        "scores": "ff21e32ee5cb1e0336b825d8eae3a0de3bb17e8c575d110dec35ec7d82b2c3e5",
+        "score_runs": "f49a438857b8d83396b181ba22ff46fc2cba1a1ef365adf6084272f7aff7f64c",
+        "audit": "8980adb146a44d964b40b73a461cb66cc2502b6f21948207607efa3a29dca54e"
+      },
+      "note": "First-pass metadata growth is reported explicitly, never called idempotence. Only a verified version migration and an exact second replay can pass."
+    },
+    "network_and_harness_guard": {
+      "dns_calls": 0,
+      "tcp_calls": 0,
+      "exit_code": 2,
+      "harness_sha256_before": "efb4c8cf70712a4600f9c2608cfcc1cb892d2dab1bee2bf48acc655748d0e3a6",
+      "harness_sha256_after": "efb4c8cf70712a4600f9c2608cfcc1cb892d2dab1bee2bf48acc655748d0e3a6",
+      "network_forbidden_entire_final_verification": true,
+      "note": "Final verifier reuses previously observed actual HTTP; no fourth internet measurement."
+    },
+    "integrity_checks_passed": 23,
+    "integrity_checks_total": 23,
+    "process_exit_code": 2,
+    "interpretation": "Final corrected-harness verification of previously captured real HTTP, not a fourth internet run. No new DNS, TCP or HTTP. Integrity and migration lineage passed, exact second replay passed, full live-300 coverage correctly failed. Immutable earlier failed resumed receipts remain unchanged."
+  },
+  "final_unit_verification": {
+    "log": "runtime/real-300/unit-final.log",
+    "executed": 838,
+    "passed": 831,
+    "skipped": 7,
+    "failures": 0,
+    "errors": 0,
+    "seconds": 42.051,
+    "log_sha256": "f1cc7c66ffadbc39a271a966e536acbd113126efe8be2c6efe315d98db2d2de1",
+    "harness_sha256": "efb4c8cf70712a4600f9c2608cfcc1cb892d2dab1bee2bf48acc655748d0e3a6",
+    "scope": "Final local suite after exact migration-provenance and temporary SQLite cleanup regressions. Separate from CI publication gate."
+  },
+  "report_scope": "Closed report of observed live, cache, migration, packaging and local-test evidence. Publication CI is an independent gate linked below. No unobserved live or final-head CI result is asserted."
 }
