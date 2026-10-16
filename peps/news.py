@@ -30,6 +30,7 @@ from .store import canonical, digest, now
 
 TRACKING = {'fbclid', 'gclid', 'dclid', 'msclkid', 'mc_cid', 'mc_eid', '_ga', 'igshid'}
 UNRESERVED = frozenset('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~')
+SUPERSEDED_PLAN = 'Plan sustituido (superseded_news_plan): '
 
 
 def source_policy(source):
@@ -169,6 +170,36 @@ def batch_queries(entities, max_terms=6, max_chars=500, language='SPANISH', coun
         yield output(batch)
 
 
+class _BodyBudget:
+    """Bound body selection across queries and resumes, never identity proof."""
+
+    def __init__(self, maximum=None, per_entity=None):
+        self.maximum, self.per_entity = maximum, per_entity
+        self.articles, self.by_entity, self.lock = set(), {}, threading.Lock()
+
+    def reserve(self, article_id, entity_ids, *, existing=False):
+        with self.lock:
+            if article_id in self.articles:
+                return True
+            entity_ids = {str(value) for value in entity_ids}
+            if not existing:
+                if self.maximum is not None and len(self.articles) >= self.maximum:
+                    return False
+                if self.per_entity is not None and not any(
+                        len(self.by_entity.get(value, ())) < self.per_entity for value in entity_ids):
+                    return False
+            self.articles.add(article_id)
+            for value in entity_ids:
+                self.by_entity.setdefault(value, set()).add(article_id)
+            return True
+
+    def release(self, article_id):
+        with self.lock:
+            self.articles.discard(article_id)
+            for articles in self.by_entity.values():
+                articles.discard(article_id)
+
+
 class NewsAcquirer:
     def __init__(self, engine, config_path=None):
         self.engine, self.store = engine, engine.store
@@ -304,10 +335,14 @@ class NewsAcquirer:
             anchor = datetime.fromisoformat(con.execute('SELECT value FROM meta WHERE key=?', (anchor_key,)).fetchone()[0])
         plan = build_search_plan(self.store.iter_entities(), self.sources(), settings, start=start, end=end, now=anchor)
         queued, query_count, anchor_due = 0, 0, time.time()
+        reactivated, superseded = [], []
         due_by_host = {}
         sources = {source['id']: source for source in self.sources()}
         with self.store.connection() as con:
             con.execute('BEGIN IMMEDIATE')
+            # A temp table avoids SQLite parameter limits for large plans. New
+            # jobs, restoration and retirement publish as one atomic queue.
+            con.execute('CREATE TEMP TABLE current_news_plan(job_id TEXT PRIMARY KEY)')
             for item in plan['queries']:
                 payload = dict(item, window=window)
                 kind = payload.pop('kind')
@@ -315,6 +350,20 @@ class NewsAcquirer:
                 host = urlsplit(item['url']).hostname or item['source_id']
                 due = due_by_host.get(host, anchor_due)
                 job_id = self.store.enqueue(kind, payload, key=key, due=due, connection=con)
+                con.execute('INSERT OR IGNORE INTO current_news_plan VALUES(?)', (job_id,))
+                previous = con.execute('SELECT status,error,due FROM jobs WHERE id=?', (job_id,)).fetchone()
+                if previous['status'] == 'cancelled' and (previous['error'] or '').startswith(SUPERSEDED_PLAN):
+                    try:
+                        saved = json.loads(previous['error'][len(SUPERSEDED_PLAN):])
+                    except (ValueError, TypeError):
+                        saved = None
+                    if isinstance(saved, dict) and saved.get('status') in ('queued', 'deferred', 'running'):
+                        restored = 'deferred' if previous['due'] > anchor_due else 'queued'
+                        con.execute("UPDATE jobs SET status=?,error=?,lease_until=NULL,owner=NULL,updated_at=? WHERE id=?",
+                                    (restored, str(saved.get('error') or ''), now(), job_id))
+                        con.execute('UPDATE news_query_windows SET status=?,error=? WHERE job_id=?',
+                                    (restored, str(saved.get('error') or ''), job_id))
+                        reactivated.append(job_id)
                 due_by_host[host] = due + max(1, float(sources[item['source_id']].get('min_interval_seconds', 5)))
                 queued += 1
                 if kind == 'news_query':
@@ -322,10 +371,30 @@ class NewsAcquirer:
                     con.execute('INSERT OR IGNORE INTO news_query_windows VALUES(?,?,?,?,?,?,?,?,?,?,?)',
                                 (job_id, item['source_id'], canonical(item['entity_ids']), item['query'],
                                  item['start'], item['end'], 'queued', 0, 0, None, ''))
+            obsolete = con.execute("SELECT id,status,error,due,attempts FROM jobs WHERE kind IN ('news_query','news_feed') "
+                                   "AND (status IN ('queued','deferred') OR "
+                                   "(status='running' AND COALESCE(lease_until,0)<=?)) "
+                                   'AND NOT EXISTS (SELECT 1 FROM current_news_plan p WHERE p.job_id=jobs.id)',
+                                   (time.time(),)).fetchall()
+            for old in obsolete:
+                marker = SUPERSEDED_PLAN + canonical({'status': old['status'], 'error': old['error'] or ''})
+                con.execute("UPDATE jobs SET status='cancelled',error=?,lease_until=NULL,owner=NULL,updated_at=? WHERE id=?",
+                            (marker, now(), old['id']))
+                con.execute("UPDATE news_query_windows SET status='cancelled',error=? WHERE job_id=?", (marker, old['id']))
+                superseded.append({'id': old['id'], 'previous_status': old['status'], 'due': old['due'],
+                                   'attempts': old['attempts'], 'previous_error_hash': digest(old['error'] or '')})
+            if superseded:
+                self.store._audit(con, 'news_discovery_plan_superseded', {'window': window, 'count': len(superseded),
+                                  'jobs': superseded, 'bodies_and_live_leases_preserved': True})
+            if reactivated:
+                self.store._audit(con, 'news_discovery_plan_reactivated', {'window': window, 'job_ids': reactivated,
+                                  'due_and_attempts_preserved': True})
             self.store._audit(con, 'news_acquisition_queued', {'window': window, 'tasks': queued,
                               'batched_queries': query_count, 'strategy': settings['strategy'],
-                              'planning_truncated': plan['truncated']})
-        return {'tasks': queued, 'batched_queries': query_count, 'search_plan': summarize_plan(plan, 3)}
+                              'planning_truncated': plan['truncated'], 'superseded': len(superseded),
+                              'reactivated': len(reactivated)})
+        return {'tasks': queued, 'batched_queries': query_count, 'search_plan': summarize_plan(plan, 3),
+                'superseded': len(superseded), 'reactivated': len(reactivated)}
 
     @staticmethod
     def _epoch(value):
@@ -364,7 +433,24 @@ class NewsAcquirer:
                      and s.get('download_articles') and (s.get('article_terms_approved') or s.get('body_terms_approved'))
                      and host in (s.get('article_allowed_hosts') or s.get('allowed_hosts', []))), None)
 
-    def _observe(self, record, source, discovery_url, result, resolver, download_all=False, connection=None, all_sources=None):
+    def _stored_candidate(self, row, relevance):
+        candidate = relevance.rank(row['title'], row['summary'])
+        if candidate['relevant']:
+            return candidate
+        with self.store.connection() as con:
+            observations = con.execute('SELECT details FROM news_observations WHERE article_id=? '
+                                       'ORDER BY retrieved_at DESC,id DESC LIMIT 10', (row['id'],)).fetchall()
+        # Preserve the original card and raw observations. A newer snippet can
+        # make the same canonical URL relevant without rewriting that history.
+        for observation in observations:
+            detail = json.loads(observation['details'])
+            alternative = relevance.rank(detail.get('title', ''), detail.get('summary', ''))
+            if alternative['rank'] > candidate['rank']:
+                candidate = alternative
+        return candidate
+
+    def _observe(self, record, source, discovery_url, result, resolver, download_all=False, connection=None, all_sources=None,
+                 candidate=None, body_budget=None):
         try:
             url = canonical_url(record['url'])
         except (ValueError, KeyError):
@@ -378,6 +464,10 @@ class NewsAcquirer:
                    'discovered_at': record.get('discovered_at'), 'source_config_hash': digest(canonical(source)),
                    'terms_url': source.get('terms_url'), 'source_policy': source_policy(source), 'scope': 'discovery_metadata',
                    'raw_url': record['url'], 'cache_validated_at': result.get('validated_at')}
+        if candidate is not None:
+            # Retrieval relevance helps decide which bodies to request. It is
+            # deliberately separate from subsequent identity attribution.
+            details['retrieval_relevance'] = candidate
         observation_id = digest(canonical([article_id, source['id'], discovery_url, result.get('sha256'), details]))
         with (nullcontext(connection) if connection is not None else self.store.connection()) as con:
             if not con.in_transaction:
@@ -390,16 +480,29 @@ class NewsAcquirer:
                         (observation_id, article_id, source['id'], discovery_url, record['url'], stamp,
                          result.get('sha256'), canonical(details)))
             row = con.execute('SELECT * FROM news_articles WHERE id=?', (article_id,)).fetchone()
-        candidates = resolver.resolve(summary, title=title, metadata={'published_at': record.get('published_at')}) if resolver else []
-        eligible = download_all or any(r['status'] != 'rejected' for r in candidates)
+        candidates = (resolver.resolve(summary, title=title, metadata={'published_at': record.get('published_at')})
+                      if candidate is None and resolver else [])
+        candidate_count = len(candidate['entity_ids']) if candidate is not None else len(candidates)
+        eligible = download_all or (candidate['relevant'] if candidate is not None else
+                                    any(r['status'] != 'rejected' for r in candidates))
         body_source = self._source_for_article(url, source, all_sources)
         fresh = row['retrieved_at'] and (time.time() - self._epoch(row['retrieved_at'])) < float((body_source or {}).get('refresh_seconds', 86400))
         if eligible and body_source and not fresh:
+            candidate_ids = candidate['entity_ids'] if candidate is not None else [r['entity_id'] for r in candidates]
+            if body_budget is not None and not body_budget.reserve(article_id, candidate_ids):
+                return {'status': 'body_budget_limited', 'id': article_id, 'candidates': candidate_count}
             period = int(time.time() // max(60, float(body_source.get('refresh_seconds', 86400))))
-            self.store.enqueue('news_article', {'article_id': article_id, 'source_id': body_source['id'], 'url': url},
-                               key='news_article:' + article_id + ':' + str(period), connection=connection)
-            return {'status': 'article_queued', 'id': article_id, 'candidates': len(candidates)}
-        return {'status': 'cached' if fresh else 'metadata_only', 'id': article_id, 'candidates': len(candidates)}
+            body_payload = {'article_id': article_id, 'source_id': body_source['id'], 'url': url}
+            if candidate is not None:
+                body_payload.update(candidate_entity_ids=candidate_ids, relevance_rank=candidate['rank'])
+            with (nullcontext(connection) if connection is not None else self.store.connection()) as queue_con:
+                before = queue_con.total_changes
+                self.store.enqueue('news_article', body_payload,
+                                   key='news_article:' + article_id + ':' + str(period), connection=queue_con)
+                inserted = queue_con.total_changes > before
+            return {'status': 'article_queued' if inserted else 'article_already_queued',
+                    'id': article_id, 'candidates': candidate_count}
+        return {'status': 'cached' if fresh else 'metadata_only', 'id': article_id, 'candidates': candidate_count}
 
     def _query_url(self, source, payload):
         from .news_search import query_url
@@ -469,7 +572,7 @@ class NewsAcquirer:
             con.execute('INSERT OR IGNORE INTO news_topic_index VALUES(?,?)', (token, article_id))
         return topic_id
 
-    def execute(self, job, fetcher, resolver=None, download_all=False):
+    def execute(self, job, fetcher, resolver=None, download_all=False, relevance=None, body_budget=None):
         from .sources import parse_results
         payload = job['payload']
         source = next((s for s in self.sources() if s['id'] == payload['source_id']), None)
@@ -479,6 +582,20 @@ class NewsAcquirer:
         if job['kind'] == 'news_article' and not (source.get('download_articles') and (source.get('article_terms_approved') or source.get('body_terms_approved'))):
             self.store.finish(job, 'blocked', 'No se ha autorizado conservar el cuerpo editorial')
             return
+        if job['kind'] == 'news_article' and relevance is not None:
+            with self.store.connection() as con:
+                stored = con.execute('SELECT id,title,summary FROM news_articles WHERE id=?', (payload['article_id'],)).fetchone()
+            relevant = stored is not None and self._stored_candidate(stored, relevance)['relevant']
+            if stored is not None and not relevant:
+                # Queues created by older versions can contain every body from
+                # a general feed. Keep their metadata/audit, avoid an irrelevant
+                # editorial request and do not classify this as a server error.
+                if self.store.finish(job):
+                    self.store.audit('news_body_excluded_irrelevant', {'article_id': payload['article_id'],
+                                     'source_id': source['id'], 'identity_verified': False,
+                                     'reason': 'No current bank name or contextual alias in stored metadata'})
+                    return {'body_skipped_irrelevant': 1}
+                return
         if job['kind'] in ('news_feed', 'news_query'):
             url = self._query_url(source, payload) if job['kind'] == 'news_query' else payload['url']
             result = fetcher.fetch(url, source)
@@ -487,23 +604,58 @@ class NewsAcquirer:
             records = parse_results(result, source)
             statuses = Counter()
             sources = self.sources()
-            iterator = iter(records)
+            filtering = job['kind'] == 'news_query' or relevance is not None
+            if filtering and relevance is None:
+                from .relevance import RelevanceIndex
+                relevance = RelevanceIndex(self.store.iter_entities())
+            candidates = []
+            for record in records:
+                ranked = (relevance.rank(record.get('title', ''), record.get('text', ''),
+                                         entity_ids=payload.get('entity_ids'), names=payload.get('names'))
+                          if filtering else None)
+                if ranked is not None and not ranked['relevant']:
+                    statuses['excluded_irrelevant'] += 1
+                else:
+                    candidates.append((record, ranked))
+            # Relevant candidates first, without promoting retrieval to an
+            # identity match or changing the editorial permissions.
+            candidates.sort(key=lambda item: -(item[1]['rank'] if item[1] is not None else 0))
+            parse_info = result.setdefault('parse_metadata', {})
+            parse_info['candidate_filter'] = {'enabled': filtering, 'input_records': len(records),
+                                              'retained_records': len(candidates),
+                                              'excluded_records': statuses['excluded_irrelevant'],
+                                              'identity_verified': False}
+            iterator = iter(candidates)
             while batch := list(islice(iterator, 250)):
                 with self.store.connection() as con:
                     con.execute('BEGIN IMMEDIATE')
-                    for record in batch:
-                        statuses[self._observe(record, source, url, result, resolver, download_all, connection=con, all_sources=sources)['status']] += 1
-            parse_info = result.get('parse_metadata') or {}
+                    for record, ranked in batch:
+                        statuses[self._observe(record, source, url, result, resolver, download_all,
+                                               connection=con, all_sources=sources, candidate=ranked,
+                                               body_budget=body_budget)['status']] += 1
+            parse_info['body_budget'] = {'global_limit': body_budget.maximum if body_budget else None,
+                                         'per_entity_limit': body_budget.per_entity if body_budget else None,
+                                         'queued': statuses['article_queued'],
+                                         'skipped': statuses['body_budget_limited']}
             result_limit = max(1, min(250, int(payload.get('result_limit', source.get('max_records', 250)))))
             saturated = job['kind'] == 'news_query' and (parse_info.get('observed_entries', len(records)) >= result_limit or parse_info.get('truncated'))
-            split = self._split_saturated(job, source) if saturated else False
+            # An upstream endpoint can ignore the search phrase and return its
+            # ordinary feed. Subdividing that same irrelevant top-N endlessly
+            # does not improve entity coverage. Preserve the limitation instead.
+            split = (self._split_saturated(job, source) if saturated and candidates
+                     and payload.get('split_policy', 'expand') != 'defer' else False)
+            incomplete_reason = ('Cobertura incompleta: respuesta limitada sin candidatos pertinentes; no se subdivide automáticamente.'
+                                 if filtering and not candidates else
+                                 'Límite top-N alcanzado; ampliación pendiente del barrido inicial.'
+                                 if payload.get('split_policy') == 'defer' else
+                                 'Límite top-N alcanzado; cobertura incompleta')
             with self.store.connection() as con:
                 con.execute('INSERT OR REPLACE INTO news_discovery_runs VALUES(?,?,?,?,?,?,?,?)',
                             (job['id'], source['id'], job['kind'], url, len(records), canonical(parse_info),
                              result.get('sha256'), result.get('retrieved_at') or now()))
                 con.execute('UPDATE news_query_windows SET status=?,records=?,saturated=?,error=? WHERE job_id=?',
                             ('split' if split else 'truncated' if saturated else 'complete', len(records), int(saturated),
-                             'Límite top-N alcanzado; cobertura incompleta' if saturated and not split else '', job['id']))
+                             incomplete_reason if saturated and not split else '', job['id']))
             self.store.audit('news_discovery_completed', {'source_id': source['id'], 'url': url,
                              'hash': result.get('sha256'), 'records': len(records), 'decisions': dict(statuses),
                              'saturated': saturated, 'window_split': split, 'retrieved_at': result.get('retrieved_at')})
@@ -588,8 +740,73 @@ class NewsAcquirer:
         return dict(summary, active_tasks=active_tasks, waiting=waiting, stop_reason=reason,
                     next_retry=retry, next_retry_at=due, wait_seconds=wait_seconds)
 
+    def _rescue_bodies(self, relevance, sources, budget, deadline=None):
+        """Queue eligible stored candidates without repeating discovery HTTP.
+
+        Read metadata in pages, not source bodies. Existing fresh/queued bodies
+        reserve quota first, so repeated resume cannot reset per-entity limits.
+        """
+        counts = Counter()
+        with self.store.connection() as con:
+            pending = {row[0] for row in con.execute("SELECT json_extract(payload,'$.article_id') FROM jobs "
+                       "WHERE kind='news_article' AND status IN ('queued','running','deferred')")}
+
+        def rows():
+            previous = ''
+            while True:
+                with self.store.connection() as con:
+                    batch = con.execute('SELECT id,canonical_url,source_id,title,summary,retrieved_at FROM news_articles '
+                                        'WHERE id>? ORDER BY id LIMIT 250', (previous,)).fetchall()
+                if not batch:
+                    return
+                yield from batch
+                previous = batch[-1]['id']
+
+        source_ids = {source['id']: source for source in sources}
+        for reserve_existing in (True, False):
+            for row in rows():
+                if self.engine.stop_event.is_set() or (deadline is not None and time.monotonic() >= deadline):
+                    return counts
+                source = self._source_for_article(row['canonical_url'], source_ids.get(row['source_id']), sources)
+                if not source:
+                    continue
+                fresh = row['retrieved_at'] and time.time() - self._epoch(row['retrieved_at']) < float(source.get('refresh_seconds', 86400))
+                existing = bool(fresh or row['id'] in pending)
+                if existing != reserve_existing:
+                    continue
+                candidate = self._stored_candidate(row, relevance)
+                if not candidate['relevant']:
+                    continue
+                if not budget.reserve(row['id'], candidate['entity_ids'], existing=existing):
+                    counts['body_skipped_budget'] += 1
+                    continue
+                if existing:
+                    continue
+                period = int(time.time() // max(60, float(source.get('refresh_seconds', 86400))))
+                payload = {'article_id': row['id'], 'source_id': source['id'], 'url': row['canonical_url'],
+                           'candidate_entity_ids': candidate['entity_ids'], 'relevance_rank': candidate['rank']}
+                with self.store.connection() as con:
+                    con.execute('BEGIN IMMEDIATE')
+                    job_id = self.store.enqueue('news_article', payload, key='news_article:' + row['id'] + ':' + str(period), connection=con)
+                    job = con.execute('SELECT status,error FROM jobs WHERE id=?', (job_id,)).fetchone()
+                    if job['status'] == 'blocked' and job['error'] in (
+                            'No se ha autorizado conservar el cuerpo editorial',
+                            'Fuente deshabilitada o condiciones sin revisar'):
+                        con.execute("UPDATE jobs SET status='queued',attempts=0,due=?,lease_until=NULL,owner=NULL,error='',updated_at=? WHERE id=?",
+                                    (time.time(), now(), job_id))
+                        job = dict(status='queued')
+                    if job['status'] in ('queued', 'running', 'deferred'):
+                        self.store._audit(con, 'news_body_recovered', {'article_id': row['id'], 'source_id': source['id'],
+                                          'candidate_entity_ids': candidate['entity_ids'], 'identity_verified': False})
+                        counts['body_queued'] += 1
+                        pending.add(row['id'])
+                    else:
+                        budget.release(row['id'])
+        return counts
+
     def acquire(self, workers=4, seconds=120, max_articles=1000, download_all=False, queue=True,
-                window=None, start=None, end=None, *, progress=None, reset_stop=True):
+                window=None, start=None, end=None, *, progress=None, reset_stop=True, relevant_only=None,
+                body_budget=None, per_entity_body_limit=None):
         from .engine import _emit_progress
         if not self.engine.online:
             _emit_progress(progress, 'download', 0, None, 'tareas', 'Comprobando el modo de descarga.', event='start')
@@ -616,9 +833,24 @@ class NewsAcquirer:
         self.store.reconcile_jobs('news_')
         _emit_progress(progress, 'download', 0, None, 'tareas', 'Preparando la reanudación y las fuentes autorizadas.',
                        event='start', processed=0, **self._runtime_queue())
-        resolver = IdentityResolver(self.store.iter_entities())
-        queued = self.queue(window, start, end) if queue else None
+        entities = list(self.store.iter_entities())
+        resolver = IdentityResolver(entities)
         news_config = self.config()
+        from .relevance import RelevanceIndex
+        filtering = (news_config.get('search', {}).get('strategy', 'targeted') != 'feeds'
+                     if relevant_only is None else bool(relevant_only))
+        relevance = RelevanceIndex(entities) if filtering else None
+        quick = news_config.get('search', {}).get('execution_mode') == 'quick'
+        if body_budget is None and quick:
+            body_budget = min(900, 3 * len(entities))
+        if per_entity_body_limit is None and quick:
+            per_entity_body_limit = 3
+        for value in (body_budget, per_entity_body_limit):
+            if value is not None and (type(value) is not int or value < 0):
+                raise ValueError('Los límites de cuerpos deben ser enteros no negativos')
+        budget = _BodyBudget(body_budget, per_entity_body_limit) if relevance is not None else None
+        recovered = self._rescue_bodies(relevance, news_config['sources'], budget, started + seconds) if relevance is not None else Counter()
+        queued = self.queue(window, start, end) if queue and not self.engine.stop_event.is_set() else None
         source_labels = {source['id']: str(source.get('source_name') or source.get('name') or source['id'])[:200]
                          for source in news_config['sources']}
         config = dict(self.engine.config(), **{k: v for k, v in news_config.items() if k != 'sources'})
@@ -629,6 +861,7 @@ class NewsAcquirer:
         in_flight = set()
         last_activity = [0.]
         task_context = threading.local()
+        discovery_counts = Counter(recovered)
         cached_summary = [self._runtime_queue()]
         observed_at = [time.monotonic()]
 
@@ -667,7 +900,12 @@ class NewsAcquirer:
                 task = getattr(task_context, 'value', None)
                 began = time.monotonic()
                 try:
-                    result = fetcher.fetch(url, source)
+                    # One session budget includes robots and redirect hops, not
+                    # a fresh timeout allowance for every network request.
+                    remaining = max(.001, deadline - time.monotonic())
+                    request_source = dict(source, timeout_seconds=min(float(source.get('timeout_seconds', 20)), remaining),
+                                          _deadline_monotonic=deadline)
+                    result = fetcher.fetch(url, request_source)
                 finally:
                     if task is not None:
                         task['fetch_seconds'] += max(0., time.monotonic() - began)
@@ -729,8 +967,9 @@ class NewsAcquirer:
                             return
                 heartbeat = threading.Thread(target=renew, daemon=True)
                 heartbeat.start()
+                execution_result = None
                 try:
-                    self.execute(job, session_fetcher, resolver, download_all)
+                    execution_result = self.execute(job, session_fetcher, resolver, download_all, relevance, budget)
                 except Exception as exc:
                     self.store.finish(job, 'deferred', f'{type(exc).__name__}: {exc}', time.time() + min(3600, 30 * 2 ** job['attempts']))
                 finally:
@@ -748,6 +987,16 @@ class NewsAcquirer:
                 with condition:
                     if state and state['status'] == 'done' and state['owner'] == job['owner']:
                         completed[0] += 1
+                        if isinstance(execution_result, dict):
+                            discovery_counts['body_skipped_irrelevant'] += execution_result.get('body_skipped_irrelevant', 0)
+                        info = ((task.get('result') or {}).get('parse_metadata') or {}).get('candidate_filter') or {}
+                        discovery_counts['discovery_records'] += info.get('input_records', 0)
+                        discovery_counts['excluded_records'] += info.get('excluded_records', 0)
+                        if info.get('enabled'):
+                            discovery_counts['relevant_records'] += info.get('retained_records', 0)
+                        body_info = ((task.get('result') or {}).get('parse_metadata') or {}).get('body_budget') or {}
+                        discovery_counts['body_queued'] += body_info.get('queued', 0)
+                        discovery_counts['body_skipped_budget'] += body_info.get('skipped', 0)
                     in_flight.discard(job['id'])
                     if progress is not None:
                         summary = self._runtime_queue(len(in_flight), in_flight)
@@ -767,6 +1016,7 @@ class NewsAcquirer:
                                        task_status=state['status'] if state and state['owner'] == job['owner'] else 'cancelled',
                                        current_source=task['source'], job_kind=job['kind'],
                                        last_error=(state['error'] or '')[:500] if state else None,
+                                       **dict(discovery_counts),
                                        **summary)
                     condition.notify_all()
         try:
@@ -781,6 +1031,12 @@ class NewsAcquirer:
             if hasattr(fetcher, 'close'):
                 fetcher.close()
         summary = self._runtime_queue()
+        summary.update(discovery_records=discovery_counts['discovery_records'],
+                       relevant_records=discovery_counts['relevant_records'],
+                       excluded_records=discovery_counts['excluded_records'],
+                       body_queued=discovery_counts['body_queued'], body_skipped_budget=discovery_counts['body_skipped_budget'],
+                       body_skipped_irrelevant=discovery_counts['body_skipped_irrelevant'],
+                       body_budget=body_budget, per_entity_body_limit=per_entity_body_limit, session_seconds=seconds)
         cancelled = self.engine.stop_event.is_set()
         stop_reason = ('cancelled' if cancelled else 'completed' if not summary['pending'] else
                        'job_limit' if counter[0] >= max_articles else 'time_limit' if time.monotonic() >= deadline else
@@ -940,9 +1196,24 @@ class NewsAcquirer:
             counts['truncated_feed_runs'] = con.execute("SELECT count(*) FROM news_discovery_runs WHERE kind='news_feed' AND json_extract(parser_metadata,'$.truncated')=1").fetchone()[0]
             return counts
 
-    def articles(self, limit=100):
+    def articles(self, limit=100, *, relevant_only=False):
         with self.store.connection() as con:
-            return [dict(r) for r in con.execute('SELECT * FROM news_articles ORDER BY discovered_at DESC LIMIT ?', (min(500, max(1, int(limit))),))]
+            if relevant_only:
+                # Legacy observations are retained for audit. They enter this
+                # optional view after retrieval relevance or identity review;
+                # polling never rebuilds a resolver or scans source bodies.
+                if not self.store._audit_json:
+                    return []
+                relevant = ("WHERE EXISTS (SELECT 1 FROM news_observations o JOIN json_each(o.details,'$.retrieval_relevance.entity_ids') v "
+                            "JOIN entities e ON e.id=CAST(v.value AS TEXT) WHERE o.article_id=n.id "
+                            "AND json_extract(o.details,'$.retrieval_relevance.relevant')=1) OR EXISTS "
+                            "(SELECT 1 FROM news_identity_links l JOIN entities e ON e.id=l.entity_id WHERE l.document_id=n.document_id "
+                            "AND COALESCE(json_extract(l.resolution,'$.status'),'rejected')!='rejected' "
+                            "AND json_extract(l.resolution,'$.bank_revision')=CAST((SELECT value FROM meta WHERE key='news_identity_revision') AS INTEGER)) ")
+            else:
+                relevant = ''
+            return [dict(r) for r in con.execute('SELECT n.* FROM news_articles n ' + relevant +
+                        'ORDER BY n.discovered_at DESC LIMIT ?', (min(500, max(1, int(limit))),))]
 
     def plan(self, entities=None, articles_per_entity=5, unique_url_ratio=.6, target_days=7):
         entities = list(entities if entities is not None else self.store.iter_entities())

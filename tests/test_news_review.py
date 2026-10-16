@@ -217,7 +217,7 @@ class NewsIntegrationReview(unittest.TestCase):
         self.news.queue('review-window', start=start, end=end)
         job = self.claimed('news_query')
         body = json.dumps({'articles': [{'url': 'https://one.example/q' + str(i),
-                                       'title': 'Resultado sintético ' + str(i),
+                                       'title': 'Persona Sintética resultado ' + str(i),
                                        'seendate': '20261015T120000Z'} for i in range(2)]})
         self.news.execute(job, FixtureFetcher(body))
         return job

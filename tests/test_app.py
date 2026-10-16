@@ -151,7 +151,8 @@ class LocalAppTests(unittest.TestCase):
             self.assertEqual(200, code, body)
             self.wait_operation('paused')
             self.assertFalse(acquire.call_args.kwargs['queue'])
-            self.assertGreater(acquire.call_args.kwargs['seconds'], 120)
+            self.assertEqual(json.loads(self.request('/api/news-search')[1])['config']['session_seconds'], acquire.call_args.kwargs['seconds'])
+            self.assertTrue(acquire.call_args.kwargs['relevant_only'])
             settings = json.loads(self.request('/api/news-search')[1])['config']
             settings['preset'] = 'public_role'
             self.assertEqual(200, self.request('/api/news-search', 'POST', settings)[0])
@@ -401,6 +402,48 @@ class LocalAppTests(unittest.TestCase):
         self.assertFalse(stale['score_current'])
         self.assertIsNone(stale['score'])
 
+    def test_session_budget_is_applied_and_unobserved_queries_do_not_count_as_coverage(self):
+        self.engine.store.import_entities([{'id': 'budget', 'name': 'Persona Sintética de Presupuesto'}])
+        self.authorize_news_source()
+        self.engine.store.enqueue('news_query', {'entity_ids': ['budget'], 'source_id': 'fixture'})
+        code, body, _ = self.request('/api/stats')
+        self.assertEqual(200, code)
+        observed = json.loads(body)['acquisition']
+        self.assertEqual(1, observed['entities_total'])
+        self.assertEqual(0, observed['entities_queried'])
+        self.assertEqual(0, observed['entities_with_bodies'])
+        settings = json.loads(self.request('/api/news-search')[1])['config']
+        settings.update(execution_mode='extended', session_seconds=1800)
+        self.assertEqual(200, self.request('/api/news-search', 'POST', settings)[0])
+        self.assertEqual(200, self.request('/api/workflow-confirm-sources', 'POST', {})[0])
+        with patch('peps.news.NewsAcquirer.acquire', return_value={'processed': 0, 'pending': 1}) as acquire:
+            code, body, _ = self.request('/api/news-acquire', 'POST', {'online': True})
+            self.assertEqual(200, code, body)
+            self.wait_operation('paused')
+        self.assertEqual(1800, acquire.call_args.kwargs['seconds'])
+        self.assertEqual(10, acquire.call_args.kwargs['per_entity_body_limit'])
+        self.assertEqual(10, acquire.call_args.kwargs['body_budget'])
+        self.assertTrue(acquire.call_args.kwargs['relevant_only'])
+
+    def test_missing_article_body_is_not_presented_as_an_evaluated_zero(self):
+        self.engine.store.import_entities([{'id': 'reference', 'name': 'Entidad Sintética Referenciada'}])
+        self.engine.import_documents([{'url': 'https://fixture.invalid/reference', 'source_kind': 'discovery',
+            'entity_ids': ['reference'], 'text': 'Entidad Sintética Referenciada aparece en el índice.',
+            'metadata': {'discovery_only': True}}])
+        self.analyze_local()
+        code, body, _ = self.request('/api/explanation?id=reference')
+        self.assertEqual(200, code, body)
+        value = json.loads(body)
+        self.assertEqual(0, value['result']['score'])
+        self.assertEqual('insufficient_text', value['assessment']['state'])
+        self.assertIsNone(value['assessment']['display_score'])
+        code, body, _ = self.request('/api/entities?summary=1')
+        self.assertEqual(200, code)
+        row = json.loads(body)[0]
+        self.assertEqual(0, row['score']['score'])
+        self.assertIsNone(row['assessment']['display_score'])
+        self.assertNotIn('evidence_audit', row['score'])
+
     def test_compact_entity_list_preserves_scores_without_expanding_saved_explanations(self):
         self.engine.store.import_entities([{'id': 'compact', 'name': 'Entidad Sintética Compacta'}])
         self.engine.import_documents([{'url': 'https://fixture.invalid/compact', 'source_kind': 'official',
@@ -427,6 +470,7 @@ class LocalAppTests(unittest.TestCase):
         self.assertFalse(stale['score_current'])
         self.assertIsNone(stale['score'])
         self.assertNotIn('result', stale)
+        self.assertNotIn('assessment', stale)
         code, body, _ = self.request('/api/entities?q=Compacta')
         self.assertEqual(200, code)
         self.assertIsNone(json.loads(body)[0]['score'])

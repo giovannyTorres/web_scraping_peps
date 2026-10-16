@@ -5,7 +5,8 @@
   "circuit_seconds": 86400,
   "max_redirects": 4,
   "search": {
-    "strategy": "targeted", "preset": "identity", "window": "auto", "max_queries": 1000,
+    "strategy": "targeted", "preset": "adverse", "execution_mode": "quick", "session_seconds": 120,
+    "window": "auto", "max_queries": 1000,
     "include_aliases": true, "use_context": true
   },
   "sources": [
@@ -128,6 +129,35 @@
       "max_history_days": 90, "historical_coverage": "recent_rolling_window_only",
       "source_country": "mexico", "source_lang": "spanish", "min_window_seconds": 900,
       "min_interval_seconds": 5, "max_bytes": 2000000, "timeout_seconds": 20
+    },
+    {
+      "id": "contralinea_search", "source_name": "Contralínea: archivo por entidad y fecha",
+      "kind": "rss", "search_kind": "wordpress_rss", "document_kind": "news",
+      "url": "https://contralinea.com.mx/feed/", "base_url": "https://contralinea.com.mx/",
+      "search_url": "https://contralinea.com.mx/", "allowed_hosts": ["contralinea.com.mx"],
+      "enabled": false, "terms_approved": false, "robots_required": true, "discovery": true,
+      "download_articles": false, "article_terms_approved": false, "body_terms_approved": false,
+      "historical_coverage": "publisher_search_best_effort_not_exhaustive",
+      "terms_url": "https://contralinea.com.mx/",
+      "permission_scope": "pendiente de revisión del operador; RSS público del editor; reutilización sin verificar",
+      "review_note": "Verificación pública: robots permitió la consulta RSS por frase; una consulta literal con filtro de 2020 devolvió 6 notas fechadas en ese año y un nombre sintético inexistente devolvió 0. Se observó capacidad de búsqueda, sin garantía de archivo completo ni permiso de reutilización. Registre la revisión de condiciones antes de habilitar; los cuerpos requieren permiso separado.",
+      "max_records": 6, "search_max_records": 6, "max_query_chars": 500, "min_window_seconds": 86400,
+      "min_interval_seconds": 5, "max_bytes": 2000000, "timeout_seconds": 15
+    },
+    {
+      "id": "aristegui_search", "source_name": "Aristegui Noticias: archivo por entidad y fecha",
+      "kind": "rss", "search_kind": "wordpress_rss", "document_kind": "news",
+      "url": "https://editorial.aristeguinoticias.com/feed/", "base_url": "https://editorial.aristeguinoticias.com/",
+      "search_url": "https://editorial.aristeguinoticias.com/",
+      "allowed_hosts": ["editorial.aristeguinoticias.com", "aristeguinoticias.com"],
+      "enabled": false, "terms_approved": false, "robots_required": true, "discovery": true,
+      "download_articles": false, "article_terms_approved": false, "body_terms_approved": false,
+      "historical_coverage": "publisher_search_best_effort_not_exhaustive",
+      "terms_url": "https://aristeguinoticias.com/aviso-de-privacidad/",
+      "permission_scope": "pendiente de revisión del operador; RSS público del editor; reutilización sin verificar",
+      "review_note": "Verificación pública: robots permitió la consulta RSS por frase y una consulta con filtro de 2020 devolvió 15 notas fechadas en ese año. El control con nombre sintético inexistente agotó su tiempo de espera: no se verificó su exclusión de resultados ajenos. Es una capacidad observada, sin garantía de relevancia ni archivo completo; cada respuesta se filtra antes de conservar candidatos. Registre la revisión de condiciones antes de habilitar; los cuerpos requieren permiso separado.",
+      "max_records": 15, "search_max_records": 15, "max_query_chars": 500, "min_window_seconds": 86400,
+      "min_interval_seconds": 5, "max_bytes": 2000000, "timeout_seconds": 15
     }
   ]
 }

@@ -2,6 +2,7 @@
 from copy import deepcopy
 from datetime import datetime, timezone
 import json
+from pathlib import Path
 import tempfile
 import unittest
 from urllib.parse import parse_qs, urlsplit
@@ -23,6 +24,115 @@ GDELT = {'id': 'index', 'kind': 'gdelt', 'base_url': 'https://api.gdeltproject.o
 
 
 class SearchPlanTests(unittest.TestCase):
+    def test_legacy_settings_keep_original_period_preset_and_900_second_budget(self):
+        legacy = {'preset': 'identity', 'start': '2020-01-01', 'end': '2020-12-31', 'include_aliases': False}
+        normalized = normalize_search_config(legacy, NOW)
+        self.assertEqual(normalized['execution_mode'], 'extended')
+        self.assertEqual(normalized['session_seconds'], 900)
+        self.assertTrue(all(normalized[key] == value for key, value in legacy.items()))
+        self.assertNotIn('execution_mode', legacy)
+        merged = merge_source_defaults({'sources': [WP]}, {'sources': [WP], 'search': {'execution_mode': 'quick', 'preset': 'adverse'}})
+        self.assertEqual(merged['search']['execution_mode'], 'extended')
+        self.assertEqual(merged['search']['preset'], 'identity')
+
+    def test_new_install_defaults_are_quick_adverse_without_source_permissions(self):
+        news = json.loads((Path(__file__).resolve().parents[1] / 'peps/defaults/news_sources.json').read_text())
+        settings = normalize_search_config(news['search'], NOW)
+        self.assertEqual((settings['execution_mode'], settings['session_seconds'], settings['preset']), ('quick', 120, 'adverse'))
+        self.assertTrue(all(source.get('enabled') is False and source.get('terms_approved') is False for source in news['sources']))
+        for invalid in ({'execution_mode': 'imaginary'}, {'execution_mode': 'quick', 'session_seconds': 900},
+                        {'execution_mode': 'quick', 'session_seconds': True}, {'execution_mode': 'extended', 'session_seconds': 86400}):
+            with self.subTest(invalid=invalid), self.assertRaises(ValueError):
+                normalize_search_config(invalid, NOW)
+        for seconds in (900, 1800, 3600, 7200):
+            self.assertEqual(normalize_search_config({'execution_mode': 'extended', 'session_seconds': seconds}, NOW)['session_seconds'], seconds)
+
+    def test_publisher_search_additions_preserve_existing_catalogue_and_require_permission(self):
+        root = Path(__file__).resolve().parents[1]
+        defaults = json.loads((root / 'peps/defaults/news_sources.json').read_text())
+        self.assertEqual(defaults, json.loads((root / 'config/news_sources.example.json').read_text()))
+        additions = defaults['sources'][-2:]
+        self.assertEqual([source['id'] for source in additions], ['contralinea_search', 'aristegui_search'])
+        existing = deepcopy(defaults['sources'][:-2])
+        existing_rss = next(source for source in existing if source['id'] == 'aristegui_rss')
+        existing_rss.update(enabled=True, terms_approved=True, download_articles=True, max_bytes=12345)
+        merged = merge_source_defaults({'sources': existing}, defaults)
+        self.assertEqual(merged['sources'][:-2], existing)
+        self.assertEqual(build_search_plan([ENTITY], additions, now=NOW)['query_count'], 0)
+        for source, count in zip(additions, (6, 15)):
+            with self.subTest(source=source['id']):
+                self.assertTrue(all(source[field] is False for field in
+                    ('enabled', 'terms_approved', 'download_articles', 'article_terms_approved', 'body_terms_approved')))
+                self.assertEqual(source['timeout_seconds'], 15)
+                self.assertEqual(source['min_interval_seconds'], 5)
+                approved = dict(source, enabled=True, terms_approved=True)
+                plan = build_search_plan([ENTITY], [approved], {'start': '2020-01-01', 'end': '2020-12-31',
+                    'include_aliases': False, 'use_context': False, 'window': 'year'}, now=NOW)
+                query = plan['queries'][0]
+                self.assertEqual(query['result_limit'], count)
+                self.assertEqual(urlsplit(query['url']).hostname, urlsplit(source['search_url']).hostname)
+                self.assertEqual(parse_qs(urlsplit(query['url']).query)['year'], ['2020'])
+
+    def test_quick_gdelt_batches_are_flat_bounded_and_keep_homonym_ids(self):
+        entities = [dict(id=str(index), name='Persona Sintética Inventada ' + str(index)) for index in range(18)]
+        entities.append(dict(entities[0], id='homonym'))
+        source = dict(GDELT, max_query_chars=250, batch_size=6, source_lang='spanish', source_country='mexico')
+        plan = build_search_plan(entities, [source], {'execution_mode': 'quick', 'preset': 'adverse',
+                                'start': '2026-07-01', 'end': '2026-10-15', 'include_aliases': False, 'use_context': False}, now=NOW)
+        self.assertEqual(plan['sources'][0]['windows'], 1)
+        self.assertEqual(plan['entities_planned'], 19)
+        first = plan['queries'][0]
+        self.assertIn('homonym', first['entity_ids'])
+        self.assertGreater(len(first['names']), 1)
+        self.assertEqual(first['query'].count('('), 1)
+        for query in plan['queries']:
+            self.assertLessEqual(len(query['query']), 250)
+            self.assertLessEqual(len(query['names']), 6)
+            self.assertEqual(query['split_policy'], 'defer')
+            depth = maximum = 0
+            for character in query['query']:
+                depth += (character == '(') - (character == ')')
+                maximum = max(maximum, depth)
+            self.assertLessEqual(maximum, 1)
+            self.assertTrue(all('"' + name + '"' in query['query'] for name in query['names']))
+            self.assertTrue(any(term in query['query'] for term in ('corrupción', 'fraude', 'sanción', 'lavado de dinero')))
+        self.assertIn('no garantiza', plan['execution']['scope_note'])
+
+    def test_quick_first_sweep_reaches_more_distinct_entities_without_claiming_execution(self):
+        entities = [dict(id=str(index), name='Persona Sintética ' + str(index), aliases=['Alias Inventado ' + str(index)],
+                         context={'state': 'Oaxaca'}) for index in range(300)]
+        source = dict(GDELT, max_query_chars=250, batch_size=6, min_interval_seconds=5,
+                      source_lang='spanish', source_country='mexico')
+        settings = {'execution_mode': 'quick', 'preset': 'adverse', 'start': '2016-01-01', 'end': '2026-10-15'}
+        quick = build_search_plan(entities, [WP, source], settings, now=NOW)
+        legacy = build_search_plan(entities, [WP, source], dict(settings, execution_mode='extended'), now=NOW)
+        self.assertEqual(legacy['execution']['session_seconds'], 900)
+        legacy_scheduled, legacy_consulted = {}, set()
+        for query in legacy['queries']:
+            host = urlsplit(query['url']).hostname
+            due = legacy_scheduled.get(host, 0)
+            legacy_scheduled[host] = due + 5
+            if due < 120:
+                legacy_consulted.update(query['entity_ids'])
+        self.assertEqual(len(legacy_consulted), 24)
+        scheduled, consulted = {}, set()
+        for query in quick['queries']:
+            host = urlsplit(query['url']).hostname
+            due = scheduled.get(host, 0)
+            scheduled[host] = due + 5
+            if due < 120:
+                consulted.update(query['entity_ids'])
+                self.assertNotIn('Alias Inventado', query['query'])
+                self.assertNotIn('"Oaxaca"', query['query'])
+        self.assertEqual(quick['estimated_entities_first_session'], len(consulted))
+        self.assertGreaterEqual(len(consulted), 120)
+        self.assertLess(len(consulted), 300)
+        self.assertTrue(all(source['entities_planned'] == 300 for source in quick['sources']))
+        self.assertIn('No son consultas ejecutadas', quick['first_session_estimate_note'])
+        self.assertIn('no equivale', quick['entity_count_note'])
+        wordpress = [query for query in quick['queries'] if query['source_id'] == WP['id']]
+        self.assertTrue(all(len(query['entity_ids']) == 1 and ' OR ' not in query['query'] for query in wordpress))
+
     def test_shared_name_queries_keep_all_distinct_identities_in_input_order(self):
         entities = [dict(ENTITY, id=str(index)) for index in range(10000)]
         plan = build_search_plan(entities, [WP], {'start': '2020-01-01', 'end': '2020-12-31',

@@ -87,7 +87,7 @@ def seed_case(engine, news, transport):
         con.execute('BEGIN IMMEDIATE')
         for number in range(235):
             url = 'https://fixture.invalid/article/' + str(number)
-            news._observe({'url': url, 'title': 'Noticia ficticia ' + str(number),
+            news._observe({'url': url, 'title': (entity['name'] + ': nota ficticia ' if number == 171 else 'Noticia ficticia ') + str(number),
                            'text': 'Metadatos sintéticos sin atribución de conducta.',
                            'published_at': '2024-06-15'}, source, source['url'],
                           {'sha256': digest('feed-fixture'), 'retrieved_at': now()}, None, connection=con)
@@ -317,7 +317,8 @@ def main():
 
                             # An eligible fixture is made ready by the test setup, never by
                             # a resume endpoint that would bypass an upstream Retry-After.
-                            selected = next(row['id'] for row in baseline if row['status'] == 'deferred')
+                            selected = next(row['id'] for row in baseline if row['status'] == 'deferred'
+                                and json.loads(row['payload'])['url'].endswith('/171'))
                             with engine.store.connection() as con:
                                 con.execute('UPDATE jobs SET due=? WHERE id=?', (time.time() - 1, selected))
                             ready_baseline = jobs_snapshot(engine.store)

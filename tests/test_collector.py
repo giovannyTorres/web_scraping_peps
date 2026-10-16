@@ -61,6 +61,61 @@ class SafeFetcherTests(unittest.TestCase):
         self.fetcher._dns = Mock(side_effect=AssertionError("DNS forbidden"))
         self.assertEqual(self.fetcher.fetch(self.url, self.source)["status"], "offline")
 
+    def test_session_deadline_clamps_subsecond_timeout_without_a_one_second_floor(self):
+        seen = []
+        def transport(_url, _headers, timeout, _max_bytes, _addresses):
+            seen.append(timeout)
+            return 200, {'content-type': 'text/plain'}, b'Fixture source body'
+        self.fetcher._transport = transport
+        with patch('peps.collector.time.monotonic', return_value=10):
+            result = self.fetcher.fetch(self.url, dict(self.source, _deadline_monotonic=10.25))
+        self.assertEqual(result['status'], 'ok')
+        self.assertEqual(seen, [.25])
+
+    def test_robots_consumes_the_same_session_budget_and_content_never_starts_after_it(self):
+        clock, calls = [10.], []
+        def transport(url, _headers, timeout, _max_bytes, _addresses):
+            calls.append((url, timeout))
+            clock[0] = 11.
+            return 200, {'content-type': 'text/plain'}, b'User-agent: *\nAllow: /\n'
+        self.fetcher._transport = transport
+        with patch('peps.collector.time.monotonic', side_effect=lambda: clock[0]):
+            result = self.fetcher.fetch(self.url, dict(self.source, robots_required=True, _deadline_monotonic=10.5))
+        self.assertEqual(calls, [('https://news.example/robots.txt', .5)])
+        self.assertEqual(result['status'], 'deferred')
+        self.assertEqual(result['error_code'], 'session_limit')
+
+    def test_redirect_hops_share_the_remaining_session_budget(self):
+        clock, seen = [10.], []
+        def transport(url, _headers, timeout, _max_bytes, _addresses):
+            seen.append((url, timeout))
+            if url == self.url:
+                clock[0] = 10.8
+                return 302, {'location': '/target'}, b''
+            return 200, {'content-type': 'text/plain'}, b'Fixture source body'
+        self.fetcher._transport = transport
+        with patch('peps.collector.time.monotonic', side_effect=lambda: clock[0]):
+            result = self.fetcher.fetch(self.url, dict(self.source, _deadline_monotonic=11))
+        self.assertEqual(result['status'], 'ok')
+        self.assertEqual(len(seen), 2)
+        self.assertEqual(seen[0][1], 1)
+        self.assertAlmostEqual(seen[1][1], .2)
+
+    def test_session_timeout_does_not_add_a_server_failure_or_backoff(self):
+        clock = [10.]
+        def transport(*_args):
+            clock[0] = 10.5
+            raise TimeoutError('The shared session deadline expired')
+        self.fetcher._transport = transport
+        with patch('peps.collector.time.monotonic', side_effect=lambda: clock[0]):
+            result = self.fetcher.fetch(self.url, dict(self.source, _deadline_monotonic=10.5))
+        self.assertEqual(result['status'], 'deferred')
+        self.assertEqual(result['error_code'], 'session_limit')
+        with self.fetcher._db() as con:
+            host = con.execute("SELECT failures,next_at FROM hosts WHERE host='news.example'").fetchone()
+        self.assertEqual(host['failures'], 0)
+        self.assertLessEqual(host['next_at'], self.now[0])
+
     def test_explicit_terms_and_enable_required(self):
         transport = self.transport({})
         for source in (dict(self.source, enabled=False), dict(self.source, terms_approved=False)):

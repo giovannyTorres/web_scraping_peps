@@ -22,7 +22,8 @@ PRESETS = {
     'adverse': {'label': 'Señales adversas para revisión',
                 'terms': '(corrupción OR fraude OR "lavado de dinero" OR investigación OR sanción OR detenido OR absuelto)'},
 }
-SEARCH_KEYS = {'strategy', 'preset', 'start', 'end', 'window', 'max_queries', 'include_aliases', 'use_context'}
+SEARCH_KEYS = {'strategy', 'preset', 'start', 'end', 'window', 'max_queries', 'include_aliases', 'use_context',
+               'execution_mode', 'session_seconds'}
 
 
 def _utc(value=None):
@@ -36,10 +37,11 @@ def _utc(value=None):
 
 
 def default_search_config(now=None):
+    """Compatibility fallback; the new-install catalogue explicitly selects quick."""
     today = _utc(now).date()
     return {'strategy': 'targeted', 'preset': 'identity', 'start': date(today.year - 10, 1, 1).isoformat(),
             'end': today.isoformat(), 'window': 'auto', 'max_queries': 1000,
-            'include_aliases': True, 'use_context': True}
+            'include_aliases': True, 'use_context': True, 'execution_mode': 'extended', 'session_seconds': 900}
 
 
 def normalize_search_config(value=None, now=None):
@@ -48,6 +50,13 @@ def normalize_search_config(value=None, now=None):
     if set(value or {}) - SEARCH_KEYS:
         raise ValueError('Opciones de búsqueda no reconocidas')
     result = {**default_search_config(now), **(value or {})}
+    if 'session_seconds' not in (value or {}) and result['execution_mode'] == 'quick':
+        result['session_seconds'] = 120
+    if result['execution_mode'] not in ('quick', 'extended'):
+        raise ValueError('execution_mode debe ser quick o extended')
+    seconds = result['session_seconds']
+    if type(seconds) is not int or seconds not in ((120,) if result['execution_mode'] == 'quick' else (900, 1800, 3600, 7200)):
+        raise ValueError('session_seconds requiere 120 para quick o 900, 1800, 3600, 7200 para extended')
     if result['strategy'] not in ('targeted', 'feeds'):
         raise ValueError('strategy debe ser targeted o feeds')
     if result['preset'] not in PRESETS:
@@ -81,7 +90,9 @@ def merge_source_defaults(config, defaults):
             added = deepcopy(source)
             added.update(enabled=False, terms_approved=False, download_articles=False, article_terms_approved=False)
             result['sources'].append(added)
-    result.setdefault('search', deepcopy(defaults.get('search') or default_search_config()))
+    # An installed catalogue without a search section had the legacy search.
+    # New-install quick defaults must not silently relabel its existing queue.
+    result.setdefault('search', default_search_config())
     return result
 
 
@@ -183,6 +194,40 @@ def wordpress_queries(entity, config, *, variants=None):
     return queries
 
 
+def _quick_gdelt_queries(entities, source, config, suffix, max_chars):
+    """One flat OR of canonical names, one risk term; never nested ORs.
+
+    Publisher WordPress search is deliberately excluded: it does not document
+    the same Boolean semantics. Alias/context requests follow the first sweep.
+    """
+    terms = [''] if config['preset'] == 'identity' else ['gobierno', 'funcionario', 'contrato'] if config['preset'] == 'public_role' else ['corrupción', 'fraude', 'sanción', '"lavado de dinero"']
+    names = {}
+    for entity in entities:
+        name = _phrase(entity.get('name'))
+        if name:
+            value = names.setdefault(name.casefold(), {'name': name, 'ids': {}})
+            value['ids'][str(entity['id'])] = None
+    limit = min(50, max(1, int(source.get('batch_size', 6))))
+    for rank, term in enumerate(terms):
+        tail = (' ' + term if term else '') + suffix
+        def query(items):
+            phrases = ['"' + item['name'] + '"' for item in items]
+            return ('(' + ' OR '.join(phrases) + ')' if len(phrases) > 1 else phrases[0]) + tail
+        batch = []
+        def output(items):
+            return {'query': query(items), 'query_type': 'identity', 'rank': rank,
+                    'entity_ids': list(dict.fromkeys(identifier for item in items for identifier in item['ids'])),
+                    'names': [item['name'] for item in items], 'batched': len(items) > 1}
+        for item in names.values():
+            if batch and (len(batch) >= limit or len(query([*batch, item])) > max_chars):
+                yield output(batch)
+                batch = []
+            if len(query([item])) <= max_chars:
+                batch.append(item)
+        if batch:
+            yield output(batch)
+
+
 def split_query_windows(source, payload):
     """Calendar splits match the date filters supported by publisher RSS."""
     first, last = [_bound(payload[key]) for key in ('start', 'end')]
@@ -256,10 +301,14 @@ def build_search_plan(entities, sources, config=None, *, start=None, end=None, n
     if first >= last:
         raise ValueError('La fecha inicial debe ser anterior a la final')
     active = [source for source in sources if source.get('enabled') and source.get('terms_approved')]
+    quick = config['execution_mode'] == 'quick'
     plan = {'config': config, 'queries': [], 'warnings': [], 'sources': [], 'truncated': False,
             'requested_start': first.isoformat(), 'requested_end_exclusive': last.isoformat(),
             'coverage': 'best_effort_not_exhaustive', 'identity_policy': 'Queries retrieve candidates; identity must be corroborated from the source.',
-            'entities_planned': 0, 'query_count': 0}
+            'entities_planned': 0, 'query_count': 0,
+            'execution': {'mode': config['execution_mode'], 'session_seconds': config['session_seconds'],
+                'scope_note': 'El presupuesto es global para la sesión. Se conservan consultas pendientes; no garantiza consultar todas las entidades ni descargar todos sus artículos.'},
+            'entity_count_note': 'Entidades planificadas no equivale a entidades consultadas ni a cobertura comprobada.'}
     prepared = []
     for source in active:
         google, gdelt = source.get('search_kind') == 'google_news_rss', source.get('kind') == 'gdelt'
@@ -287,7 +336,11 @@ def build_search_plan(entities, sources, config=None, *, start=None, end=None, n
             plan['warnings'].append(source['id'] + ': el período solicitado queda fuera del alcance temporal de la fuente.')
             continue
         unit = config['window'] if config['window'] != 'auto' else 'year' if (google or wordpress) and (b - a).days > 730 else 'month'
-        windows = _windows(a, b, unit)
+        # GDELT supports the recent interval directly. Monthly subdivisions are
+        # a response-limit recovery strategy, not mandatory work before results.
+        windows = [(a, b)] if quick and gdelt else _windows(a, b, unit)
+        if quick and gdelt:
+            unit = 'recent_interval'
         prepared.append((source, windows))
         plan['sources'].append({'id': source['id'], 'source_name': source.get('source_name') or source['id'], 'scope': 'publisher_historical_search' if wordpress else 'historical_search_best_effort' if google else 'recent_rolling_window',
             'start': a.isoformat(), 'end_exclusive': b.isoformat(), 'windows': len(windows), 'window_unit': unit,
@@ -301,6 +354,8 @@ def build_search_plan(entities, sources, config=None, *, start=None, end=None, n
     if config['strategy'] == 'targeted' and prepared:
         entities = list(entities)
         total_ids = {str(entity['id']) for entity in entities}
+        hosts = list(dict.fromkeys(urlsplit(source.get('search_url') or source.get('base_url') or source.get('url') or '').hostname or source['id']
+                                   for source, _ in prepared))
         for source, windows in prepared:
             grouped = {}
             source_suffix = ''
@@ -310,7 +365,14 @@ def build_search_plan(entities, sources, config=None, *, start=None, end=None, n
                 if source.get('source_country'):
                     source_suffix += ' sourcecountry:' + source['source_country']
             max_chars = min(1500, max(1, int(source.get('max_query_chars', 500))))
-            for entity in entities:
+            host = urlsplit(source.get('search_url') or source.get('base_url') or source.get('url') or '').hostname or source['id']
+            offset = hosts.index(host) * ((len(entities) + len(hosts) - 1) // len(hosts)) if quick else 0
+            ordered = entities[offset:] + entities[:offset]
+            batches = list(_quick_gdelt_queries(ordered, source, config, source_suffix, max_chars)) if quick and source.get('kind') == 'gdelt' else []
+            included = {identifier for query in batches for identifier in query['entity_ids']}
+            if quick and source.get('kind') == 'gdelt' and any(_phrase(entity.get('name')) and str(entity['id']) not in included for entity in ordered):
+                plan['warnings'].append(source['id'] + ': nombres o términos que exceden el límite local de longitud no se pudieron incluir en lotes.')
+            for entity in ordered:
                 variants = _variants(entity, config['include_aliases'])
                 if source.get('search_kind') == 'wordpress_rss' or source.get('kind') == 'gdelt':
                     # GDELT rejects nested OR groups. Separate exact-phrase
@@ -319,6 +381,10 @@ def build_search_plan(entities, sources, config=None, *, start=None, end=None, n
                 else:
                     queries = entity_queries(entity, config, max(1, max_chars - len(source_suffix)))
                 for rank, query in enumerate(queries):
+                    if quick and source.get('kind') == 'gdelt':
+                        if query['query_type'] == 'identity':
+                            continue  # Canonical requests were batched above.
+                        rank += 100
                     text = query['query'] + source_suffix
                     if len(text) > max_chars:
                         plan['warnings'].append(source['id'] + ': una consulta excede el límite local de longitud y fue omitida; revise nombres/contexto o aumente el límite de la fuente.')
@@ -327,8 +393,8 @@ def build_search_plan(entities, sources, config=None, *, start=None, end=None, n
                     template['rank'] = min(rank, template['rank'])
                     template['entity_ids'][str(entity['id'])] = None
                     template['names'].update(dict.fromkeys(variants))
-            templates.append((source, windows, [dict(query, entity_ids=list(query['entity_ids']), names=list(query['names']))
-                                                for query in grouped.values()]))
+            templates.append((source, windows, batches + [dict(query, entity_ids=list(query['entity_ids']), names=list(query['names']))
+                                                          for query in grouped.values()]))
         required = sum(len(windows) * len(queries) for _, windows, queries in templates)
         # Give every PEP a primary-name query before spending the budget on
         # aliases/context or advancing to the next historical window.
@@ -353,7 +419,8 @@ def build_search_plan(entities, sources, config=None, *, start=None, end=None, n
                             break
                         payload = {key: value for key, value in query.items() if key != 'rank'}
                         payload.update(source_id=source['id'], kind='news_query', start=a.strftime('%Y%m%d%H%M%S'),
-                                       end=b.strftime('%Y%m%d%H%M%S'), result_limit=int(source.get('search_max_records', source.get('max_records', 100 if source.get('search_kind') == 'google_news_rss' else 250))))
+                                       end=b.strftime('%Y%m%d%H%M%S'), result_limit=int(source.get('search_max_records', source.get('max_records', 100 if source.get('search_kind') == 'google_news_rss' else 250))),
+                                       split_policy='defer' if quick else 'expand')
                         payload['url'] = query_url(source, payload)
                         plan['queries'].append(payload)
                         planned_ids.update(payload['entity_ids'])
@@ -369,11 +436,26 @@ def build_search_plan(entities, sources, config=None, *, start=None, end=None, n
     plan.update(entities_planned=len(planned_ids), entities_covered=len(planned_ids), entities_total=len(total_ids),
                 queries_required=required, query_count=len(plan['queries']))
     intervals = {source['id']: max(1, float(source.get('min_interval_seconds', 5))) for source in sources}
-    hosts = {}
+    hosts, source_entities, first_session, first_by_source = {}, {}, set(), {}
+    last_start = 0.
     for query in plan['queries']:
         host = urlsplit(query['url']).hostname or query['source_id']
-        hosts[host] = hosts.get(host, 0) + intervals[query['source_id']]
-    plan['estimated_schedule_seconds'] = round(max(hosts.values(), default=0), 1)
+        scheduled = hosts.get(host, 0.)
+        last_start = max(last_start, scheduled)
+        identifiers = query.get('entity_ids', [])
+        source_entities.setdefault(query['source_id'], set()).update(identifiers)
+        if scheduled < config['session_seconds']:
+            first_session.update(identifiers)
+            first_by_source.setdefault(query['source_id'], set()).update(identifiers)
+        hosts[host] = scheduled + intervals[query['source_id']]
+    for source in plan['sources']:
+        source['entities_planned'] = len(source_entities.get(source['id'], ()))
+        source['estimated_entities_first_session'] = len(first_by_source.get(source['id'], ()))
+    plan['estimated_entities_first_session'] = len(first_session)
+    plan['first_session_estimate_note'] = 'Límite orientativo de entidades distintas cuyas consultas podrían iniciarse según intervalos de host; excluye latencia, robots, fallos y descarga de cuerpos. No son consultas ejecutadas ni cobertura garantizada.'
+    plan['estimated_schedule_seconds'] = round(last_start, 1)
+    if quick:
+        plan['warnings'].append('Modo rápido: primero nombres canónicos; los lotes sólo se aplican a GDELT. Las respuestas saturadas quedan como cobertura incompleta sin expansión automática; alias y contexto siguen al primer barrido.')
     plan['schedule_estimate_note'] = 'Programación mínima orientativa por intervalos de host; excluye latencia, robots, reintentos y divisiones adicionales. No es un SLA ni ETA de finalización.'
     plan['warnings'] = list(dict.fromkeys(plan['warnings']))
     return plan
