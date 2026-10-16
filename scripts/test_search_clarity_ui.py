@@ -51,15 +51,15 @@ def main():
 
     def snapshot(base):
         value = deepcopy(base)
-        active = mode in ('waiting', 'running', 'pausing', 'analysis', 'analysis_scoring')
+        active = mode in ('waiting', 'running', 'pausing', 'analysis', 'analysis_scoring', 'nominal_preparing', 'nominal_running')
         analyzing = mode in ('analysis', 'analysis_scoring')
         body_mode = mode in ('running', 'pausing', 'paused_text', 'analysis', 'analysis_scoring')
         candidates, bodies = (5, 3) if body_mode else (0, 0)
-        activity = {'state': 'running' if analyzing else 'paused' if mode in ('historical', 'paused_text') else mode, 'label': 'Analizando información' if analyzing else mode,
+        activity = {'state': 'running' if analyzing or mode == 'nominal_running' else 'preparing' if mode == 'nominal_preparing' else 'failed' if mode == 'nominal_failed' else 'paused' if mode in ('historical', 'paused_text') else mode, 'label': 'Analizando información' if analyzing else mode,
                     'detail': 'Solicitud del artículo pertinente' if body_mode else 'Esperando el siguiente intento permitido.',
                     'owner_active': active, 'active_requests': 2 if mode == 'running' else 0,
                     'can_pause': active, 'source_id': 'fixture', 'source_label': 'Fuente de prueba',
-                    'last_error': 'HTTP 429 · pausa solicitada' if mode == 'waiting' else None,
+                    'last_error': 'HTTP 403 · fuente bloqueada; revisión necesaria' if mode == 'nominal_failed' else 'HTTP 429 · pausa solicitada' if mode == 'waiting' else None,
                     'next_retry_at': time.time() + 120 if mode == 'waiting' else None,
                     'next_retry_seconds': 120 if mode == 'waiting' else None,
                     'session_tasks': {'scope': 'current_session', 'completed': 17, 'pending': 7},
@@ -69,6 +69,11 @@ def main():
                     'material': {'scope': 'current_bank', 'body_articles': bodies, 'local_documents': 0,
                         'analyzable_documents': bodies, 'relevant_articles': candidates, 'archived_articles': 235,
                         'archived_documents': 235}}
+        if mode in ('nominal_preparing', 'nominal_running'):
+            activity['session_tasks'].update(completed=0)
+            activity['current_bank_tasks'].update(done=0, failed=0, blocked=0, dead=0)
+        if mode == 'nominal_failed':
+            activity['current_bank_tasks'].update(queued=0, deferred=0, failed=1, blocked=1, pending=0, ready=0)
         if mode == 'historical':
             activity['current_bank_tasks'].update(done=0, running=0, queued=0, deferred=0, failed=0, pending=0, ready=0)
         value.update(entities=652, documents=235, evidence=0, jobs={'done': 719, 'queued': 1, 'deferred': 6, 'running': 0})
@@ -165,7 +170,28 @@ def main():
                     checked('mobile_has_no_horizontal_overflow', page.evaluate('document.documentElement.scrollWidth<=innerWidth'))
                     page.screenshot(path=str(output / 'waiting-mobile.png'), full_page=True)
                     report['screenshots'].append(str(output / 'waiting-mobile.png'))
+                    config['strategy'] = 'targeted'
+                    for startup_mode, startup_label in [('nominal_preparing', 'Preparando las consultas'), ('nominal_running', 'Buscando información')]:
+                        mode = startup_mode
+                        page.reload(wait_until='networkidle')
+                        expect(page.locator('#workflow-download-card-title')).to_have_text(startup_label)
+                        expect(page.locator('#workflow-zero-results')).to_be_hidden()
+                        expect(page.locator('#workflow-targeted-recovery')).to_be_hidden()
+                        expect(page.locator('#workflow-entity-progress')).to_have_attribute('value', '0')
+                        checked(startup_mode + '_shows_progress_without_premature_empty_warning_or_abort_recovery')
+                    mode = 'nominal_failed'
+                    page.reload(wait_until='networkidle')
+                    expect(page.locator('#workflow-download-card-title')).to_have_text('La búsqueda necesita atención')
+                    expect(page.locator('#workflow-live-wait')).to_be_visible()
+                    expect(page.locator('#workflow-live-wait')).to_contain_text('HTTP 403')
+                    expect(page.locator('#workflow-live-wait')).not_to_contain_text('Próximo intento')
+                    expect(page.locator('#workflow-targeted-recovery')).to_be_hidden()
+                    expect(page.locator('#workflow-news-settings')).to_be_enabled()
+                    checked('failed_nominal_search_exposes_source_error_and_settings_without_identical_recovery')
+                    checked('startup_and_failed_presentations_never_start_or_cancel_work', not mutations)
+                    config['strategy'] = 'shared'
                     mode = 'historical'
+                    page.reload(wait_until='networkidle')
                     page.evaluate('refresh(true)')
                     expect(page.locator('#workflow-download-card-title')).to_have_text('Búsqueda en pausa')
                     page.locator('#workflow-inspection > summary').click()
