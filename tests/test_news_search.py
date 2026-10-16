@@ -51,13 +51,14 @@ class SearchPlanTests(unittest.TestCase):
         root = Path(__file__).resolve().parents[1]
         defaults = json.loads((root / 'peps/defaults/news_sources.json').read_text())
         self.assertEqual(defaults, json.loads((root / 'config/news_sources.example.json').read_text()))
-        additions = defaults['sources'][-2:]
+        additions = [source for source in defaults['sources'] if source['id'] in ('contralinea_search', 'aristegui_search')]
         self.assertEqual([source['id'] for source in additions], ['contralinea_search', 'aristegui_search'])
-        existing = deepcopy(defaults['sources'][:-2])
+        existing = deepcopy([source for source in defaults['sources'] if source['id'] not in
+                             ('contralinea_search', 'aristegui_search') and source['kind'] not in ('wordpress_api', 'sitemap')])
         existing_rss = next(source for source in existing if source['id'] == 'aristegui_rss')
         existing_rss.update(enabled=True, terms_approved=True, download_articles=True, max_bytes=12345)
         merged = merge_source_defaults({'sources': existing}, defaults)
-        self.assertEqual(merged['sources'][:-2], existing)
+        self.assertEqual(merged['sources'][:len(existing)], existing)
         self.assertEqual(build_search_plan([ENTITY], additions, now=NOW)['query_count'], 0)
         for source, count in zip(additions, (6, 15)):
             with self.subTest(source=source['id']):
@@ -72,6 +73,42 @@ class SearchPlanTests(unittest.TestCase):
                 self.assertEqual(query['result_limit'], count)
                 self.assertEqual(urlsplit(query['url']).hostname, urlsplit(source['search_url']).hostname)
                 self.assertEqual(parse_qs(urlsplit(query['url']).query)['year'], ['2020'])
+
+    def test_shared_300_entities_use_yearly_pages_not_300_queries_and_obey_budget(self):
+        source = dict(id='shared', kind='wordpress_api', url='https://example.org/wp-json/wp/v2/posts',
+                      allowed_hosts=['example.org'], enabled=True, terms_approved=True)
+        entities = [dict(id=str(i), name=f'Persona Pública Sintética {i}') for i in range(300)]
+        plan = build_search_plan(entities, [source], {'strategy': 'shared', 'start': '2016-01-01',
+            'end': '2026-01-15', 'execution_mode': 'quick'}, now=NOW)
+        self.assertEqual(plan['entities_total'], 300)
+        self.assertEqual(plan['entities_planned'], 0)
+        self.assertEqual(plan['shared_discovery']['initial_pages'], 11)
+        self.assertEqual(plan['shared_discovery']['max_pages_per_source'], 24)
+        self.assertEqual(len(plan['queries']), 11)
+        for query in plan['queries']:
+            self.assertEqual(query['kind'], 'news_feed')
+            args = parse_qs(urlsplit(query['url']).query)
+            self.assertNotIn('search', args)
+            self.assertNotIn('content', args['_fields'][0])
+            self.assertEqual(args['per_page'], ['100'])
+        limited = build_search_plan(entities, [source], dict(plan['config'], max_queries=2), now=NOW)
+        self.assertEqual(len(limited['queries']), 2)
+        self.assertTrue(limited['truncated'])
+        complete_years = build_search_plan(entities, [source], dict(plan['config'], start='2020-01-01', end='2025-12-31'), now=NOW)
+        self.assertEqual(complete_years['shared_discovery']['initial_pages'], 6)
+        self.assertFalse(any('años antiguos sin planificar' in warning or 'nombres canónicos' in warning
+                             for warning in complete_years['warnings']))
+
+    def test_shared_sources_are_added_disabled_and_old_permissions_remain_exact(self):
+        defaults = json.loads((Path(__file__).resolve().parents[1] / 'peps/defaults/news_sources.json').read_text())
+        sources = [source for source in defaults['sources'] if source['kind'] in ('wordpress_api', 'sitemap')]
+        self.assertEqual(len(sources), 6)
+        for source in sources:
+            for permission in ('enabled', 'terms_approved', 'download_articles', 'article_terms_approved'):
+                self.assertFalse(source[permission])
+        old = {'sources': [dict(id='fixture', enabled=True, terms_approved=True, kind='rss', max_bytes=123)]}
+        merged = merge_source_defaults(old, defaults)
+        self.assertEqual(merged['sources'][0], old['sources'][0])
 
     def test_quick_gdelt_batches_are_flat_bounded_and_keep_homonym_ids(self):
         entities = [dict(id=str(index), name='Persona Sintética Inventada ' + str(index)) for index in range(18)]
@@ -98,23 +135,25 @@ class SearchPlanTests(unittest.TestCase):
             self.assertTrue(any(term in query['query'] for term in ('corrupción', 'fraude', 'sanción', 'lavado de dinero')))
         self.assertIn('no garantiza', plan['execution']['scope_note'])
 
-    def test_quick_first_sweep_reaches_more_distinct_entities_without_claiming_execution(self):
+    def test_both_modes_batch_first_sweep_without_claiming_execution(self):
         entities = [dict(id=str(index), name='Persona Sintética ' + str(index), aliases=['Alias Inventado ' + str(index)],
                          context={'state': 'Oaxaca'}) for index in range(300)]
         source = dict(GDELT, max_query_chars=250, batch_size=6, min_interval_seconds=5,
                       source_lang='spanish', source_country='mexico')
         settings = {'execution_mode': 'quick', 'preset': 'adverse', 'start': '2016-01-01', 'end': '2026-10-15'}
         quick = build_search_plan(entities, [WP, source], settings, now=NOW)
-        legacy = build_search_plan(entities, [WP, source], dict(settings, execution_mode='extended'), now=NOW)
-        self.assertEqual(legacy['execution']['session_seconds'], 900)
-        legacy_scheduled, legacy_consulted = {}, set()
-        for query in legacy['queries']:
+        extended = build_search_plan(entities, [WP, source], dict(settings, execution_mode='extended'), now=NOW)
+        self.assertEqual(extended['execution']['session_seconds'], 900)
+        extended_scheduled, extended_consulted = {}, set()
+        for query in extended['queries']:
             host = urlsplit(query['url']).hostname
-            due = legacy_scheduled.get(host, 0)
-            legacy_scheduled[host] = due + 5
+            due = extended_scheduled.get(host, 0)
+            extended_scheduled[host] = due + 5
             if due < 120:
-                legacy_consulted.update(query['entity_ids'])
-        self.assertEqual(len(legacy_consulted), 24)
+                extended_consulted.update(query['entity_ids'])
+                self.assertNotIn('Alias Inventado', query['query'])
+                self.assertNotIn('"Oaxaca"', query['query'])
+        self.assertGreaterEqual(len(extended_consulted), 120)
         scheduled, consulted = {}, set()
         for query in quick['queries']:
             host = urlsplit(query['url']).hostname
@@ -132,6 +171,48 @@ class SearchPlanTests(unittest.TestCase):
         self.assertIn('no equivale', quick['entity_count_note'])
         wordpress = [query for query in quick['queries'] if query['source_id'] == WP['id']]
         self.assertTrue(all(len(query['entity_ids']) == 1 and ' OR ' not in query['query'] for query in wordpress))
+
+    def test_extended_300_entities_use_bounded_batches_and_expand_only_saturated_windows(self):
+        entities = [dict(id=str(index), name=f'Persona Sintética Apellido {index:04d}') for index in range(300)]
+        entities.append(dict(entities[0], id='homonym'))
+        source = dict(GDELT, max_query_chars=250, batch_size=6, source_lang='spanish', source_country='mexico')
+        settings = {'execution_mode': 'extended', 'session_seconds': 3600, 'preset': 'identity',
+                    'start': '2016-01-01', 'end': '2026-10-15', 'include_aliases': False, 'use_context': False}
+        plan = build_search_plan(entities, [source], settings, now=NOW)
+        # Before batching and lazy windows this workload needed at least
+        # 300 names x 3 monthly windows. A neutral identity search stays broad.
+        self.assertLessEqual(plan['query_count'], 75)
+        self.assertEqual(plan['entities_planned'], 301)
+        self.assertFalse(plan['truncated'])
+        self.assertEqual(plan['sources'][0]['windows'], 1)
+        self.assertEqual(plan['sources'][0]['window_unit'], 'recent_interval')
+        self.assertIn('homonym', plan['queries'][0]['entity_ids'])
+        for query in plan['queries']:
+            self.assertLessEqual(len(query['query']), 250)
+            self.assertLessEqual(len(query['names']), 6)
+            self.assertEqual(query['split_policy'], 'expand')
+            self.assertNotIn('corrupción', query['query'])
+            self.assertEqual(query['query'].count('('), 1)
+            args = parse_qs(urlsplit(query['url']).query)
+            self.assertEqual(args['startdatetime'], [query['start']])
+            self.assertEqual(args['enddatetime'], [query['end']])
+
+    def test_extended_batches_prioritize_canonical_names_before_aliases_and_context(self):
+        entities = [dict(id=str(index), name=f'Persona Sintética {index:04d}',
+                         aliases=[f'Alias Inventado {index:04d}'], context={'state': 'Oaxaca'}) for index in range(18)]
+        source = dict(GDELT, max_query_chars=250, batch_size=6)
+        plan = build_search_plan(entities, [source], {'execution_mode': 'extended', 'preset': 'adverse',
+                                'start': '2026-07-01', 'end': '2026-10-15'}, now=NOW)
+        canonical, secondary = [], []
+        for index, query in enumerate(plan['queries']):
+            (canonical if query['query_type'] == 'identity' else secondary).append((index, query))
+        self.assertTrue(secondary)
+        self.assertLess(canonical[-1][0], secondary[0][0])
+        self.assertEqual({identifier for _, query in canonical for identifier in query['entity_ids']},
+                         {str(index) for index in range(18)})
+        self.assertTrue(any('Alias Inventado' in query['query'] for _, query in secondary))
+        self.assertTrue(any('"Oaxaca"' in query['query'] for _, query in secondary))
+        self.assertTrue(all(query['split_policy'] == 'expand' for query in plan['queries']))
 
     def test_shared_name_queries_keep_all_distinct_identities_in_input_order(self):
         entities = [dict(ENTITY, id=str(index)) for index in range(10000)]
@@ -281,6 +362,32 @@ class SearchQueueIntegrationTests(unittest.TestCase):
         self.news._split_saturated(parent, WP)
         with self.engine.store.connection() as con:
             self.assertEqual(con.execute('SELECT count(*) FROM jobs').fetchone()[0], 13)
+
+    def test_extended_gdelt_saturation_preserves_batched_names_ids_and_query(self):
+        self.engine.store.import_entities([dict(ENTITY, id='second', name='Otra Persona Sintética')])
+        source = dict(GDELT, max_query_chars=250, batch_size=6, min_interval_seconds=5)
+        self.configure([source])
+        self.news.set_search_config({'execution_mode': 'extended', 'preset': 'identity',
+                                    'start': '2026-08-01', 'end': '2026-10-15',
+                                    'include_aliases': False, 'use_context': False})
+        self.news.queue('gdelt-extended-batches')
+        parent = self.engine.store.claim(kind_prefix='news_')
+        self.assertEqual(len(parent['payload']['entity_ids']), 2)
+        self.assertEqual(parent['payload']['split_policy'], 'expand')
+        self.assertTrue(self.news._split_saturated(parent, source))
+        with self.engine.store.connection() as con:
+            children = [json.loads(row['payload']) for row in con.execute(
+                'SELECT j.payload FROM jobs j JOIN news_query_windows w ON w.job_id=j.id '
+                'WHERE w.parent_id=? ORDER BY w.window_start', (parent['id'],))]
+        self.assertEqual(len(children), 2)
+        self.assertEqual(children[0]['start'], parent['payload']['start'])
+        self.assertEqual(children[0]['end'], children[1]['start'])
+        self.assertEqual(children[1]['end'], parent['payload']['end'])
+        for payload in children:
+            self.assertEqual(payload['entity_ids'], parent['payload']['entity_ids'])
+            self.assertEqual(payload['names'], parent['payload']['names'])
+            self.assertEqual(payload['query'], parent['payload']['query'])
+            self.assertEqual(payload['url'], query_url(source, payload))
 
     def test_search_settings_persist_and_emit_the_revision_event(self):
         self.configure([WP])

@@ -26,6 +26,64 @@ def _json(value):
         return {}
 
 
+def _shared_coverage(con, tables, result, *, json_sql):
+    """Count observed local index scans independently from directed searches.
+
+    Parsed-page caches can be reused for another bank revision, but only a
+    completed discovery receipt proves that the current bank was checked.
+    """
+    row = con.execute("SELECT value FROM meta WHERE key='news_identity_revision'").fetchone()
+    if row is None:
+        return
+    revision = row[0]
+    if not json_sql:
+        current_ids = {row[0] for row in con.execute('SELECT id FROM entities')}
+        checked = set()
+        if 'news_discovery_runs' in tables:
+            for row in con.execute('SELECT parser_metadata FROM news_discovery_runs'):
+                metadata = _json(row[0])
+                if metadata.get('shared_index') is not True or metadata.get('bank_revision') != revision:
+                    continue
+                result['shared_pages_read'] += 1
+                candidate_filter = metadata.get('candidate_filter')
+                count = candidate_filter.get('input_records') if isinstance(candidate_filter, dict) else None
+                if type(count) is int:
+                    result['shared_records_checked'] += max(0, count)
+                identifiers = metadata.get('locally_checked_entity_ids')
+                if isinstance(identifiers, list):
+                    checked.update(str(identifier) for identifier in identifiers if str(identifier) in current_ids)
+                continuation = metadata.get('continuation')
+                pagination = metadata.get('pagination')
+                limited = (isinstance(continuation, dict) and continuation.get('page_limit_reached') is True
+                           or isinstance(pagination, dict) and pagination.get('truncated') is True)
+                result['shared_pages_limited'] += int(limited)
+        result['entities_checked_locally'] = len(checked)
+        for row in con.execute("SELECT payload FROM jobs WHERE kind='news_feed' AND status IN ('queued','deferred','running')"):
+            payload = _json(row[0])
+            if payload.get('shared_index') is True and payload.get('bank_revision') == revision:
+                result['shared_pages_pending'] += 1
+        return
+
+    if 'news_discovery_runs' in tables:
+        receipts = ("WITH parsed AS (SELECT CASE WHEN json_valid(parser_metadata) THEN parser_metadata ELSE '{}' END AS metadata "
+                    "FROM news_discovery_runs), current AS (SELECT metadata FROM parsed "
+                    "WHERE json_type(metadata,'$.shared_index')='true' AND json_extract(metadata,'$.bank_revision')=?) ")
+        counts = con.execute(receipts + "SELECT count(*),COALESCE(sum(CASE "
+            "WHEN json_type(metadata,'$.candidate_filter.input_records')='integer' "
+            "THEN max(0,json_extract(metadata,'$.candidate_filter.input_records')) ELSE 0 END),0),"
+            "COALESCE(sum(json_type(metadata,'$.continuation.page_limit_reached')='true' "
+            "OR json_type(metadata,'$.pagination.truncated')='true'),0) FROM current", (revision,)).fetchone()
+        result.update(shared_pages_read=counts[0], shared_records_checked=counts[1], shared_pages_limited=counts[2])
+        result['entities_checked_locally'] = con.execute(receipts +
+            "SELECT count(DISTINCT e.id) FROM current r JOIN json_each(r.metadata,'$.locally_checked_entity_ids') v "
+            "JOIN entities e ON e.id=CAST(v.value AS TEXT) "
+            "WHERE json_type(r.metadata,'$.locally_checked_entity_ids')='array'", (revision,)).fetchone()[0]
+    result['shared_pages_pending'] = con.execute("WITH parsed AS (SELECT "
+        "CASE WHEN json_valid(payload) THEN payload ELSE '{}' END AS payload FROM jobs "
+        "WHERE kind='news_feed' AND status IN ('queued','deferred','running')) SELECT count(*) FROM parsed "
+        "WHERE json_type(payload,'$.shared_index')='true' AND json_extract(payload,'$.bank_revision')=?", (revision,)).fetchone()[0]
+
+
 def _fallback(con, tables, result):
     ids = {row[0] for row in con.execute('SELECT id FROM entities')}
     queried, pairs, bodies = set(), set(), set()
@@ -80,11 +138,14 @@ def acquisition_coverage(store, sources):
     result = {'entities_total': 0, 'entities_queried': 0, 'entities_with_candidates': 0,
               'entities_with_bodies': 0, 'body_articles': 0, 'relevant_articles': 0,
               'metadata_only_articles': 0, 'excluded_records': 0,
+              'shared_pages_read': 0, 'shared_records_checked': 0, 'entities_checked_locally': 0,
+              'shared_pages_pending': 0, 'shared_pages_limited': 0,
               'local_documents': 0, 'local_entities_with_bodies': 0, 'permissions': _permissions(sources)}
     with store.connection() as con:
         con.execute('BEGIN')
         result['entities_total'] = con.execute('SELECT count(*) FROM entities').fetchone()[0]
         tables = {row[0] for row in con.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+        _shared_coverage(con, tables, result, json_sql=store._audit_json)
         if not store._audit_json:
             return _fallback(con, tables, result)
         observed = ("SELECT o.article_id,CAST(v.value AS TEXT) AS entity_id FROM news_observations o "

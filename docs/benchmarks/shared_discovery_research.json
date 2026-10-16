@@ -1,0 +1,555 @@
+{
+  "schema": "webscope.shared_discovery.research.v1",
+  "observed_utc_date": "2026-10-16",
+  "method": {
+    "identity_bank_used": false,
+    "data_scope": "Public publisher metadata and public technical documentation; no user entity bank or internal BBVA information.",
+    "wordpress_requests": 12,
+    "publishers": 3,
+    "per_page": 100,
+    "fields": "id,link,date,title.rendered,excerpt.rendered",
+    "intra_host_delay_seconds": 5,
+    "cross_host_parallelism": 3,
+    "response_timeout_seconds": 18,
+    "response_read_cap_bytes": 2500001,
+    "bodies_requested": false,
+    "latency_scope": "Single technical observation including public endpoint latency from this runner; not a throughput SLA or a benchmark of scoring300 entities."
+  },
+  "wordpress_checks": [
+    {
+      "base": "https://contralinea.com.mx",
+      "pagination_disjoint": true,
+      "historical_dates_verified": true,
+      "requests_success": true,
+      "full_content_not_requested": true,
+      "latest_100_date_span": [
+        "2026-10-02T16:57:41",
+        "2026-10-15T18:55:08"
+      ]
+    },
+    {
+      "base": "https://editorial.aristeguinoticias.com",
+      "pagination_disjoint": true,
+      "historical_dates_verified": true,
+      "requests_success": true,
+      "full_content_not_requested": true,
+      "latest_100_date_span": [
+        "2026-10-14T06:41:10",
+        "2026-10-15T19:11:24"
+      ]
+    },
+    {
+      "base": "https://desinformemonos.org",
+      "pagination_disjoint": true,
+      "historical_dates_verified": true,
+      "requests_success": true,
+      "full_content_not_requested": true,
+      "latest_100_date_span": [
+        "2026-09-26T03:33:05",
+        "2026-10-15T10:16:09"
+      ]
+    }
+  ],
+  "wordpress_probes": [
+    {
+      "source": "https://contralinea.com.mx",
+      "scenario": "recent-page1",
+      "url": "https://contralinea.com.mx/wp-json/wp/v2/posts?_fields=id%2Clink%2Cdate%2Ctitle.rendered%2Cexcerpt.rendered&orderby=date&order=desc&per_page=100&page=1",
+      "http_status": 200,
+      "elapsed_seconds": 0.998,
+      "response_bytes": 49003,
+      "response_sha256": "10a3627a8bc738028c300218617252aa326060bacc896a99e4a5011628689ad8",
+      "post_count": 100,
+      "observed_keys": [
+        "id",
+        "date",
+        "link",
+        "title",
+        "excerpt"
+      ],
+      "headers": {
+        "content-type": "application/json; charset=UTF-8",
+        "x-wp-total": "31081",
+        "x-wp-totalpages": "311"
+      },
+      "date_min": "2026-10-02T16:57:41",
+      "date_max": "2026-10-15T18:55:08",
+      "all_dates_2020": null,
+      "ids_sha256": "d8ea508c92fa339afb5265b7891fefc61a2a17c34bb262f2b90112dbfbfc9482",
+      "title_excerpt_corrup_prefix_count": 3,
+      "content_requested": false,
+      "next_link_present": true
+    },
+    {
+      "source": "https://contralinea.com.mx",
+      "scenario": "recent-page2",
+      "url": "https://contralinea.com.mx/wp-json/wp/v2/posts?_fields=id%2Clink%2Cdate%2Ctitle.rendered%2Cexcerpt.rendered&orderby=date&order=desc&per_page=100&page=2",
+      "http_status": 200,
+      "elapsed_seconds": 0.692,
+      "response_bytes": 58138,
+      "response_sha256": "535a50fd176714054d71edf404fdfe3f4bc896cdfb5b0dce5af2098919ab8567",
+      "post_count": 100,
+      "observed_keys": [
+        "id",
+        "date",
+        "link",
+        "title",
+        "excerpt"
+      ],
+      "headers": {
+        "content-type": "application/json; charset=UTF-8",
+        "x-wp-total": "31081",
+        "x-wp-totalpages": "311"
+      },
+      "date_min": "2026-09-18T18:09:55",
+      "date_max": "2026-10-02T16:01:30",
+      "all_dates_2020": null,
+      "ids_sha256": "66f30eeab39e3f81b5f70032b5d51a585445f7a00371862b36c68ebf95e1ee74",
+      "title_excerpt_corrup_prefix_count": 3,
+      "content_requested": false,
+      "next_link_present": true
+    },
+    {
+      "source": "https://contralinea.com.mx",
+      "scenario": "historical-2020",
+      "url": "https://contralinea.com.mx/wp-json/wp/v2/posts?_fields=id%2Clink%2Cdate%2Ctitle.rendered%2Cexcerpt.rendered&orderby=date&order=desc&per_page=100&after=2020-01-01T00%3A00%3A00&before=2021-01-01T00%3A00%3A00",
+      "http_status": 200,
+      "elapsed_seconds": 0.595,
+      "response_bytes": 61206,
+      "response_sha256": "d31f3dd57b05749925d08cfb3447a9c4776142d213333fc56615d9a300cf1f43",
+      "post_count": 100,
+      "observed_keys": [
+        "id",
+        "date",
+        "link",
+        "title",
+        "excerpt"
+      ],
+      "headers": {
+        "content-type": "application/json; charset=UTF-8",
+        "x-wp-total": "2633",
+        "x-wp-totalpages": "27"
+      },
+      "date_min": "2020-12-15T09:50:55",
+      "date_max": "2020-12-31T19:24:03",
+      "all_dates_2020": true,
+      "ids_sha256": "f90fbb61f5231a47e462ef138b999f5fc14ad74382fcffc833d397218006cc24",
+      "title_excerpt_corrup_prefix_count": 1,
+      "content_requested": false,
+      "next_link_present": true
+    },
+    {
+      "source": "https://contralinea.com.mx",
+      "scenario": "shared-adverse",
+      "url": "https://contralinea.com.mx/wp-json/wp/v2/posts?_fields=id%2Clink%2Cdate%2Ctitle.rendered%2Cexcerpt.rendered&orderby=relevance&order=desc&per_page=100&search=corrupci%C3%B3n",
+      "http_status": 200,
+      "elapsed_seconds": 2.159,
+      "response_bytes": 68510,
+      "response_sha256": "10b25d226588aebebd7684374b11118a40cb74898732d407b7c2982a5f007225",
+      "post_count": 100,
+      "observed_keys": [
+        "id",
+        "date",
+        "link",
+        "title",
+        "excerpt"
+      ],
+      "headers": {
+        "content-type": "application/json; charset=UTF-8",
+        "x-wp-total": "4852",
+        "x-wp-totalpages": "49"
+      },
+      "date_min": "2023-05-17T22:31:34",
+      "date_max": "2026-09-23T18:23:12",
+      "all_dates_2020": null,
+      "ids_sha256": "275ac9057e9085de042a440366cd8a8a23e3f0745121501955d483bd063a50a3",
+      "title_excerpt_corrup_prefix_count": 100,
+      "content_requested": false,
+      "next_link_present": true
+    },
+    {
+      "source": "https://editorial.aristeguinoticias.com",
+      "scenario": "recent-page1",
+      "url": "https://editorial.aristeguinoticias.com/wp-json/wp/v2/posts?_fields=id%2Clink%2Cdate%2Ctitle.rendered%2Cexcerpt.rendered&orderby=date&order=desc&per_page=100&page=1",
+      "http_status": 200,
+      "elapsed_seconds": 1.486,
+      "response_bytes": 52778,
+      "response_sha256": "f0060f75c6d1079dd0e34541f2edcb384cf787ec6a3c593e05f46a4b5086b76d",
+      "post_count": 100,
+      "observed_keys": [
+        "id",
+        "date",
+        "link",
+        "title",
+        "excerpt"
+      ],
+      "headers": {
+        "content-type": "application/json; charset=UTF-8",
+        "x-wp-total": "298966",
+        "x-wp-totalpages": "2990"
+      },
+      "date_min": "2026-10-14T06:41:10",
+      "date_max": "2026-10-15T19:11:24",
+      "all_dates_2020": null,
+      "ids_sha256": "2f0d72b88332b99a9a87c275c289fe46588a8981a125da286d0f615ce52aaa5e",
+      "title_excerpt_corrup_prefix_count": 0,
+      "content_requested": false,
+      "next_link_present": true
+    },
+    {
+      "source": "https://editorial.aristeguinoticias.com",
+      "scenario": "recent-page2",
+      "url": "https://editorial.aristeguinoticias.com/wp-json/wp/v2/posts?_fields=id%2Clink%2Cdate%2Ctitle.rendered%2Cexcerpt.rendered&orderby=date&order=desc&per_page=100&page=2",
+      "http_status": 200,
+      "elapsed_seconds": 1.221,
+      "response_bytes": 52326,
+      "response_sha256": "0ad0db9aa0ab3961303493ce98b2a69f710f62673d8b7ce06f875686503a8d3a",
+      "post_count": 100,
+      "observed_keys": [
+        "id",
+        "date",
+        "link",
+        "title",
+        "excerpt"
+      ],
+      "headers": {
+        "content-type": "application/json; charset=UTF-8",
+        "x-wp-total": "298966",
+        "x-wp-totalpages": "2990"
+      },
+      "date_min": "2026-10-12T03:00:33",
+      "date_max": "2026-10-14T05:32:19",
+      "all_dates_2020": null,
+      "ids_sha256": "93954e623475a661b47d3753ab15153d29904f9a3518c96b1b09135811acc15e",
+      "title_excerpt_corrup_prefix_count": 0,
+      "content_requested": false,
+      "next_link_present": true
+    },
+    {
+      "source": "https://editorial.aristeguinoticias.com",
+      "scenario": "historical-2020",
+      "url": "https://editorial.aristeguinoticias.com/wp-json/wp/v2/posts?_fields=id%2Clink%2Cdate%2Ctitle.rendered%2Cexcerpt.rendered&orderby=date&order=desc&per_page=100&after=2020-01-01T00%3A00%3A00&before=2021-01-01T00%3A00%3A00",
+      "http_status": 200,
+      "elapsed_seconds": 0.745,
+      "response_bytes": 56793,
+      "response_sha256": "1016d90d7ac9ba7001e8da923b2b5a66d2e63cdb0a61ad0c07f051885d3b8151",
+      "post_count": 100,
+      "observed_keys": [
+        "id",
+        "date",
+        "link",
+        "title",
+        "excerpt"
+      ],
+      "headers": {
+        "content-type": "application/json; charset=UTF-8",
+        "x-wp-total": "28242",
+        "x-wp-totalpages": "283"
+      },
+      "date_min": "2020-12-30T18:06:22",
+      "date_max": "2020-12-31T23:36:19",
+      "all_dates_2020": true,
+      "ids_sha256": "953ab6700a115282d8abad1ca359e1bb79dfaac293880d57299f9c1861c6f626",
+      "title_excerpt_corrup_prefix_count": 0,
+      "content_requested": false,
+      "next_link_present": true
+    },
+    {
+      "source": "https://editorial.aristeguinoticias.com",
+      "scenario": "shared-adverse",
+      "url": "https://editorial.aristeguinoticias.com/wp-json/wp/v2/posts?_fields=id%2Clink%2Cdate%2Ctitle.rendered%2Cexcerpt.rendered&orderby=relevance&order=desc&per_page=100&search=corrupci%C3%B3n",
+      "http_status": 200,
+      "elapsed_seconds": 14.715,
+      "response_bytes": 61979,
+      "response_sha256": "18ccd51b5a634f5de5fc35b5774f21e645de71bd9cc275ddee36ba1160c02409",
+      "post_count": 100,
+      "observed_keys": [
+        "id",
+        "date",
+        "link",
+        "title",
+        "excerpt"
+      ],
+      "headers": {
+        "content-type": "application/json; charset=UTF-8",
+        "x-wp-total": "16227",
+        "x-wp-totalpages": "163"
+      },
+      "date_min": "2025-04-29T12:31:11",
+      "date_max": "2026-09-25T14:15:41",
+      "all_dates_2020": null,
+      "ids_sha256": "9d8ad7de1f2ca2f04d5f8082d8d884d5c97c9cdf53f0a41741e2f222dccc610f",
+      "title_excerpt_corrup_prefix_count": 100,
+      "content_requested": false,
+      "next_link_present": true
+    },
+    {
+      "source": "https://desinformemonos.org",
+      "scenario": "recent-page1",
+      "url": "https://desinformemonos.org/wp-json/wp/v2/posts?_fields=id%2Clink%2Cdate%2Ctitle.rendered%2Cexcerpt.rendered&orderby=date&order=desc&per_page=100&page=1",
+      "http_status": 200,
+      "elapsed_seconds": 2.371,
+      "response_bytes": 53669,
+      "response_sha256": "d1bc927585a6e463d32ce7921a2c38c337bebf910d086633d9305243bf71c0b8",
+      "post_count": 100,
+      "observed_keys": [
+        "id",
+        "date",
+        "link",
+        "title",
+        "excerpt"
+      ],
+      "headers": {
+        "content-type": "application/json; charset=UTF-8",
+        "x-wp-total": "36209",
+        "x-wp-totalpages": "363"
+      },
+      "date_min": "2026-09-26T03:33:05",
+      "date_max": "2026-10-15T10:16:09",
+      "all_dates_2020": null,
+      "ids_sha256": "b43d28c562a38e882d4d786facad05af04133e89617a781e883994ccc40ecc58",
+      "title_excerpt_corrup_prefix_count": 0,
+      "content_requested": false,
+      "next_link_present": true
+    },
+    {
+      "source": "https://desinformemonos.org",
+      "scenario": "recent-page2",
+      "url": "https://desinformemonos.org/wp-json/wp/v2/posts?_fields=id%2Clink%2Cdate%2Ctitle.rendered%2Cexcerpt.rendered&orderby=date&order=desc&per_page=100&page=2",
+      "http_status": 200,
+      "elapsed_seconds": 1.543,
+      "response_bytes": 50998,
+      "response_sha256": "a67df8e684d7d6451fc6aa587689c35dc86f247905d68b69e4b026ee85d1660b",
+      "post_count": 100,
+      "observed_keys": [
+        "id",
+        "date",
+        "link",
+        "title",
+        "excerpt"
+      ],
+      "headers": {
+        "content-type": "application/json; charset=UTF-8",
+        "x-wp-total": "36209",
+        "x-wp-totalpages": "363"
+      },
+      "date_min": "2026-09-08T07:13:50",
+      "date_max": "2026-09-26T02:09:00",
+      "all_dates_2020": null,
+      "ids_sha256": "3286447c754b7ecb9266745b4abaae069fa5a8ecf689fa884d869f9308b0c3ff",
+      "title_excerpt_corrup_prefix_count": 0,
+      "content_requested": false,
+      "next_link_present": true
+    },
+    {
+      "source": "https://desinformemonos.org",
+      "scenario": "historical-2020",
+      "url": "https://desinformemonos.org/wp-json/wp/v2/posts?_fields=id%2Clink%2Cdate%2Ctitle.rendered%2Cexcerpt.rendered&orderby=date&order=desc&per_page=100&after=2020-01-01T00%3A00%3A00&before=2021-01-01T00%3A00%3A00",
+      "http_status": 200,
+      "elapsed_seconds": 1.252,
+      "response_bytes": 50522,
+      "response_sha256": "17e0d02ea2d1b3d259c6b41389d26c5f5426cdd53fcbaa3129421cc5db34186f",
+      "post_count": 100,
+      "observed_keys": [
+        "id",
+        "date",
+        "link",
+        "title",
+        "excerpt"
+      ],
+      "headers": {
+        "content-type": "application/json; charset=UTF-8",
+        "x-wp-total": "2893",
+        "x-wp-totalpages": "29"
+      },
+      "date_min": "2020-12-16T11:10:39",
+      "date_max": "2020-12-31T01:57:28",
+      "all_dates_2020": true,
+      "ids_sha256": "3286c5042f86c6d5a2389d1072d54d493bc8653e7ce0a23aa21ddbf3a450204b",
+      "title_excerpt_corrup_prefix_count": 0,
+      "content_requested": false,
+      "next_link_present": true
+    },
+    {
+      "source": "https://desinformemonos.org",
+      "scenario": "shared-adverse",
+      "url": "https://desinformemonos.org/wp-json/wp/v2/posts?_fields=id%2Clink%2Cdate%2Ctitle.rendered%2Cexcerpt.rendered&orderby=relevance&order=desc&per_page=100&search=corrupci%C3%B3n",
+      "http_status": 200,
+      "elapsed_seconds": 7.705,
+      "response_bytes": 56077,
+      "response_sha256": "f2cf97827a04ee6810c14f3dcd1546b96bf2512d50637b9ebd7dded77ceb0b79",
+      "post_count": 100,
+      "observed_keys": [
+        "id",
+        "date",
+        "link",
+        "title",
+        "excerpt"
+      ],
+      "headers": {
+        "content-type": "application/json; charset=UTF-8",
+        "x-wp-total": "2650",
+        "x-wp-totalpages": "27"
+      },
+      "date_min": "2013-01-10T20:44:35",
+      "date_max": "2026-01-19T08:32:55",
+      "all_dates_2020": null,
+      "ids_sha256": "0db54783b5faf1c11c5147b294c113d83013b2c744a0e0c9040efe7578152ff4",
+      "title_excerpt_corrup_prefix_count": 100,
+      "content_requested": false,
+      "next_link_present": true
+    }
+  ],
+  "robots_observations": [
+    {
+      "url": "https://news.google.com/robots.txt",
+      "http_status": 200,
+      "elapsed_seconds": 0.273,
+      "error": null,
+      "body_sha256": "b7233dfe338c30329a8936be1011b16181f7f4ed47d6175954be90abcf842c07",
+      "result": "/rss/search disallowed for WebScope-Research/2.6"
+    },
+    {
+      "url": "https://api.gdeltproject.org/robots.txt",
+      "http_status": null,
+      "elapsed_seconds": 5.09,
+      "error": "HTTP Error 503: Service Unavailable",
+      "body_sha256": null,
+      "result": "No positive robots permission conclusion from this request."
+    },
+    {
+      "url": "https://data.gdeltproject.org/robots.txt",
+      "http_status": null,
+      "elapsed_seconds": 0.292,
+      "error": "HTTP Error 404: Not Found",
+      "body_sha256": null,
+      "result": "No positive robots permission conclusion from this request."
+    },
+    {
+      "url": "https://contralinea.com.mx/robots.txt",
+      "http_status": 200,
+      "elapsed_seconds": 0.599,
+      "error": null,
+      "body_sha256": "3ee39d6d2738774dafb52df775bd9835b483f87e0a5823a35db321e81d5d549e",
+      "result": "WP REST allowed for WebScope-Research/2.6"
+    },
+    {
+      "url": "https://editorial.aristeguinoticias.com/robots.txt",
+      "http_status": 200,
+      "elapsed_seconds": 0.27,
+      "error": null,
+      "body_sha256": "7f90f04b2036a7dca78edd65d612afbed213b2333bcb942740b53041cedcc54e",
+      "result": "WP REST allowed for WebScope-Research/2.6"
+    },
+    {
+      "url": "https://desinformemonos.org/robots.txt",
+      "http_status": 200,
+      "elapsed_seconds": 0.449,
+      "error": null,
+      "body_sha256": "1aa270ffcba70411103b1ab54911f76ac2f74378662c91b8b460096ada98a0c6",
+      "result": "WP REST allowed for WebScope-Research/2.6"
+    }
+  ],
+  "gdelt_head_observations": [
+    {
+      "url": "https://data.gdeltproject.org/gdeltv5/weblegacy/ngrams/20260630201600.ngrams.txt.gz",
+      "http_status": 200,
+      "elapsed_seconds": 0.377,
+      "content_length": 8192280,
+      "content_type": "text/plain",
+      "last_modified": "Wed, 01 Jul 2026 01:24:23 GMT",
+      "method": "HEAD; archive not downloaded"
+    },
+    {
+      "url": "https://data.gdeltproject.org/gdeltv5/weblegacy/ngrams/20260630201600.toc.json.gz",
+      "http_status": 200,
+      "elapsed_seconds": 0.164,
+      "content_length": 284249,
+      "content_type": "application/json",
+      "last_modified": "Wed, 01 Jul 2026 01:24:23 GMT",
+      "method": "HEAD; archive not downloaded"
+    }
+  ],
+  "sources": [
+    {
+      "url": "https://developer.wordpress.org/rest-api/reference/posts/",
+      "finding": "Public posts collection supports search, date filters, page/per_page, relevance/date ordering."
+    },
+    {
+      "url": "https://developer.wordpress.org/rest-api/using-the-rest-api/pagination/",
+      "finding": "per_page is documented 1-100; collection headers provide X-WP-Total and X-WP-TotalPages."
+    },
+    {
+      "url": "https://developer.wordpress.org/rest-api/using-the-rest-api/global-parameters/",
+      "finding": "_fields removes unnecessary fields and can reduce database/transfer/parsing work."
+    },
+    {
+      "url": "https://developer.wordpress.org/reference/classes/wp_query/parse_search/",
+      "finding": "Normal core search ANDs search terms; OR groups of names are not a supported Boolean batching mechanism."
+    },
+    {
+      "url": "https://blog.gdeltproject.org/using-the-new-web-ngrams-dataset-to-find-relevant-coverage/",
+      "finding": "June 2026: GDELT reports legacy search capacity constraints while migrating to Spanner and recommends downloadable quadgrams plus TOC for large phrase lists. No fulltext; up to four-word phrases; files per minute. High data volume for cold historical scans."
+    },
+    {
+      "url": "https://blog.gdeltproject.org/announcing-the-new-web-news-ngrams-3-0-dataset/",
+      "finding": "Web NGrams 3.0 archive from 2020 with source URLs and contextual snippets; local filtering supports multiple names without one query per name. Historical full global corpus requires substantial ingestion."
+    },
+    {
+      "url": "https://blog.gdeltproject.org/gdelt-doc-2-0-api-debuts/",
+      "finding": "ArtList returns at most250 results/request, no article body. Local max_query_chars250 is conservative application policy, not proven API limit."
+    },
+    {
+      "url": "https://docs.searxng.org/dev/search_api.html",
+      "finding": "Self-hosted metasearch supports JSON/RSS/CSV if enabled; many public instances disable formats and return403. Queries and syntax are passed to external engines; not a new independent index."
+    },
+    {
+      "url": "https://docs.searxng.org/admin/searx.limiter.html",
+      "finding": "Bot activity can cause origin engines to block/captcha the instance; owning an instance does not remove engine limits."
+    },
+    {
+      "url": "https://github.com/deedy5/ddgs",
+      "finding": "Open-source library aggregates engines including Bing/DDG/Yahoo for news; it is an engine wrapper rather than a dataset/index. No SLA or unlimited quota."
+    },
+    {
+      "url": "https://github.com/deedy5/ddgs/issues/480",
+      "finding": "Current upstream issue documents DDG403s; availability must be measured rather than assumed."
+    },
+    {
+      "url": "https://www.commoncrawl.org/cdxj-index",
+      "finding": "CDXJ API finds capture records by URL pattern and links to WARC offsets; it is not a name/full-text search endpoint."
+    },
+    {
+      "url": "https://commoncrawl.org/url-index",
+      "finding": "Bulk filtering with URL columnar index requires SQL on Parquet (Athena/Spark/localDuckDB); downstream WARC scans/indexing needed for names absent from URLs."
+    },
+    {
+      "url": "https://www.commoncrawl.org/faq",
+      "finding": "CommonCrawl API requests should be spaced without parallel threads per IP or proxy networks; columnar index better for broad bulk queries."
+    },
+    {
+      "url": "https://docs.scrapy.org/en/latest/topics/autothrottle.html",
+      "finding": "Python crawling framework; adjusts delays by latency and respects configured per-domain concurrency/delay limits."
+    },
+    {
+      "url": "https://docs.scrapy.org/en/latest/topics/spiders.html#sitemapspider",
+      "finding": "SitemapSpider traverses sitemap indexes; not a prebuilt web search index."
+    },
+    {
+      "url": "https://crawlee.dev/python/docs/guides/request-throttling",
+      "finding": "Per-domain request throttling and429/robots crawl-delay behavior; reusable persistent request queue."
+    },
+    {
+      "url": "https://go-colly.org/docs/examples/rate_limit/",
+      "finding": "Go crawler exposes per-domain parallelism and delay controls; a different implementation language does not create an index or remove endpoint limits."
+    },
+    {
+      "url": "https://trafilatura.readthedocs.io/en/latest/usage-python.html",
+      "finding": "Main text/metadata extraction and separate sitemap/feed/focused crawling capabilities; should extract selected article bodies after discovery."
+    },
+    {
+      "url": "https://www.sitemaps.org/protocol.html",
+      "finding": "Sitemap loc/lastmod and sitemap indexes describe URLs/modification timestamps; lastmod is not inherently publication time."
+    }
+  ]
+}

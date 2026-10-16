@@ -251,6 +251,13 @@ class NewsAcquirer:
               CREATE TABLE IF NOT EXISTS news_discovery_runs(job_id TEXT PRIMARY KEY,source_id TEXT NOT NULL,
                 kind TEXT NOT NULL,url TEXT NOT NULL,records INTEGER NOT NULL,parser_metadata TEXT NOT NULL,
                 content_hash TEXT,retrieved_at TEXT NOT NULL);
+              CREATE TABLE IF NOT EXISTS news_shared_pages(
+                source_id TEXT NOT NULL,url TEXT NOT NULL,config_hash TEXT NOT NULL,
+                content_hash TEXT,retrieved_at TEXT NOT NULL,valid_until REAL NOT NULL,
+                parsed TEXT NOT NULL,PRIMARY KEY(source_id,url));
+              CREATE TABLE IF NOT EXISTS news_shared_queue(
+                scope TEXT NOT NULL,url TEXT NOT NULL,job_id TEXT NOT NULL,
+                PRIMARY KEY(scope,url));
             ''')
 
     def _migrate_disabled_catalogue(self, previous, current):
@@ -343,14 +350,30 @@ class NewsAcquirer:
             # A temp table avoids SQLite parameter limits for large plans. New
             # jobs, restoration and retirement publish as one atomic queue.
             con.execute('CREATE TEMP TABLE current_news_plan(job_id TEXT PRIMARY KEY)')
+            bank_revision = con.execute("SELECT value FROM meta WHERE key='news_identity_revision'").fetchone()[0]
             for item in plan['queries']:
                 payload = dict(item, window=window)
                 kind = payload.pop('kind')
+                if payload.get('shared_index'):
+                    payload['bank_revision'] = bank_revision
+                    payload['crawl_scope'] = digest(canonical([window, item['source_id'], bank_revision,
+                        item['scope_start'], item['scope_end'], item['page_limit'],
+                        digest(canonical(sources[item['source_id']]))]))
                 key = kind + ':' + digest(canonical([window, payload]))
                 host = urlsplit(item['url']).hostname or item['source_id']
                 due = due_by_host.get(host, anchor_due)
+                cached_page = (con.execute('SELECT 1 FROM news_shared_pages WHERE source_id=? AND url=? AND config_hash=? AND valid_until>?',
+                    (item['source_id'], item['url'], digest(canonical(sources[item['source_id']])), anchor_due)).fetchone()
+                    if payload.get('shared_index') else None)
+                if cached_page:
+                    due = anchor_due
                 job_id = self.store.enqueue(kind, payload, key=key, due=due, connection=con)
                 con.execute('INSERT OR IGNORE INTO current_news_plan VALUES(?)', (job_id,))
+                if payload.get('shared_index'):
+                    con.execute('INSERT OR IGNORE INTO news_shared_queue VALUES(?,?,?)',
+                                (payload['crawl_scope'], payload['url'], job_id))
+                    con.execute('INSERT OR IGNORE INTO current_news_plan SELECT job_id FROM news_shared_queue WHERE scope=?',
+                                (payload['crawl_scope'],))
                 previous = con.execute('SELECT status,error,due FROM jobs WHERE id=?', (job_id,)).fetchone()
                 if previous['status'] == 'cancelled' and (previous['error'] or '').startswith(SUPERSEDED_PLAN):
                     try:
@@ -364,13 +387,30 @@ class NewsAcquirer:
                         con.execute('UPDATE news_query_windows SET status=?,error=? WHERE job_id=?',
                                     (restored, str(saved.get('error') or ''), job_id))
                         reactivated.append(job_id)
-                due_by_host[host] = due + max(1, float(sources[item['source_id']].get('min_interval_seconds', 5)))
+                if not cached_page:
+                    due_by_host[host] = due + max(1, float(sources[item['source_id']].get('min_interval_seconds', 5)))
                 queued += 1
                 if kind == 'news_query':
                     query_count += 1
                     con.execute('INSERT OR IGNORE INTO news_query_windows VALUES(?,?,?,?,?,?,?,?,?,?,?)',
                                 (job_id, item['source_id'], canonical(item['entity_ids']), item['query'],
                                  item['start'], item['end'], 'queued', 0, 0, None, ''))
+            # Descendants are part of the same durable crawl even though only
+            # its roots appear in the offline plan. Restore their saved backoff
+            # when returning to a previously superseded scope, not just seeds.
+            for descendant in con.execute("SELECT j.id,j.error,j.due FROM jobs j JOIN current_news_plan p ON p.job_id=j.id "
+                                           "WHERE j.status='cancelled'").fetchall():
+                if not (descendant['error'] or '').startswith(SUPERSEDED_PLAN):
+                    continue
+                try:
+                    saved = json.loads(descendant['error'][len(SUPERSEDED_PLAN):])
+                except (ValueError, TypeError):
+                    continue
+                if isinstance(saved, dict) and saved.get('status') in ('queued', 'deferred', 'running'):
+                    restored = 'deferred' if descendant['due'] > anchor_due else 'queued'
+                    con.execute("UPDATE jobs SET status=?,error=?,lease_until=NULL,owner=NULL,updated_at=? WHERE id=?",
+                                (restored, str(saved.get('error') or ''), now(), descendant['id']))
+                    reactivated.append(descendant['id'])
             obsolete = con.execute("SELECT id,status,error,due,attempts FROM jobs WHERE kind IN ('news_query','news_feed') "
                                    "AND (status IN ('queued','deferred') OR "
                                    "(status='running' AND COALESCE(lease_until,0)<=?)) "
@@ -468,6 +508,8 @@ class NewsAcquirer:
             # Retrieval relevance helps decide which bodies to request. It is
             # deliberately separate from subsequent identity attribution.
             details['retrieval_relevance'] = candidate
+        if record.get('metadata'):
+            details['discovery_metadata'] = record['metadata']
         observation_id = digest(canonical([article_id, source['id'], discovery_url, result.get('sha256'), details]))
         with (nullcontext(connection) if connection is not None else self.store.connection()) as con:
             if not con.in_transaction:
@@ -572,6 +614,95 @@ class NewsAcquirer:
             con.execute('INSERT OR IGNORE INTO news_topic_index VALUES(?,?)', (token, article_id))
         return topic_id
 
+    def _shared_page(self, source, payload, fetcher):
+        from .shared_crawl import allowed_index_url
+        from .shared_discovery import parse_sitemap, parse_wordpress_posts
+        url = payload['url']
+        if not allowed_index_url(url, source):
+            return {'status': 'blocked', 'error': 'Índice fuera del alcance autorizado', 'body': ''}, None
+        config_hash = digest(canonical(source))
+        with self.store.connection() as con:
+            cached = con.execute('SELECT * FROM news_shared_pages WHERE source_id=? AND url=?',
+                                 (source['id'], url)).fetchone()
+        if cached and cached['config_hash'] == config_hash and cached['valid_until'] > time.time():
+            return ({'status': 'not_modified', 'body': '[cached discovery metadata]', 'url': url,
+                     'sha256': cached['content_hash'], 'retrieved_at': cached['retrieved_at'],
+                     'metadata_cache_hit': True}, self._shared_depth(json.loads(cached['parsed']), source, payload))
+        request_source = dict(source, _wordpress_inferred_page=True) if payload.get('inferred_page') else source
+        result = fetcher.fetch(url, request_source)
+        if result.get('status') not in ('ok', 'not_modified') or not result.get('body'):
+            return result, None
+        maximum = min(8_000_000, int(source.get('max_bytes', 2_000_000)))
+        if source['kind'] == 'wordpress_api':
+            parsed = parse_wordpress_posts(result['body'], headers=result.get('pagination_headers'),
+                                           page=payload.get('page', 1), max_bytes=maximum)
+            if result.get('pagination_end'):
+                parsed['pagination'].update(publisher_pagination_end=True, publisher_http_status=result.get('http_status'))
+        else:
+            parsed = parse_sitemap(result['body'], max_bytes=maximum,
+                                   max_items=min(50000, int(source.get('max_records', 50000))),
+                                   depth=0, max_depth=3)
+        # This is a reusable metadata index, not a second store of article
+        # bodies. Respect the HTTP cache's freshness when it is available.
+        ttl = min(86400, max(0, float(source.get('index_ttl_seconds', 900))))
+        valid_until = time.time() + ttl
+        if result.get('cache_valid_until'):
+            valid_until = min(valid_until, self._epoch(result['cache_valid_until']))
+        with self.store.connection() as con:
+            con.execute('INSERT OR REPLACE INTO news_shared_pages VALUES(?,?,?,?,?,?,?)',
+                        (source['id'], url, config_hash, result.get('sha256'), result.get('retrieved_at') or now(),
+                         valid_until, canonical(parsed)))
+        return result, self._shared_depth(deepcopy(parsed), source, payload)
+
+    @staticmethod
+    def _shared_depth(parsed, source, payload):
+        # Cached metadata is independent of where a URL occurs in a crawl.
+        # Apply depth to the current traversal, not the original cache writer.
+        if source.get('kind') == 'sitemap':
+            depth = payload.get('depth', 0)
+            parsed['pagination']['depth'] = depth
+            if depth >= 3 and parsed['children']:
+                parsed['children'] = []
+                parsed['pagination'].update(depth_limited=True, truncated=True)
+        return parsed
+
+    def _queue_shared_children(self, job, source, children):
+        from .shared_crawl import allowed_index_url
+        payload = job['payload']
+        result = {'queued': 0, 'duplicate_pages': 0, 'out_of_scope': 0, 'page_limit_reached': False}
+        # Missing old/manual payloads cannot create an unbounded crawl.
+        scope = payload.get('crawl_scope')
+        maximum = min(240, max(1, int(payload.get('page_limit', 24))))
+        if not scope:
+            return result
+        with self.store.connection() as con:
+            con.execute('BEGIN IMMEDIATE')
+            count = con.execute('SELECT count(*) FROM news_shared_queue WHERE scope=?', (scope,)).fetchone()[0]
+            # Children follow the seeds, so the first page of every historical
+            # year runs before a popular year can consume the whole session.
+            due = max(time.time(), con.execute('SELECT COALESCE(max(j.due),0) FROM news_shared_queue q '
+                        'JOIN jobs j ON j.id=q.job_id WHERE q.scope=?', (scope,)).fetchone()[0])
+            for child in children:
+                if not allowed_index_url(child['url'], source):
+                    result['out_of_scope'] += 1
+                    continue
+                if con.execute('SELECT 1 FROM news_shared_queue WHERE scope=? AND url=?', (scope, child['url'])).fetchone():
+                    result['duplicate_pages'] += 1
+                    continue
+                if count >= maximum:
+                    result['page_limit_reached'] = True
+                    break
+                cached = con.execute('SELECT 1 FROM news_shared_pages WHERE source_id=? AND url=? AND config_hash=? AND valid_until>?',
+                                     (source['id'], child['url'], digest(canonical(source)), time.time())).fetchone()
+                if not cached:
+                    due += max(1, float(source.get('min_interval_seconds', 5)))
+                key = 'news_shared:' + digest(canonical([scope, child['url']]))
+                identifier = self.store.enqueue('news_feed', child, key=key, due=time.time() if cached else due, connection=con)
+                con.execute('INSERT INTO news_shared_queue VALUES(?,?,?)', (scope, child['url'], identifier))
+                count += 1
+                result['queued'] += 1
+        return result
+
     def execute(self, job, fetcher, resolver=None, download_all=False, relevance=None, body_budget=None):
         from .sources import parse_results
         payload = job['payload']
@@ -598,18 +729,27 @@ class NewsAcquirer:
                 return
         if job['kind'] in ('news_feed', 'news_query'):
             url = self._query_url(source, payload) if job['kind'] == 'news_query' else payload['url']
-            result = fetcher.fetch(url, source)
+            shared = bool(payload.get('shared_index'))
+            if shared:
+                result, parsed = self._shared_page(source, payload, fetcher)
+            else:
+                result, parsed = fetcher.fetch(url, source), None
             if self._failure(job, result):
                 return
-            records = parse_results(result, source)
+            records = parsed['records'] if shared else parse_results(result, source)
             statuses = Counter()
             sources = self.sources()
-            filtering = job['kind'] == 'news_query' or relevance is not None
+            filtering = shared or job['kind'] == 'news_query' or relevance is not None
             if filtering and relevance is None:
                 from .relevance import RelevanceIndex
                 relevance = RelevanceIndex(self.store.iter_entities())
             candidates = []
             for record in records:
+                if shared:
+                    from .shared_crawl import in_period
+                    if not in_period(record, payload):
+                        statuses['excluded_period'] += 1
+                        continue
                 ranked = (relevance.rank(record.get('title', ''), record.get('text', ''),
                                          entity_ids=payload.get('entity_ids'), names=payload.get('names'))
                           if filtering else None)
@@ -621,6 +761,13 @@ class NewsAcquirer:
             # identity match or changing the editorial permissions.
             candidates.sort(key=lambda item: -(item[1]['rank'] if item[1] is not None else 0))
             parse_info = result.setdefault('parse_metadata', {})
+            if shared:
+                from .shared_crawl import next_pages
+                continuation = self._queue_shared_children(job, source, next_pages(source, payload, parsed))
+                parse_info.update(shared_index=True, pagination=parsed['pagination'],
+                    continuation=continuation, metadata_cache_hit=bool(result.get('metadata_cache_hit')),
+                    locally_checked_entity_ids=[str(entity['id']) for entity in self.store.iter_entities()],
+                    bank_revision=payload.get('bank_revision'), excluded_period=statuses['excluded_period'])
             parse_info['candidate_filter'] = {'enabled': filtering, 'input_records': len(records),
                                               'retained_records': len(candidates),
                                               'excluded_records': statuses['excluded_irrelevant'],
@@ -660,7 +807,7 @@ class NewsAcquirer:
                              'hash': result.get('sha256'), 'records': len(records), 'decisions': dict(statuses),
                              'saturated': saturated, 'window_split': split, 'retrieved_at': result.get('retrieved_at')})
             self.store.finish(job)
-            return
+            return {'discovery_metadata': parse_info}
         if job['kind'] != 'news_article':
             raise ValueError('Tipo de trabajo de noticias desconocido')
         article_source = dict(source, allowed_hosts=source.get('article_allowed_hosts') or source.get('allowed_hosts', []))
@@ -989,12 +1136,14 @@ class NewsAcquirer:
                         completed[0] += 1
                         if isinstance(execution_result, dict):
                             discovery_counts['body_skipped_irrelevant'] += execution_result.get('body_skipped_irrelevant', 0)
-                        info = ((task.get('result') or {}).get('parse_metadata') or {}).get('candidate_filter') or {}
+                        discovery_info = ((execution_result or {}).get('discovery_metadata') or
+                                          (task.get('result') or {}).get('parse_metadata') or {})
+                        info = discovery_info.get('candidate_filter') or {}
                         discovery_counts['discovery_records'] += info.get('input_records', 0)
                         discovery_counts['excluded_records'] += info.get('excluded_records', 0)
                         if info.get('enabled'):
                             discovery_counts['relevant_records'] += info.get('retained_records', 0)
-                        body_info = ((task.get('result') or {}).get('parse_metadata') or {}).get('body_budget') or {}
+                        body_info = discovery_info.get('body_budget') or {}
                         discovery_counts['body_queued'] += body_info.get('queued', 0)
                         discovery_counts['body_skipped_budget'] += body_info.get('skipped', 0)
                     in_flight.discard(job['id'])

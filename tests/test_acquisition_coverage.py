@@ -55,6 +55,26 @@ class AcquisitionCoverageTests(unittest.TestCase):
                             (job_id, 'synthetic', kind, 'https://synthetic.invalid/search', records,
                              canonical({'candidate_filter': {'excluded_records': excluded}}), 'synthetic-hash', now()))
 
+    def shared_page(self, ids=(), *, revision=None, completed=True, records=0, status='queued',
+                    page_limit=False, truncated=False, metadata_extra=None):
+        self.serial += 1
+        with self.store.connection() as con:
+            current = con.execute("SELECT value FROM meta WHERE key='news_identity_revision'").fetchone()[0]
+        revision = current if revision is None else revision
+        payload = {'shared_index': True, 'bank_revision': revision, 'url': f'https://synthetic.invalid/page-{self.serial}'}
+        job_id = self.store.enqueue('news_feed', payload, key=f'shared-page-{self.serial}')
+        with self.store.connection() as con:
+            con.execute('UPDATE jobs SET status=? WHERE id=?', ('done' if completed else status, job_id))
+            if completed:
+                metadata = {'shared_index': True, 'bank_revision': revision, 'locally_checked_entity_ids': list(ids),
+                            'candidate_filter': {'input_records': records, 'excluded_records': 0},
+                            'continuation': {'page_limit_reached': page_limit}, 'pagination': {'truncated': truncated}}
+                metadata.update(metadata_extra or {})
+                con.execute('INSERT INTO news_discovery_runs VALUES(?,?,?,?,?,?,?,?)',
+                            (job_id, 'synthetic', 'news_feed', payload['url'], 0,
+                             canonical(metadata), 'synthetic-hash', now()))
+        return job_id
+
     def test_queued_searches_do_not_count_and_successful_empty_results_count(self):
         self.search(['one'], completed=False)
         self.assertEqual(acquisition_coverage(self.store, self.sources)['entities_queried'], 0)
@@ -109,6 +129,91 @@ class AcquisitionCoverageTests(unittest.TestCase):
     def test_source_permissions_are_separate_from_source_and_body_counts(self):
         value = acquisition_coverage(self.store, self.sources)
         self.assertEqual(value['permissions'], {'prepared_sources': 2, 'body_authorized_sources': 1, 'discovery_only_sources': 1})
+
+    def test_shared_scan_reports_300_local_checks_without_inventing_directed_queries_or_evidence(self):
+        additional = [{'id': f'bank-{index}', 'name': f'Persona Sintética {index}'} for index in range(298)]
+        self.store.import_entities(additional)
+        identifiers = ['one', 'two', *(entity['id'] for entity in additional)]
+        self.shared_page([*identifiers, 'one', 'retired-entity'], records=100)
+        self.shared_page(['one', 'two'], records=80)
+        before = self.store.stats()
+        value = acquisition_coverage(self.store, self.sources)
+        self.assertEqual(value['entities_total'], 300)
+        self.assertEqual(value['shared_pages_read'], 2)
+        self.assertEqual(value['shared_records_checked'], 180)
+        self.assertEqual(value['entities_checked_locally'], 300)
+        self.assertEqual(value['entities_queried'], 0)
+        self.assertEqual(value['shared_pages_pending'], 0)
+        self.assertEqual(value['entities_with_candidates'], 0)
+        self.assertEqual(value['body_articles'], 0)
+        self.assertEqual(self.store.stats(), before)
+        self.search(['one'])
+        self.assertEqual(acquisition_coverage(self.store, self.sources)['entities_queried'], 1)
+
+    def test_shared_receipts_and_queue_must_match_current_bank_revision_even_when_ids_are_unchanged(self):
+        self.shared_page(['one', 'two'], records=100, page_limit=True)
+        self.shared_page(completed=False)
+        self.store.import_entities([{'id': 'one', 'name': 'Nombre Sintético Corregido'}])
+        value = acquisition_coverage(self.store, self.sources)
+        for key in ('shared_pages_read', 'shared_records_checked', 'entities_checked_locally',
+                    'shared_pages_pending', 'shared_pages_limited'):
+            self.assertEqual(value[key], 0, key)
+        self.shared_page(['one', 'retired-entity'], records=25)
+        self.shared_page(completed=False)
+        value = acquisition_coverage(self.store, self.sources)
+        self.assertEqual(value['shared_pages_read'], 1)
+        self.assertEqual(value['shared_records_checked'], 25)
+        self.assertEqual(value['entities_checked_locally'], 1)
+        self.assertEqual(value['shared_pages_pending'], 1)
+
+    def test_shared_pending_counts_only_active_shared_feed_jobs_and_limits_count_pages_once(self):
+        for status in ('queued', 'deferred', 'running', 'blocked', 'dead', 'cancelled', 'done'):
+            self.shared_page(completed=False, status=status)
+        self.shared_page(completed=False, revision='stale-revision')
+        self.store.enqueue('news_feed', {'entity_ids': ['one']}, key='general-feed')
+        self.shared_page(['one'], records=7, page_limit=True)
+        self.shared_page(['two'], records=8, truncated=True)
+        self.shared_page(['one'], records=9, page_limit=True, truncated=True)
+        value = acquisition_coverage(self.store, self.sources)
+        self.assertEqual(value['shared_pages_pending'], 3)
+        self.assertEqual(value['shared_pages_read'], 3)
+        self.assertEqual(value['shared_pages_limited'], 3)
+        self.assertEqual(value['shared_records_checked'], 24)
+        self.assertEqual(value['entities_checked_locally'], 2)
+
+    def test_shared_metadata_cache_is_neither_a_completed_current_bank_scan_nor_article_evidence(self):
+        parsed = {'records': [{'title': 'Primera Persona Sintética', 'text': 'Una mención en índice'}],
+                  'pagination': {'truncated': True}}
+        with self.store.connection() as con:
+            con.execute('INSERT INTO news_shared_pages VALUES(?,?,?,?,?,?,?)',
+                        ('synthetic', 'https://synthetic.invalid/sitemap.xml', 'configuration',
+                         'metadata-hash', now(), 9999999999, canonical(parsed)))
+        value = acquisition_coverage(self.store, self.sources)
+        self.assertEqual(value['shared_pages_read'], 0)
+        self.assertEqual(value['entities_checked_locally'], 0)
+        self.assertEqual(value['shared_pages_limited'], 0)
+        self.assertEqual(value['entities_with_candidates'], 0)
+        self.assertEqual(value['body_articles'], 0)
+
+    def test_shared_fallback_has_identical_counts_for_current_stale_limited_and_malformed_receipts(self):
+        self.shared_page(['one', 'two', 'retired-entity'], records=40, page_limit=True)
+        self.shared_page(['one'], records=0, truncated=True)
+        self.shared_page(['two'], records=500, revision='stale')
+        self.shared_page(['one'], records=99, metadata_extra={'shared_index': False})
+        self.shared_page(['two'], records=-10)
+        self.shared_page(['one'], records=True)
+        self.shared_page(['one'], records='99')
+        self.shared_page(completed=False, status='running')
+        self.shared_page(completed=False, revision='stale')
+        self.search(['two'])
+        before = self.store.stats()
+        expected = acquisition_coverage(self.store, self.sources)
+        self.assertEqual(expected['shared_records_checked'], 40)
+        self.assertEqual(expected['shared_pages_read'], 5)
+        self.assertEqual(expected['entities_queried'], 1)
+        self.store._audit_json = False
+        self.assertEqual(acquisition_coverage(self.store, self.sources), expected)
+        self.assertEqual(self.store.stats(), before)
 
     def test_older_sqlite_fallback_has_the_same_counts_and_reads_do_not_create_results(self):
         metadata = self.article()

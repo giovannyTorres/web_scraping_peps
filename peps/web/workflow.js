@@ -93,10 +93,14 @@ window.pepsWorkflow = (() => {
   }
   function renderBudgetChoice() {
     const quick=$('workflow-profile-quick').checked;
+    const shared=$('workflow-search-strategy').value==='shared';
     $('workflow-time-budget-field').hidden=quick;
     $('workflow-time-budget').disabled=quick||$('workflow-search-fields').disabled;
     for(const mode of ['quick','extended'])$('workflow-profile-'+mode).closest('label').classList.toggle('selected',$('workflow-profile-'+mode).checked);
-    setText('workflow-budget-preview',(quick?'Hasta 2 minutos de descarga en esta sesión.':'Hasta '+formatTime(Number($('workflow-time-budget').value))+' de descarga en esta sesión.')+' El límite no garantiza consultar toda la lista ni encontrar evidencia puntuable. El avance se conserva para reanudar.');
+    setText('workflow-budget-preview',(quick?'Hasta 2 minutos de descarga en esta sesión.':'Hasta '+formatTime(Number($('workflow-time-budget').value))+' de descarga en esta sesión.')+(shared?' Cada página se contrasta con toda la lista en tu equipo. El límite acota las páginas y los textos que se pueden leer; no garantiza recorrer todo el archivo.':' El límite no garantiza consultar toda la lista ni encontrar evidencia puntuable.')+' El avance se conserva para reanudar.');
+    $('workflow-shared-strategy-note').hidden=!shared;
+    window.pepsOrderNewsSources?.();
+    $('workflow-search-preset').disabled=$('workflow-search-fields').disabled||['feeds','shared'].includes($('workflow-search-strategy').value);
   }
   function renderAcquisition() {
     const local=state.workflow?.mode==='local',data=state.acquisition,permissions=data?.permissions;
@@ -111,10 +115,25 @@ window.pepsWorkflow = (() => {
     if(noBodies)setText('workflow-session-permission-warning','No hay fuentes con texto autorizado. Esta sesión sólo puede descubrir referencias; no aportarán el cuerpo original para el score. Revisa «Fuentes y permisos» si cuentas con autorización para conservar el contenido.');
     $('workflow-entity-coverage').hidden=local||!data;
     if(data){const total=Number(data.entities_total||0),label=value=>Number.isFinite(value)?value.toLocaleString('es-MX')+' de '+total.toLocaleString('es-MX'):'Aún no disponible';setText('workflow-entities-queried',label(data.entities_queried));setText('workflow-entities-candidates',label(data.entities_with_candidates));setText('workflow-entities-bodies',label(data.entities_with_bodies));const counts=[];for(const [key,text] of [['relevant_articles','noticias candidatas para esta lista'],['body_articles','artículos con texto conservado'],['metadata_only_articles','referencias sin cuerpo'],['excluded_records','registros ajenos a la lista omitidos']])if(Number.isFinite(data[key]))counts.push(data[key].toLocaleString('es-MX')+' '+text);setText('workflow-relevant-articles',counts.join(' · '));}
+    const shared=state.searchConfig.strategy==='shared'||Number(state.searchPlan.shared_discovery?.sources||0)>0||Number(data?.shared_pages_read||0)>0||Number(data?.shared_pages_pending||0)>0;
+    $('workflow-shared-coverage').hidden=local||!data||!shared;
+    if(data&&shared){
+      const read=Number(data.shared_pages_read||0),pending=Number(data.shared_pages_pending||0),known=read+pending,total=Number(data.entities_total||0),checked=Number(data.entities_checked_locally||0);
+      setText('workflow-shared-pages',read.toLocaleString('es-MX'));
+      setText('workflow-shared-records',Number(data.shared_records_checked||0).toLocaleString('es-MX'));
+      setText('workflow-shared-entities',checked.toLocaleString('es-MX')+' de '+total.toLocaleString('es-MX'));
+      setText('workflow-shared-progress-label',read?read.toLocaleString('es-MX')+' páginas leídas · '+pending.toLocaleString('es-MX')+' pendientes conocidas':pending?pending.toLocaleString('es-MX')+' páginas pendientes conocidas':'Todavía no se han leído páginas del índice.');
+      const progress=$('workflow-shared-progress');progress.max=Math.max(1,known);progress.value=read;progress.setAttribute('aria-valuetext',read+' páginas leídas y '+pending+' pendientes conocidas. No representa todo el archivo.');
+      $('workflow-shared-limit-notice').hidden=Number(data.shared_pages_limited||0)===0;
+    }
     const budget=$('workflow-session-budget');budget.hidden=local;
     if(local)return;
     const execution=state.searchPlan.execution||{},config=state.searchConfig,seconds=execution.session_seconds??config.session_seconds,mode=execution.mode||config.execution_mode;
     if(!Number.isFinite(seconds)){setText('workflow-session-budget','Cargando el presupuesto de la sesión…');return;}
+    if(config.strategy==='shared'||Number(state.searchPlan.shared_discovery?.sources||0)>0&&!Number(state.searchPlan.entities_planned||0)){
+      const index=state.searchPlan.shared_discovery||{},sources=Number(index.sources||0);
+      setText('workflow-session-budget',(mode==='quick'?'Rápido':'Ampliado')+' · hasta '+formatTime(seconds)+' por sesión. Índice compartido: '+sources.toLocaleString('es-MX')+' '+(sources===1?'fuente preparada':'fuentes preparadas')+'. Cada página se filtra contra toda la lista y se reutilizan metadatos ya descargados. Sólo los candidatos pertinentes pasan a la descarga de texto; recorrer parte del índice no equivale a cubrir todo el período.');return;
+    }
     const planned=state.searchPlan.entities_planned,total=state.searchPlan.entities_total,firstSession=state.searchPlan.estimated_entities_first_session;
     const estimate=Number.isFinite(firstSession)&&Number.isFinite(total)?' Primera sesión: hasta '+firstSession.toLocaleString('es-MX')+' de '+total.toLocaleString('es-MX')+' entidades según la programación; las respuestas y la descarga de texto pueden reducir ese alcance.':'';
     setText('workflow-session-budget',(mode==='quick'?'Rápido':'Ampliado')+' · hasta '+formatTime(seconds)+' por sesión.'+estimate+(Number.isFinite(planned)&&Number.isFinite(total)?' Plan completo: '+planned.toLocaleString('es-MX')+' de '+total.toLocaleString('es-MX')+' entidades.':'')+' Las tareas pendientes se guardan para reanudar; el plan no equivale a cobertura completada.');
@@ -130,29 +149,38 @@ window.pepsWorkflow = (() => {
     state.searchConfig=config;state.searchPlan=plan;
     const mode=config.execution_mode||'extended';$('workflow-profile-quick').checked=mode==='quick';$('workflow-profile-extended').checked=mode!=='quick';
     const seconds=Number(config.session_seconds||900);$('workflow-time-budget').querySelector('option[value="900"]').hidden=seconds!==900;$('workflow-time-budget').value=String(mode==='quick'?1800:seconds);
-    renderBudgetChoice();renderAcquisition();
     for(const [id,key] of [['workflow-search-strategy','strategy'],['workflow-search-preset','preset'],['workflow-history-start','start'],['workflow-history-end','end'],['workflow-history-window','window'],['workflow-search-max-queries','max_queries']])if(config[key]!==undefined)$(id).value=String(config[key]);
     for(const [id,key] of [['workflow-search-aliases','include_aliases'],['workflow-search-context','use_context']])if(config[key]!==undefined)$(id).checked=!!config[key];
+    renderBudgetChoice();renderAcquisition();
     state.searchLoaded=true;state.searchDirty=false;
     const box=$('workflow-search-plan');box.replaceChildren();
     const summary=document.createElement('p');summary.className='search-plan-summary';
-    const measures=[];
+    const measures=[],sharedPlan=plan.shared_discovery||{};
     const measured={entities:plan.entities_planned??plan.entities,queries:plan.query_count??(Array.isArray(plan.queries)?plan.queries.length:plan.queries),windows:plan.windows??(Array.isArray(plan.sources)?plan.sources.reduce((sum,source)=>sum+Number(source.windows||0),0):undefined)};
-    if(config.strategy!=='feeds'&&Number.isFinite(measured.entities))measures.push(measured.entities.toLocaleString('es-MX')+(Number.isFinite(plan.entities_total)?' de '+plan.entities_total.toLocaleString('es-MX'):'')+' entidades incluidas');
-    for(const [key,label] of [['queries',config.strategy==='feeds'?'feeds previstos':'consultas'],['windows','ventanas por fuente']])if(Number.isFinite(measured[key]))measures.push(measured[key].toLocaleString('es-MX')+' '+label);
+    if(config.strategy==='shared'){
+      const shared=plan.shared_discovery||{};
+      if(Number.isFinite(shared.sources))measures.push(shared.sources.toLocaleString('es-MX')+' '+(shared.sources===1?'fuente':'fuentes')+' de índice compartido');
+      if(Number.isFinite(shared.initial_pages))measures.push(shared.initial_pages.toLocaleString('es-MX')+' páginas iniciales');
+      if(Number.isFinite(plan.entities_total))measures.push('Cada página se contrasta con '+plan.entities_total.toLocaleString('es-MX')+' entidades');
+    }else{
+      if(config.strategy!=='feeds'&&Number.isFinite(measured.entities))measures.push(measured.entities.toLocaleString('es-MX')+(Number.isFinite(plan.entities_total)?' de '+plan.entities_total.toLocaleString('es-MX'):'')+' entidades incluidas');
+      for(const [key,label] of [['queries',config.strategy==='feeds'?'feeds previstos':Number(sharedPlan.sources||0)>0?'consultas y páginas previstas':'consultas'],['windows','ventanas por fuente']])if(Number.isFinite(measured[key]))measures.push(measured[key].toLocaleString('es-MX')+' '+label);
+      if(Number(sharedPlan.sources||0)>0)measures.push(sharedPlan.sources.toLocaleString('es-MX')+' fuentes de índice compartido');
+    }
     summary.textContent=measures.length?measures.join(' · '):'La planeación muestra el alcance de las fuentes preparadas, sin iniciar descargas.';
     box.append(summary);
     const execution=plan.execution||{};
     if(Number.isFinite(execution.session_seconds)){const note=document.createElement('p');note.className='search-plan-estimate';note.textContent='Presupuesto guardado: '+(execution.mode==='quick'?'Rápido':'Ampliado')+' · hasta '+formatTime(execution.session_seconds)+' por sesión. '+(execution.scope_note||'La cobertura de la lista depende del ritmo y las respuestas de las fuentes; el avance pendiente se puede reanudar.');box.append(note);}
-    if(Number.isFinite(plan.estimated_entities_first_session)){const note=document.createElement('p');note.className='search-plan-estimate';note.textContent='Primera sesión: aproximadamente '+plan.estimated_entities_first_session.toLocaleString('es-MX')+' entidades podrían consultarse según la programación del plan. '+(plan.first_session_estimate_note||'Es una estimación de alcance, no de hallazgos ni de cobertura completa.');box.append(note);}
+    if(config.strategy==='shared'||Number(sharedPlan.sources||0)>0){const shared=sharedPlan,note=document.createElement('p');note.className='search-plan-estimate';note.textContent=(Number.isFinite(shared.max_pages_per_source)?'Límite guardado: hasta '+shared.max_pages_per_source.toLocaleString('es-MX')+' páginas por fuente y recorrido. ':'')+(shared.scope_note||'Los filtros de fechas delimitan la búsqueda. El recorrido del índice puede quedar parcial; las páginas consultadas no equivalen a todo el archivo.')+' Reutiliza metadatos ya descargados al contrastar la lista, sin tratarlos como cuerpos de noticias ni como identidad confirmada.';box.append(note);}
+    if(config.strategy!=='shared'&&Number.isFinite(plan.estimated_entities_first_session)){const note=document.createElement('p');note.className='search-plan-estimate';note.textContent='Primera sesión: aproximadamente '+plan.estimated_entities_first_session.toLocaleString('es-MX')+' entidades podrían consultarse según la programación del plan. '+(plan.first_session_estimate_note||'Es una estimación de alcance, no de hallazgos ni de cobertura completa.');box.append(note);}
     if(measured.queries>0&&Number.isFinite(plan.estimated_schedule_seconds)){
       const estimate=document.createElement('p');estimate.className='search-plan-estimate';
-      estimate.textContent='Tiempo mínimo programado entre consultas: '+formatTime(plan.estimated_schedule_seconds)+'. No incluye la duración ni los reintentos de las descargas.';box.append(estimate);
+      estimate.textContent='Tiempo mínimo programado entre '+(Number(sharedPlan.sources||0)>0?'solicitudes':'consultas')+': '+formatTime(plan.estimated_schedule_seconds)+'. No incluye la duración ni los reintentos de las descargas.';box.append(estimate);
     }
     const sources=Array.isArray(plan.sources)?plan.sources:[];
     if(sources.length){
       const list=document.createElement('ul');list.className='search-effective-ranges';
-      for(const source of sources){const item=document.createElement('li'),name=source.source_name||source.name||source.id;item.textContent=name+': '+(source.start&&source.end_exclusive?'desde '+searchDate(source.start)+' hasta antes del '+searchDate(source.end_exclusive):source.scope==='current_feed_only'?'actualizaciones del feed, sin búsqueda de archivo histórico':'alcance informado por la fuente')+'.';list.append(item);}box.append(list);
+      for(const source of sources){const item=document.createElement('li'),name=source.source_name||source.name||source.id;item.textContent=name+': '+(source.scope==='shared_publisher_index'?'índice compartido para toda la lista'+(source.start&&source.end_exclusive?' · desde '+searchDate(source.start)+' hasta antes del '+searchDate(source.end_exclusive):''):source.start&&source.end_exclusive?'desde '+searchDate(source.start)+' hasta antes del '+searchDate(source.end_exclusive):source.scope==='current_feed_only'?'actualizaciones del feed, sin búsqueda de archivo histórico':'alcance informado por la fuente')+'.';list.append(item);}box.append(list);
     }
     const examples=(Array.isArray(plan.queries)?plan.queries:[]).filter(query=>typeof query.query==='string'&&query.query.trim()).slice(0,3);
     if(examples.length){
@@ -203,7 +231,7 @@ window.pepsWorkflow = (() => {
     const finished=['completed','complete','done'].includes(status);
     if(finished)card.progress.value=100;else if(['ready','pending','paused','failed'].includes(status)&&total===null)card.progress.value=0;else if(total!==null&&completed!==null)card.progress.value=Math.min(99,Math.max(0,100*completed/total));else card.progress.removeAttribute('value');
     card.progress.setAttribute('aria-label','Progreso de '+card.title.textContent);
-    const units={entities:'entidades',documents:'documentos',articles:'noticias',jobs:'tareas',urls:'enlaces'};
+    const units={entities:'entidades',documents:'documentos',articles:'noticias',jobs:'tareas',urls:'enlaces',pages:'páginas',records:'registros'};
     const countText=completed!==null?completed.toLocaleString('es-MX')+(total!==null?' de '+total.toLocaleString('es-MX'):'')+' '+(units[item.unit]||item.unit||'elementos'):'';
     put(card.counts,countText);card.counts.hidden=!countText;
     card.progress.setAttribute('aria-valuetext',finished?'Trabajo terminado':countText||'Avance aún no cuantificable; se muestra la actividad real');
@@ -365,13 +393,13 @@ window.pepsWorkflow = (() => {
     setText('workflow-local-document-status',Number(counts.documents||0).toLocaleString('es-MX')+' documentos conservados. La importación no calcula el score.');
     $('workflow-sources-next').textContent=local?'Continuar con mis documentos':'Confirmar fuentes y continuar';
     setButton('workflow-sources-next',!opBusy&&action('configure_sources').enabled,action('configure_sources').reason||'Comprueba el origen de la evidencia antes de continuar.','workflow-sources-reason');
-    for(const field of document.querySelectorAll('#news-sources input,#sources input'))field.disabled=opBusy||!action('configure_sources').enabled;
+    for(const field of document.querySelectorAll('#news-sources input,#sources input'))field.disabled=opBusy||!action('configure_sources').enabled||field.dataset.permissionSaving==='true';
     const context=downloadContext(),{coverage,pending,workerActive}=context;
     $('workflow-network-consent').hidden=local||context.canContinue&&!pending;
     $('workflow-search-fields').disabled=opBusy||state.searchLoading||!action('configure_sources').enabled;
     renderBudgetChoice();renderAcquisition();
     setButton('workflow-save-search',!opBusy&&!state.searchLoading&&action('configure_sources').enabled);
-    $('workflow-search-preset').disabled=$('workflow-search-fields').disabled||$('workflow-search-strategy').value==='feeds';
+    $('workflow-search-preset').disabled=$('workflow-search-fields').disabled||['feeds','shared'].includes($('workflow-search-strategy').value);
     setText('workflow-download-mode',local?'Documentos locales':'Fuentes autorizadas');
     setText('workflow-download-card-title',local?'Tu evidencia ya está en el equipo':context.canContinue?'La información está lista para analizar':pending?'Tu avance está guardado':'Descargar noticias');
     setText('workflow-download-note',local?'Este recorrido utiliza los documentos que importaste. Puedes continuar al análisis sin realizar una descarga.':coverage.needs_new_search?'Cambió el banco o el alcance de la búsqueda. Se preparará el plan nuevo y se conservarán las tareas anteriores, sin presentarlas como consultas del alcance actual.':pending?pending.toLocaleString('es-MX')+' tareas siguen pendientes. Reanuda desde ese punto o cierra la descarga con la cobertura ya disponible.':'La conexión consulta las fuentes y el período que preparaste. La identidad se revisará durante el análisis.');

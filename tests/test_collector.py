@@ -474,6 +474,160 @@ class SafeFetcherTests(unittest.TestCase):
                 self.assertEqual(result["body"], "")
                 connection.close.assert_called_once()
 
+    def test_sitemap_gzip_file_without_http_encoding_decodes_and_caches_xml(self):
+        body = b'<?xml version="1.0"?><urlset><url><loc>https://news.example/nota</loc></url></urlset>'
+        wire = gzip.compress(body)
+        for index, mime in enumerate(('application/gzip', 'application/x-gzip', 'application/octet-stream', 'application/xml')):
+            with self.subTest(mime=mime):
+                url = f'https://news.example/sitemap-{index}.xml.gz'
+                transport = self.transport({url: [(200, {'content-type': mime}, wire)]})
+                source = dict(self.source, kind='sitemap', cache_ttl_seconds=60)
+                result = self.fetcher.fetch(url, source)
+                self.assertEqual(result['status'], 'ok')
+                self.assertEqual(result['body'], body.decode())
+                self.assertEqual(result['sha256'], hashlib.sha256(body).hexdigest())
+                cached = self.fetcher.fetch(url, source)
+                self.assertEqual(cached['status'], 'not_modified')
+                self.assertEqual(cached['body'], body.decode())
+                self.assertEqual(len(transport.calls), 1)
+
+    def test_sitemap_gzip_magic_is_kind_specific_and_not_inferred_from_extension(self):
+        body = b'<urlset><url><loc>https://news.example/nota</loc></url></urlset>'
+        wire = gzip.compress(body)
+        self.transport({self.url: [(200, {'content-type': 'application/gzip'}, wire)]})
+        result = self.fetcher.fetch(self.url, self.source)
+        self.assertEqual(result['status'], 'error')
+        self.assertEqual(result['error'], 'Unsupported content type')
+        url = 'https://news.example/plain.xml.gz'
+        self.transport({url: [(200, {'content-type': 'application/xml'}, body)]})
+        result = self.fetcher.fetch(url, dict(self.source, kind='sitemap'))
+        self.assertEqual(result['status'], 'ok')
+        self.assertEqual(result['body'], body.decode())
+
+    def test_sitemap_gzip_rejects_bombs_truncation_corruption_and_multiple_members(self):
+        good = gzip.compress(b'<urlset><url><loc>https://news.example/nota</loc></url></urlset>')
+        cases = {
+            'bomb': gzip.compress(b'x' * 1_000_000),
+            'truncated': good[:-3],
+            'corrupt': good[:-1] + bytes([good[-1] ^ 255]),
+            'concatenated': good + good,
+            'trailing': good + b'junk',
+        }
+        for name, wire in cases.items():
+            with self.subTest(name=name):
+                connection, response, _ = self.wire_connection(wire)
+                response.getheaders.return_value.append(('Content-Type', 'application/gzip'))
+                url = f'https://news.example/{name}.xml.gz'
+                with patch('peps.collector._PinnedHTTPSConnection', return_value=connection):
+                    result = self.fetcher.fetch(url, dict(self.source, kind='sitemap', max_bytes=2000))
+                self.assertEqual(result['status'], 'error')
+                self.assertEqual(result['body'], '')
+                self.assertIsNone(result['sha256'])
+                self.assertEqual(result['network_requests'], 1)
+                with self.fetcher._db() as con:
+                    self.assertIsNone(con.execute('SELECT body FROM http_cache WHERE url=?', (url,)).fetchone())
+                self.fetcher._discard_connection(connection)
+                self.fetcher._local.pool.clear()
+
+    def test_sitemap_gzip_allows_exact_decoded_limit(self):
+        body = b'<urlset>' + b' ' * 2000 + b'</urlset>'
+        self.transport({self.url: [(200, {'content-type': 'application/gzip'}, gzip.compress(body))]})
+        result = self.fetcher.fetch(self.url, dict(self.source, kind='sitemap', max_bytes=len(body)))
+        self.assertEqual(result['status'], 'ok')
+        self.assertEqual(result['body'].encode(), body)
+
+    def test_wordpress_pagination_exposes_only_bounded_numeric_headers_on_new_response(self):
+        self.transport({self.url: [(200, {'content-type': 'application/json', 'X-WP-Total': ' 3250 ',
+                                        'X-WP-TotalPages': '33', 'set-cookie': 'private=value',
+                                        'x-irrelevant-header': 'unrelated'}, b'[]')]})
+        result = self.fetcher.fetch(self.url, dict(self.source, cache_ttl_seconds=60))
+        self.assertEqual(result['pagination_headers'], {'x-wp-total': '3250', 'x-wp-totalpages': '33'})
+        self.assertNotIn('set-cookie', result)
+        # Existing cache rows are valid without pagination metadata; callers
+        # can infer continuation from their bounded response page instead.
+        cached = self.fetcher.fetch(self.url, self.source)
+        self.assertEqual(cached['status'], 'not_modified')
+        self.assertNotIn('pagination_headers', cached)
+
+    def test_wordpress_invalid_pagination_headers_are_omitted(self):
+        self.transport({self.url: [(200, {'X-WP-Total': '9' * 10000, 'X-WP-TotalPages': '-1'}, b'[]')]})
+        result = self.fetcher.fetch(self.url, self.source)
+        self.assertEqual(result['status'], 'ok')
+        self.assertEqual(result['pagination_headers'], {})
+
+    def test_inferred_wordpress_end_is_empty_discovery_with_original_error_hash_and_no_http_cache(self):
+        endpoint = 'https://news.example/wp-json/wp/v2/posts'
+        url = endpoint + '?per_page=100&page=4'
+        error_body = json.dumps({'code': 'rest_post_invalid_page_number',
+                                 'message': 'The page number requested is larger than the number of pages available.',
+                                 'data': {'status': 400}}).encode()
+        connection, response, _ = self.wire_connection(error_body)
+        response.status = 400
+        response.getheaders.return_value.append(('Content-Type', 'application/json'))
+        source = dict(self.source, kind='wordpress_api', api_url=endpoint,
+                      _wordpress_inferred_page=True, cache_ttl_seconds=600)
+        with patch('peps.collector._PinnedHTTPSConnection', return_value=connection):
+            result = self.fetcher.fetch(url, source)
+        self.assertEqual(result['status'], 'ok')
+        self.assertEqual(result['http_status'], 400)
+        self.assertTrue(result['pagination_end'])
+        self.assertEqual(result['error_code'], 'publisher_pagination_end')
+        self.assertEqual(result['body'], '[]')
+        self.assertEqual(result['sha256'], hashlib.sha256(error_body).hexdigest())
+        self.assertEqual(result['network_requests'], 1)
+        self.assertIsNone(result['error'])
+        with self.fetcher._db() as con:
+            self.assertEqual(con.execute('SELECT count(*) FROM http_cache').fetchone()[0], 0)
+
+    def test_wordpress_end_exception_rejects_other_http_errors_endpoints_pages_and_error_envelopes(self):
+        endpoint = 'https://news.example/wp-json/wp/v2/posts'
+        envelope = {'code': 'rest_post_invalid_page_number', 'data': {'status': 400}}
+        valid_body = json.dumps(envelope).encode()
+        cases = [
+            ('no-private-flag', {}, '?page=2', valid_body, 400),
+            ('false-flag', {'_wordpress_inferred_page': False}, '?page=2', valid_body, 400),
+            ('string-flag', {'_wordpress_inferred_page': 'true'}, '?page=2', valid_body, 400),
+            ('other-kind', {'kind': 'rss', '_wordpress_inferred_page': True}, '?page=2', valid_body, 400),
+            ('first-page', {'_wordpress_inferred_page': True}, '?page=1', valid_body, 400),
+            ('no-page', {'_wordpress_inferred_page': True}, '?per_page=100', valid_body, 400),
+            ('duplicate-page', {'_wordpress_inferred_page': True}, '?page=2&page=3', valid_body, 400),
+            ('invalid-page', {'_wordpress_inferred_page': True}, '?page=invalid', valid_body, 400),
+            ('different-endpoint', {'_wordpress_inferred_page': True, 'api_url': endpoint + '/other'}, '?page=2', valid_body, 400),
+            ('other-code', {'_wordpress_inferred_page': True}, '?page=2',
+             json.dumps(dict(envelope, code='rest_invalid_param')).encode(), 400),
+            ('other-data-status', {'_wordpress_inferred_page': True}, '?page=2',
+             json.dumps(dict(envelope, data={'status': 401})).encode(), 400),
+            ('string-data-status', {'_wordpress_inferred_page': True}, '?page=2',
+             json.dumps(dict(envelope, data={'status': '400'})).encode(), 400),
+            ('malformed-json', {'_wordpress_inferred_page': True}, '?page=2', b'{broken', 400),
+            ('json-list', {'_wordpress_inferred_page': True}, '?page=2', b'[]', 400),
+            ('unauthorized', {'_wordpress_inferred_page': True}, '?page=2', valid_body, 401),
+        ]
+        for name, changes, query, body, status in cases:
+            with self.subTest(name=name):
+                url = endpoint + query
+                self.transport({url: [(status, {'content-type': 'application/json'}, body)]})
+                result = self.fetcher.fetch(url, {**self.source, 'kind': 'wordpress_api', 'api_url': endpoint, **changes})
+                self.assertEqual(result['status'], 'error')
+                self.assertEqual(result['http_status'], status)
+                self.assertEqual(result['body'], '')
+                self.assertFalse(result.get('pagination_end'))
+
+    def test_inferred_wordpress_end_keeps_host_courtesy_and_allows_url_endpoint_fallback(self):
+        endpoint = 'https://news.example/wp-json/wp/v2/posts'
+        url = endpoint + '?page=2'
+        body = json.dumps({'code': 'rest_post_invalid_page_number', 'data': {'status': 400}}).encode()
+        transport = self.transport({url: [(400, {'content-type': 'application/json'}, body)]})
+        source = dict(self.source, kind='wordpress_api', url=endpoint, _wordpress_inferred_page=True,
+                      min_interval_seconds=5)
+        first = self.fetcher.fetch(url, source)
+        self.assertTrue(first['pagination_end'])
+        second = self.fetcher.fetch(url, source)
+        self.assertEqual(second['status'], 'deferred')
+        self.assertEqual(second['error_code'], 'host_interval')
+        self.assertEqual(second['network_requests'], 0)
+        self.assertEqual(len(transport.calls), 1)
+
     def test_wire_limit_independent_from_decoded_limit(self):
         connection, _, stream = self.wire_connection(b"a" * 500, length=False)
         with patch("peps.collector._PinnedHTTPSConnection", return_value=connection):

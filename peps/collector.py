@@ -10,6 +10,7 @@ import hashlib
 import http.client
 import ipaddress
 import io
+import json
 import re
 import socket
 import sqlite3
@@ -22,7 +23,7 @@ from email.utils import parsedate_to_datetime
 from pathlib import Path
 from contextlib import contextmanager
 from typing import Iterator
-from urllib.parse import urljoin, urlsplit, urlunsplit
+from urllib.parse import parse_qs, urljoin, urlsplit, urlunsplit
 from urllib.robotparser import RobotFileParser
 
 
@@ -749,11 +750,55 @@ class SafeFetcher:
                     db.execute("DELETE FROM http_cache WHERE url=?", (normalized,))
             self._record_event(normalized, "content", network_requests=0, outcome="cache_revalidated", cache_status="revalidated")
             return self._result(normalized, "not_modified", http_status=304, body=cached["body"], content_type=cached["content_type"], retrieved_at=cached["retrieved_at"], sha256=cached["sha256"], etag=cached["etag"], last_modified=cached["last_modified"], final_url=final_url, validated_at=_iso(now), from_cache=True, cache_status="revalidated", cache_valid_until=_iso(now + ttl), original_retrieved_at=cached["retrieved_at"])
+        # Without X-WP-TotalPages a full page implies a tentative next page.
+        # WordPress reports the end with a specific 400 envelope. Only that
+        # inferred continuation at the configured posts endpoint becomes an
+        # empty discovery page; all other HTTP errors retain their meaning.
+        if status == 400 and source.get("kind") == "wordpress_api" and source.get("_wordpress_inferred_page") is True:
+            try:
+                endpoint = urlsplit(source.get("api_url") or source.get("url") or "")
+                response_url = urlsplit(final_url)
+                pages = parse_qs(response_url.query, keep_blank_values=True, max_num_fields=100).get("page", [])
+                valid_page = (len(pages) == 1 and re.fullmatch(r"[0-9]{1,12}", pages[0])
+                              and int(pages[0]) > 1)
+                error_data = json.loads(raw) if valid_page and endpoint.path == response_url.path else None
+            except (ValueError, UnicodeError, RecursionError):
+                error_data = None
+            if (isinstance(error_data, dict) and error_data.get("code") == "rest_post_invalid_page_number"
+                    and isinstance(error_data.get("data"), dict) and error_data["data"].get("status") == 400):
+                if cached:
+                    with self._db() as db:
+                        db.execute("DELETE FROM http_cache WHERE url=?", (normalized,))
+                return self._result(normalized, "ok", http_status=400, body="[]", content_type="application/json",
+                                    sha256=hashlib.sha256(raw).hexdigest(), final_url=final_url,
+                                    pagination_end=True, error_code="publisher_pagination_end", pagination_headers={})
         if status != 200:
             return self._result(normalized, "error", http_status=status, error="Unexpected HTTP status")
         content_type = response_headers.get("content-type", "text/plain")
         mime = content_type.split(";", 1)[0].strip().lower()
-        if mime not in {"text/html", "text/plain", "application/json", "application/rss+xml", "application/atom+xml", "application/xml", "text/xml", "application/xhtml+xml"}:
+        # A .xml.gz sitemap is often a gzip *file*, without HTTP
+        # Content-Encoding. Restrict magic-based decoding to this source kind;
+        # the same input/output ceiling applies to transport and file decoding.
+        sitemap_gzip = source.get("kind") == "sitemap" and raw.startswith(b"\x1f\x8b")
+        if sitemap_gzip:
+            maximum = max(1, min(int(source.get("max_bytes", 2_000_000)), 20_000_000))
+            try:
+                decoder = zlib.decompressobj(31)
+                decoded = decoder.decompress(raw, maximum + 1)
+                if len(decoded) > maximum:
+                    raise CollectionError("Sitemap exceeds max_bytes decoded limit")
+                if decoder.unused_data:
+                    raise CollectionError("Trailing or concatenated sitemap gzip data is unsupported")
+                if not decoder.eof:
+                    raise CollectionError("Truncated sitemap gzip file")
+            except (zlib.error, CollectionError) as exc:
+                return self._result(normalized, "error", http_status=status, content_type=content_type,
+                                    error=str(exc)[:500] if isinstance(exc, CollectionError) else "Corrupt sitemap gzip file")
+            raw = decoded
+        accepted_mimes = {"text/html", "text/plain", "application/json", "application/rss+xml", "application/atom+xml", "application/xml", "text/xml", "application/xhtml+xml"}
+        if sitemap_gzip:
+            accepted_mimes.update({"application/gzip", "application/x-gzip", "application/octet-stream"})
+        if mime not in accepted_mimes:
             return self._result(normalized, "error", http_status=status, content_type=content_type, error="Unsupported content type")
         charset = "utf-8"
         for item in content_type.split(";")[1:]:
@@ -775,4 +820,7 @@ class SafeFetcher:
                 db.execute("INSERT OR REPLACE INTO http_cache(url,body,content_type,etag,last_modified,sha256,retrieved_at,fetched_at,expires_at,cache_control,cache_expires,final_url) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)", (normalized, body, content_type, etag, modified, digest, retrieved, now, now + ttl, response_headers.get("cache-control", ""), response_headers.get("expires", ""), final_url))
             else:
                 db.execute("DELETE FROM http_cache WHERE url=?", (normalized,))
-        return self._result(normalized, "ok", http_status=status, body=body, content_type=content_type, retrieved_at=retrieved, sha256=digest, etag=etag, last_modified=modified, final_url=final_url, cache_status="refreshed" if cached else "miss")
+        pagination_headers = {key: value.strip() for key in ("x-wp-total", "x-wp-totalpages")
+                              if isinstance(value := response_headers.get(key), str)
+                              and re.fullmatch(r"[0-9]{1,12}", value.strip())}
+        return self._result(normalized, "ok", http_status=status, body=body, content_type=content_type, retrieved_at=retrieved, sha256=digest, etag=etag, last_modified=modified, final_url=final_url, cache_status="refreshed" if cached else "miss", pagination_headers=pagination_headers, cache_valid_until=_iso(now + ttl if store_cache else now))

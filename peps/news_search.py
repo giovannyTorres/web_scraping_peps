@@ -57,8 +57,8 @@ def normalize_search_config(value=None, now=None):
     seconds = result['session_seconds']
     if type(seconds) is not int or seconds not in ((120,) if result['execution_mode'] == 'quick' else (900, 1800, 3600, 7200)):
         raise ValueError('session_seconds requiere 120 para quick o 900, 1800, 3600, 7200 para extended')
-    if result['strategy'] not in ('targeted', 'feeds'):
-        raise ValueError('strategy debe ser targeted o feeds')
+    if result['strategy'] not in ('targeted', 'shared', 'feeds'):
+        raise ValueError('strategy debe ser targeted, shared o feeds')
     if result['preset'] not in PRESETS:
         raise ValueError('preset debe ser identity, public_role o adverse')
     if result['window'] not in ('auto', 'year', 'month'):
@@ -194,7 +194,7 @@ def wordpress_queries(entity, config, *, variants=None):
     return queries
 
 
-def _quick_gdelt_queries(entities, source, config, suffix, max_chars):
+def _gdelt_batch_queries(entities, source, config, suffix, max_chars):
     """One flat OR of canonical names, one risk term; never nested ORs.
 
     Publisher WordPress search is deliberately excluded: it does not document
@@ -309,12 +309,28 @@ def build_search_plan(entities, sources, config=None, *, start=None, end=None, n
             'execution': {'mode': config['execution_mode'], 'session_seconds': config['session_seconds'],
                 'scope_note': 'El presupuesto es global para la sesión. Se conservan consultas pendientes; no garantiza consultar todas las entidades ni descargar todos sus artículos.'},
             'entity_count_note': 'Entidades planificadas no equivale a entidades consultadas ni a cobertura comprobada.'}
+    entities = list(entities)
+    shared_sources = []
     prepared = []
     for source in active:
         google, gdelt = source.get('search_kind') == 'google_news_rss', source.get('kind') == 'gdelt'
         wordpress = source.get('search_kind') == 'wordpress_rss'
         if source.get('automated_search') is False:
             plan['warnings'].append(source['id'] + ': búsqueda automática omitida por la política robots verificada; candidato de consulta manual.')
+            continue
+        if source.get('kind') in ('wordpress_api', 'sitemap') and config['strategy'] != 'feeds':
+            from .shared_crawl import seed_pages
+            pages = seed_pages(source, config, first, last)
+            if source.get('kind') == 'wordpress_api' and (last - timedelta(microseconds=1)).year - first.year + 1 > len(pages):
+                plan['warnings'].append(source['id'] + ': el límite de páginas deja años antiguos sin planificar; se priorizan los más recientes. Acote el período o elija Ampliado.')
+            plan['queries'].extend(pages)
+            shared_sources.append(source)
+            plan['sources'].append({'id': source['id'], 'source_name': source.get('source_name') or source['id'],
+                'scope': 'shared_publisher_index', 'historical': True, 'complete_archive': False,
+                'start': first.isoformat(), 'end_exclusive': last.isoformat(), 'windows': len(pages),
+                'max_records_per_response': 100 if source.get('kind') == 'wordpress_api' else int(source.get('max_records', 50000))})
+            continue
+        if config['strategy'] == 'shared':
             continue
         if config['strategy'] == 'feeds':
             if source.get('kind') in ('rss', 'atom') and not google:
@@ -338,8 +354,11 @@ def build_search_plan(entities, sources, config=None, *, start=None, end=None, n
         unit = config['window'] if config['window'] != 'auto' else 'year' if (google or wordpress) and (b - a).days > 730 else 'month'
         # GDELT supports the recent interval directly. Monthly subdivisions are
         # a response-limit recovery strategy, not mandatory work before results.
-        windows = [(a, b)] if quick and gdelt else _windows(a, b, unit)
-        if quick and gdelt:
+        # Both execution modes start from one shared recent interval. Extended
+        # mode expands only a saturated response instead of multiplying every
+        # name by monthly windows before knowing whether any candidates exist.
+        windows = [(a, b)] if gdelt else _windows(a, b, unit)
+        if gdelt:
             unit = 'recent_interval'
         prepared.append((source, windows))
         plan['sources'].append({'id': source['id'], 'source_name': source.get('source_name') or source['id'], 'scope': 'publisher_historical_search' if wordpress else 'historical_search_best_effort' if google else 'recent_rolling_window',
@@ -350,7 +369,10 @@ def build_search_plan(entities, sources, config=None, *, start=None, end=None, n
             plan['warnings'].append(source['id'] + ': Google News RSS entrega un top limitado (hasta 100 observado), sin garantía de archivo completo; divida ventanas saturadas. Los enlaces del agregador pueden requerir apertura manual del editor.')
         if wordpress:
             plan['warnings'].append(source['id'] + ': búsqueda del editor por frase y año/mes; RSS limitado y archivo no exhaustivo. Las fechas son filtros solicitados, no garantía de cobertura; se conservan las fechas reportadas.')
-    planned_ids, total_ids, templates = set(), set(), []
+    planned_ids, total_ids, templates = set(), {str(entity['id']) for entity in entities}, []
+    shared_required = len(plan['queries'])
+    plan['queries'] = plan['queries'][:config['max_queries']]
+    shared_initial = len(plan['queries'])
     if config['strategy'] == 'targeted' and prepared:
         entities = list(entities)
         total_ids = {str(entity['id']) for entity in entities}
@@ -368,9 +390,9 @@ def build_search_plan(entities, sources, config=None, *, start=None, end=None, n
             host = urlsplit(source.get('search_url') or source.get('base_url') or source.get('url') or '').hostname or source['id']
             offset = hosts.index(host) * ((len(entities) + len(hosts) - 1) // len(hosts)) if quick else 0
             ordered = entities[offset:] + entities[:offset]
-            batches = list(_quick_gdelt_queries(ordered, source, config, source_suffix, max_chars)) if quick and source.get('kind') == 'gdelt' else []
+            batches = list(_gdelt_batch_queries(ordered, source, config, source_suffix, max_chars)) if source.get('kind') == 'gdelt' else []
             included = {identifier for query in batches for identifier in query['entity_ids']}
-            if quick and source.get('kind') == 'gdelt' and any(_phrase(entity.get('name')) and str(entity['id']) not in included for entity in ordered):
+            if source.get('kind') == 'gdelt' and any(_phrase(entity.get('name')) and str(entity['id']) not in included for entity in ordered):
                 plan['warnings'].append(source['id'] + ': nombres o términos que exceden el límite local de longitud no se pudieron incluir en lotes.')
             for entity in ordered:
                 variants = _variants(entity, config['include_aliases'])
@@ -381,7 +403,7 @@ def build_search_plan(entities, sources, config=None, *, start=None, end=None, n
                 else:
                     queries = entity_queries(entity, config, max(1, max_chars - len(source_suffix)))
                 for rank, query in enumerate(queries):
-                    if quick and source.get('kind') == 'gdelt':
+                    if source.get('kind') == 'gdelt':
                         if query['query_type'] == 'identity':
                             continue  # Canonical requests were batched above.
                         rank += 100
@@ -395,7 +417,7 @@ def build_search_plan(entities, sources, config=None, *, start=None, end=None, n
                     template['names'].update(dict.fromkeys(variants))
             templates.append((source, windows, batches + [dict(query, entity_ids=list(query['entity_ids']), names=list(query['names']))
                                                           for query in grouped.values()]))
-        required = sum(len(windows) * len(queries) for _, windows, queries in templates)
+        required = shared_required + sum(len(windows) * len(queries) for _, windows, queries in templates)
         # Give every PEP a primary-name query before spending the budget on
         # aliases/context or advancing to the next historical window.
         max_windows = max((len(windows) for _, windows, _ in templates), default=0)
@@ -426,13 +448,20 @@ def build_search_plan(entities, sources, config=None, *, start=None, end=None, n
                         planned_ids.update(payload['entity_ids'])
         plan['truncated'] = required > len(plan['queries'])
     else:
-        required = len(plan['queries'])
+        required = shared_required
         plan['queries'] = plan['queries'][:config['max_queries']]
         plan['truncated'] = required > len(plan['queries'])
     if plan['truncated']:
         plan['warnings'].append('Presupuesto local de consultas alcanzado: existen entidades o ventanas sin planificar. Amplíe el presupuesto o reduzca el período.')
-    if not prepared and config['strategy'] == 'targeted':
+    if not prepared and not shared_sources and config['strategy'] in ('targeted', 'shared'):
         plan['warnings'].append('Habilite una fuente con búsqueda histórica del editor o GDELT reciente y registre sus permisos; los feeds generales no buscan a las entidades cargadas.')
+    if shared_sources:
+        plan['shared_discovery'] = {'sources': len(shared_sources), 'initial_pages': shared_initial,
+            'max_pages_per_source': 24 if quick else 240,
+            'scope_note': 'Cada página se contrasta localmente con toda la lista. El archivo es parcial: se reparten las primeras páginas entre años antes de profundizar; las páginas pendientes y los metadatos se conservan.'}
+        plan['warnings'].append('Índice compartido: títulos, resúmenes y URLs son candidatos; no acreditan identidad ni lectura de artículos. Un archivo parcial no equivale a consultar cada nombre en todo el medio.')
+        if config['strategy'] == 'shared':
+            plan['execution']['scope_note'] = 'El presupuesto es global para la sesión. Se conservan metadatos y páginas pendientes; contrástelos con la cobertura observada, que puede ser parcial.'
     plan.update(entities_planned=len(planned_ids), entities_covered=len(planned_ids), entities_total=len(total_ids),
                 queries_required=required, query_count=len(plan['queries']))
     intervals = {source['id']: max(1, float(source.get('min_interval_seconds', 5))) for source in sources}
@@ -454,7 +483,7 @@ def build_search_plan(entities, sources, config=None, *, start=None, end=None, n
     plan['estimated_entities_first_session'] = len(first_session)
     plan['first_session_estimate_note'] = 'Límite orientativo de entidades distintas cuyas consultas podrían iniciarse según intervalos de host; excluye latencia, robots, fallos y descarga de cuerpos. No son consultas ejecutadas ni cobertura garantizada.'
     plan['estimated_schedule_seconds'] = round(last_start, 1)
-    if quick:
+    if quick and prepared:
         plan['warnings'].append('Modo rápido: primero nombres canónicos; los lotes sólo se aplican a GDELT. Las respuestas saturadas quedan como cobertura incompleta sin expansión automática; alias y contexto siguen al primer barrido.')
     plan['schedule_estimate_note'] = 'Programación mínima orientativa por intervalos de host; excluye latencia, robots, reintentos y divisiones adicionales. No es un SLA ni ETA de finalización.'
     plan['warnings'] = list(dict.fromkeys(plan['warnings']))
