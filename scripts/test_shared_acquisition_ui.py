@@ -50,9 +50,14 @@ def main():
         report['screenshots'].append('runtime/shared-acquisition-ui-validation/' + name + '.png')
 
     def permissions(page):
+        response = api(page, 'news')
+        assert response['status'] == 200, ('GET /api/news failed while reading source permissions: '
+            f"HTTP {response['status']} · {json.dumps(response['body'], ensure_ascii=False)[:1000]}")
+        sources = response['body'].get('sources')
+        assert isinstance(sources, list), 'GET /api/news did not return a complete source catalogue'
         return {source['id']: {key: bool(source.get(key)) for key in
                 ('enabled', 'terms_approved', 'download_articles', 'article_terms_approved', 'body_terms_approved')}
-                for source in api(page, 'news')['body']['sources']}
+                for source in sources}
 
     try:
         with tempfile.TemporaryDirectory(prefix='webscope-shared-ui-') as tmp:
@@ -175,6 +180,7 @@ def main():
                             expect(page.locator('[data-panel="news"]')).to_be_visible()
                             expect(page.locator('#workflow-session-budget')).to_contain_text('Índice compartido: 1 fuente preparada')
                             expect(page.locator('#workflow-session-budget')).not_to_contain_text('Primera sesión: hasta 0 de 300')
+                            page.locator('#workflow-index-details > summary').click()
                             expect(page.locator('#workflow-shared-coverage')).to_be_visible()
                             expect(page.locator('#workflow-shared-progress-label')).to_have_text('Todavía no se han leído páginas del índice.')
                             checked('unstarted_index_has_zero_progress_and_no_false_full_coverage')
@@ -199,11 +205,11 @@ def main():
                             shared_stats.update(shared_pages_pending=0, shared_pages_limited=1)
                             wait_until(page, lambda: page.locator('#workflow-shared-progress').evaluate('p=>p.max===6'),
                                        'Known queue completion was not rendered')
-                            expect(page.locator('.shared-coverage-limit')).to_contain_text('no equivale a haber consultado todo su histórico')
+                            expect(page.locator('.shared-coverage-limit')).to_contain_text('no representa la cobertura de tus nombres ni de todo el histórico')
                             checked('complete_known_queue_does_not_claim_complete_historical_coverage')
                             expect(page.locator('#workflow-shared-limit-notice')).to_be_visible()
-                            expect(page.locator('#workflow-shared-limit-notice')).to_contain_text('Se alcanzó un límite del índice; el archivo sigue parcial.')
-                            expect(page.locator('#workflow-shared-limit-notice')).to_contain_text('elige Ampliado, ajusta el período o las fuentes')
+                            expect(page.locator('#workflow-shared-limit-notice')).to_contain_text('El recorrido alcanzó un límite y sigue parcial.')
+                            expect(page.locator('#workflow-shared-limit-notice')).to_contain_text('Prioriza la búsqueda por nombre')
                             checked('reaching_page_cap_explains_partial_archive_and_concrete_ways_to_expand')
                             page.set_viewport_size({'width': 390, 'height': 844})
                             checked('mobile_shared_coverage_has_no_page_overflow', page.evaluate('document.documentElement.scrollWidth<=innerWidth'))

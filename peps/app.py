@@ -46,6 +46,7 @@ def create_server(engine, port=0):
     tickets = {}
     import_operations = {}
     import_ttl = 30 * 60
+    after_pause = {}
 
     def start_operation(kind, action, phase='', online=None, message=''):
         with lock:
@@ -56,6 +57,21 @@ def create_server(engine, port=0):
             engine.stop_event.clear()
             return operation_id
 
+    def finish_background(operation_id, **values):
+        # Completion and a requested continuation share the mutation lock. No
+        # other request can import a bank between pause and analysis startup.
+        with lock:
+            tracker.finish(operation_id=operation_id, **values)
+            requested = after_pause.pop(operation_id, False)
+            if requested and tracker.snapshot().get('operation_id') == operation_id:
+                try:
+                    workflow.require('analyze_available', tracker.snapshot())
+                    workflow.accept_partial(tracker.snapshot())
+                    background(analyze_bank, kind='analysis', action='analyze', phase='attribution',
+                               message='Analizando los textos conservados con cobertura parcial registrada…')
+                except Exception as exc:
+                    tracker.note_message(f'La descarga se pausó. No se inició el análisis: {exc}')
+
     def background(fn, online=None, kind='analysis', action='analyze', phase='', message=''):
         operation_id = start_operation(kind, action, phase, online, message)
         def execute():
@@ -63,15 +79,16 @@ def create_server(engine, port=0):
                 result = fn()
                 paused = engine.stop_event.is_set() or (isinstance(result, dict) and
                     (result.get('cancelled') or result.get('pending', 0) or result.get('failed', 0) or result.get('status') == 'paused'))
-                tracker.finish(status='paused' if paused else 'completed', result=result,
-                               operation_id=operation_id,
-                               message=(result.get('message') if isinstance(result, dict) else None) or
-                                   ('Descarga en pausa. Puedes reanudarla o cerrar con la cobertura disponible.'
-                                    if paused and kind in ('download', 'pipeline') else 'Proceso pausado.' if paused else 'Paso terminado.'))
+                # acquire() has returned and joined its request workers before
+                # finish_background can accept partial coverage or start NLP.
+                finish_background(operation_id, status='paused' if paused else 'completed', result=result,
+                                  message=(result.get('message') if isinstance(result, dict) else None) or
+                                      ('Descarga en pausa. Puedes reanudarla o cerrar con la cobertura disponible.'
+                                       if paused and kind in ('download', 'pipeline') else 'Proceso pausado.' if paused else 'Paso terminado.'))
             except Exception as exc:
                 if kind in ('download', 'pipeline') and tracker.snapshot()['phase'] == 'download':
                     workflow.mark_download(status='failed', details={'error': str(exc)})
-                tracker.finish(status='failed', message=f'{type(exc).__name__}: {exc}', operation_id=operation_id)
+                finish_background(operation_id, status='failed', message=f'{type(exc).__name__}: {exc}')
         threading.Thread(target=execute, daemon=True).start()
         return operation_id
 
@@ -119,18 +136,21 @@ def create_server(engine, port=0):
     def acquisition_context():
         """Archive the actual acquisition limits with each evaluation."""
         snapshot = workflow.snapshot(tracker.snapshot())
-        coverage, counts, news_counts = snapshot['coverage'], snapshot['counts'], news.stats()
+        coverage, counts = snapshot['coverage'], snapshot['counts']
+        observed = acquisition_coverage(engine.store, news.sources())
         archived = coverage.get('acquisition_context') or {}
         return {'mode': coverage['mode'], 'status': coverage['status'],
                 'partial': bool(coverage.get('partial')), 'accepted_partial': bool(coverage.get('accepted_partial')),
                 'pending_tasks': counts['pending_downloads'], 'failed_tasks': coverage['failed'],
-                'articles': counts['articles'], 'full_articles': news_counts['scopes'].get('full_article', 0),
-                'metadata_only_articles': sum(number for scope, number in news_counts['scopes'].items() if scope != 'full_article'),
+                'scope': 'current_bank', 'articles': observed['relevant_articles'], 'full_articles': observed['body_articles'],
+                'metadata_only_articles': observed['metadata_only_articles'],
+                'local_documents': observed['local_documents'],
+                'archived_articles': counts['articles'], 'archived_documents': counts['documents'],
                 'search': copy.deepcopy(archived.get('search')), 'search_plan': copy.deepcopy(coverage.get('search_plan')),
                 'planning_warnings': copy.deepcopy(coverage.get('plan_warnings', [])),
                 'planning_truncated': bool(coverage.get('plan_truncated')),
                 'limitations': copy.deepcopy(coverage.get('limitations', [])),
-                'observed': acquisition_coverage(engine.store, news.sources()),
+                'observed': observed,
                 'last_session_limits': copy.deepcopy(coverage.get('session_limits', {}))}
 
     def news_tasks(query):
@@ -150,6 +170,15 @@ def create_server(engine, port=0):
         if len(source) > 200:
             raise ValueError('Fuente no válida')
         conditions, params = ["kind GLOB 'news_*'"], []
+        scope = query.get('scope', ['all_saved'])[0]
+        if scope not in ('current_bank', 'all_saved'):
+            raise ValueError('Alcance de tareas no válido')
+        with engine.store.connection() as con:
+            bank_row = con.execute("SELECT value FROM meta WHERE key='news_identity_revision'").fetchone()
+        bank_revision = str(bank_row[0]) if bank_row else '0'
+        if scope == 'current_bank':
+            conditions.append("CAST(json_extract(CASE WHEN json_valid(payload) THEN payload ELSE '{}' END,'$.bank_revision') AS TEXT)=?")
+            params.append(bank_revision)
         if status:
             conditions.append('status=?')
             params.append(status)
@@ -179,7 +208,8 @@ def create_server(engine, port=0):
                              url=url, next_retry_seconds=max(0., row['due'] - stamp) if row['status'] == 'deferred' else None)
             if not metadata_valid:
                 items[-1]['metadata_warning'] = 'No se pueden leer los metadatos de esta tarea. El registro original se conserva.'
-        return {'items': items, 'total': total, 'limit': limit, 'offset': offset, 'has_more': offset + len(items) < total}
+        return {'items': items, 'total': total, 'limit': limit, 'offset': offset, 'has_more': offset + len(items) < total,
+                'scope': scope, 'bank_revision': bank_revision if scope == 'current_bank' else None}
 
     def analyze_bank():
         workflow.mark_analysis(status='running')
@@ -298,25 +328,62 @@ def create_server(engine, port=0):
             try:
                 self.end_headers()
                 self.wfile.write(data)
-            except (BrokenPipeError, ConnectionResetError):
+            except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError):
                 # Navigation and cancelled polling can close the browser socket
                 # after a response was computed. The operation itself remains
                 # tracked by the server; do not log a misleading worker crash.
                 self.close_connection = True
 
+        def discard_rejected_body(self):
+            """Avoid resetting a small rejected POST before its 403 arrives.
+
+            Authorization has already failed. Consume only plainly framed,
+            small input, without JSON decoding or invoking an endpoint. Windows
+            can reset a socket closed with unread incoming request bytes. The
+            short total deadline prevents a missing/slow body holding a worker.
+            """
+            self.close_connection = True
+            lengths = self.headers.get_all('Content-Length', [])
+            if self.command != 'POST' or 'Transfer-Encoding' in self.headers or len(lengths) != 1:
+                return
+            raw = lengths[0].strip()
+            if not raw.isascii() or not raw.isdecimal() or len(raw) > 6:
+                return
+            remaining = int(raw)
+            if not 0 < remaining <= 65_536:
+                return
+            previous_timeout = self.connection.gettimeout()
+            deadline = time.monotonic() + .2
+            try:
+                while remaining:
+                    budget = deadline - time.monotonic()
+                    if budget <= 0:
+                        break
+                    self.connection.settimeout(budget)
+                    chunk = self.rfile.read1(min(remaining, 8192))
+                    if not chunk:
+                        break
+                    remaining -= len(chunk)
+            except (OSError, TimeoutError):
+                pass
+            finally:
+                self.connection.settimeout(previous_timeout)
+
+        def reject_authorization(self, message):
+            self.discard_rejected_body()
+            self.reply({'error': message}, 403)
+            return False
+
         def authorized(self, api=True):
             expected = f'127.0.0.1:{self.server.server_port}'
             if self.headers.get('Host') != expected:
-                self.reply({'error': 'Host no permitido'}, 403)
-                return False
+                return self.reject_authorization('Host no permitido')
             origin = self.headers.get('Origin')
             if origin and origin != 'http://' + expected:
-                self.reply({'error': 'Origen no permitido'}, 403)
-                return False
+                return self.reject_authorization('Origen no permitido')
             supplied_token = self.headers.get('X-PEPS-Token', '')
             if api and not (supplied_token.isascii() and secrets.compare_digest(supplied_token, token)):
-                self.reply({'error': 'Sesión inválida'}, 403)
-                return False
+                return self.reject_authorization('Sesión inválida')
             return True
 
         def do_GET(self):
@@ -339,16 +406,21 @@ def create_server(engine, port=0):
                 elif path in ('/fonts/Lato-Regular.woff2', '/fonts/Lato-Bold.woff2', '/fonts/SourceSerif4-Roman.woff2'):
                     self.reply((web / 'fonts' / Path(path).name).read_bytes(), content_type='font/woff2')
                 elif path == '/api/stats':
-                    operation = tracker.snapshot()
-                    current_workflow = workflow.snapshot(operation)
+                    with lock:
+                        operation = tracker.snapshot()
+                        current_workflow = workflow.snapshot(operation)
+                        operation['activity'] = copy.deepcopy(current_workflow['activity'])
+                        operation['pause_and_analyze_requested'] = bool(after_pause.get(operation.get('operation_id')))
                     counts = current_workflow['counts']
                     operation['task_progress']['estimates'] = tracker.estimate_phases('analysis', {
-                        'attribution': counts['articles'], 'scoring': counts['entities']
+                        'attribution': counts['current_articles'], 'scoring': counts['entities']
                     }) + tracker.estimate_phases('download', {'download': None})
                     self.reply(dict(engine.store.stats(), online=engine.online, operation=operation,
                                     workflow=current_workflow, acquisition=acquisition_coverage(engine.store, news.sources()), capacity=capacity()))
                 elif path == '/api/workflow':
-                    self.reply(workflow.snapshot(tracker.snapshot()))
+                    with lock:
+                        current_workflow = workflow.snapshot(tracker.snapshot())
+                    self.reply(current_workflow)
                 elif path == '/api/import-status':
                     with lock:
                         prune_imports()
@@ -497,10 +569,24 @@ def create_server(engine, port=0):
                     with lock:
                         # The user's explicit action records the incomplete
                         # coverage and starts analysis without another prompt.
+                        workflow.require('analyze_available', tracker.snapshot())
                         workflow.accept_partial(tracker.snapshot())
                         operation_id = background(analyze_bank, kind='analysis', action='analyze', phase='attribution',
                                                   message='Analizando la información disponible con su cobertura registrada…')
                     self.reply({'ok': True, 'operation_id': operation_id})
+                    return
+                elif self.path == '/api/workflow-pause-and-analyze-available':
+                    with lock:
+                        operation = tracker.snapshot()
+                        expected = data.get('operation_id')
+                        if expected is not None and expected != operation.get('operation_id'):
+                            raise WorkflowError('La operación cambió. Actualiza su estado antes de pedir una pausa.')
+                        workflow.require('pause_and_analyze', operation)
+                        after_pause[operation['operation_id']] = True
+                        tracker.request_cancel()
+                        engine.stop_event.set()
+                    self.reply({'ok': True, 'operation_id': operation['operation_id'], 'status': 'pausing',
+                                'message': 'Pausa solicitada. El análisis comenzará cuando finalicen las solicitudes activas.'}, code=202)
                     return
                 elif self.path == '/api/workflow-mode':
                     with lock:

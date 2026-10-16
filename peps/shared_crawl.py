@@ -8,7 +8,76 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
 import re
-from urllib.parse import urlencode, urlsplit
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
+
+
+_LEGACY_WORDPRESS_SEARCH_ENDPOINTS = {
+    'contralinea_index': 'https://contralinea.com.mx/wp-json/wp/v2/posts',
+    'aristegui_index': 'https://editorial.aristeguinoticias.com/wp-json/wp/v2/posts',
+    'desinformemonos_index': 'https://desinformemonos.org/wp-json/wp/v2/posts',
+}
+
+
+def supports_wordpress_search(source):
+    """Recognize an explicit adapter or one of three existing public profiles.
+
+    This is a capability check only. Enabled/terms/body permissions continue to
+    be enforced by the caller. Existing saved profiles gain a directed-search
+    option without changing their stored permissions or selected strategy.
+    """
+    if not isinstance(source, dict) or source.get('kind') != 'wordpress_api':
+        return False
+    marker = source.get('search_kind')
+    if marker not in (None, 'wordpress_api_search'):
+        return False
+    base = source.get('api_url') or source.get('url')
+    if not isinstance(base, str) or not allowed_index_url(base, source):
+        return False
+    from .shared_discovery import _public_https
+    if _public_https(base) is None:
+        return False
+    parts = urlsplit(base)
+    if parts.path.rstrip('/') != '/wp-json/wp/v2/posts' or parts.query or parts.fragment:
+        return False
+    return (marker == 'wordpress_api_search'
+            or base == _LEGACY_WORDPRESS_SEARCH_ENDPOINTS.get(source.get('id')))
+
+
+def wordpress_search_url(source, query, first, last, *, page=1, per_page=None):
+    """Build one bounded publisher search, separate from a shared archive crawl.
+
+    WordPress searches the publisher's original posts, including their bodies.
+    Its results remain retrieval leads: a search hit does not assert that the
+    name occurs in the returned title/excerpt or establish the person's identity.
+    Body permissions are deliberately not inferred from this public endpoint.
+    """
+    if not supports_wordpress_search(source):
+        raise ValueError('La fuente no declara búsqueda dirigida de WordPress')
+    if not isinstance(query, str) or not query.strip() or len(query) > 1500:
+        raise ValueError('La consulta WordPress requiere entre 1 y 1500 caracteres')
+    if any(ord(char) < 32 for char in query):
+        raise ValueError('La consulta WordPress contiene caracteres de control')
+    if type(page) is not int or not 1 <= page <= 10000:
+        raise ValueError('La página WordPress requiere un entero entre 1 y 10000')
+    per_page = source.get('search_max_records', 10) if per_page is None else per_page
+    if type(per_page) is not int or not 1 <= per_page <= 100:
+        raise ValueError('El límite WordPress requiere un entero entre 1 y 100')
+    first, last = _period_timestamp(first), _period_timestamp(last)
+    if first is None or last is None or first >= last:
+        raise ValueError('La búsqueda WordPress requiere un período UTC válido')
+    base = source.get('api_url') or source.get('url')
+    if not isinstance(base, str) or not allowed_index_url(base, source):
+        raise ValueError('La API WordPress está fuera del alcance autorizado')
+    parts = urlsplit(base)
+    # Preserve explicit endpoint routing (e.g. rest_route) while overriding
+    # request parameters exactly once; duplicate search/date keys are unsafe.
+    args = dict(parse_qsl(parts.query, keep_blank_values=True))
+    args.update(search=query.strip(), per_page=per_page, page=page,
+                orderby='relevance', order='desc',
+                after=(first - timedelta(seconds=1)).strftime('%Y-%m-%dT%H:%M:%SZ'),
+                before=last.strftime('%Y-%m-%dT%H:%M:%SZ'),
+                _fields='id,link,date_gmt,date,title.rendered,excerpt.rendered')
+    return urlunsplit((parts.scheme, parts.netloc, parts.path, urlencode(args), ''))
 
 
 def wordpress_url(source, page, first, last):
@@ -68,7 +137,8 @@ def next_pages(source, payload, parsed):
 
 def _period_timestamp(value):
     try:
-        stamp = (datetime.strptime(value, '%Y%m%d%H%M%S')
+        stamp = (value if isinstance(value, datetime) else
+                 datetime.strptime(value, '%Y%m%d%H%M%S')
                  if isinstance(value, str) and re.fullmatch(r'\d{14}', value)
                  else datetime.fromisoformat(value.replace('Z', '+00:00')))
         return stamp.replace(tzinfo=timezone.utc) if stamp.tzinfo is None else stamp.astimezone(timezone.utc)

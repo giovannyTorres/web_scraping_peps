@@ -92,6 +92,7 @@ class LocalAppTests(unittest.TestCase):
             ('/api/news-search', 'GET', None),
             ('/api/news-search', 'POST', {}),
             ('/api/workflow-finish-download', 'POST', {}),
+            ('/api/workflow-pause-and-analyze-available', 'POST', {}),
         ):
             with self.subTest(path=path):
                 self.assertEqual(403, self.request(path, method, data, token=False)[0])
@@ -503,6 +504,89 @@ class LocalAppTests(unittest.TestCase):
         self.assertTrue(json.loads(body)['matched'])
         self.assertFalse(json.loads(body)['auxiliary_replayed'])
         self.assertEqual(self.request('/api/explanation?id=missing')[0], 404)
+
+
+    def test_pause_and_analyze_waits_for_download_return_and_keeps_pending_queue(self):
+        self.engine.store.import_entities([{'id': 'pause-fixture', 'name': 'Persona Sintética de Pausa'}])
+        self.engine.import_documents([{'url': 'https://fixture.invalid/pause', 'source_kind': 'official',
+            'entity_ids': ['pause-fixture'], 'text': 'Persona Sintética de Pausa inauguró una biblioteca pública.'}])
+        self.authorize_news_source()
+        with self.engine.store.connection() as con:
+            revision = con.execute("SELECT value FROM meta WHERE key='news_identity_revision'").fetchone()[0]
+        job_id = self.engine.store.enqueue('news_feed', {'bank_revision': revision, 'source_id': 'fixture'})
+        with self.engine.store.connection() as con:
+            con.execute("UPDATE jobs SET status='deferred',due=? WHERE id=?", (time.time() + 600, job_id))
+        started, release = threading.Event(), threading.Event()
+        def acquisition(*args, **kwargs):
+            kwargs['progress'](phase='download', completed=1, pending=1, deferred=1,
+                               waiting=True, active_tasks=0, ready=0)
+            started.set()
+            release.wait(5)
+            return {'pending': 1, 'cancelled': self.engine.stop_event.is_set(), 'queue_complete': False}
+        with patch('peps.news.NewsAcquirer.acquire', side_effect=acquisition), \
+                patch.object(self.engine, 'rescore', wraps=self.engine.rescore) as scoring:
+            try:
+                code, body, _ = self.request('/api/news-acquire', 'POST', {'online': True})
+                self.assertEqual(200, code, body)
+                operation_id = json.loads(body)['operation_id']
+                self.assertTrue(started.wait(2))
+                code, body, _ = self.request('/api/workflow-pause-and-analyze-available', 'POST',
+                                             {'operation_id': 'stale-operation'})
+                self.assertEqual(409, code, body)
+                self.assertFalse(self.engine.stop_event.is_set())
+                code, body, _ = self.request('/api/workflow-pause-and-analyze-available', 'POST',
+                                             {'operation_id': operation_id})
+                self.assertEqual(202, code, body)
+                stats = json.loads(self.request('/api/stats')[1])
+                self.assertEqual('pausing', stats['workflow']['activity']['state'])
+                self.assertTrue(stats['operation']['busy'])
+                self.assertTrue(stats['operation']['pause_and_analyze_requested'])
+                self.assertEqual(stats['workflow']['activity'], stats['operation']['activity'])
+                self.assertFalse(stats['workflow']['actions']['analyze']['enabled'])
+                scoring.assert_not_called()
+            finally:
+                release.set()
+            result = self.wait_operation()
+            self.assertEqual('analysis', result['kind'])
+            scoring.assert_called_once()
+        with self.engine.store.connection() as con:
+            self.assertEqual('deferred', con.execute('SELECT status FROM jobs WHERE id=?', (job_id,)).fetchone()[0])
+        stats = json.loads(self.request('/api/stats')[1])
+        self.assertTrue(stats['workflow']['coverage']['accepted_partial'])
+        self.assertTrue(stats['workflow']['analysis_current'])
+        self.assertTrue(self.engine.store.verify_audit()['ok'])
+
+    def test_archived_unrelated_documents_do_not_enable_available_analysis(self):
+        self.engine.store.import_entities([{'id': 'no-body', 'name': 'Persona Sintética sin Texto'}])
+        self.engine.import_documents([{'url': 'https://fixture.invalid/archive', 'source_kind': 'official',
+            'text': 'Un documento conservado que no corresponde a los nombres actuales.'}])
+        self.authorize_news_source()
+        from peps.workflow import GuidedWorkflow
+        from peps.news import NewsAcquirer
+        workflow = GuidedWorkflow(self.engine.store, NewsAcquirer(self.engine).sources)
+        workflow.mark_download('paused')
+        with patch.object(self.engine, 'rescore') as scoring:
+            for endpoint in ('/api/workflow-analyze-available', '/api/workflow-pause-and-analyze-available'):
+                code, body, _ = self.request(endpoint, 'POST', {})
+                self.assertEqual(409, code, body)
+                self.assertIn('textos pertinentes', json.loads(body)['error'])
+            scoring.assert_not_called()
+        self.assertEqual(0, self.engine.store.stats()['scores'])
+
+    def test_task_details_offer_current_bank_scope_without_hiding_historical_tasks(self):
+        self.engine.store.import_entities([{'id': 'scope-fixture', 'name': 'Persona Sintética del Alcance'}])
+        with self.engine.store.connection() as con:
+            revision = con.execute("SELECT value FROM meta WHERE key='news_identity_revision'").fetchone()[0]
+        self.engine.store.enqueue('news_feed', {'bank_revision': revision, 'source_id': 'fixture'})
+        self.engine.store.enqueue('news_feed', {'bank_revision': 'old', 'source_id': 'fixture'})
+        self.engine.store.enqueue('news_feed', {'legacy_without_revision': True})
+        current = json.loads(self.request('/api/news-tasks?scope=current_bank')[1])
+        all_saved = json.loads(self.request('/api/news-tasks?scope=all_saved')[1])
+        self.assertEqual(1, current['total'])
+        self.assertEqual('current_bank', current['scope'])
+        self.assertEqual(str(revision), current['bank_revision'])
+        self.assertEqual(3, all_saved['total'])
+        self.assertEqual(400, self.request('/api/news-tasks?scope=invalid')[0])
 
 
 if __name__ == '__main__':

@@ -232,7 +232,8 @@ function refresh(force=false){
       if(window.pepsWorkflow)window.pepsWorkflow.update(stats);
       for(const key of ['entities','documents','evidence'])$('m-'+key).textContent=stats[key].toLocaleString('es-MX');
       $('m-jobs').textContent=String((stats.jobs.queued||0)+(stats.jobs.deferred||0)+(stats.jobs.running||0));
-      $('operation').textContent=stats.operation.busy?(stats.operation.label||'Procesando…'):'Listo para continuar';
+      const acquisitionPhase=stats.operation.kind==='download'||stats.operation.kind==='pipeline'&&['preparing','download'].includes(stats.operation.phase);
+      $('operation').textContent=acquisitionPhase&&stats.workflow?.activity?.label?stats.workflow.activity.label:stats.operation.busy?(stats.operation.label||'Procesando…'):'Listo para continuar';
       $('mode').textContent=stats.online?'Red autorizada':'Modo cerrado';
       $('jobs').textContent=JSON.stringify(stats.jobs);
       $('errors').textContent=stats.recent_errors.map(e=>`${e.status}: ${e.error}`).join('\n');
@@ -304,7 +305,7 @@ async function loadNews(includeSources=true){
   const articlesKey=JSON.stringify(data.articles||[]);
   if(articlesKey!==renderedNewsArticlesKey){renderedNewsArticlesKey=articlesKey;const articles=$('news-articles');articles.replaceChildren();
     for(const article of data.articles){const row=el('div',undefined,'evidence');row.append(el('strong',article.title||article.canonical_url),el('p',`${article.publisher_id} · ${article.scope==='full_article'?'Cuerpo conservado':'Referencia sin cuerpo'} · ${{fetched:'Conservada',discovered:'Pendiente de texto',failed:'Con error'}[article.status]||article.status}`,'muted'),sourceLink(article.canonical_url));articles.append(row);}
-    if(!data.articles.length)articles.append(el('p','Aún no hay noticias adquiridas.','muted'));
+    if(!data.articles.length)articles.append(el('p','No hay referencias pertinentes para la lista actual. Los documentos de búsquedas anteriores se conservan en el banco.','muted'));
   }
   if(!includeSources)return;
   const container=$('news-sources');container.replaceChildren();

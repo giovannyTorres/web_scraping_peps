@@ -82,7 +82,7 @@ def public_search_url(query, source):
 
 
 def public_queries(entity, config, variants):
-    """A nominal first sweep, then plain-text focus, context and aliases.
+    """A nominal first sweep, then context, plain-text focus and aliases.
 
     Extra words guide discovery without asserting an event or relying on an
     engine's Boolean/date syntax. Identity adds no thematic requests.
@@ -91,14 +91,13 @@ def public_queries(entity, config, variants):
         return []
     primary = _query(variants[0])
     queries = [{'query': primary, 'query_type': 'identity'}]
-    queries.extend({'query': _query(primary + ' ' + term), 'query_type': 'focus',
-                    'focus_term': term} for term in FOCUS_TERMS.get(config.get('preset'), ()))
     context = entity.get('context') or {}
     if config.get('use_context') and isinstance(context, dict):
-        # One secondary contextual request narrows common names without
-        # multiplying a bank by every hint. Keep the broad nominal query and
-        # never present the supplied clue as independent identity evidence.
-        hints = []
+        # One secondary contextual request combines at most one geography and
+        # one supplied role, useful for notaries and other common public names.
+        # Keep the broad nominal query and never present either clue as
+        # independent identity evidence.
+        hints = {'geography': [], 'role': []}
         for key in ('municipality', 'city', 'state', 'role', 'position', 'cargo'):
             values = context.get(key) or []
             for value in values if isinstance(values, list) else [values]:
@@ -107,11 +106,25 @@ def public_queries(entity, config, variants):
                 if isinstance(value, str):
                     hint = ' '.join(re.sub(r'[\x00-\x1f\x7f]', ' ', value).split())
                     if hint and len(primary + ' ' + hint) <= 500:
-                        hints.append(hint)
-        if hints:
-            text = primary + ' ' + hints[0]
+                        category = 'geography' if key in ('municipality', 'city', 'state') else 'role'
+                        if hint.casefold() not in {value.casefold() for value in hints[category]}:
+                            hints[category].append(hint)
+        selected = []
+        for category in ('geography', 'role'):
+            for hint in hints[category]:
+                if hint.casefold() in primary.casefold() or hint.casefold() in {value.casefold() for value in selected}:
+                    continue
+                if len(' '.join([primary, *selected, hint])) <= 500:
+                    selected.append(hint)
+                    break
+        if selected:
+            context_hint = ' '.join(selected)
+            text = primary + ' ' + context_hint
             if text.casefold() not in {query['query'].casefold() for query in queries}:
-                queries.append({'query': _query(text), 'query_type': 'context', 'context_hint': hints[0]})
+                queries.append({'query': _query(text), 'query_type': 'context',
+                                'context_hint': context_hint, 'context_hints': selected})
+    queries.extend({'query': _query(primary + ' ' + term), 'query_type': 'focus',
+                    'focus_term': term} for term in FOCUS_TERMS.get(config.get('preset'), ()))
     company = _fold(entity.get('kind', 'person')) in COMPANY_KINDS
     for name in variants[1:4]:
         # Short personal aliases remain contextual. The canonical full name is

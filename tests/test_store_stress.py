@@ -3,6 +3,7 @@ from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
 import json
 from pathlib import Path
+from queue import Empty, Queue
 import sqlite3
 import sys
 import tempfile
@@ -198,21 +199,63 @@ class StoreStressTests(unittest.TestCase):
             retried = list(pool.map(self.store.retry_news_jobs, groups * 3))
         self.assertEqual(sum(row['retried'] for row in retried), count)
 
+        progress = Queue()
+        stop = threading.Event()
+        progress_lock = threading.Lock()
+        durable_finishes = [0]
+
         def drain(_):
             claimed = []
-            while True:
+            while not stop.is_set():
                 job = self.store.claim(kind_prefix='news_')
                 if job is None:
                     return claimed
                 claimed.append(job['id'])
                 self.assertTrue(self.store.finish(job))
+                # Notify only after the durable finish transaction commits.
+                with progress_lock:
+                    durable_finishes[0] += 1
+                progress.put(None)
+            return claimed
 
         with self.store.connection() as anchor, ThreadPoolExecutor(max_workers=8) as pool:
             anchor.execute('SELECT count(*) FROM jobs').fetchone()
             drains = [pool.submit(drain, i) for i in range(8)]
             retries = [pool.submit(self.store.retry_news_jobs, group) for group in groups * 2]
-            delivered = [value for worker in drains for value in worker.result(timeout=30)]
-            self.assertTrue(all(retry.result(timeout=5)['retried'] == 0 for retry in retries))
+            futures = drains + retries
+            for future in futures:
+                future.add_done_callback(lambda _: progress.put(None))
+
+            def diagnostics():
+                with progress_lock:
+                    completed = durable_finishes[0]
+                done = [future for future in futures if future.done() and not future.cancelled()]
+                errors = [repr(future.exception()) for future in done if future.exception() is not None]
+                return f'{completed} durable finishes; {len(done)}/{len(futures)} tasks finished; errors={errors}'
+
+            # Each SQLite write can legitimately wait 30 seconds. Requiring
+            # an entire 270-job drain to finish within that same deadline
+            # confuses disk throughput with a stalled worker on Windows.
+            # Keep the full workload, detect missing forward progress and
+            # bound the entire test independently; this is a correctness test,
+            # not a filesystem-speed assertion.
+            deadline = time.monotonic() + 180
+            try:
+                while any(not future.done() for future in futures):
+                    remaining = deadline - time.monotonic()
+                    self.assertGreater(remaining, 0, 'Concurrent queue exceeded its test budget: ' + diagnostics())
+                    try:
+                        progress.get(timeout=min(60, remaining))
+                    except Empty:
+                        reason = ('Concurrent queue exceeded its test budget: ' if time.monotonic() >= deadline
+                                  else 'Concurrent queue made no progress for 60 seconds: ')
+                        self.fail(reason + diagnostics())
+                delivered = [value for worker in drains for value in worker.result()]
+                self.assertTrue(all(retry.result()['retried'] == 0 for retry in retries))
+            finally:
+                stop.set()
+                for future in futures:
+                    future.cancel()
         self.assertEqual(len(delivered), count - delayed)
         self.assertEqual(len(set(delivered)), count - delayed)
         with self.store.connection() as con:

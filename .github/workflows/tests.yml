@@ -20,9 +20,11 @@ jobs:
       - run: python scripts/test_download_recovery_ui.py
       - run: python scripts/test_acquisition_ui.py
       - run: python scripts/test_shared_acquisition_ui.py
+      - run: python scripts/test_search_clarity_ui.py
       - run: python scripts/benchmark_shared_discovery.py --output runtime/shared-discovery-validation/benchmark.json
       - run: python scripts/benchmark_mass_acquisition.py --entities 300 --seconds 120 --output runtime/mass-acquisition-validation/benchmark.json
       - run: python scripts/benchmark_ui_polling.py --tab sources --duration 6 --assert-optimized
+      - run: python scripts/benchmark_search_state.py --output runtime/search-clarity/search-state-benchmark.json
       - run: python scripts/test_import_ui.py
       - run: python scripts/test_explainability_ui.py
       - run: python scripts/stress_pipeline.py --profile quick --output runtime/stress-ci/stress.json
@@ -36,9 +38,11 @@ jobs:
             runtime/download-recovery-ui-validation/
             runtime/acquisition-ui-validation/
             runtime/shared-acquisition-ui-validation/
+            runtime/search-clarity-ui-validation/
             runtime/shared-discovery-validation/
             runtime/mass-acquisition-validation/
             runtime/ui-polling-validation/
+            runtime/search-clarity/search-state-benchmark.json
             runtime/import-ui-validation/
             runtime/ui-validation/
             runtime/stress-ci/

@@ -1,13 +1,21 @@
 # Descubrimiento compartido para listas grandes
 
+Para investigar una lista de personas, especialmente notarios, WebScope 2.9.3
+recomienda empezar por **Búsqueda dirigida por entidad**: nombres canónicos antes
+de contexto y variantes. **Índice de medios · complementario** permite revisar
+archivos concretos, pero no reemplaza la búsqueda por nombre. Cientos de páginas
+sin coincidencias no acreditan cobertura de la lista. Consulte la
+[guía de adquisición masiva](ADQUISICION_MASIVA.md) y la
+[recuperación de búsquedas anteriores](RECUPERACION_DESCARGA.md).
+
 La estrategia adicional **Web abierta y fuentes públicas** incorpora Mwmbl,
 DuckDuckGo HTML/Lite y enlaces sociales públicos sin claves de desarrollador.
 Sus formatos, comprobaciones reales y límites se describen en
 [búsqueda web abierta](DESCUBRIMIENTO_PUBLICO.md). Este documento explica el
 recorrido compartido por los archivos de los editores.
 
-La mejora principal para una lista de 300 entidades consiste en **compartir el
-descubrimiento entre todos los nombres**: descargar una página pequeña de
+El recorrido compartido permite **reutilizar un archivo entre todos los nombres**:
+descargar una página pequeña de
 metadatos del editor, cotejarla localmente contra el banco completo y solicitar
 el texto únicamente de los candidatos pertinentes. Esto reduce las peticiones
 sin convertir cada persona en una consulta de red independiente.
@@ -90,9 +98,9 @@ archivo histórico. La evidencia compacta conserva URLs, parámetros, fechas,
 cabeceras, hashes y verificaciones en
 [shared_discovery_research.json](benchmarks/shared_discovery_research.json).
 
-## Usar «Índice compartido (listas grandes)»
+## Usar el índice de medios como complemento
 
-En **Preparar fuentes**, seleccione **Índice compartido (listas grandes)**
+En **Preparar fuentes**, seleccione **Índice de medios · complementario**
 (`strategy: shared`), revise el rango de fechas y el plan visible y guarde la
 configuración antes de iniciar la descarga.
 

@@ -53,7 +53,7 @@ class DisabledCatalogueUpgradeTests(unittest.TestCase):
         connection.close()
         return result
 
-    def test_http_partial_close_recovers_235_articles_64_jobs_when_new_search_plan_is_empty(self):
+    def test_http_partial_close_preserves_235_metadata_references_without_enabling_empty_analysis(self):
         with self.engine.store.connection() as con:
             jobs_before = [dict(row) for row in con.execute('SELECT * FROM jobs ORDER BY id')]
         server, token = create_server(self.engine)
@@ -74,9 +74,20 @@ class DisabledCatalogueUpgradeTests(unittest.TestCase):
                                 for field in ('enabled', 'terms_approved', 'download_articles', 'article_terms_approved')))
             code, workflow = self.request(server, token, '/api/workflow-finish-download', {})
             self.assertEqual(code, 200, workflow)
-            self.assertTrue(workflow['actions']['analyze']['enabled'])
+            self.assertFalse(workflow['actions']['analyze']['enabled'])
+            self.assertFalse(workflow['actions']['analyze_available']['enabled'])
+            self.assertIn('textos pertinentes', workflow['actions']['analyze']['reason'])
+            self.assertEqual(workflow['activity']['material']['archived_articles'], 235)
+            self.assertEqual(workflow['activity']['material']['relevant_articles'], 0)
+            self.assertEqual(workflow['activity']['material']['analyzable_documents'], 0)
+            self.assertTrue(workflow['coverage']['closed_partial'])
             self.assertEqual(workflow['coverage']['limitations']['articles'], 235)
             self.assertEqual(workflow['coverage']['limitations']['pending_downloads'], 64)
+            for endpoint in ('/api/workflow-analyze', '/api/workflow-analyze-available'):
+                code, response = self.request(server, token, endpoint, {})
+                self.assertEqual(code, 409, response)
+                self.assertIn('textos pertinentes', response['error'])
+            self.assertEqual(self.engine.store.stats()['scores'], 0)
             with self.engine.store.connection() as con:
                 self.assertEqual(jobs_before, [dict(row) for row in con.execute('SELECT * FROM jobs ORDER BY id')])
                 self.assertEqual(con.execute('SELECT count(*) FROM news_articles').fetchone()[0], 235)
@@ -120,7 +131,11 @@ class DisabledCatalogueUpgradeTests(unittest.TestCase):
         self.assertFalse(snapshot['actions']['finish_download']['enabled'])
         with self.engine.store.connection() as con:
             con.execute('UPDATE jobs SET lease_until=? WHERE id=?', (time.time() - 1, job_id))
-        self.assertTrue(self.workflow.finish_download()['actions']['analyze']['enabled'])
+        closed = self.workflow.finish_download()
+        self.assertTrue(closed['coverage']['closed_partial'])
+        self.assertFalse(closed['actions']['analyze']['enabled'])
+        self.assertEqual(closed['activity']['material']['analyzable_documents'], 0)
+        self.assertEqual(self.engine.store.stats()['scores'], 0)
 
 
 if __name__ == '__main__':

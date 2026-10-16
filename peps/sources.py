@@ -6,7 +6,7 @@ import re
 from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
 from html.parser import HTMLParser
-from urllib.parse import quote, urlencode, urljoin, urlsplit
+from urllib.parse import parse_qs, quote, urlencode, urljoin, urlsplit
 from xml.etree import ElementTree
 
 
@@ -155,6 +155,53 @@ def parse_results(fetch_result: dict, source: dict) -> list[dict]:
         candidates = parse_lemmy_results(fetch_result, source)
     elif kind in PUBLIC_SEARCH_KINDS:
         candidates = parse_public_results(fetch_result, source)
+    elif kind == 'wordpress_api':
+        from .shared_crawl import allowed_index_url, supports_wordpress_search
+        from .shared_discovery import parse_wordpress_posts, parse_wordpress_search
+        response_parts = urlsplit(base)
+        params = parse_qs(response_parts.query, keep_blank_values=True, max_num_fields=32)
+        directed = 'search' in params
+        if directed and not supports_wordpress_search(source):
+            raise ValueError('La fuente no declara búsqueda dirigida de WordPress')
+        if directed:
+            declared = urlsplit(source.get('api_url') or source.get('url'))
+            if (not allowed_index_url(base, source)
+                    or (response_parts.scheme, response_parts.netloc, response_parts.path.rstrip('/'))
+                    != (declared.scheme, declared.netloc, declared.path.rstrip('/'))
+                    or response_parts.fragment):
+                raise ValueError('La respuesta de búsqueda WordPress cambió de API autorizada')
+
+        def request_integer(key, default, maximum):
+            values = params.get(key, [str(default)])
+            if len(values) != 1 or not values[0].isascii() or not values[0].isdigit():
+                raise ValueError('Parámetro WordPress inválido: ' + key)
+            value = int(values[0])
+            if not 1 <= value <= maximum:
+                raise ValueError('Parámetro WordPress fuera de límite: ' + key)
+            return value
+
+        page = request_integer('page', 1, 10000)
+        per_page = request_integer('per_page', 10 if directed else 100, 100)
+        retained_limit = min(limit, per_page)
+        if directed:
+            retained_limit = min(retained_limit, max(1, min(100, int(source.get('search_max_records', 10)))))
+        options = dict(headers=fetch_result.get('pagination_headers'), page=page,
+                       per_page=per_page, max_items=retained_limit,
+                       max_bytes=min(8_000_000, int(source.get('max_bytes', 2_000_000))))
+        if directed:
+            if len(params['search']) != 1:
+                raise ValueError('La búsqueda WordPress contiene consultas duplicadas')
+            parsed = parse_wordpress_search(body, query=params['search'][0], **options)
+        else:
+            parsed = parse_wordpress_posts(body, **options)
+        pagination = parsed['pagination']
+        fetch_result['parse_metadata'] = {
+            'observed_entries': pagination['observed_items'],
+            'truncated': pagination['truncated'], 'pagination': pagination,
+            'directed_publisher_search': directed,
+        }
+        candidates = [dict(record, source_kind=source.get('document_kind', 'news'),
+                           source_id=source_id) for record in parsed['records']]
     elif kind == "gdelt" or (source_id == "gdelt" and "kind" not in source):
         try:
             payload = json.loads(body)

@@ -289,10 +289,17 @@ class NewsRuntimeTests(unittest.TestCase):
         class Fetcher(NoNetworkFetcher):
             def fetch(self, url, _source):
                 return dict(status='ok', url=url, body=body)
-        with patch('peps.collector.SafeFetcher', Fetcher):
-            first = self.news.acquire(queue=False, workers=1, seconds=2, max_articles=2)
-        self.assertEqual(first['body_queued'], 1)
-        self.assertEqual(first['relevant_records'], 2)
+        # Exercise duplicate discovery explicitly. Acquisition now prioritizes
+        # a ready original over the second feed, so this test must not depend
+        # on that former scheduling order to establish a Retry-After receipt.
+        from peps.relevance import RelevanceIndex
+        receipts = []
+        for _ in range(2):
+            feed_job = self.store.claim(kind_prefix='news_feed')
+            receipts.append(self.news.execute(feed_job, Fetcher(),
+                relevance=RelevanceIndex(self.store.iter_entities()))['discovery_metadata'])
+        self.assertEqual(sum(receipt['body_budget']['queued'] for receipt in receipts), 1)
+        self.assertEqual(sum(receipt['candidate_filter']['retained_records'] for receipt in receipts), 2)
         job = self.store.claim(kind_prefix='news_article')
         due = time.time() + 3600
         self.store.finish(job, 'deferred', 'HTTP 429: Retry-After', due)

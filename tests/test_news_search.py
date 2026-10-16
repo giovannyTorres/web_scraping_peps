@@ -2,6 +2,7 @@
 from copy import deepcopy
 from datetime import datetime, timezone
 import json
+from collections import Counter
 from pathlib import Path
 import tempfile
 import unittest
@@ -25,6 +26,150 @@ GDELT = {'id': 'index', 'kind': 'gdelt', 'base_url': 'https://api.gdeltproject.o
 
 
 class SearchPlanTests(unittest.TestCase):
+    def test_652_names_start_with_nominal_search_without_scanning_unrelated_archives(self):
+        """An enabled archive must not consume a nominal search's job budget."""
+        entities = [{'id': str(index), 'name': f'Persona Sintética Notarial {index}',
+                     'context': {'state': 'Ciudad de México', 'role': 'notario público'}}
+                    for index in range(652)]
+        archive = {'id': 'archive', 'kind': 'wordpress_api',
+                   'url': 'https://publisher.invalid/wp-json/wp/v2/posts',
+                   'enabled': True, 'terms_approved': True}
+        web = {'id': 'web', 'kind': 'mwmbl', 'url': 'https://mwmbl.org/api/v2/search/',
+               'enabled': True, 'terms_approved': True}
+        second = dict(web, id='second', kind='duckduckgo_html',
+                      url='https://html.duckduckgo.com/html/')
+        settings = {'strategy': 'targeted', 'preset': 'adverse', 'execution_mode': 'quick',
+                    'max_queries': 652, 'start': '2016-01-01', 'end': '2026-10-15'}
+        sources = [archive, WP, web, second]
+        original = deepcopy(sources)
+        plan = build_search_plan(entities, sources, settings, now=NOW)
+        self.assertEqual(plan['entities_planned'], 652)
+        self.assertEqual(plan['query_count'], 652)
+        self.assertNotIn('shared_discovery', plan)
+        self.assertTrue(all(query['query_type'] == 'identity' and query['kind'] == 'news_query'
+                            for query in plan['queries']))
+        self.assertEqual({query['source_id'] for query in plan['queries']}, {'web', 'second', WP['id']})
+        self.assertEqual([query['source_id'] for query in plan['queries'][:3]], ['web', 'second', WP['id']])
+        self.assertEqual([query['entity_ids'] for query in plan['queries']],
+                         [[str(index)] for index in range(652)])
+        self.assertEqual([query['query'].strip('"') for query in plan['queries']],
+                         [entity['name'] for entity in entities])
+        self.assertEqual(sources, original)
+        self.assertEqual(settings['preset'], 'adverse')
+        self.assertTrue(any('índice general omitido' in warning for warning in plan['warnings']))
+
+    def test_652_name_budget_does_not_starve_direct_publishers_behind_public_provider_combinations(self):
+        root = Path(__file__).resolve().parents[1]
+        defaults = json.loads((root / 'peps/defaults/news_sources.json').read_text(encoding='utf-8'))
+        identifiers = {'mwmbl_web', 'duckduckgo_web', 'contralinea_index',
+                       'aristegui_index', 'desinformemonos_index'}
+        sources = [dict(source, enabled=True, terms_approved=True) for source in defaults['sources']
+                   if source['id'] in identifiers]
+        entities = [{'id': str(index), 'name': f'Persona Sintética Notarial {index}',
+                     'context': {'state': 'Ciudad de México', 'role': 'notario público'}}
+                    for index in range(652)]
+        settings = {'strategy': 'targeted', 'preset': 'identity', 'execution_mode': 'quick',
+                    'max_queries': 1000, 'start': '2016-01-01', 'end': '2026-10-15'}
+        plan = build_search_plan(entities, sources, settings, now=NOW)
+        self.assertEqual(plan['query_count'], 1000)
+        first = plan['queries'][:652]
+        self.assertEqual([query['entity_ids'] for query in first],
+                         [[str(index)] for index in range(652)])
+        self.assertTrue(all(query['query_type'] == 'identity' for query in plan['queries']))
+        self.assertEqual(Counter(query['source_id'] for query in first),
+                         {'mwmbl_web': 131, 'duckduckgo_web': 131, 'contralinea_index': 130,
+                          'aristegui_index': 130, 'desinformemonos_index': 130})
+        publisher_ids = {'contralinea_index', 'aristegui_index', 'desinformemonos_index'}
+        self.assertEqual({query['source_id'] for query in first[:5]}, identifiers)
+        self.assertGreaterEqual(sum(query['source_id'] in publisher_ids for query in plan['queries']), 390)
+        # Changing the cap cannot change assignments already published. The
+        # schedule is determined without observing HTTP responses or blocks.
+        bounded = build_search_plan(entities, sources, dict(settings, max_queries=652), now=NOW)
+        self.assertEqual(bounded['queries'], first)
+        self.assertNotIn('shared_discovery', plan)
+
+    def test_only_explicit_shared_strategy_walks_an_archive_and_preserves_saved_choices(self):
+        archive = {'id': 'archive', 'kind': 'wordpress_api',
+                   'url': 'https://publisher.invalid/wp-json/wp/v2/posts',
+                   'enabled': True, 'terms_approved': True, 'download_articles': False}
+        settings = {'strategy': 'targeted', 'preset': 'adverse', 'execution_mode': 'extended',
+                    'session_seconds': 3600, 'start': '2020-01-01', 'end': '2022-12-31'}
+        directed = build_search_plan([ENTITY], [archive], settings, now=NOW)
+        self.assertEqual(directed['query_count'], 0)
+        self.assertEqual(directed['config']['strategy'], 'targeted')
+        self.assertTrue(any('buscador web público' in warning for warning in directed['warnings']))
+        explicit = dict(settings, strategy='shared')
+        shared = build_search_plan([ENTITY], [archive], explicit, now=NOW)
+        self.assertEqual(shared['query_count'], 3)
+        self.assertTrue(all(query['shared_index'] for query in shared['queries']))
+        self.assertEqual(shared['config'], normalize_search_config(explicit, NOW))
+        self.assertEqual(shared['execution']['session_seconds'], 3600)
+        self.assertFalse(archive['download_articles'])
+
+    def test_old_approved_publisher_profiles_search_652_names_in_one_interval_without_policy_changes(self):
+        root = Path(__file__).resolve().parents[1]
+        defaults = json.loads((root / 'peps/defaults/news_sources.json').read_text(encoding='utf-8'))
+        sources = [deepcopy(source) for source in defaults['sources'] if source['kind'] == 'wordpress_api']
+        self.assertEqual(len(sources), 3)
+        for source in sources:
+            source.pop('search_kind', None)
+            source.update(enabled=True, terms_approved=True, search_max_records=50)
+        original = deepcopy(sources)
+        entities = [{'id': str(index), 'name': f'Persona Sintética Notarial {index}',
+                     'context': {'state': 'Ciudad de México', 'role': 'notario público'}}
+                    for index in range(652)]
+        settings = {'strategy': 'targeted', 'preset': 'identity', 'execution_mode': 'quick',
+                    'max_queries': 652, 'start': '2016-01-01', 'end': '2026-10-15'}
+        plan = build_search_plan(entities, sources, settings, now=NOW)
+        self.assertEqual(plan['entities_planned'], 652)
+        self.assertEqual(plan['query_count'], 652)
+        self.assertNotIn('shared_discovery', plan)
+        self.assertEqual([query['entity_ids'] for query in plan['queries']],
+                         [[str(index)] for index in range(652)])
+        self.assertTrue(all(source['windows'] == 1 and source['window_unit'] == 'publisher_search_interval'
+                            for source in plan['sources']))
+        for query, entity in zip(plan['queries'], entities):
+            self.assertEqual(query['query_type'], 'identity')
+            self.assertEqual(query['result_limit'], 10)
+            args = parse_qs(urlsplit(query['url']).query)
+            self.assertEqual(args['search'], ['"' + entity['name'] + '"'])
+            self.assertEqual(args['per_page'], ['10'])
+            self.assertEqual(args['page'], ['1'])
+            self.assertEqual(args['after'], ['2015-12-31T23:59:59Z'])
+            self.assertEqual(args['before'], ['2026-10-16T00:00:00Z'])
+        self.assertEqual(sources, original)
+        # Explicit archive searches keep their original yearly sampling and
+        # approved policy; planning the directed route does not replace them.
+        shared = build_search_plan(entities, sources, dict(settings, strategy='shared'), now=NOW)
+        self.assertEqual(shared['query_count'], 33)
+        self.assertTrue(all(query['shared_index'] for query in shared['queries']))
+        self.assertEqual(sources, original)
+
+    def test_publisher_context_is_one_supplied_geography_and_role_after_the_nominal_query(self):
+        entity = dict(ENTITY, context={'state': 'Ciudad de México', 'role': 'notario público'})
+        queries = wordpress_queries(entity, normalize_search_config({'preset': 'adverse',
+                                    'include_aliases': False}, NOW))
+        self.assertEqual([query['query_type'] for query in queries[:3]], ['identity', 'context', 'focus'])
+        self.assertEqual(queries[0]['query'], '"' + ENTITY['name'] + '"')
+        self.assertEqual(queries[1]['query'], '"' + ENTITY['name'] + '" "Ciudad de México" "notario público"')
+        self.assertNotIn('corrupción', queries[1]['query'])
+        self.assertEqual(len([query for query in queries if query['query_type'] == 'context']), 1)
+
+    def test_adverse_profile_refines_publisher_search_after_unrestricted_nominal_queries(self):
+        entities = [dict(ENTITY, id=str(index), name=f'Persona Sintética Notarial {index}')
+                    for index in range(4)]
+        settings = {'preset': 'adverse', 'use_context': False, 'include_aliases': False,
+                    'start': '2026-10-01', 'end': '2026-10-15', 'window': 'year'}
+        for source in (WP, dict(GDELT, batch_size=1)):
+            with self.subTest(source=source['id']):
+                plan = build_search_plan(entities, [source], settings, now=NOW)
+                first = plan['queries'][:len(entities)]
+                self.assertTrue(all(query['query_type'] == 'identity' for query in first))
+                self.assertEqual([query['query'] for query in first],
+                                 ['"' + entity['name'] + '"' for entity in entities])
+                self.assertTrue(any(query['query_type'] == 'focus' and 'corrupción' in query['query']
+                                    for query in plan['queries'][len(entities):]))
+
     def test_quick_auto_yearly_first_sweep_removes_twelvefold_queue_for_8_and_300_entities(self):
         for count in (8, 300):
             with self.subTest(entities=count):
@@ -149,10 +294,10 @@ class SearchPlanTests(unittest.TestCase):
         self.assertEqual(merged['search']['execution_mode'], 'extended')
         self.assertEqual(merged['search']['preset'], 'identity')
 
-    def test_new_install_defaults_are_quick_adverse_without_source_permissions(self):
+    def test_new_install_defaults_are_quick_nominal_without_source_permissions(self):
         news = json.loads((Path(__file__).resolve().parents[1] / 'peps/defaults/news_sources.json').read_text(encoding='utf-8'))
         settings = normalize_search_config(news['search'], NOW)
-        self.assertEqual((settings['execution_mode'], settings['session_seconds'], settings['preset']), ('quick', 120, 'adverse'))
+        self.assertEqual((settings['execution_mode'], settings['session_seconds'], settings['preset']), ('quick', 120, 'identity'))
         self.assertTrue(all(source.get('enabled') is False and source.get('terms_approved') is False for source in news['sources']))
         for invalid in ({'execution_mode': 'imaginary'}, {'execution_mode': 'quick', 'session_seconds': 900},
                         {'execution_mode': 'quick', 'session_seconds': True}, {'execution_mode': 'extended', 'session_seconds': 86400}):
@@ -246,7 +391,11 @@ class SearchPlanTests(unittest.TestCase):
                 maximum = max(maximum, depth)
             self.assertLessEqual(maximum, 1)
             self.assertTrue(all('"' + name + '"' in query['query'] for name in query['names']))
-            self.assertTrue(any(term in query['query'] for term in ('corrupción', 'fraude', 'sanción', 'lavado de dinero')))
+            if query['query_type'] == 'identity':
+                self.assertFalse(any(term in query['query'] for term in ('corrupción', 'fraude', 'sanción', 'lavado de dinero')))
+            else:
+                self.assertEqual(query['query_type'], 'focus')
+                self.assertTrue(any(term in query['query'] for term in ('corrupción', 'fraude', 'sanción', 'lavado de dinero')))
         self.assertIn('no garantiza', plan['execution']['scope_note'])
 
     def test_both_modes_batch_first_sweep_without_claiming_execution(self):

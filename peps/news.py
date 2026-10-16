@@ -557,6 +557,7 @@ class NewsAcquirer:
         return normalize_search_config(self.config().get('search'))
 
     def set_search_config(self, settings):
+        from .engine import _write_config_atomic
         from .news_search import normalize_search_config
         if not isinstance(settings, dict):
             raise ValueError('La búsqueda requiere un objeto de configuración')
@@ -565,13 +566,7 @@ class NewsAcquirer:
         config['search'] = normalize_search_config({**current, **settings})
         if config['search'] == current:
             return current
-        with tempfile.NamedTemporaryFile(mode='w', encoding='utf-8', dir=self.config_path.parent, delete=False) as output:
-            temporary = Path(output.name)
-            json.dump(config, output, ensure_ascii=False, indent=2)
-        try:
-            os.replace(temporary, self.config_path)
-        finally:
-            temporary.unlink(missing_ok=True)
+        _write_config_atomic(self.config_path, config)
         self.store.audit('news_search_configured', {'config_hash': digest(canonical(config['search']))})
         return config['search']
 
@@ -590,6 +585,7 @@ class NewsAcquirer:
             return deepcopy(summary)
 
     def set_source(self, source_id, enabled, terms_approved, download_articles=False, body_terms_approved=False):
+        from .engine import _write_config_atomic
         config = self.config()
         source = next((s for s in config['sources'] if s['id'] == source_id), None)
         if source is None:
@@ -598,7 +594,7 @@ class NewsAcquirer:
             raise ValueError('Esta fuente sólo descubre enlaces; autoriza el editor de destino para conservar cuerpos.')
         source.update(enabled=bool(enabled), terms_approved=bool(terms_approved),
                       download_articles=bool(download_articles), article_terms_approved=bool(body_terms_approved))
-        self.config_path.write_text(json.dumps(config, ensure_ascii=False, indent=2), encoding='utf-8')
+        _write_config_atomic(self.config_path, config)
         self.store.audit('news_source_configured', {'id': source_id, 'config_hash': digest(canonical(source))})
 
     def queue(self, window=None, start=None, end=None, *, cache_mode='reuse', deadline=None):
@@ -792,6 +788,16 @@ class NewsAcquirer:
         # an optimization, not a cap on the metadata that can retrieve a lead.
         seen, seen_bytes = OrderedDict(), 0
         with (nullcontext(connection) if connection is not None else self.store.connection()) as con:
+            original = con.execute("SELECT d.id,d.title,d.text FROM news_articles n JOIN documents d "
+                                   "ON d.id=n.document_id WHERE n.id=? AND n.scope='full_article'",
+                                   (row['id'],)).fetchone()
+            if original is not None:
+                check()
+                body_candidate = relevance.rank(original['title'], original['text'])
+                identities.update(body_candidate['entity_ids'])
+                if body_candidate['rank'] > candidate['rank']:
+                    candidate = dict(body_candidate, match_scope='full_article',
+                                     original_document_id=original['id'])
             cursor = con.execute('SELECT details FROM news_observations WHERE article_id=? '
                                  'ORDER BY retrieved_at DESC,id DESC', (row['id'],))
             while observations := cursor.fetchmany(32):
@@ -822,6 +828,95 @@ class NewsAcquirer:
         candidate['relevant'] = bool(identities)
         return candidate
 
+    def _publisher_phrase_ids(self, source, query, identifiers, connection):
+        """Validate a canonical exact-name query against the current bank.
+
+        A publisher search is only a reason to read a bounded original. It
+        never becomes a name match, a bank alias, an identity or a score.
+        """
+        from .news_search import _phrase
+        from .shared_crawl import supports_wordpress_search
+        if (not supports_wordpress_search(source) or not isinstance(query, str)
+                or not re.fullmatch(r'"[^"\r\n]+"', query)
+                or not isinstance(identifiers, list) or len(identifiers) > 10000):
+            return []
+        valid = []
+        for identifier in dict.fromkeys(str(value) for value in identifiers):
+            entity = connection.execute('SELECT name FROM entities WHERE id=?', (identifier,)).fetchone()
+            if entity is not None and '"' + _phrase(entity['name']) + '"' == query:
+                valid.append(identifier)
+        return valid
+
+    def _publisher_phrase_lead(self, record, source, payload, result):
+        """Create immutable, source-backed retrieval provenance, not relevance."""
+        metadata = record.get('metadata') or {}
+        query = payload.get('query')
+        content_hash = result.get('sha256')
+        if (payload.get('query_type') != 'identity'
+                or metadata.get('discovery_kind') != 'wordpress_rest_search'
+                or metadata.get('publisher_query_match') is not True
+                or metadata.get('publisher_search_query') != query
+                or result.get('parse_metadata', {}).get('directed_publisher_search') is not True
+                or not isinstance(content_hash, str) or not re.fullmatch(r'[0-9a-f]{64}', content_hash)):
+            return None
+        with self.store.connection() as con:
+            identifiers = self._publisher_phrase_ids(source, query, payload.get('entity_ids'), con)
+            revision = con.execute("SELECT value FROM meta WHERE key='news_identity_revision'").fetchone()[0]
+        if not identifiers:
+            return None
+        return {'version': 1, 'source_id': source['id'], 'query': query,
+                'entity_ids': identifiers, 'bank_revision': str(revision),
+                'api_url': source.get('api_url') or source.get('url'),
+                'discovery_url': result.get('final_url') or result.get('url') or payload.get('url'),
+                'response_sha256': content_hash, 'identity_verified': False,
+                'score_effect': 'none', 'metadata_name_match': False}
+
+    def _stored_publisher_phrase_ids(self, article_id, source, connection=None, *, should_stop=None,
+                                    discovery_sources=None):
+        """Recheck preserved exact-query leads; body job flags are not trusted."""
+        from .shared_crawl import supports_wordpress_search
+        origins = {item['id']: item for item in (self.sources() if discovery_sources is None else discovery_sources)
+                   if item.get('enabled') and item.get('terms_approved') and supports_wordpress_search(item)}
+        if not origins:
+            return []
+        identifiers = set()
+        with (nullcontext(connection) if connection is not None else self.store.connection()) as con:
+            article = con.execute('SELECT canonical_url FROM news_articles WHERE id=?', (article_id,)).fetchone()
+            if article is None or urlsplit(article['canonical_url']).hostname not in (
+                    source.get('article_allowed_hosts') or source.get('allowed_hosts', [])):
+                return []
+            cursor = con.execute('SELECT source_id,discovery_url,discovery_hash,details FROM news_observations '
+                                 'WHERE article_id=?', (article_id,))
+            while observations := cursor.fetchmany(32):
+                for observation in observations:
+                    if should_stop is not None and should_stop():
+                        raise _MetadataScanStopped()
+                    origin = origins.get(observation['source_id'])
+                    if origin is None:
+                        continue
+                    try:
+                        detail = json.loads(observation['details'])
+                    except (TypeError, ValueError):
+                        continue
+                    if not isinstance(detail, dict):
+                        continue
+                    lead, metadata = detail.get('publisher_phrase_lead'), detail.get('discovery_metadata')
+                    if not isinstance(lead, dict) or not isinstance(metadata, dict):
+                        continue
+                    if (lead.get('version') != 1 or lead.get('source_id') != origin['id']
+                            or lead.get('api_url') != (origin.get('api_url') or origin.get('url'))
+                            or lead.get('response_sha256') != observation['discovery_hash']
+                            or lead.get('discovery_url') != observation['discovery_url']
+                            or metadata.get('discovery_kind') != 'wordpress_rest_search'
+                            or metadata.get('publisher_query_match') is not True
+                            or metadata.get('publisher_search_query') != lead.get('query')):
+                        continue
+                    if (not isinstance(lead.get('response_sha256'), str)
+                            or not re.fullmatch(r'[0-9a-f]{64}', lead['response_sha256'])):
+                        continue
+                    identifiers.update(self._publisher_phrase_ids(origin, lead.get('query'), lead.get('entity_ids'), con))
+        return sorted(identifiers)
+
     def _replace_waiting_body(self, con, article_id):
         jobs = con.execute("SELECT id,status,attempts FROM jobs WHERE kind='news_article' "
                            "AND json_extract(CASE WHEN json_valid(payload) THEN payload ELSE '{}' END,'$.article_id')=? "
@@ -846,7 +941,7 @@ class NewsAcquirer:
         return key
 
     def _observe(self, record, source, discovery_url, result, resolver, download_all=False, connection=None, all_sources=None,
-                 candidate=None, body_budget=None):
+                 candidate=None, body_budget=None, publisher_lead=None):
         try:
             url = canonical_url(record['url'])
         except (ValueError, KeyError):
@@ -868,6 +963,8 @@ class NewsAcquirer:
             details['retrieval_relevance'] = candidate
         if record.get('metadata'):
             details['discovery_metadata'] = record['metadata']
+        if publisher_lead is not None:
+            details['publisher_phrase_lead'] = publisher_lead
         observation_id = digest(canonical([article_id, source['id'], discovery_url, result.get('sha256'), details]))
         with (nullcontext(connection) if connection is not None else self.store.connection()) as con:
             if not con.in_transaction:
@@ -888,9 +985,11 @@ class NewsAcquirer:
             session.note(duplicate_candidates=1)
         candidates = (resolver.resolve(summary, title=title, metadata={'published_at': record.get('published_at')})
                       if candidate is None and resolver else [])
-        candidate_count = len(candidate['entity_ids']) if candidate is not None else len(candidates)
+        retrieval_ids = sorted(set((candidate['entity_ids'] if candidate is not None else [r['entity_id'] for r in candidates])
+                                  + (publisher_lead['entity_ids'] if publisher_lead else [])))
+        candidate_count = len(retrieval_ids)
         eligible = download_all or (candidate['relevant'] if candidate is not None else
-                                    any(r['status'] != 'rejected' for r in candidates))
+                                    any(r['status'] != 'rejected' for r in candidates)) or bool(publisher_lead)
         body_source = self._source_for_article(url, source, all_sources)
         checked = row['validated_at'] or row['retrieved_at']
         mode = getattr(self, '_active_cache_mode', 'reuse')
@@ -899,12 +998,17 @@ class NewsAcquirer:
         if fresh and session:
             session.body(article_id)
         if eligible and body_source and not fresh:
-            candidate_ids = candidate['entity_ids'] if candidate is not None else [r['entity_id'] for r in candidates]
+            candidate_ids = retrieval_ids
             period = int(time.time() // max(60, float(body_source.get('refresh_seconds', 86400))))
             body_payload = {'article_id': article_id, 'source_id': body_source['id'], 'url': url,
                             'reading_priority': selection['priority'], 'body_selection': selection}
             if candidate is not None:
                 body_payload.update(candidate_entity_ids=candidate_ids, relevance_rank=candidate['rank'])
+            captured_revision = (candidate.get('bank_revision') if candidate is not None else None)
+            if captured_revision is None and publisher_lead:
+                captured_revision = publisher_lead.get('bank_revision')
+            if captured_revision is not None:
+                body_payload['bank_revision'] = str(captured_revision)
             with (nullcontext(connection) if connection is not None else self.store.connection()) as queue_con:
                 if not queue_con.in_transaction:
                     queue_con.execute('BEGIN IMMEDIATE')
@@ -1114,7 +1218,8 @@ class NewsAcquirer:
         if job['kind'] == 'news_article' and relevance is not None:
             with self.store.connection() as con:
                 stored = con.execute('SELECT id,title,summary FROM news_articles WHERE id=?', (payload['article_id'],)).fetchone()
-            relevant = stored is not None and self._stored_candidate(stored, relevance)['relevant']
+            relevant = stored is not None and (self._stored_candidate(stored, relevance)['relevant']
+                        or bool(self._stored_publisher_phrase_ids(stored['id'], source)))
             if stored is not None and not relevant:
                 # Queues created by older versions can contain every body from
                 # a general feed. Keep their metadata/audit, avoid an irrelevant
@@ -1159,10 +1264,16 @@ class NewsAcquirer:
                           if filtering else None)
                 if ranked is not None:
                     ranked['bank_revision'] = getattr(relevance, 'bank_revision', None)
-                if ranked is not None and not ranked['relevant']:
+                publisher_lead = (self._publisher_phrase_lead(record, source, payload, result)
+                                  if job['kind'] == 'news_query' and ranked is not None
+                                  and not ranked['relevant'] else None)
+                if publisher_lead is not None:
+                    publisher_lead['discovery_url'] = url
+                if ranked is not None and not ranked['relevant'] and publisher_lead is None:
                     statuses['excluded_irrelevant'] += 1
                 else:
-                    candidates.append((record, ranked))
+                    candidates.append((record, ranked, publisher_lead))
+                    statuses['publisher_phrase_leads'] += int(publisher_lead is not None)
             # Relevant candidates first, without promoting retrieval to an
             # identity match or changing the editorial permissions.
             candidates.sort(key=lambda item: -_body_selection(item[0].get('title'), item[0].get('text'),
@@ -1187,6 +1298,7 @@ class NewsAcquirer:
             parse_info['candidate_filter'] = {'enabled': filtering, 'input_records': len(records),
                                               'retained_records': len(candidates),
                                               'excluded_records': statuses['excluded_irrelevant'],
+                                              'publisher_phrase_leads': statuses['publisher_phrase_leads'],
                                               'identity_verified': False}
             session = getattr(self, '_session', None)
             if session:
@@ -1195,21 +1307,23 @@ class NewsAcquirer:
             while batch := list(islice(iterator, 250)):
                 with self.store.connection() as con:
                     con.execute('BEGIN IMMEDIATE')
-                    for record, ranked in batch:
+                    for record, ranked, publisher_lead in batch:
                         statuses[self._observe(record, source, url, result, resolver, download_all,
                                                connection=con, all_sources=sources, candidate=ranked,
-                                               body_budget=body_budget)['status']] += 1
+                                               body_budget=body_budget, publisher_lead=publisher_lead)['status']] += 1
             parse_info['body_budget'] = {'global_limit': body_budget.maximum if body_budget else None,
                                          'per_entity_limit': body_budget.per_entity if body_budget else None,
                                          'queued': statuses['article_queued'],
                                          'skipped': statuses['body_budget_limited']}
             result_limit = max(1, min(250, int(payload.get('result_limit', source.get('max_records', 250)))))
-            saturated = job['kind'] == 'news_query' and (parse_info.get('observed_entries', len(records)) >= result_limit or parse_info.get('truncated'))
+            directed_publisher = parse_info.get('directed_publisher_search') is True
+            saturated = job['kind'] == 'news_query' and (bool(parse_info.get('truncated')) if directed_publisher else
+                        parse_info.get('observed_entries', len(records)) >= result_limit or parse_info.get('truncated'))
             # An upstream endpoint can ignore the search phrase and return its
             # ordinary feed. Subdividing that same irrelevant top-N endlessly
             # does not improve entity coverage. Preserve the limitation instead.
             split = (self._split_saturated(job, source) if saturated and candidates
-                     and payload.get('split_policy', 'expand') != 'defer' else False)
+                     and not directed_publisher and payload.get('split_policy', 'expand') != 'defer' else False)
             incomplete_reason = ('Cobertura incompleta: respuesta limitada sin candidatos pertinentes; no se subdivide automáticamente.'
                                  if filtering and not candidates else
                                  'Límite top-N alcanzado; ampliación pendiente del barrido inicial.'
@@ -1233,11 +1347,11 @@ class NewsAcquirer:
         result = fetcher.fetch(payload['url'], article_source)
         if self._failure(job, result):
             return
-        conserved = self._conserve_article(payload, source, result)
+        conserved = self._conserve_article(payload, source, result, relevance=relevance)
         self.store.finish(job)
         return {'article_id': payload['article_id'], 'body_result': conserved['status']}
 
-    def _conserve_article(self, payload, source, result, *, reextraction=None):
+    def _conserve_article(self, payload, source, result, *, reextraction=None, relevance=None):
         from .sources import parse_results
         # Parse metadata as an article, regardless of the source's RSS transport.
         page_source = dict(source, kind=source.get('document_kind', 'news'))
@@ -1319,6 +1433,21 @@ class NewsAcquirer:
                               'raw_snapshot_sha256': snapshot_hash, 'content_cluster': fingerprint,
                               'topic_candidate': topic, 'canonical_response_url': url,
                               'local_reextraction': reextraction is not None})
+            # Project only real original text, using the acquisition index's
+            # captured bank revision. A concurrent bank import invalidates this
+            # disposable lookup instead of stamping stale IDs as current.
+            from .news_projection import projection_signature, update_projection
+            signature = projection_signature(con)
+            if (relevance is not None
+                    and str(getattr(relevance, 'bank_revision', None)) == signature['bank_revision']
+                    and getattr(relevance, 'model_version', None) == signature['relevance_version']):
+                current_row = con.execute('SELECT id,title,summary FROM news_articles WHERE id=?', (row['id'],)).fetchone()
+                current_candidate = self._stored_candidate(current_row, relevance, con)
+                con.execute('DELETE FROM news_current_candidates WHERE article_id=?', (row['id'],))
+                update_projection(con, row['id'], current_candidate, bank_revision=relevance.bank_revision)
+            else:
+                con.execute("DELETE FROM meta WHERE key='news_projection_ready'")
+            con.execute("UPDATE meta SET value=CAST(value AS INTEGER)+1 WHERE key='news_data_revision'")
         session = getattr(self, '_session', None)
         if session:
             session.body(row['id'], new=previous_document != doc_id)
@@ -1455,8 +1584,9 @@ class NewsAcquirer:
     def _rescue_bodies(self, relevance, sources, budget, deadline=None):
         """Queue eligible stored candidates without repeating discovery HTTP.
 
-        Read metadata in pages, not source bodies. Existing fresh/queued bodies
-        reserve quota first, so repeated resume cannot reset per-entity limits.
+        Read stored cards and already conserved original plain text in pages.
+        Existing fresh/queued bodies reserve quota first, so repeated resume
+        cannot reset per-entity limits. No original is fetched here.
         """
         counts = Counter()
         relevance = _MetadataRelevanceCache(relevance)
@@ -1476,8 +1606,11 @@ class NewsAcquirer:
         def rows(reader):
             previous = ''
             while True:
-                candidate_filter = (" AND EXISTS (SELECT 1 FROM news_current_candidates p WHERE p.article_id=n.id "
-                                    "AND p.bank_revision=? AND p.relevance_version=?)" if projected else '')
+                candidate_filter = (" AND (EXISTS (SELECT 1 FROM news_current_candidates p WHERE p.article_id=n.id "
+                                    "AND p.bank_revision=? AND p.relevance_version=?) OR EXISTS "
+                                    "(SELECT 1 FROM news_observations o WHERE o.article_id=n.id "
+                                    "AND json_extract(CASE WHEN json_valid(o.details) THEN o.details ELSE '{}' END,"
+                                    "'$.publisher_phrase_lead.version')=1))" if projected else '')
                 params = ((previous, signature['bank_revision'], signature['relevance_version']) if projected else (previous,))
                 batch = reader.execute('SELECT id,canonical_url,source_id,title,summary,retrieved_at,validated_at FROM news_articles n '
                                        'WHERE id>?' + candidate_filter + ' ORDER BY id LIMIT 250', params).fetchall()
@@ -1510,15 +1643,19 @@ class NewsAcquirer:
                     continue
                 try:
                     candidate = self._stored_candidate(row, relevance, reader, should_stop=stopped)
+                    publisher_ids = self._stored_publisher_phrase_ids(row['id'], source, reader, should_stop=stopped,
+                                                                      discovery_sources=sources)
                 except _MetadataScanStopped:
                     return
-                if not candidate['relevant']:
+                retrieval_ids = sorted(set(candidate['entity_ids'] + publisher_ids))
+                if not retrieval_ids:
                     continue
+                candidate['body_candidate_entity_ids'] = retrieval_ids
                 selection = _body_selection(row['title'], row['summary'], candidate, row['canonical_url'])
                 yield row, source, candidate, selection
 
         for row, _source, candidate, selection in eligible(True):
-            budget.reserve(row['id'], candidate['entity_ids'], existing=True, priority=selection['priority'])
+            budget.reserve(row['id'], candidate['body_candidate_entity_ids'], existing=True, priority=selection['priority'])
 
         def ranked_candidates():
             # Keep only the best bounded frontier per entity, rather than sort
@@ -1531,7 +1668,7 @@ class NewsAcquirer:
             for row, source, candidate, selection in eligible(False):
                 considered += 1
                 item = (selection['priority'], row['id'], (row, source, candidate, selection))
-                for entity_id in candidate['entity_ids'] if budget.per_entity is not None else ('*',):
+                for entity_id in candidate['body_candidate_entity_ids'] if budget.per_entity is not None else ('*',):
                     heap = heaps.setdefault(entity_id, [])
                     heapq.heappush(heap, item)
                     if len(heap) > limit:
@@ -1546,13 +1683,15 @@ class NewsAcquirer:
         for row, source, candidate, selection in ranked_candidates():
                 if self.engine.stop_event.is_set() or (deadline is not None and time.monotonic() >= deadline):
                     return counts
-                if not budget.reserve(row['id'], candidate['entity_ids'], priority=selection['priority']):
+                if not budget.reserve(row['id'], candidate['body_candidate_entity_ids'], priority=selection['priority']):
                     counts['body_skipped_budget'] += 1
                     continue
                 period = int(time.time() // max(60, float(source.get('refresh_seconds', 86400))))
                 payload = {'article_id': row['id'], 'source_id': source['id'], 'url': row['canonical_url'],
-                           'candidate_entity_ids': candidate['entity_ids'], 'relevance_rank': candidate['rank'],
+                           'candidate_entity_ids': candidate['body_candidate_entity_ids'], 'relevance_rank': candidate['rank'],
                            'reading_priority': selection['priority'], 'body_selection': selection}
+                if getattr(relevance, 'bank_revision', None) is not None:
+                    payload['bank_revision'] = str(relevance.bank_revision)
                 with self.store.connection() as con:
                     con.execute('BEGIN IMMEDIATE')
                     job_id = self.store.enqueue('news_article', payload, key=self._body_job_key(row['id'], period), connection=con)
@@ -1569,7 +1708,7 @@ class NewsAcquirer:
                         job = dict(status='queued')
                     if job['status'] in ('queued', 'running', 'deferred'):
                         self.store._audit(con, 'news_body_recovered', {'article_id': row['id'], 'source_id': source['id'],
-                                          'candidate_entity_ids': candidate['entity_ids'], 'identity_verified': False})
+                                          'candidate_entity_ids': candidate['body_candidate_entity_ids'], 'identity_verified': False})
                         counts['body_queued'] += 1
                         pending.add(row['id'])
                     else:
@@ -1823,7 +1962,7 @@ class NewsAcquirer:
                 with condition:
                     if counter[0] >= max_articles:
                         return
-                    job = self.store.claim(lease_seconds=300, kind_prefix='news_')
+                    job = self.store.claim(lease_seconds=300, kind_prefix='news_', preferred_kind='news_article')
                     if job:
                         counter[0] += 1
                         in_flight.add(job['id'])

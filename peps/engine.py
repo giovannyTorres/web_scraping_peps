@@ -1,6 +1,9 @@
 """Motor de ingestión, búsqueda y scoring. Todas las operaciones son reanudables."""
 import json
+import os
 import re
+import stat
+import tempfile
 import threading
 import time
 import unicodedata
@@ -10,6 +13,27 @@ from pathlib import Path
 from urllib.parse import urlsplit
 
 from .store import Store, canonical, digest, now, kind_prefix_pattern
+
+
+def _write_config_atomic(path, value):
+    """Publish a complete JSON configuration without exposing a partial file."""
+    path = Path(path)
+    temporary = None
+    try:
+        with tempfile.NamedTemporaryFile(mode='w', encoding='utf-8', dir=path.parent,
+                                         prefix='.' + path.name + '.', suffix='.tmp', delete=False) as output:
+            temporary = Path(output.name)
+            json.dump(value, output, ensure_ascii=False, indent=2)
+        try:
+            mode = stat.S_IMODE(path.stat().st_mode)
+        except FileNotFoundError:
+            pass
+        else:
+            os.chmod(temporary, mode)
+        os.replace(temporary, path)
+    finally:
+        if temporary is not None:
+            temporary.unlink(missing_ok=True)
 
 
 def _emit_progress(callback, phase, completed, total, unit, message, *, event='progress', **details):
@@ -118,7 +142,7 @@ class Engine:
                 found = True
         if not found:
             raise ValueError('Fuente inexistente')
-        self.config_path.write_text(json.dumps(config, ensure_ascii=False, indent=2), encoding='utf-8')
+        _write_config_atomic(self.config_path, config)
         self.store.audit('source_configured', {'id': source_id, 'enabled': enabled, 'terms_approved': terms_approved})
 
     def import_documents(self, rows):
