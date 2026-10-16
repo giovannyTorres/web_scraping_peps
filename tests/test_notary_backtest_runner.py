@@ -28,7 +28,7 @@ class NotaryBacktestRunnerTests(unittest.TestCase):
             'context': {'source_url': 'https://provenance.invalid/gold-do-not-query'},
             'incident_label': 'yes', 'reference_articles': ['https://gold.invalid/not-a-query']}
             for index in range(people)]}
-        defaults = json.loads((Path(__file__).resolve().parents[1] / 'peps/defaults/news_sources.json').read_text())
+        defaults = json.loads((Path(__file__).resolve().parents[1] / 'peps/defaults/news_sources.json').read_text(encoding='utf-8'))
         source = deepcopy(next(item for item in defaults['sources'] if item['id'] == 'contralinea_index'))
         source.update(enabled=True, terms_approved=True, robots_required=True, download_articles=True,
                       article_terms_approved=True, body_terms_approved=True, min_interval_seconds=0,
@@ -77,11 +77,11 @@ class NotaryBacktestRunnerTests(unittest.TestCase):
         config = effective_config(args)
         self.assertFalse(config['search']['use_context'])
         self.assertEqual(config['search']['preset'], 'identity')
-        self.assertTrue(json.loads(args.sources_config.read_text())['search']['use_context'])
+        self.assertTrue(json.loads(args.sources_config.read_text(encoding='utf-8'))['search']['use_context'])
 
     def test_permissions_and_existing_directory_are_rejected_before_opening_bank(self):
         args = self.arguments()
-        config = json.loads(args.sources_config.read_text())
+        config = json.loads(args.sources_config.read_text(encoding='utf-8'))
         config['sources'][0]['robots_required'] = False
         args.sources_config.write_text(json.dumps(config))
         with self.assertRaisesRegex(ValueError, 'robots'):

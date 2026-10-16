@@ -13,6 +13,7 @@ import hashlib
 import html
 import json
 import math
+import os
 from pathlib import Path
 from typing import Any
 from urllib.parse import quote, unquote, urlsplit
@@ -78,24 +79,36 @@ def safe_link(value: Any, output_dir: Path, allowed_local_roots: list[Path] | No
     """HTTPS or an existing allowlisted local artifact; never executable schemes."""
     if not isinstance(value, str) or not value or len(value) > 8192:
         return None
-    if any(character.isspace() or ord(character) < 32 or ord(character) == 127 for character in value):
+    if any(ord(character) < 32 or ord(character) == 127 for character in value):
         return None
-    try:
-        parsed = urlsplit(value)
-    except ValueError:
-        return None
-    if parsed.scheme:
-        if parsed.scheme.lower() != 'https' or not parsed.hostname or parsed.username or parsed.password:
+    # A native drive path is a local artifact, not a URL scheme. UNC paths,
+    # drive-relative paths and alternate data streams remain inadmissible.
+    native_windows = (os.name == 'nt' and len(value) >= 3
+                      and value[0] in 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
+                      and value[1] == ':' and value[2] in ('/', '\\'))
+    if native_windows:
+        if ':' in value[2:] or '?' in value or '#' in value:
             return None
-        return value
-    if parsed.netloc or value.startswith('//') or '\\' in value:
-        return None
-    if parsed.query or not parsed.path:
-        return None
-    decoded = unquote(parsed.path)
-    if any(ord(character) < 32 for character in decoded) or ':' in decoded:
-        return None
-    candidate = Path(decoded)
+        candidate, fragment = Path(value), ''
+    else:
+        if any(character.isspace() for character in value):
+            return None
+        try:
+            parsed = urlsplit(value)
+        except ValueError:
+            return None
+        if parsed.scheme:
+            if parsed.scheme.lower() != 'https' or not parsed.hostname or parsed.username or parsed.password:
+                return None
+            return value
+        if parsed.netloc or value.startswith('//') or '\\' in value:
+            return None
+        if parsed.query or not parsed.path:
+            return None
+        decoded = unquote(parsed.path)
+        if any(ord(character) < 32 or ord(character) == 127 for character in decoded) or ':' in decoded or '\\' in decoded:
+            return None
+        candidate, fragment = Path(decoded), parsed.fragment
     candidate = candidate if candidate.is_absolute() else output_dir / candidate
     try:
         resolved = candidate.resolve(strict=True)
@@ -104,11 +117,10 @@ def safe_link(value: Any, output_dir: Path, allowed_local_roots: list[Path] | No
                 or not any(resolved.is_relative_to(root) for root in roots)):
             return None
         # A report may link a sibling only when its root is explicitly allowed.
-        import os
         relative = Path(os.path.relpath(resolved, output_dir.resolve())).as_posix()
     except (ValueError, OSError, RuntimeError):
         return None
-    return quote(relative, safe='/') + ('#' + quote(parsed.fragment, safe='') if parsed.fragment else '')
+    return quote(relative, safe='/') + ('#' + quote(fragment, safe='') if fragment else '')
 
 
 def _fonts() -> str:

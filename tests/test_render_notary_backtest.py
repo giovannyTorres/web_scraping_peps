@@ -116,6 +116,10 @@ class NotaryBacktestRendererTests(unittest.TestCase):
         self.assertIsNone(safe_link('../outside.json', self.directory))
         self.assertIsNone(safe_link('%2e%2e/outside.json', self.directory))
         self.assertIsNone(safe_link('file:///etc/passwd', self.directory))
+        self.assertIsNone(safe_link(r'C:relative.json', self.directory))
+        self.assertIsNone(safe_link(r'\\server\share\review.json', self.directory))
+        self.assertIsNone(safe_link('%5C%5Cserver%5Cshare%5Creview.json', self.directory))
+        self.assertIsNone(safe_link(str(allowed) + ':stream.json', self.directory))
         self.assertIsNone(safe_link('https://example.org/\nscript', self.directory))
         with tempfile.TemporaryDirectory() as outside:
             outside_file = Path(outside) / 'review.json'
