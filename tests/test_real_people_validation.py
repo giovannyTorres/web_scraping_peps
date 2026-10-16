@@ -3,6 +3,7 @@ from copy import deepcopy
 import importlib.util
 import json
 from pathlib import Path
+import sqlite3
 import tempfile
 import threading
 import time
@@ -200,6 +201,39 @@ class RealPeopleValidationTests(unittest.TestCase):
         rows, _ = VALIDATION.person_report(engine, self.people, VALIDATION.queue_receipt(engine.store), history)
         self.assertEqual(rows[0]['search']['query_http_requests'], 1)
         self.assertFalse(rows[0]['search_completed'])
+
+    def test_all_harness_sqlite_connections_are_closed_without_garbage_collection(self):
+        self.save()
+        people, roster = VALIDATION.load_roster(self.roster, allow_small=True)
+        engine = Engine(self.root / 'bank')
+        NewsAcquirer(engine)
+        engine.store.import_entities(people)
+        engine.store.audit('real_people_validation_started', {'roster_sha256': roster['sha256'], 'groups': roster['groups']})
+        with VALIDATION.SafeFetcher({}, engine.data_dir):
+            pass
+        connections = []
+        original_connect = sqlite3.connect
+
+        class TrackedConnection(sqlite3.Connection):
+            explicitly_closed = False
+
+            def close(self):
+                self.explicitly_closed = True
+                return super().close()
+
+        def connect(*args, **kwargs):
+            kwargs['factory'] = TrackedConnection
+            connection = original_connect(*args, **kwargs)
+            connections.append(connection)
+            return connection
+
+        with patch.object(VALIDATION.sqlite3, 'connect', side_effect=connect):
+            VALIDATION.validate_resume_bank(engine.data_dir, people, roster)
+            VALIDATION.http_history(engine.data_dir)
+            VALIDATION.network_state(engine.data_dir)
+            VALIDATION.copy_bank(engine.data_dir, self.root / 'copied')
+        self.assertGreaterEqual(len(connections), 7)
+        self.assertTrue(all(connection.explicitly_closed for connection in connections))
 
 
 if __name__ == '__main__':

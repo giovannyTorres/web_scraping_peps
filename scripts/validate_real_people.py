@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 from collections import Counter, defaultdict
+from contextlib import closing
 from copy import deepcopy
 import hashlib
 import json
@@ -145,7 +146,7 @@ def validate_resume_bank(directory, people, roster):
     database = directory / 'peps.sqlite3'
     if not database.exists():
         raise ValueError('--resume requiere un banco existente de esta validación.')
-    with sqlite3.connect(database.as_uri() + '?mode=ro', uri=True) as con:
+    with closing(sqlite3.connect(database.as_uri() + '?mode=ro', uri=True)) as con:
         con.row_factory = sqlite3.Row
         receipt = con.execute("SELECT payload FROM audit WHERE action='real_people_validation_started' ORDER BY seq LIMIT 1").fetchone()
         if receipt is None:
@@ -193,7 +194,7 @@ def http_history(directory):
     database = directory / 'network.sqlite3'
     if not database.exists():
         return []
-    with sqlite3.connect(database.as_uri() + '?mode=ro', uri=True) as con:
+    with closing(sqlite3.connect(database.as_uri() + '?mode=ro', uri=True)) as con:
         con.row_factory = sqlite3.Row
         return [dict(row) for row in con.execute('SELECT id,occurred_at,url,request_kind,network_requests,http_status,outcome '
                                                'FROM request_history WHERE network_requests>0 ORDER BY id')]
@@ -275,7 +276,7 @@ def network_state(directory):
     database = directory / 'network.sqlite3'
     if not database.exists():
         return {'hosts': [], 'cached_responses': 0, 'recorded_http_requests': 0}
-    with sqlite3.connect(database.as_uri() + '?mode=ro', uri=True) as con:
+    with closing(sqlite3.connect(database.as_uri() + '?mode=ro', uri=True)) as con:
         con.row_factory = sqlite3.Row
         return {'hosts': [dict(row) for row in con.execute('SELECT * FROM hosts ORDER BY host')],
                 'cached_responses': con.execute('SELECT count(*) FROM http_cache').fetchone()[0],
@@ -290,8 +291,8 @@ def copy_bank(source, target):
             continue
         for suffix in ('-wal', '-shm'):
             (target / (name + suffix)).unlink(missing_ok=True)
-        with sqlite3.connect((source / name).as_uri() + '?mode=ro', uri=True) as original:
-            with sqlite3.connect(target / name) as copied:
+        with closing(sqlite3.connect((source / name).as_uri() + '?mode=ro', uri=True)) as original:
+            with closing(sqlite3.connect(target / name)) as copied:
                 original.backup(copied)
 
 
