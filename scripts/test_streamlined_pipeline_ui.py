@@ -32,6 +32,7 @@ def main():
     from peps.engine import Engine
     from peps.news import NewsAcquirer
     from peps.workflow import GuidedWorkflow
+    from peps.news_projection import projection_signature
 
     out = ROOT / "runtime/streamlined-pipeline-ui-validation"
     out.mkdir(parents=True, exist_ok=True)
@@ -247,6 +248,7 @@ def main():
                                 ).all_text_contents()
                             ),
                         )
+                        page.locator("#workflow-inspection").evaluate("e=>e.open=true")
                         page.locator("#workflow-queue-details").evaluate(
                             "e=>e.open=true"
                         )
@@ -326,17 +328,21 @@ def main():
                             ),
                         )
                         # A failed task is selected explicitly; retry does not start another pipeline.
+                        with engine.store.connection() as con:
+                            current_revision = projection_signature(con)["bank_revision"]
                         jid = engine.store.enqueue(
                             "news_article",
                             {
                                 "source_id": "synthetic_rss",
                                 "url": "https://fixture.invalid/retry",
+                                "bank_revision": current_revision,
                             },
                             key="retry-ui",
                         )
                         job = engine.store.claim(kind_prefix="news_")
                         engine.store.finish(job, "blocked", "Synthetic source denial")
                         page.locator("[data-tab=news]").click()
+                        page.locator("#workflow-inspection").evaluate("e=>e.open=true")
                         page.locator("#workflow-queue-details").evaluate(
                             "e=>e.open=true"
                         )

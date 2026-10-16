@@ -361,3 +361,66 @@ body[data-workflow-tab=sources] [data-panel=sources]{padding-bottom:135px}
 html{scroll-padding-bottom:150px}.source-consent:focus-within{outline:2px solid #1464A5;outline-offset:2px;border-radius:4px}
 .search-scope-details{margin-top:12px}.search-scope-details>summary{cursor:pointer;color:#004481;font-size:13px;font-weight:700;min-height:32px}.search-scope-details[open]>summary{margin-bottom:12px}
 .manual-discovery{margin:16px 0}.manual-discovery>summary{cursor:pointer;color:#004481;font-size:14px;font-weight:700;min-height:25px}.manual-discovery[open]>summary{margin-bottom:15px}.manual-discovery p{font-size:12px;margin:10px 0;line-height:1.65}.manual-search-fields{display:grid;grid-template-columns:1fr 1fr;gap:16px}.manual-search-fields .import-field{margin:0}.manual-discovery a{color:#1464A5;font-size:13px;overflow-wrap:anywhere}@media(max-width:720px){.manual-search-fields{grid-template-columns:1fr;gap:12px}.manual-discovery>summary{font-size:13px;line-height:1.65}}
+
+/* Search has one live state and only the current list's coverage above the fold. */
+body[data-workflow-tab=news] .app-header,body[data-workflow-tab=news] .metrics{display:none}
+body[data-workflow-tab=news] #message:not(.error){display:none}
+body[data-workflow-tab=news] .workflow-overview{display:none}
+.acquisition-heading{margin-bottom:24px;align-items:center}
+.acquisition-heading h2{font-size:35px;letter-spacing:-.6px;margin:5px 0 10px}
+.acquisition-heading>div>p:last-child{font-size:15px;max-width:720px;line-height:1.7}
+.acquisition-heading>button{font-size:13px;white-space:nowrap;align-self:flex-start;margin-top:25px}
+[data-panel=news] .download-grid{display:block;margin:0 0 18px}
+.search-live.card{border:1px solid #C6E5F6;border-radius:16px;padding:29px 32px;box-shadow:0 5px 24px #07214608;background:#FFFFFF}
+.search-live>.eyebrow{font-size:11px;letter-spacing:1.6px;color:#626262;margin:0 0 20px}
+.search-live-heading{display:flex;align-items:center;gap:12px}
+.search-live-heading h3{font-size:29px;line-height:1.3;margin:0;color:#072146;letter-spacing:-.25px}
+.search-state-icon{display:block;width:12px;height:12px;border:3px solid #1464A5;border-radius:50%;flex:0 0 auto;box-sizing:border-box;background:#D4EDFC;box-shadow:0 0 0 5px #D4EDFC66}
+.search-live[data-state=waiting] .search-state-icon,.search-live[data-state=paused] .search-state-icon,.search-live[data-state=resumable] .search-state-icon{background:#B58138;border-color:#B58138;box-shadow:0 0 0 5px #F9F0DE}
+.search-live[data-state=failed] .search-state-icon{background:#B92A45;border-color:#B92A45;box-shadow:0 0 0 5px #FCE8EB}
+.search-live[data-state=completed] .search-state-icon{background:#028484;border-color:#028484;box-shadow:0 0 0 5px #D9F3F3}
+.search-live-description{font-size:14px!important;line-height:1.8!important;color:#626262;margin:12px 0 24px!important;max-width:930px!important}
+.search-live .entity-coverage{margin:0;padding:0;border:0}
+.search-live .entity-coverage-grid{gap:0;margin:0 0 22px;border:1px solid #D4EDFC;border-radius:11px;overflow:hidden}
+.search-live .entity-coverage-grid>div{background:#F6FBFE;border:0;border-right:1px solid #D4EDFC;border-radius:0;padding:19px 23px}
+.search-live .entity-coverage-grid>div:last-child{border:0}
+.search-live .entity-coverage-grid dt{font-size:13px;line-height:1.6;color:#4F6173}
+.search-live .entity-coverage-grid dd{font-size:27px;letter-spacing:-.6px;margin-top:8px;color:#004481}
+#workflow-entity-progress{width:100%;height:7px;border:0;border-radius:5px;overflow:hidden;accent-color:#1464A5;display:block;background:#D4EDFC}
+#workflow-entity-progress::-webkit-progress-bar{background:#D4EDFC;border-radius:5px}
+#workflow-entity-progress::-webkit-progress-value{background:#1464A5;border-radius:5px}
+#workflow-entity-progress::-moz-progress-bar{background:#1464A5;border-radius:5px}
+.coverage-progress-label{font-size:12px;line-height:1.7;color:#4F6173;margin:9px 0 0}
+.search-live .coverage-detail{font-size:12px;font-weight:400;color:#626262;margin:7px 0 0}
+.search-live-timing{display:flex;gap:18px;flex-wrap:wrap;font-size:12px;color:#626262;margin:17px 0 0}
+.search-live-timing p{margin:0}.search-live-timing p:empty{display:none}
+.source-wait{margin:15px 0 0;padding:13px 16px;border:1px solid #E9DABF;border-radius:8px;background:#FFF9EE;color:#765C32;font-size:13px;line-height:1.8;overflow-wrap:anywhere}
+.zero-results{padding:19px 21px;margin:21px 0 0;border-radius:10px;border:1px solid #D4EDFC;background:#F4FAFE}
+.zero-results h4{font-size:20px;margin:0 0 8px;line-height:1.4;color:#072146}
+.zero-results>p{font-size:13px;line-height:1.8;margin:0 0 14px;color:#4F6173;max-width:900px}
+.zero-results .action-reason{font-size:12px;margin:10px 0 0}
+.search-live .download-main-actions{margin:20px 0 0;gap:11px}.search-live .download-main-actions:empty{display:none}
+.search-live .download-main-actions button,.zero-results button{min-height:44px;font-size:13px}
+.search-live>.action-reason{font-size:12px;line-height:1.8;margin:10px 0 0;color:#626262}
+.download-options{border-top:1px solid #D4EDFC;padding-top:16px;margin-top:20px}
+.download-options>summary,.acquisition-inspection>summary{cursor:pointer;color:#004481;font-size:13px;line-height:1.7;font-weight:700;min-height:25px}
+.download-options .run-options{box-shadow:none;margin:12px 0 0;padding:14px 0 0;border:0;border-radius:0}
+.download-options .session-budget{margin:12px 0 0;font-size:12px;background:transparent;border:0;padding:0;color:#626262}
+.acquisition-inspection.card{padding:19px 23px;border:1px solid #D4EDFC;border-radius:11px;box-shadow:none;margin:0 0 13px}
+.acquisition-inspection>summary>span{font-weight:400;font-size:12px;color:#626262;margin-left:8px}
+.acquisition-inspection[open]>summary{padding-bottom:17px;border-bottom:1px solid #D4EDFC;margin-bottom:20px}
+.acquisition-inspection h3{font-size:22px}.acquisition-inspection .download-activity{padding-top:20px;border-top:1px solid #D4EDFC;margin-top:20px}
+.acquisition-inspection .session-monitor{margin-bottom:0}.acquisition-inspection .current-activity{font-size:12px!important}
+.acquisition-inspection .shared-coverage{margin:0;border:0;background:transparent;padding:0}
+.acquisition-inspection .shared-coverage-grid{margin:20px 0}
+[data-panel=news] .manual-discovery.card{padding:18px 23px;border-radius:11px;border:1px solid #D4EDFC;background:transparent;margin-top:0;box-shadow:none}
+[data-panel=news] .manual-discovery>summary{font-size:13px;line-height:1.7}
+[data-panel=news] .partial-warning{margin-top:18px;padding:17px 19px;background:#F4FAFE;border-color:#D4EDFC}
+@media(max-width:900px){.search-live.card{padding:24px}.search-live .entity-coverage-grid>div{padding:16px}.search-live .entity-coverage-grid dd{font-size:24px}.acquisition-heading{align-items:flex-start;gap:12px}.acquisition-heading>button{white-space:normal;max-width:150px}}
+@media(max-width:720px){.acquisition-heading{display:block;margin-bottom:20px}.acquisition-heading h2{font-size:30px}.acquisition-heading>div>p:last-child{font-size:14px}.acquisition-heading>button{margin-top:4px;max-width:none;min-height:38px}.search-live.card{padding:22px 18px;border-radius:12px}.search-live-heading{gap:11px}.search-live-heading h3{font-size:25px}.search-live>.eyebrow{font-size:10px;letter-spacing:1.2px;margin-bottom:17px}.search-live-description{font-size:13px!important;margin-bottom:19px!important}.search-live .entity-coverage-grid{display:grid;grid-template-columns:1fr;margin-bottom:17px}.search-live .entity-coverage-grid>div{padding:13px 14px;display:flex;align-items:center;gap:12px;justify-content:space-between;border:0;border-bottom:1px solid #D4EDFC}.search-live .entity-coverage-grid dt{max-width:58%;font-size:12px}.search-live .entity-coverage-grid dd{font-size:21px;margin:0;white-space:nowrap}.zero-results{padding:16px;margin-top:18px}.zero-results h4{font-size:21px}.zero-results>p,.source-wait{font-size:13px}.zero-results button{width:100%}.search-live-timing{gap:7px;margin-top:13px;display:grid}.search-live .download-main-actions{gap:9px;display:flex;flex-wrap:wrap}.search-live .download-main-actions button{flex:1;min-width:145px}.search-live .download-main-actions button[hidden]{display:none}.acquisition-inspection.card{padding:16px 18px}.acquisition-inspection>summary>span{display:block;margin:5px 0 0}.source-wait{padding:12px;line-height:1.8}.search-live>.action-reason{font-size:12px}.download-options .run-options{gap:12px}.acquisition-inspection h3{font-size:21px}}
+.sr-only{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
+.search-live.card{padding:25px 29px}.search-live>.eyebrow{margin-bottom:17px}.search-live-description{margin-bottom:20px!important}.search-live .entity-coverage-grid>div{padding-top:16px;padding-bottom:16px}.search-live .entity-coverage-grid{margin-bottom:18px}.search-live>.source-wait{max-width:none!important}.zero-results{padding:16px 20px}.search-live .download-main-actions{margin-top:17px}.download-options{margin-top:16px;padding-top:13px}
+@media(max-width:720px){.search-live.card{padding:21px 17px}.search-live .entity-coverage-grid>div{padding:12px 13px}.zero-results{padding:15px}}
+.search-live>.zero-results{margin:0 0 21px}
+@media(max-width:720px){body[data-workflow-tab=news] .app-sidebar{padding:14px 18px 10px}body[data-workflow-tab=news] .app-sidebar .brand{font-size:27px}body[data-workflow-tab=news] .mobile-step-select{margin:9px 0 5px}body[data-workflow-tab=news] .sidebar-bottom{margin-top:8px}body[data-workflow-tab=news] .sidebar-bottom .utility-button,body[data-workflow-tab=news] .sidebar-bottom #shutdown.quiet{min-height:30px}body[data-workflow-tab=news] main{padding-top:21px}.acquisition-heading{margin-bottom:17px}.acquisition-heading h2{font-size:29px}.acquisition-heading>div>p:last-child{font-size:13px}.search-live>.zero-results{margin-bottom:18px}}
+.search-live>#workflow-network-consent{margin:17px 0 0;padding:12px 14px;border:1px solid #D4EDFC;border-radius:7px;background:#F7FBFD}.search-live>#workflow-network-consent .consent-check{margin:0;font-size:12px;line-height:1.7}.search-live>#workflow-network-consent:has(input:disabled){display:none}

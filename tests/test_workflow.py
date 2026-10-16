@@ -1,6 +1,7 @@
 """Prerequisite, persistence and truthful progress regressions without network."""
 from copy import deepcopy
 import concurrent.futures
+import json
 import tempfile
 import time
 import unittest
@@ -330,7 +331,7 @@ class GuidedWorkflowTests(unittest.TestCase):
         current = upgraded.snapshot()
         self.assertEqual(current['coverage']['queue_signature'], fingerprint)
         self.assertTrue(current['coverage']['closed_partial'])
-        self.assertTrue(current['actions']['analyze']['enabled'])
+        self.assertFalse(current['actions']['analyze']['enabled'])  # No current text was acquired.
         with self.engine.store.connection() as external:
             external.execute("UPDATE jobs SET status='done' WHERE id=?", (identifier,))
         changed = upgraded.snapshot()
@@ -401,7 +402,8 @@ class GuidedWorkflowTests(unittest.TestCase):
         self.assertFalse(self.workflow.snapshot()['actions']['analyze']['enabled'])
         snapshot = self.workflow.accept_partial()
         self.assertTrue(snapshot['coverage']['accepted_partial'])
-        self.assertTrue(snapshot['actions']['analyze']['enabled'])
+        self.assertFalse(snapshot['actions']['analyze']['enabled'])
+        self.assertIn('textos pertinentes', snapshot['actions']['analyze']['reason'])
 
     def test_pending_download_requires_explicit_closure_and_completed_receipt_becomes_paused(self):
         self.import_bank()
@@ -413,7 +415,7 @@ class GuidedWorkflowTests(unittest.TestCase):
         snapshot = self.workflow.finish_download()
         self.assertTrue(snapshot['coverage']['closed_partial'])
         self.assertTrue(snapshot['coverage']['resume_available'])
-        self.assertTrue(snapshot['actions']['analyze']['enabled'])
+        self.assertFalse(snapshot['actions']['analyze']['enabled'])  # Closing a queue does not create text.
 
     def test_paused_235_articles_64_jobs_can_be_closed_and_analyzed_without_losing_queue(self):
         self.import_bank()
@@ -484,7 +486,7 @@ class GuidedWorkflowTests(unittest.TestCase):
             self.workflow.finish_download()
         with self.engine.store.connection() as con:
             con.execute('UPDATE jobs SET lease_until=? WHERE id=?', (time.time() - 1, job['id']))
-        self.assertTrue(self.workflow.finish_download()['actions']['analyze']['enabled'])
+        self.assertFalse(self.workflow.finish_download()['actions']['analyze']['enabled'])
         self.workflow.set_mode('local')
         self.workflow.confirm_sources()
         self.engine.store.claim(lease_seconds=300, kind_prefix='news_')
@@ -707,6 +709,115 @@ class GuidedWorkflowTests(unittest.TestCase):
         self.assertTrue(snapshot['actions']['download']['enabled'])
         self.assertTrue(snapshot['actions']['configure_sources']['enabled'])
         self.assertFalse(snapshot['actions']['analyze']['enabled'])
+
+
+    def test_652_names_never_inherit_235_archived_documents_or_719_historical_completions(self):
+        self.engine.store.import_entities([{'id': f'fixture-{number}',
+            'name': f'Persona Sintética del Banco {number}', 'kind': 'person'} for number in range(652)])
+        self.sources[0]['source_name'] = 'Fuente sintética en espera'
+        self.workflow.confirm_sources()
+        with self.engine.store.connection() as con:
+            revision = con.execute("SELECT value FROM meta WHERE key='news_identity_revision'").fetchone()[0]
+            stamp = time.time()
+            con.executemany('INSERT INTO documents VALUES(?,?,?,?,?,?,?,?,?,?)', [
+                (f'archive-{n}', f'https://fixture.invalid/old/{n}', 'Archivo anterior',
+                 'Texto de otro banco sin coincidencias actuales.', f'hash-{n}', 'synthetic', 'news', None,
+                 '2026-10-01', '{}') for n in range(235)])
+            con.executemany('INSERT INTO news_articles(id,canonical_url,publisher_id,source_id,title,summary,'
+                'discovered_at,scope,status,document_id) VALUES(?,?,?,?,?,?,?,?,?,?)', [
+                (f'article-{n}', f'https://fixture.invalid/old/{n}', 'synthetic', 'synthetic', 'Archivo anterior',
+                 '', '2026-10-01', 'full_article', 'acquired', f'archive-{n}') for n in range(235)])
+            con.executemany('INSERT INTO jobs(id,kind,payload,status,due,created_at,updated_at,error) VALUES(?,?,?,?,?,?,?,?)', [
+                (f'done-{n}', 'news_feed', json.dumps({'bank_revision': revision if n < 133 else 'old',
+                 'source_id': 'synthetic'}), 'done', stamp - 100, '2026-10-01', '2026-10-01', None)
+                for n in range(719)])
+            con.executemany('INSERT INTO jobs(id,kind,payload,status,due,created_at,updated_at,error) VALUES(?,?,?,?,?,?,?,?)', [
+                (f'pending-{n}', 'news_feed', json.dumps({'bank_revision': revision, 'source_id': 'synthetic'}),
+                 'queued' if n == 0 else 'deferred', stamp + 120 if n == 0 else stamp + 60,
+                 '2026-10-01', '2026-10-01', None if n == 0 else 'Pausa obligatoria de la fuente') for n in range(7)])
+        self.workflow.mark_download('running')
+        tracker = OperationTracker()
+        tracker.start('download', phase='download')
+        tracker.update(completed=133, pending=7, deferred=6, ready=0, active_tasks=0, waiting=True,
+                       jobs={'done': 719, 'queued': 1, 'deferred': 6})
+        snapshot = self.workflow.snapshot(tracker)
+        activity = snapshot['activity']
+        self.assertEqual('waiting', activity['state'])
+        self.assertTrue(activity['owner_active'])
+        self.assertEqual(0, activity['active_requests'])
+        self.assertEqual(133, activity['session_tasks']['completed'])
+        self.assertEqual(133, activity['current_bank_tasks']['done'])
+        self.assertEqual(719, activity['historical_tasks']['done'])
+        self.assertEqual(7, activity['current_bank_tasks']['pending'])
+        self.assertEqual(235, activity['material']['archived_documents'])
+        self.assertEqual(235, activity['material']['archived_articles'])
+        self.assertEqual(0, activity['material']['analyzable_documents'])
+        self.assertEqual(0, activity['material']['relevant_articles'])
+        self.assertEqual('Fuente sintética en espera', activity['source_label'])
+        self.assertEqual('Pausa obligatoria de la fuente', activity['last_error'])
+        self.assertGreater(activity['next_retry_seconds'], 0)
+        self.assertEqual('waiting', snapshot['steps'][2]['status'])
+        self.assertTrue(snapshot['coverage']['waiting'])
+        for action in ('analyze', 'analyze_available', 'pause_and_analyze', 'import', 'configure_sources'):
+            self.assertFalse(snapshot['actions'][action]['enabled'], action)
+        tracker.request_cancel()
+        self.assertEqual('pausing', self.workflow.snapshot(tracker)['activity']['state'])
+        tracker.finish('paused')
+        self.workflow.mark_download('paused')
+        paused = self.workflow.snapshot(tracker)
+        self.assertEqual('paused', paused['activity']['state'])
+        self.assertFalse(paused['activity']['owner_active'])
+        self.assertNotEqual('waiting', tracker.snapshot()['task_progress']['queue']['eta_kind'])
+        self.assertFalse(paused['actions']['analyze_available']['enabled'])
+        self.assertIn('textos pertinentes', paused['actions']['analyze_available']['reason'])
+        self.assertEqual(0, self.engine.store.stats()['scores'])
+
+    def test_waiting_owner_with_current_text_can_request_safe_pause_and_analysis(self):
+        self.import_bank()
+        self.document()
+        self.workflow.mark_download('running')
+        tracker = OperationTracker()
+        tracker.start('download', phase='download')
+        tracker.update(waiting=True, active_tasks=0, pending=1)
+        current = self.workflow.snapshot(tracker)
+        self.assertTrue(current['actions']['pause_and_analyze']['enabled'])
+        self.assertFalse(current['actions']['analyze_available']['enabled'])
+        self.assertEqual(1, current['activity']['material']['analyzable_documents'])
+        tracker.request_cancel()
+        self.assertFalse(self.workflow.snapshot(tracker)['actions']['pause_and_analyze']['enabled'])
+
+    def test_completed_search_and_session_counts_expire_when_the_bank_changes(self):
+        self.import_bank()
+        self.document()
+        self.workflow.mark_download('completed')
+        tracker = OperationTracker()
+        tracker.start('download', phase='download')
+        tracker.update(completed=133)
+        tracker.finish()
+        self.assertEqual('completed', self.workflow.snapshot(tracker)['activity']['state'])
+        self.engine.store.import_entities([{'id': 'new-fixture', 'name': 'Nueva Persona Sintética del Banco'}])
+        current = self.workflow.snapshot(tracker)
+        self.assertEqual('idle', current['activity']['state'])
+        self.assertFalse(current['activity']['session_tasks']['matches_current_bank'])
+        self.assertIsNone(current['activity']['session_tasks']['completed'])
+
+    def test_blocked_source_without_retry_does_not_look_like_a_ready_or_active_download(self):
+        self.import_bank()
+        self.sources[0]['source_name'] = 'Fuente sintética bloqueada'
+        with self.engine.store.connection() as con:
+            revision = con.execute("SELECT value FROM meta WHERE key='news_identity_revision'").fetchone()[0]
+        identifier = self.engine.store.enqueue('news_query', {'bank_revision': revision, 'source_id': 'synthetic'})
+        with self.engine.store.connection() as con:
+            con.execute("UPDATE jobs SET status='blocked',error='La fuente exige revisión manual' WHERE id=?", (identifier,))
+        self.workflow.mark_download('paused')
+        activity = self.workflow.snapshot()['activity']
+        self.assertEqual('failed', activity['state'])
+        self.assertFalse(activity['owner_active'])
+        self.assertEqual(0, activity['active_requests'])
+        self.assertEqual('Fuente sintética bloqueada', activity['source_label'])
+        self.assertEqual('La fuente exige revisión manual', activity['last_error'])
+        self.assertIsNone(activity['next_retry_at'])
+        self.assertIsNone(activity['next_retry_seconds'])
 
 
 if __name__ == '__main__':

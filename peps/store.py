@@ -95,6 +95,8 @@ class Store:
               CREATE INDEX IF NOT EXISTS jobs_ready ON jobs(status,due,lease_until);
               CREATE INDEX IF NOT EXISTS jobs_claim_pending ON jobs(due,id)
                 WHERE attempts<5 AND status IN ('queued','deferred','running');
+              CREATE INDEX IF NOT EXISTS jobs_claim_kind_pending ON jobs(kind,due,id)
+                WHERE attempts<5 AND status IN ('queued','deferred','running');
               CREATE INDEX IF NOT EXISTS jobs_exhausted_pending ON jobs(attempts)
                 WHERE attempts>=5 AND status IN ('queued','deferred','running');
               CREATE TABLE IF NOT EXISTS audit(seq INTEGER PRIMARY KEY AUTOINCREMENT,at TEXT NOT NULL,
@@ -801,7 +803,13 @@ class Store:
             con.execute('BEGIN IMMEDIATE')
             return self._reconcile_jobs(con, time.time(), kind_prefix)
 
-    def claim(self, owner=None, lease_seconds=120, kind_prefix=None):
+    def claim(self, owner=None, lease_seconds=120, kind_prefix=None, preferred_kind=None):
+        """Lease ready work, optionally preferring one exact job kind.
+
+        Preference changes the ordering of eligible work only. It never moves
+        a retry deadline, releases another worker's lease or resets attempts.
+        The default retains the ordinary due/id order.
+        """
         owner = owner or uuid.uuid4().hex
         with self.connection() as con:
             con.execute('BEGIN IMMEDIATE')
@@ -809,11 +817,22 @@ class Store:
             current = time.time()
             self._reconcile_jobs(con, current, kind_prefix)
             while True:
-                row = con.execute("SELECT * FROM jobs INDEXED BY jobs_claim_pending WHERE attempts<5 "
-                                  "AND status IN ('queued','deferred','running') AND due<=? "
-                                  "AND (? IS NULL OR kind LIKE ? ESCAPE '\\') AND "
-                                  "(status IN ('queued','deferred') OR (status='running' AND COALESCE(lease_until,0)<=?)) "
-                                  "ORDER BY due,id LIMIT 1", (current, kind_prefix, kind_prefix_pattern(kind_prefix), current)).fetchone()
+                row = None
+                if preferred_kind is not None:
+                    # An exact-kind index avoids scanning a large discovery
+                    # backlog merely to learn that no body is ready yet.
+                    row = con.execute("SELECT * FROM jobs INDEXED BY jobs_claim_kind_pending WHERE attempts<5 "
+                                      "AND status IN ('queued','deferred','running') AND kind=? AND due<=? "
+                                      "AND (? IS NULL OR kind LIKE ? ESCAPE '\\') AND "
+                                      "(status IN ('queued','deferred') OR (status='running' AND COALESCE(lease_until,0)<=?)) "
+                                      "ORDER BY due,id LIMIT 1", (preferred_kind, current, kind_prefix,
+                                                                kind_prefix_pattern(kind_prefix), current)).fetchone()
+                if row is None:
+                    row = con.execute("SELECT * FROM jobs INDEXED BY jobs_claim_pending WHERE attempts<5 "
+                                      "AND status IN ('queued','deferred','running') AND due<=? "
+                                      "AND (? IS NULL OR kind LIKE ? ESCAPE '\\') AND "
+                                      "(status IN ('queued','deferred') OR (status='running' AND COALESCE(lease_until,0)<=?)) "
+                                      "ORDER BY due,id LIMIT 1", (current, kind_prefix, kind_prefix_pattern(kind_prefix), current)).fetchone()
                 if not row:
                     return None
                 try:

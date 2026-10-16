@@ -307,6 +307,11 @@ class OperationTracker:
             self._state.update(status='cancel_requested', message='Pausa solicitada; esperando que termine el trabajo actual.')
             return self._state['operation_id']
 
+    def note_message(self, message):
+        """Explain a rejected post-pause continuation without changing status."""
+        with self._lock:
+            self._state['message'] = str(message)[:2000]
+
     def _phase_eta(self, phase, moment, waiting=False):
         completed, total = phase['completed'], phase['total']
         if phase['status'] == 'completed':
@@ -331,7 +336,7 @@ class OperationTracker:
             row = {key: item for key, item in phase.items() if not key.startswith('_')}
             ended = phase['_ended'] if phase['_ended'] is not None else moment
             row['elapsed_seconds'] = round(max(0., ended - phase['_started']), 3) if phase['_started'] is not None else 0.
-            waiting = phase['id'] == value['phase'] and value.get('waiting', False)
+            waiting = self.busy and phase['id'] == value['phase'] and value.get('waiting', False)
             eta = self._phase_eta(phase, ended, waiting)
             # Discovery and retry queues can grow or require external permission;
             # a phase rate cannot promise an end-to-end download time.
@@ -358,7 +363,7 @@ class OperationTracker:
         done = jobs.get('done', value.get('done', value['completed']))
         pending, failed = value.get('pending', 0), value.get('failed', 0)
         queue_eta = current_eta
-        if value.get('waiting'):
+        if self.busy and value.get('waiting'):
             queue_eta = (value.get('next_retry_seconds'), 'waiting', 'scheduled_retry', 0)
         elif value['phase'] != 'download' and value['kind'] != 'download':
             queue_eta = (None, 'unknown', None, 0)
@@ -394,7 +399,8 @@ class OperationTracker:
 class GuidedWorkflow:
     STEPS = (('data', 'Importar banco'), ('sources', 'Configurar fuentes'),
              ('download', 'Descargar documentos'), ('analysis', 'Analizar evidencia'), ('results', 'Consultar resultados'))
-    ACTIONS = ('import', 'configure_sources', 'download', 'analyze', 'view_results', 'export', 'review', 'accept_partial', 'finish_download')
+    ACTIONS = ('import', 'configure_sources', 'download', 'analyze', 'view_results', 'export', 'review', 'accept_partial', 'finish_download',
+               'analyze_available', 'pause_and_analyze')
 
     def __init__(self, store, sources_provider=None):
         self.store, self.sources_provider = store, sources_provider or (lambda: [])
@@ -409,6 +415,9 @@ class GuidedWorkflow:
             # includes a REAL sum, whose rounding must not change on upgrade.
             con.execute("CREATE INDEX IF NOT EXISTS jobs_news_workflow ON jobs "
                         "(status,due,lease_until,kind,attempts,updated_at) WHERE kind GLOB 'news_*'")
+            con.execute("CREATE INDEX IF NOT EXISTS jobs_news_bank_workflow ON jobs "
+                        "(CAST(json_extract(CASE WHEN json_valid(payload) THEN payload ELSE '{}' END,'$.bank_revision') AS TEXT),"
+                        "status,due,lease_until,attempts) WHERE kind GLOB 'news_*'")
             con.execute('CREATE INDEX IF NOT EXISTS documents_workflow_kind ON documents(source_kind)')
 
     @staticmethod
@@ -537,7 +546,117 @@ class GuidedWorkflow:
                     'failed': statuses.get('dead', 0) + statuses.get('blocked', 0),
                     'unfetched_articles': unfetched, 'saturated_windows': saturated,
                     'insufficient_documents': counts['documents'] == 0}
+        # The execution lock still considers every live lease. Display counters
+        # have a narrower scope: old searches must not become progress for a new
+        # bank. Invalid/unversioned legacy payloads remain in historical totals.
+        revision = str(signature['bank'])
+        payload_sql = "CASE WHEN json_valid(payload) THEN payload ELSE '{}' END"
+        scope_sql = f"CAST(json_extract({payload_sql},'$.bank_revision') AS TEXT)=?"
+        scoped = con.execute("SELECT status,count(*) FROM jobs WHERE kind GLOB 'news_*' AND " +
+                             scope_sql + ' GROUP BY status', (revision,)).fetchall()
+        current = {row[0]: row[1] for row in scoped}
+        current_ready = con.execute("SELECT count(*) FROM jobs WHERE kind GLOB 'news_*' AND " +
+            scope_sql + " AND attempts<5 AND due<=? AND (status IN ('queued','deferred') OR "
+            "(status='running' AND COALESCE(lease_until,0)<=?))", (revision, observed_at, observed_at)).fetchone()[0]
+        retry = con.execute("SELECT payload,error,due,lease_until,status FROM jobs WHERE kind GLOB 'news_*' AND " +
+            scope_sql + " AND attempts<5 AND ((status IN ('queued','deferred') AND due>?) OR "
+            "(status='running' AND lease_until>?)) ORDER BY CASE WHEN status='running' THEN MAX(due,lease_until) "
+            'ELSE due END,id LIMIT 1', (revision, observed_at, observed_at)).fetchone()
+        task_counts = lambda values, scope: dict(scope=scope, **{key: values.get(key, 0) for key in
+            ('done', 'running', 'queued', 'deferred', 'blocked', 'dead', 'cancelled')},
+            pending=sum(values.get(key, 0) for key in ('queued', 'deferred', 'running')),
+            failed=sum(values.get(key, 0) for key in ('blocked', 'dead')))
+        coverage['current_bank_tasks'] = dict(task_counts(current, 'current_bank'), bank_revision=revision, ready=current_ready)
+        coverage['historical_tasks'] = task_counts(statuses, 'all_saved')
+        coverage['retry_detail'] = None
+        if retry:
+            try:
+                retry_payload = json.loads(retry['payload'])
+            except (TypeError, ValueError):
+                retry_payload = {}
+            source_id = retry_payload.get('source_id') if isinstance(retry_payload, dict) else None
+            source = next((item for item in sources if item.get('id') == source_id), {})
+            retry_at = max(retry['due'], retry['lease_until'] or 0) if retry['status'] == 'running' else retry['due']
+            coverage['retry_detail'] = {'source_id': source_id if isinstance(source_id, str) else None,
+                'source_label': source.get('source_name') or source.get('name') or source_id,
+                'last_error': str(retry['error'])[:2000] if retry['error'] else None,
+                'next_retry_at': retry_at, 'next_retry_seconds': max(0., retry_at - observed_at),
+                'wait_reason': 'external_lease' if retry['status'] == 'running' else 'source_retry'}
+        coverage['failure_detail'] = None
+        failure = con.execute("SELECT payload,error FROM jobs WHERE kind GLOB 'news_*' AND " + scope_sql +
+            " AND status IN ('blocked','dead') AND error IS NOT NULL ORDER BY updated_at DESC,id LIMIT 1",
+            (revision,)).fetchone()
+        if failure:
+            try:
+                failure_payload = json.loads(failure['payload'])
+            except (TypeError, ValueError):
+                failure_payload = {}
+            source_id = failure_payload.get('source_id') if isinstance(failure_payload, dict) else None
+            source = next((item for item in sources if item.get('id') == source_id), {})
+            coverage['failure_detail'] = {'source_id': source_id if isinstance(source_id, str) else None,
+                'source_label': source.get('source_name') or source.get('name') or source_id,
+                'last_error': str(failure['error'])[:2000]}
         return counts, signature, coverage, source_error
+
+    @staticmethod
+    def _activity(operation, coverage, receipt, material, scope_current=True):
+        """One operational truth for the banner, steps, buttons and task panel.
+
+        A coordinator can own the operation while no request is executing.
+        Waiting never releases that ownership or invents a completion ETA.
+        """
+        op = operation
+        owner = bool(op.get('busy') or op.get('status') in ('running', 'cancel_requested'))
+        download_owner = owner and (op.get('kind') == 'download' or
+                                   op.get('kind') == 'pipeline' and op.get('phase') == 'download')
+        active = coverage['active_running']
+        current = coverage['current_bank_tasks']
+        retry = coverage.get('retry_detail') or coverage.get('failure_detail') or {}
+        if owner and op.get('status') == 'cancel_requested':
+            state, label = 'pausing', 'Confirmando pausa'
+            detail = 'La pausa terminará cuando finalicen las solicitudes en ejecución. Las tareas pendientes se conservarán.'
+        elif download_owner and active:
+            state, label = 'running', 'Consultando fuentes'
+            detail = f'{active} solicitudes en ejecución.'
+        elif download_owner and not current['ready'] and (op.get('waiting') or current['pending']):
+            state, label = 'waiting', 'Esperando a las fuentes'
+            detail = 'No hay solicitudes en ejecución. El proceso conserva la cola y espera el próximo intento.'
+        elif owner:
+            state, label = 'preparing' if download_owner else 'running', 'Preparando consultas' if download_owner else 'Analizando información'
+            detail = 'El proceso está preparando o guardando trabajo.' if download_owner else op.get('message') or 'El análisis está en ejecución.'
+        elif active:
+            state, label = 'external_worker', 'Otra ejecución utiliza la cola'
+            detail = 'Hay solicitudes con una reserva vigente. Espera a que finalicen antes de modificar o analizar.'
+        elif receipt.get('status') == 'closed_partial':
+            state, label = 'completed', 'Descarga cerrada con cobertura parcial'
+            detail = 'Se conservan las tareas pendientes. El análisis utiliza únicamente los textos disponibles para esta lista.'
+        elif receipt.get('status') == 'failed' or scope_current and op.get('status') == 'failed':
+            state, label, detail = 'failed', 'Proceso interrumpido', 'Revisa el error y reanuda las tareas conservadas.'
+        elif current['failed'] and not current['pending']:
+            state, label, detail = 'failed', 'Hay fuentes que no respondieron', 'La cola terminó con tareas bloqueadas o con error. Revisa las fuentes antes de volver a intentar.'
+        elif current['pending'] or receipt.get('status') == 'paused':
+            state = 'paused' if receipt.get('status') in ('paused', 'closed_partial') else 'resumable'
+            label, detail = 'Descarga en pausa' if state == 'paused' else 'Trabajo pendiente guardado', 'No hay un proceso ejecutándose. Puedes reanudar con el alcance guardado.'
+        elif receipt.get('status') in ('completed', 'closed_partial'):
+            state, label, detail = 'completed', 'Búsqueda finalizada', 'La cola terminó; revisa la cobertura obtenida para esta lista.'
+        else:
+            state, label, detail = 'idle', 'Lista para buscar', 'Inicia una búsqueda por los nombres de tu lista.'
+        download_phase = next((phase for phase in (op.get('task_progress') or {}).get('phases', [])
+                               if phase.get('id') == 'download'), {})
+        session = {'scope': 'current_session',
+                   'completed': op.get('completed') if op.get('kind') == 'download' or op.get('phase') == 'download'
+                                else download_phase.get('completed'),
+                   'pending': op.get('pending') if op.get('kind') == 'download' or op.get('phase') == 'download' else None}
+        session['matches_current_bank'] = scope_current
+        if not scope_current:
+            session.update(completed=None, pending=None)
+        return dict(state=state, label=label, detail=detail, owner_active=owner, active_requests=active,
+                    can_pause=download_owner and op.get('status') != 'cancel_requested',
+                    source_id=retry.get('source_id'), source_label=retry.get('source_label'),
+                    last_error=retry.get('last_error') or op.get('last_error'),
+                    next_retry_at=retry.get('next_retry_at'), next_retry_seconds=retry.get('next_retry_seconds'),
+                    wait_reason=retry.get('wait_reason'), session_tasks=session,
+                    current_bank_tasks=deepcopy(current), historical_tasks=deepcopy(coverage['historical_tasks']), material=material)
 
     @staticmethod
     def _acquisition_signature(signature):
@@ -573,6 +692,21 @@ class GuidedWorkflow:
             con.execute('BEGIN')
             state = self._state(con)
             counts, signature, coverage, source_error = self._read(con)
+        from .acquisition_coverage import acquisition_coverage
+        try:
+            material_sources = self.sources_provider()
+        except (ValueError, TypeError, OSError):
+            material_sources = []
+        valid_sources = (material_sources if isinstance(material_sources, list)
+                         and all(isinstance(source, dict) for source in material_sources) else [])
+        observed = acquisition_coverage(self.store, valid_sources)
+        material = {'scope': 'current_bank', 'body_articles': observed['body_articles'],
+            'local_documents': observed['local_documents'],
+            'analyzable_documents': observed['body_articles'] + observed['local_documents'],
+            'relevant_articles': observed['relevant_articles'],
+            'archived_articles': counts['articles'], 'archived_documents': counts['documents']}
+        counts['current_documents'] = material['analyzable_documents']
+        counts['current_articles'] = material['relevant_articles']
         mode, busy = state.get('mode', 'online'), bool(op.get('busy') or op.get('status') in ('running', 'cancel_requested'))
         sources_confirmed = state.get('sources_confirmed') == {'sources': signature['sources'], 'mode': mode}
         pending = counts['pending_downloads'] > 0
@@ -587,7 +721,12 @@ class GuidedWorkflow:
         coverage['needs_new_search'] = bool(coverage['preparation_incomplete'] or pending and not coverage['resume_available'])
         coverage['acquisition_current'] = acquisition_current
         active = busy or bool(coverage['active_running'])
+        # Compatibility flag means an execution owns the workflow, rather than
+        # an HTTP request. New clients use activity.owner_active/active_requests.
         coverage['worker_active'] = active
+        activity = self._activity(op, coverage, receipt if resume_scope_current else {}, material,
+                                  scope_current=resume_scope_current)
+        coverage['activity'] = activity
         plan = self._plan_summary(download_details)
         coverage['search_plan'] = plan
         coverage['acquisition_context'] = deepcopy(download_details.get('acquisition_context')) if isinstance(download_details, dict) else None
@@ -603,7 +742,8 @@ class GuidedWorkflow:
         coverage['closed_partial'] = coverage['accepted_partial'] and receipt.get('status') == 'closed_partial'
         coverage['limitations'] = deepcopy((state.get('partial_acceptance') or {}).get('limitations'))
         coverage['stop_reason'] = download_details.get('stop_reason') if isinstance(download_details, dict) else None
-        coverage['waiting'] = bool(coverage['deferred'] and not coverage['ready'] and not active)
+        coverage['waiting'] = activity['state'] == 'waiting'
+        coverage['insufficient_documents'] = not material['analyzable_documents']
         coverage['status'] = receipt.get('status', 'not_started')
         coverage['mode'] = mode
         downloaded = bool(acquisition_current and not active and
@@ -625,6 +765,9 @@ class GuidedWorkflow:
                           else sources_reason if not sources_confirmed else '' if local else sources_reason if not counts['sources'] else '' if downloaded else download_reason)
         if not active and not local and pending and not downloaded and counts['entities'] and sources_confirmed:
             analyze_reason = pending_reason
+        no_material_reason = 'Aún no hay textos pertinentes para esta lista. Busca por nombre o incorpora documentos antes de analizar.'
+        if not active and not local and not material['analyzable_documents']:
+            analyze_reason = no_material_reason
         actions = {action: {'enabled': True, 'reason': ''} for action in self.ACTIONS}
         for action in ('import', 'configure_sources'):
             actions[action] = {'enabled': not active, 'reason': active_reason if active else ''}
@@ -639,6 +782,12 @@ class GuidedWorkflow:
                           'La adquisición no corresponde a los datos vigentes; confirme las fuentes y reanude la descarga antes de finalizarla.')
         actions['accept_partial'] = {'enabled': not bool(partial_reason), 'reason': partial_reason}
         actions['finish_download'] = deepcopy(actions['accept_partial'])
+        available_reason = no_material_reason if not material['analyzable_documents'] else partial_reason
+        actions['analyze_available'] = {'enabled': not bool(available_reason), 'reason': available_reason}
+        pause_reason = (no_material_reason if not material['analyzable_documents'] else
+                        'Esta acción requiere una descarga activa de esta aplicación.' if not activity['can_pause'] else
+                        sources_reason if not sources_confirmed else '')
+        actions['pause_and_analyze'] = {'enabled': not bool(pause_reason), 'reason': pause_reason}
         for action in ('view_results', 'export', 'review'):
             reason = active_reason if active else '' if analysis_current else 'Ejecute el análisis de los datos vigentes.'
             actions[action] = {'enabled': not bool(reason), 'reason': reason}
@@ -658,11 +807,11 @@ class GuidedWorkflow:
             if op.get('kind') == 'pipeline':
                 operation_step = 'download' if op.get('phase') == 'download' else 'analysis'
             if busy and operation_step == step_id:
-                status, reason = 'running', op.get('message') or active_reason
+                status, reason = (activity['state'] if step_id == 'download' else 'running'), activity['label']
             steps.append({'id': step_id, 'number': number, 'label': label, 'status': status, 'reason': reason})
         recommended = next((step['id'] for step in steps if step['status'] != 'complete'), 'results')
         return {'mode': mode, 'sources_confirmed': sources_confirmed, 'steps': steps, 'recommended_step': recommended, 'actions': actions,
-                'counts': counts, 'analysis_current': analysis_current, 'coverage': coverage}
+                'counts': counts, 'analysis_current': analysis_current, 'coverage': coverage, 'activity': activity}
 
     def require(self, action, operation=None):
         if action not in self.ACTIONS:

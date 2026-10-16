@@ -62,6 +62,7 @@ def jobs_snapshot(store):
 
 def seed_case(engine, news, transport):
     from peps.store import digest, now
+    from peps.news_projection import projection_signature
     entity = {'id': 'recovery-fixture', 'name': 'Entidad Sintética Aurora de Recuperación',
               'kind': 'company', 'aliases': ['Aurora Sintética de Prueba'],
               'context': {'city': 'Puebla', 'role': 'Organización enteramente ficticia'}}
@@ -96,9 +97,10 @@ def seed_case(engine, news, transport):
     due = time.time() + 3600
     with engine.store.connection() as con:
         con.execute('BEGIN IMMEDIATE')
+        bank_revision = projection_signature(con)['bank_revision']
         for number, (article_id, url) in enumerate(rows[171:], 171):
             job_id = engine.store.enqueue('news_article',
-                {'article_id': article_id, 'source_id': source['id'], 'url': url},
+                {'article_id': article_id, 'source_id': source['id'], 'url': url, 'bank_revision': bank_revision},
                 key='recovery-fixture-' + str(number), due=due, connection=con)
             con.execute("UPDATE jobs SET status='deferred',attempts=2,error='Espera sintética del servidor' WHERE id=?",
                         (job_id,))
@@ -127,7 +129,7 @@ def main():
     artifacts.mkdir(parents=True, exist_ok=True)
     report = {'kind': 'synthetic_real_scheduler_download_recovery',
               'processed_at': datetime.now(timezone.utc).isoformat(), 'checks': {}, 'screenshots': [],
-              'fixture': {'articles': 235, 'full_bodies': 0, 'metadata_only_articles': 235, 'deferred_tasks': 64,
+              'fixture': {'articles': 235, 'local_document_added_before_analysis': True, 'full_bodies': 0, 'metadata_only_articles': 235, 'deferred_tasks': 64,
                           'retry_seconds': 3600, 'real_scheduler': True, 'real_local_http': True,
                           'replaced_boundary': 'external HTTP transport only'}}
 
@@ -276,12 +278,26 @@ def main():
                             checked('235_articles_and_64_pending_are_visible',
                                     api(page, 'workflow')['body']['counts']['articles'] == 235 and
                                     api(page, 'workflow')['body']['counts']['pending_downloads'] == 64)
-                            expect(page.locator('#workflow-news-count')).to_have_text('235')
+                            expect(page.locator('#workflow-news-count')).to_have_text('1')
                             expect(page.locator('#m-jobs')).to_have_text('64')
                             expect(page.locator('#workflow-tasks-deferred')).to_have_text('64')
                             expect(page.locator('#workflow-tasks-retained')).to_have_text('64')
-                            expect(page.locator('#workflow-coverage-note')).to_contain_text('235')
+                            expect(page.locator('#workflow-coverage-note')).to_contain_text('1 referencias pertinentes')
                             expect(page.locator('#workflow-download-wait')).to_contain_text('Próximo intento permitido')
+                            checked('metadata_references_do_not_enable_empty_analysis',
+                                    api(page, 'workflow-analyze-available', {})['status'] == 409 and
+                                    not page.locator('#workflow-accept-partial').is_visible())
+                            # Explicitly add an independent local source document. Metadata
+                            # references remain insufficient; the following analysis uses this text.
+                            engine.import_documents([{'url': 'https://fixture.invalid/local-evidence',
+                                'title': 'Documento local enteramente sintético', 'source_kind': 'official',
+                                'entity_ids': [entity['id']], 'published_at': '2024-06-15',
+                                'text': entity['name'] + ': documento inventado para probar el análisis de texto local. No describe hechos reales.'}])
+                            page.evaluate('refresh(true)')
+                            page.locator('#news-acquire').click()
+                            idle(page)
+                            checked('local_text_then_real_resume_keeps_all_pending_jobs',
+                                    jobs_snapshot(engine.store) == baseline and not transport.calls)
                             wait_until(page, lambda: 'pausa' in page.locator('#workflow-download-status').inner_text().lower(),
                                        'The paused status was not rendered')
                             checked('analysis_is_guarded_until_explicit_partial_close',
@@ -292,7 +308,7 @@ def main():
                             page.reload()
                             page.locator('[data-panel="news"]').wait_for()
                             checked('paused_queue_survives_reload_without_automatic_acquisition',
-                                    len(started_payloads) == 1 and jobs_snapshot(engine.store) == baseline)
+                                    len(started_payloads) == 2 and jobs_snapshot(engine.store) == baseline)
                             page.mouse.wheel(0, 12000)
                             page.wait_for_timeout(100)
                             scroll = page.evaluate('window.scrollY')
@@ -319,9 +335,9 @@ def main():
                                     analyzed['operation']['status'] == 'completed' and
                                     analyzed['workflow']['analysis_current'] and jobs_snapshot(engine.store) == baseline)
                             explanation = api(page, 'explanation?id=' + entity['id'])
-                            checked('saved_score_archives_235_metadata_only_articles_and_64_pending_tasks',
+                            checked('saved_score_scopes_one_current_metadata_reference_and_64_pending_tasks',
                                     explanation['status'] == 200 and
-                                    explanation['body']['result']['provenance']['acquisition']['metadata_only_articles'] == 235 and
+                                    explanation['body']['result']['provenance']['acquisition']['metadata_only_articles'] == 1 and
                                     explanation['body']['result']['provenance']['acquisition']['pending_tasks'] == 64 and
                                     explanation['body']['result']['provenance']['acquisition']['accepted_partial'] is True)
                             checked('partial_acquisition_snapshot_remains_replayable', api(page, 'replay',
@@ -346,7 +362,7 @@ def main():
                             resume.click()
                             wait_until(page, transport.entered.is_set, 'The real worker did not claim the ready fixture')
                             checked('every_resume_suppresses_new_discovery',
-                                    len(started_payloads) == 2 and all(payload.get('resume') is True for payload in started_payloads))
+                                    len(started_payloads) == 3 and all(payload.get('resume') is True for payload in started_payloads))
                             busy = api(page, 'stats')['body']['operation']
                             checked('resume_revokes_previous_partial_results_while_the_worker_is_active',
                                     busy['busy'] and not api(page, 'workflow')['body']['analysis_current'] and

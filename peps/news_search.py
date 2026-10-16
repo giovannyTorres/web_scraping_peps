@@ -24,6 +24,10 @@ PRESETS = {
     'adverse': {'label': 'Señales adversas para revisión',
                 'terms': '(corrupción OR fraude OR "lavado de dinero" OR investigación OR sanción OR detenido OR absuelto)'},
 }
+PUBLISHER_FOCUS_TERMS = {
+    'public_role': ('gobierno', 'funcionario', 'contrato'),
+    'adverse': ('corrupción', 'fraude', 'sanción', '"lavado de dinero"'),
+}
 SEARCH_KEYS = {'strategy', 'preset', 'start', 'end', 'window', 'max_queries', 'include_aliases', 'use_context',
                'execution_mode', 'session_seconds'}
 
@@ -191,14 +195,20 @@ def entity_queries(entity, config, max_chars=500):
         phrase = '"' + variant + '"'
         if short_alias:
             phrase = '(' + phrase + ' ' + hint_query + ')'
-        candidate = '(' + ' OR '.join([*group, phrase]) + ')' + (' ' + suffix if suffix else '')
+        candidate = '(' + ' OR '.join([*group, phrase]) + ')'
         if len(candidate) > max_chars and group:
-            queries.append({'query': '(' + ' OR '.join(group) + ')' + (' ' + suffix if suffix else ''), 'query_type': 'identity'})
+            queries.append({'query': '(' + ' OR '.join(group) + ')', 'query_type': 'identity'})
             group = []
-        if len(phrase) + len(suffix) + 3 <= max_chars:
+        if len(phrase) + 2 <= max_chars:
             group.append(phrase)
     if group:
-        queries.append({'query': '(' + ' OR '.join(group) + ')' + (' ' + suffix if suffix else ''), 'query_type': 'identity'})
+        queries.append({'query': '(' + ' OR '.join(group) + ')', 'query_type': 'identity'})
+    # A profile refines discovery only after the nominal request. Requiring
+    # adverse vocabulary in every request hides neutral coverage for people
+    # whose public record simply uses their name.
+    if suffix:
+        queries.extend({'query': query['query'] + ' ' + suffix, 'query_type': 'focus'}
+                       for query in list(queries) if len(query['query']) + len(suffix) + 1 <= max_chars)
     if hint_query:
         contextual = '"' + variants[0] + '" ' + hint_query + (' ' + suffix if suffix else '')
         if len(contextual) <= max_chars:
@@ -218,8 +228,10 @@ def wordpress_queries(entity, config, *, variants=None):
     context = entity.get('context') or {}
     hints = [_phrase(context.get(key)) for key in ('state', 'municipality', 'role', 'position')
              if config['use_context'] and isinstance(context, dict) and _phrase(context.get(key))]
-    terms = [''] if config['preset'] == 'identity' else ['gobierno', 'funcionario', 'contrato'] if config['preset'] == 'public_role' else ['corrupción', 'fraude', 'sanción', '"lavado de dinero"']
+    terms = ('', *PUBLISHER_FOCUS_TERMS.get(config['preset'], ()))
     queries = []
+    contextual = next((query for query in public_queries(entity, {'use_context': config['use_context']}, variants[:1])
+                       if query['query_type'] == 'context'), None)
     for index, name in enumerate(variants):
         short = (index > 0 and len(name.split()) == 1
                  and not _uncontextual_corporate_alias(entity, name))
@@ -228,10 +240,12 @@ def wordpress_queries(entity, config, *, variants=None):
         phrase = '"' + name + '"' + (' "' + hints[0] + '"' if short else '')
         for term in terms:
             queries.append({'query': phrase + (' ' + term if term else ''),
-                            'query_type': 'identity' if index == 0 else 'alias'})
-    if variants:
-        for hint in list(dict.fromkeys(hints))[:3]:
-            queries.append({'query': '"' + variants[0] + '" "' + hint + '"', 'query_type': 'context'})
+                            'query_type': ('focus' if term else 'identity') if index == 0 else 'alias'})
+            if index == 0 and not term and contextual:
+                hint = contextual['context_hint']
+                text = phrase + ' ' + ' '.join('"' + _phrase(value) + '"' for value in contextual['context_hints'])
+                if len(text) <= 500:
+                    queries.append({'query': text, 'query_type': 'context', 'context_hint': hint})
     return queries
 
 
@@ -241,7 +255,7 @@ def _gdelt_batch_queries(entities, source, config, suffix, max_chars):
     Publisher WordPress search is deliberately excluded: it does not document
     the same Boolean semantics. Alias/context requests follow the first sweep.
     """
-    terms = [''] if config['preset'] == 'identity' else ['gobierno', 'funcionario', 'contrato'] if config['preset'] == 'public_role' else ['corrupción', 'fraude', 'sanción', '"lavado de dinero"']
+    terms = ('', *PUBLISHER_FOCUS_TERMS.get(config['preset'], ()))
     names = {}
     for entity in entities:
         variants = _variants(entity, config['include_aliases']) if _is_company(entity) else [_phrase(entity.get('name'))]
@@ -262,7 +276,7 @@ def _gdelt_batch_queries(entities, source, config, suffix, max_chars):
             return ('(' + ' OR '.join(phrases) + ')' if len(phrases) > 1 else phrases[0]) + tail
         batch = []
         def output(items):
-            return {'query': query(items), 'query_type': 'identity', 'rank': rank,
+            return {'query': query(items), 'query_type': 'focus' if term else 'identity', 'rank': rank,
                     'entity_ids': list(dict.fromkeys(identifier for item in items for identifier in item['ids'])),
                     'names': [item['name'] for item in items], 'batched': len(items) > 1}
         for item in names.values():
@@ -317,6 +331,9 @@ def _recent_floor(current, source):
 def query_url(source, payload):
     if source.get('kind') in PUBLIC_SEARCH_KINDS:
         return public_search_url(payload['query'], source)
+    from .shared_crawl import supports_wordpress_search, wordpress_search_url
+    if supports_wordpress_search(source):
+        return wordpress_search_url(source, payload['query'], payload['start'], payload['end'])
     if source.get('search_kind') == 'wordpress_rss':
         first, last = [_bound(payload[key]) for key in ('start', 'end')]
         args = {'s': payload['query'], 'feed': 'rss2', 'year': first.year}
@@ -347,7 +364,7 @@ class SearchPlanningStopped(Exception):
     """The caller stopped local planning before a complete plan was published."""
 
 
-def _fair_primary_queries(templates, entities, check):
+def _fair_primary_group(templates, entities, check):
     """Assign the first nominal sweep before spending on another provider.
 
     The assignment is made offline and never changes in response to a block.
@@ -393,6 +410,23 @@ def _fair_primary_queries(templates, entities, check):
             check()
             if index < len(queries) and (provider, index) not in used:
                 yield source, windows, queries[index]
+
+
+def _fair_primary_queries(templates, entities, check):
+    """Share the nominal first sweep across approved search providers.
+
+    Provider assignments are fixed before any request. Public engines start
+    the rotation, followed by directed publisher searches. Complete the first
+    distinct-name sweep before spending on another provider/name combination;
+    otherwise two public engines can exhaust a large bank's query budget and
+    leave every useful publisher search unplanned. This is offline scheduling,
+    never an endpoint change in response to a block.
+    An approved publisher remains available for body acquisition independently
+    from whether its historical search fits in this session's query budget.
+    """
+    ordered = [template for public in (True, False) for template in templates
+               if (template[0].get('kind') in PUBLIC_SEARCH_KINDS) == public]
+    yield from _fair_primary_group(ordered, entities, check)
 
 
 def build_search_plan(entities, sources, config=None, *, start=None, end=None, now=None, should_stop=None):
@@ -445,11 +479,24 @@ def build_search_plan(entities, sources, config=None, *, start=None, end=None, n
                 plan['warnings'].append(source['id'] + ': tras el primer barrido nominal se añaden dos consultas con palabras del perfil, sin OR ni filtros temporales inventados. Esos términos orientan la búsqueda, no acreditan hallazgos ni generan puntos; los resultados pueden ser neutrales o parciales.')
             continue
         google, gdelt = source.get('search_kind') == 'google_news_rss', source.get('kind') == 'gdelt'
-        wordpress = source.get('search_kind') == 'wordpress_rss'
+        from .shared_crawl import supports_wordpress_search
+        wordpress_api = supports_wordpress_search(source)
+        if wordpress_api and config['strategy'] == 'targeted':
+            # Old approved standard publisher endpoints support the same
+            # search parameter. Compute the capability for this explicit plan
+            # without rewriting their saved policy or any existing queue.
+            limit = int(source.get('search_max_records', 10))
+            source = dict(source, search_kind='wordpress_api_search',
+                          search_max_records=min(10, limit) if quick else limit)
+        wordpress = source.get('search_kind') == 'wordpress_rss' or wordpress_api
         if source.get('automated_search') is False:
             plan['warnings'].append(source['id'] + ': búsqueda automática omitida por la política robots verificada; candidato de consulta manual.')
             continue
-        if source.get('kind') in ('wordpress_api', 'sitemap') and config['strategy'] != 'feeds':
+        if (source.get('kind') in ('wordpress_api', 'sitemap') and config['strategy'] != 'feeds'
+                and not (wordpress_api and config['strategy'] == 'targeted')):
+            if config['strategy'] != 'shared':
+                plan['warnings'].append(source['id'] + ': índice general omitido en búsqueda por nombre. Para recorrer su archivo elija explícitamente Índice compartido; habilite una fuente de búsqueda para consultar las entidades.')
+                continue
             from .shared_crawl import seed_pages
             pages = seed_pages(source, config, first, last)
             if source.get('kind') == 'wordpress_api' and (last - timedelta(microseconds=1)).year - first.year + 1 > len(pages):
@@ -493,9 +540,11 @@ def build_search_plan(entities, sources, config=None, *, start=None, end=None, n
         # Both execution modes start from one shared recent interval. Extended
         # mode expands only a saturated response instead of multiplying every
         # name by monthly windows before knowing whether any candidates exist.
-        windows = [(a, b)] if gdelt else _windows(a, b, unit)
+        windows = [(a, b)] if gdelt or wordpress_api else _windows(a, b, unit)
         if gdelt:
             unit = 'recent_interval'
+        elif wordpress_api:
+            unit = 'publisher_search_interval'
         prepared.append((source, windows))
         plan['sources'].append({'id': source['id'], 'source_name': source.get('source_name') or source['id'], 'scope': 'publisher_historical_search' if wordpress else 'historical_search_best_effort' if google else 'recent_rolling_window',
             'start': a.isoformat(), 'end_exclusive': b.isoformat(), 'windows': len(windows), 'window_unit': unit,
@@ -503,7 +552,9 @@ def build_search_plan(entities, sources, config=None, *, start=None, end=None, n
             'historical': google or wordpress, 'complete_archive': False})
         if google:
             plan['warnings'].append(source['id'] + ': Google News RSS entrega un top limitado (hasta 100 observado), sin garantía de archivo completo; divida ventanas saturadas. Los enlaces del agregador pueden requerir apertura manual del editor.')
-        if wordpress:
+        if wordpress_api:
+            plan['warnings'].append(source['id'] + ': búsqueda dirigida del editor por nombre dentro del período, con un top limitado por relevancia. Evita recorrer el índice completo; una respuesta limitada no garantiza revisar todo el histórico. Los extractos son candidatos y el cuerpo requiere su permiso separado.')
+        elif wordpress:
             plan['warnings'].append(source['id'] + ': búsqueda del editor por frase y año/mes; RSS limitado y archivo no exhaustivo. Las fechas son filtros solicitados, no garantía de cobertura; se conservan las fechas reportadas.')
     planned_ids, total_ids, templates = set(), {str(entity['id']) for entity in entities}, []
     shared_required = len(plan['queries'])
@@ -534,7 +585,7 @@ def build_search_plan(entities, sources, config=None, *, start=None, end=None, n
                 variants = _variants(entity, config['include_aliases'])
                 if source.get('kind') in PUBLIC_SEARCH_KINDS:
                     queries = public_queries(entity, config, variants)
-                elif source.get('search_kind') == 'wordpress_rss' or source.get('kind') == 'gdelt':
+                elif source.get('search_kind') in ('wordpress_rss', 'wordpress_api_search') or source.get('kind') == 'gdelt':
                     # GDELT rejects nested OR groups. Separate exact-phrase
                     # requests also keep short aliases bound to a context hint.
                     queries = wordpress_queries(entity, config, variants=variants)
@@ -542,7 +593,7 @@ def build_search_plan(entities, sources, config=None, *, start=None, end=None, n
                     queries = entity_queries(entity, config, max(1, max_chars - len(source_suffix)))
                 for rank, query in enumerate(checked(queries)):
                     if source.get('kind') == 'gdelt':
-                        if query['query_type'] == 'identity':
+                        if query['query_type'] in ('identity', 'focus'):
                             continue  # Canonical requests were batched above.
                         rank += 100
                     text = query['query'] + source_suffix
@@ -593,7 +644,7 @@ def build_search_plan(entities, sources, config=None, *, start=None, end=None, n
     if plan['truncated']:
         plan['warnings'].append('Presupuesto local de consultas alcanzado: existen entidades o ventanas sin planificar. Amplíe el presupuesto o reduzca el período.')
     if not prepared and not shared_sources and config['strategy'] in ('targeted', 'shared', 'public'):
-        plan['warnings'].append('Habilite una fuente con búsqueda histórica del editor o GDELT reciente y registre sus permisos; los feeds generales no buscan a las entidades cargadas.')
+        plan['warnings'].append('Habilite un buscador web público o una fuente con búsqueda del editor y registre sus permisos. Los índices compartidos requieren esa estrategia explícita; los feeds generales no buscan los nombres cargados.')
     if shared_sources:
         plan['shared_discovery'] = {'sources': len(shared_sources), 'initial_pages': shared_initial,
             'max_pages_per_source': 24 if quick else 240,

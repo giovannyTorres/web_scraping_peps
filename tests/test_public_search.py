@@ -255,7 +255,7 @@ class PublicPlanningTests(unittest.TestCase):
         extended = build_search_plan(entities, [SOURCE, second], dict(settings, max_queries=1000))
         self.assertTrue(all(query['query_type'] == 'identity' for query in extended['queries'][:600]))
         self.assertEqual(extended['queries'][600]['query_type'], 'context')
-        self.assertEqual(extended['queries'][600]['query'], entities[0]['name'] + ' Municipio Ejemplo')
+        self.assertEqual(extended['queries'][600]['query'], entities[0]['name'] + ' Municipio Ejemplo presidente municipal')
         plain = build_search_plan(entities, [SOURCE, second], dict(settings, use_context=False, max_queries=1000))
         self.assertEqual(plain['query_count'], 600)
         self.assertTrue(all(query['query_type'] == 'identity' for query in plain['queries']))
@@ -269,6 +269,35 @@ class PublicPlanningTests(unittest.TestCase):
         self.assertEqual(public_queries(oversized, {'use_context': True}, [ENTITY['name']])[1]['context_hint'], 'Estado')
         invalid = dict(ENTITY, context={'municipality': {'unrecognized': ['municipio']}})
         self.assertEqual(len(public_queries(invalid, {'use_context': True}, [ENTITY['name']])), 1)
+
+    def test_notarial_role_and_geography_form_one_contextual_query_before_adverse_terms(self):
+        entity = dict(ENTITY, context={'state': 'Ciudad de México', 'city': 'Ciudad de México',
+                                      'role': [{'name': 'notario público'}], 'position': 'notario público'})
+        config = {'use_context': True, 'preset': 'adverse'}
+        queries = public_queries(entity, config, [entity['name']])
+        self.assertEqual([query['query_type'] for query in queries],
+                         ['identity', 'context', 'focus', 'focus'])
+        self.assertEqual(queries[0]['query'], entity['name'])
+        self.assertEqual(queries[1]['query'], entity['name'] + ' Ciudad de México notario público')
+        self.assertEqual(queries[1]['context_hint'], 'Ciudad de México notario público')
+        self.assertEqual(len([query for query in queries if query['query_type'] == 'context']), 1)
+        self.assertTrue(all(len(query['query']) <= 500 for query in queries))
+        disabled = public_queries(entity, dict(config, use_context=False), [entity['name']])
+        self.assertNotIn('context', [query['query_type'] for query in disabled])
+        self.assertEqual(entity['context']['role'], [{'name': 'notario público'}])
+
+    def test_context_does_not_repeat_existing_name_clues_or_overflow_query_budget(self):
+        primary = 'Persona Sintética Notarial Ciudad de México'
+        entity = dict(ENTITY, name=primary,
+                      context={'state': 'Ciudad de México', 'role': 'notario público'})
+        queries = public_queries(entity, {'use_context': True}, [primary])
+        self.assertEqual(queries[1]['context_hint'], 'notario público')
+        long_name = 'Nombre ' + 'X' * 470
+        long_entity = dict(ENTITY, context={'state': 'Ciudad de México', 'role': 'notario público'})
+        long_queries = public_queries(long_entity, {'use_context': True}, [long_name])
+        self.assertTrue(all(len(query['query']) <= 500 for query in long_queries))
+        self.assertEqual(len(long_queries), 2)
+        self.assertEqual(long_queries[1]['context_hint'], 'Ciudad de México')
 
     def test_only_one_duckduckgo_format_per_plan_no_automatic_fallback(self):
         html = dict(SOURCE, id='html', kind='duckduckgo_html', url='https://html.duckduckgo.com/html/')

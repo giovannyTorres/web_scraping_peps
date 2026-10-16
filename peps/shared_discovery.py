@@ -262,3 +262,29 @@ def parse_wordpress_posts(payload, *, headers=None, page=1, per_page=100,
                            'observed_items': len(posts), 'retained_items': len(records),
                            'excluded_urls': excluded, 'truncated': len(posts) > max_items,
                            'pagination_inferred': total_pages is None}}
+
+
+def parse_wordpress_search(payload, *, query, headers=None, page=1, per_page=10,
+                           max_bytes=2_000_000, max_items=10):
+    """Parse one directed publisher response without promoting it to evidence.
+
+    WordPress may find a name in the full article while returning an excerpt
+    that omits it. Keep that publisher search provenance separately so callers
+    can select a bounded original-article fetch, then validate the actual text.
+    ``text`` remains the public excerpt; content is never copied into it.
+    """
+    if (not isinstance(query, str) or not query.strip() or len(query) > 1500
+            or any(ord(char) < 32 for char in query)):
+        raise DiscoveryParseError('Consulta WordPress inválida')
+    parsed = parse_wordpress_posts(payload, headers=headers, page=page,
+                                   per_page=per_page, max_bytes=max_bytes,
+                                   max_items=max_items)
+    for record in parsed['records']:
+        record['metadata'].update(discovery_kind='wordpress_rest_search',
+                                  publisher_query_match=True,
+                                  publisher_search_query=query.strip())
+    pagination = parsed['pagination']
+    pagination.update(kind='wordpress_rest_search', page_bounded=True,
+                      continuation_required=pagination['next_page'] is not None,
+                      truncated=pagination['truncated'] or pagination['next_page'] is not None)
+    return parsed

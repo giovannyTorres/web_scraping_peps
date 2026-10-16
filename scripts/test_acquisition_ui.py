@@ -197,6 +197,7 @@ def main():
                             expect(page.locator('[data-panel="news"]')).to_be_visible()
                             expect(page.locator('#workflow-session-budget')).to_contain_text('Rápido · hasta 2 min')
                             expect(page.locator('#workflow-session-budget')).to_contain_text('24 de 300')
+                            page.locator('#workflow-download-options > summary').click()
                             expect(page.locator('#workflow-session-permission-warning')).to_be_visible()
                             checked('budget_and_no_body_warning_are_visible_before_start')
                             coverage = api(page, 'stats')['body']['acquisition']
@@ -208,7 +209,7 @@ def main():
                                     coverage['body_articles'] == 0 and coverage['excluded_records'] == 223 and news.stats()['articles'] == 235)
                             for suffix, text in [('queried', '24 de 300'), ('candidates', '8 de 300'), ('bodies', '0 de 300')]:
                                 expect(page.locator('#workflow-entities-' + suffix)).to_have_text(text)
-                            expect(page.locator('#workflow-news-count')).to_have_text('235')
+                            expect(page.locator('#workflow-news-count')).to_have_text('8')
                             expect(page.locator('#workflow-summary-entity-count')).to_have_text('0')
                             checked('rendered_coverage_prioritizes_entities_over_raw_reference_count')
                             expect(page.locator('#news-articles .evidence')).to_have_count(8)

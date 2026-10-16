@@ -61,8 +61,11 @@ class ControlledOperations:
         if kwargs.get('reset_stop', True):
             acquirer.engine.stop_event.clear()
         if not self.queued:
+            from peps.news_projection import projection_signature
+            with acquirer.store.connection() as con:
+                bank_revision = projection_signature(con)['bank_revision']
             for number in range(2):
-                acquirer.store.enqueue('news_fixture', {'fixture': number}, key='guided-fixture-' + str(number))
+                acquirer.store.enqueue('news_fixture', {'fixture': number, 'bank_revision': bank_revision}, key='guided-fixture-' + str(number))
             self.queued = True
         self.entered.set()
         self.finished.clear()
@@ -363,7 +366,7 @@ def run_validation(args):
                         operation_id = busy.get('operation_id') or busy.get('id')
                         checked('download_reports_honest_indeterminate_progress', busy['busy'] and busy['total'] is None and
                                 busy['percent'] is None and busy['eta_seconds'] is None and busy['elapsed_seconds'] >= 0)
-                        wait_until(page, lambda: page.locator('#workflow-operation').is_visible(), 'Download progress was not shown')
+                        wait_until(page, lambda: page.locator('#workflow-search-live').is_visible() and page.locator('#stop').is_visible(), 'Current-list active download state was not shown')
                         checked('indeterminate_progress_does_not_invent_percentage', page.locator('#workflow-progress').get_attribute('value') is None)
                         checked('running_download_step_has_indeterminate_bar', page.locator('#workflow-step-progress-download').get_attribute('value') is None)
                         screenshot(page, 'desktop-running-download')

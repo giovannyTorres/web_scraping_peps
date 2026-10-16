@@ -97,13 +97,35 @@ class PipelineApiTests(unittest.TestCase):
                   'unit': 'tareas', 'pending': pending, 'failed': 0, 'queue_complete': pending == 0})
         return {'status': 'ok', 'processed': 1, 'completed': 1, 'pending': pending, 'failed': 0}
 
+    def seed_pertinent_text(self):
+        """Keep the workflow fixture meaningful: an actual current-bank body.
+
+        Only transport is mocked in these tests. Import, identity projection,
+        attribution, scoring and coverage remain the production implementations.
+        """
+        imported = self.engine.import_documents([{
+            'url': 'https://publisher.invalid/pertinent-synthetic-body',
+            'title': 'Persona Pública Sintética participa en un acto público',
+            'text': 'Persona Pública Sintética inauguró una biblioteca pública. '
+                    'La crónica describe una actividad neutral de la persona mencionada.',
+            'source_kind': 'news', 'entity_ids': ['synthetic'],
+            'published_at': '2020-10-15',
+        }])
+        self.assertEqual(imported['documents'], 1)
+        material = self.get('/api/stats')['workflow']['activity']['material']
+        self.assertEqual(material['body_articles'], 1)
+        self.assertEqual(material['relevant_articles'], 1)
+        self.assertEqual(material['analyzable_documents'], 1)
+
     def seed_paused_acquisition(self):
         self.authorize()
         self.post('/api/workflow-confirm-sources', {})
         workflow = GuidedWorkflow(self.engine.store, self.news.sources)
         workflow.mark_download(status='running')
+        with self.engine.store.connection() as con:
+            revision = con.execute("SELECT value FROM meta WHERE key='news_identity_revision'").fetchone()[0]
         job = self.engine.store.enqueue('news_query', {'source_id': 'fixture', 'entity_ids': ['synthetic'],
-                          'url': 'https://publisher.invalid/?s=synthetic'}, due=time.time() + 3600)
+                          'url': 'https://publisher.invalid/?s=synthetic', 'bank_revision': revision}, due=time.time() + 3600)
         workflow.mark_download(status='paused')
         return job
 
@@ -236,8 +258,7 @@ class PipelineApiTests(unittest.TestCase):
 
     def test_automatic_pipeline_stops_before_attribution_on_pending_or_limited_coverage(self):
         self.authorize()
-        self.engine.store.add_document({'url': 'https://publisher.invalid/local', 'title': 'Synthetic source',
-                                       'text': 'A synthetic neutral source document.', 'source_kind': 'official'}, [], lambda *_: {})
+        self.seed_pertinent_text()
         for pending in (1, 0):
             with self.subTest(pending=pending):
                 def acquire(**options):
@@ -266,8 +287,7 @@ class PipelineApiTests(unittest.TestCase):
 
     def test_complete_pipeline_reports_all_phases_and_scores_the_real_synthetic_bank(self):
         self.authorize()
-        self.engine.store.add_document({'url': 'https://publisher.invalid/local', 'title': 'Synthetic source',
-                                       'text': 'A synthetic neutral source document.', 'source_kind': 'official'}, [], lambda *_: {})
+        self.seed_pertinent_text()
         with patch('peps.news.NewsAcquirer.acquire', side_effect=lambda **options: self.report_download(options)):
             self.post('/api/workflow-run', {'online': True, 'analyze_after_download': True})
             operation = self.wait_finished('completed')
@@ -277,11 +297,34 @@ class PipelineApiTests(unittest.TestCase):
         self.assertTrue(all(phase['status'] == 'completed' for phase in operation['task_progress']['phases']))
         self.assertEqual(self.engine.store.stats()['scores'], 1)
         self.assertTrue(self.get('/api/workflow')['analysis_current'])
+        explanation = self.get('/api/explanation?id=synthetic')
+        self.assertTrue(explanation['result']['evidence_audit'])
+        acquisition = explanation['result']['provenance']['acquisition']
+        self.assertEqual(acquisition['scope'], 'current_bank')
+        self.assertEqual(acquisition['full_articles'], 1)
+
+    def test_complete_queue_without_pertinent_text_never_runs_automatic_empty_analysis(self):
+        self.authorize()
+        self.engine.store.add_document({'url': 'https://publisher.invalid/unrelated-archive',
+            'text': 'Un archivo anterior que no menciona a las personas de esta lista.',
+            'source_kind': 'official'}, [], lambda *_: {})
+        with patch('peps.news.NewsAcquirer.acquire', side_effect=lambda **options: self.report_download(options)), \
+                patch('peps.news.NewsAcquirer.attribute') as attribute, patch.object(self.engine, 'rescore') as score:
+            self.post('/api/workflow-run', {'online': True, 'analyze_after_download': True})
+            self.wait_finished('paused')
+        attribute.assert_not_called()
+        score.assert_not_called()
+        workflow = self.get('/api/workflow')
+        self.assertEqual(workflow['activity']['material']['archived_documents'], 1)
+        self.assertEqual(workflow['activity']['material']['analyzable_documents'], 0)
+        self.assertFalse(workflow['actions']['analyze']['enabled'])
+        self.assertFalse(workflow['actions']['analyze_available']['enabled'])
+        self.assertFalse(workflow['analysis_current'])
+        self.assertEqual(self.engine.store.stats()['scores'], 0)
 
     def test_incomplete_preparation_pauses_zero_pending_pipeline_before_analysis(self):
         self.authorize()
-        self.engine.store.add_document({'url': 'https://publisher.invalid/local', 'title': 'Synthetic source',
-                                       'text': 'A synthetic neutral source document.', 'source_kind': 'official'}, [], lambda *_: {})
+        self.seed_pertinent_text()
         report = {'processed': 0, 'completed': 0, 'pending': 0, 'failed': 0,
                   'preparation_incomplete': True, 'queue_complete': False, 'status': 'paused'}
         with patch('peps.news.NewsAcquirer.acquire', return_value=report), \
@@ -298,6 +341,7 @@ class PipelineApiTests(unittest.TestCase):
         self.assertTrue(operation['result']['preparation_incomplete'])
 
     def test_explicit_analyze_available_archives_partial_consent_without_deleting_queue(self):
+        self.seed_pertinent_text()
         job = self.seed_paused_acquisition()
         with self.engine.store.connection() as con:
             before = tuple(con.execute('SELECT * FROM jobs WHERE id=?', (job,)).fetchone())
@@ -318,8 +362,7 @@ class PipelineApiTests(unittest.TestCase):
 
     def test_cancel_requested_during_attribution_keeps_mutations_blocked_and_skips_scoring(self):
         self.authorize()
-        self.engine.store.add_document({'url': 'https://publisher.invalid/local', 'title': 'Synthetic source',
-                                       'text': 'A synthetic neutral source document.', 'source_kind': 'official'}, [], lambda *_: {})
+        self.seed_pertinent_text()
         entered, release = threading.Event(), threading.Event()
         self.releases.append(release)
         def attribute(**options):

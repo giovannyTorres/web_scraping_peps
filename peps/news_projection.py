@@ -1,7 +1,8 @@
-"""Versioned metadata relevance projection for the current entity bank.
+"""Versioned retrieval relevance projection for the current entity bank.
 
 Only this disposable lookup is rebuilt. Raw observations, identity history and
-source documents remain unchanged. No body parsing, NLP or network is used.
+source documents remain unchanged. Retained original plain text is included;
+no HTML parsing, NLP, identity attribution or network is used.
 """
 from __future__ import annotations
 
@@ -13,7 +14,7 @@ from . import relevance as relevance_model
 from .store import canonical
 
 _READY_KEY = 'news_projection_ready'
-PROJECTION_VERSION = 'all-history-1'
+PROJECTION_VERSION = 'all-history-body-2'
 
 
 class _IndexBuildStopped(Exception):

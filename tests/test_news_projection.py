@@ -8,7 +8,7 @@ from unittest.mock import patch
 from peps.acquisition_coverage import acquisition_coverage
 from peps.engine import Engine
 from peps.news import NewsAcquirer
-from peps.news_projection import ensure_projection, projection_ready, update_projection
+from peps.news_projection import PROJECTION_VERSION, ensure_projection, projection_ready, update_projection
 from peps.relevance import RelevanceIndex, MODEL_VERSION
 from peps.store import canonical, now
 
@@ -86,7 +86,7 @@ class NewsProjectionTests(unittest.TestCase):
         with self.store.connection() as con:
             self.assertTrue(projection_ready(con))
             marker = json.loads(con.execute("SELECT value FROM meta WHERE key='news_projection_ready'").fetchone()[0])
-            self.assertEqual(marker['projection_version'], 'all-history-1')
+            self.assertEqual(marker['projection_version'], PROJECTION_VERSION)
             self.assertEqual([row[0] for row in con.execute('SELECT entity_id FROM news_current_candidates')], ['one'])
             self.assertEqual([tuple(row) for row in con.execute('SELECT * FROM news_observations ORDER BY id')], raw)
         self.assertEqual(self.coverage()['entities_with_candidates'], 1)
