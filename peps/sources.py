@@ -76,6 +76,9 @@ def build_search_url(entity: str | dict, source: dict) -> str:
         raise ValueError("Entity name must contain 1 to 300 characters")
     # Escape search language operators inside the quoted entity name.
     name = name.replace('"', " ").replace("\\", " ")
+    from .public_search import PUBLIC_SEARCH_KINDS, public_search_url
+    if source.get('kind') in PUBLIC_SEARCH_KINDS:
+        return public_search_url(name, source)
     query = '"' + name + '" (México OR Mexico)'
     if source.get("id") == "gdelt" or source.get("kind") == "gdelt":
         base = source.get("base_url", "https://api.gdeltproject.org/api/v2/doc/doc")
@@ -146,7 +149,13 @@ def parse_results(fetch_result: dict, source: dict) -> list[dict]:
     candidates = []
     limit = max(1, min(int(source.get('max_items', source.get('max_records', 250))), 100000))
     fetch_result['parse_metadata'] = {'observed_entries': 0, 'truncated': False}
-    if kind == "gdelt" or (source_id == "gdelt" and "kind" not in source):
+    from .public_search import PUBLIC_SEARCH_KINDS, parse_public_results
+    if kind == 'lemmy_search':
+        from .social_discovery import parse_lemmy_results
+        candidates = parse_lemmy_results(fetch_result, source)
+    elif kind in PUBLIC_SEARCH_KINDS:
+        candidates = parse_public_results(fetch_result, source)
+    elif kind == "gdelt" or (source_id == "gdelt" and "kind" not in source):
         try:
             payload = json.loads(body)
         except (ValueError, RecursionError) as exc:

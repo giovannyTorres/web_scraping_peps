@@ -344,7 +344,9 @@ def run_validation(args):
                         page.locator('#workflow-save-search').click()
                         wait_until(page, lambda: api(page, 'news-search')['body']['config']['strategy'] == 'feeds',
                                    'The fixture must explicitly select its generic RSS feed')
-                        page.locator('#workflow-sources-next').click()
+                        page.locator('#workflow-auto-analyze').uncheck()
+                        assert api(page, 'workflow-confirm-sources', {})['status'] == 200
+                        page.locator('[data-tab="news"]').click()
                         page.locator('[data-panel="news"]').wait_for()
                         checked('download_needs_explicit_network_consent', api(page, 'news-acquire', {'online': False})['status'] in (400, 409))
                         guarded_import = {'mode': 'single', 'entity': {'name': 'Empresa Ficticia Carga Bloqueada', 'kind': 'company'}}
@@ -352,12 +354,12 @@ def run_validation(args):
                         assert guarded_preview['status'] == 200 and guarded_preview['body']['ready']
                         guarded_confirm = dict(guarded_import, preview_hash=guarded_preview['body']['preview_hash'])
                         page.locator('#news-online').check()
-                        before = len([url for url in network if url.endswith('/api/news-acquire')])
+                        before = len([url for url in network if url.endswith('/api/workflow-run')])
                         page.locator('#news-acquire').evaluate('element=>{element.click();element.click();}')
                         wait_until(page, controlled.entered.is_set, 'Controlled download was not entered')
                         busy = api(page, 'stats')['body']['operation']
                         checked('double_click_starts_one_download', controlled.calls == 1 and
-                                len([url for url in network if url.endswith('/api/news-acquire')]) == before + 1)
+                                len([url for url in network if url.endswith('/api/workflow-run')]) == before + 1)
                         operation_id = busy.get('operation_id') or busy.get('id')
                         checked('download_reports_honest_indeterminate_progress', busy['busy'] and busy['total'] is None and
                                 busy['percent'] is None and busy['eta_seconds'] is None and busy['elapsed_seconds'] >= 0)

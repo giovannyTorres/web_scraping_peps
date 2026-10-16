@@ -138,11 +138,21 @@ class SafeFetcherTests(unittest.TestCase):
         self.assertFalse(transport.calls)
 
     def test_dns_revalidated_immediately_before_transport(self):
-        transport = self.transport({})
-        replies = iter((PUBLIC_DNS, [(socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_TCP, "", ("127.0.0.1", 443))]))
-        self.fetcher._dns = lambda *args, **kwargs: next(replies)
-        self.assertEqual(self.fetcher.fetch(self.url, self.source)["status"], "error")
-        self.assertFalse(transport.calls)
+        transport = self.transport({self.url: [(200, {}, b'one')], self.url + '2': [(200, {}, b'two')]})
+        other_public = [(socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_TCP, '', ('93.184.216.35', 443))]
+        private = [(socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_TCP, '', ('127.0.0.1', 443))]
+        self.fetcher._dns = Mock(side_effect=[PUBLIC_DNS, other_public, private])
+        self.assertEqual(self.fetcher.fetch(self.url, self.source)['status'], 'ok')
+        self.assertEqual(self.fetcher.fetch(self.url + '2', self.source)['status'], 'ok')
+        # The transport must receive exactly the answer validated for its own
+        # request, rather than a second lookup or a previous request's answer.
+        self.assertIs(transport.calls[0][2], PUBLIC_DNS)
+        self.assertIs(transport.calls[1][2], other_public)
+        rejected = self.fetcher.fetch(self.url + '3', self.source)
+        self.assertEqual(rejected['status'], 'error')
+        self.assertEqual(rejected['network_requests'], 0)
+        self.assertEqual(len(transport.calls), 2)
+        self.assertEqual(self.fetcher._dns.call_count, 3)
 
     def test_transport_pins_address_and_preserves_tls_hostname(self):
         raw_socket, wrapped_socket, context = Mock(), Mock(), Mock()
@@ -745,11 +755,11 @@ class SafeFetcherTests(unittest.TestCase):
         result = self.fetcher.fetch(self.url, dict(self.source, cache_ttl_seconds=60))
         self.assertEqual(result['pagination_headers'], {'x-wp-total': '3250', 'x-wp-totalpages': '33'})
         self.assertNotIn('set-cookie', result)
-        # Existing cache rows are valid without pagination metadata; callers
-        # can infer continuation from their bounded response page instead.
+        # Warm pages retain exact publisher pagination instead of probing a
+        # nonexistent next page when their last page happens to contain100 rows.
         cached = self.fetcher.fetch(self.url, self.source)
         self.assertEqual(cached['status'], 'not_modified')
-        self.assertNotIn('pagination_headers', cached)
+        self.assertEqual(cached['pagination_headers'], result['pagination_headers'])
 
     def test_wordpress_invalid_pagination_headers_are_omitted(self):
         self.transport({self.url: [(200, {'X-WP-Total': '9' * 10000, 'X-WP-TotalPages': '-1'}, b'[]')]})
@@ -849,7 +859,8 @@ class SafeFetcherTests(unittest.TestCase):
             second = self.fetcher.fetch(self.url + "2", self.source)
         self.assertEqual((first["body"], second["body"]), ("one", "two"))
         self.assertEqual(factory.call_count, 1)
-        self.assertEqual(self.fetcher._dns.call_count, 4)
+        self.assertIs(factory.call_args.args[1], PUBLIC_DNS)
+        self.assertEqual(self.fetcher._dns.call_count, 2)
         connection.close.assert_not_called()
         self.assertEqual(self.fetcher.metrics_snapshot()["reused_connections"], 1)
         self.fetcher.close()
@@ -857,15 +868,16 @@ class SafeFetcherTests(unittest.TestCase):
 
     def test_keepalive_rebinding_to_private_dns_is_denied(self):
         connection, _, _ = self.wire_connection(b"one")
-        with patch("peps.collector._PinnedHTTPSConnection", return_value=connection):
+        with patch("peps.collector._PinnedHTTPSConnection", return_value=connection) as factory:
             self.assertEqual(self.fetcher.fetch(self.url, self.source)["status"], "ok")
             private = [(socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_TCP, "", ("127.0.0.1", 443))]
-            self.fetcher._dns = Mock(side_effect=[PUBLIC_DNS, private])
+            self.fetcher._dns = Mock(return_value=private)
             result = self.fetcher.fetch(self.url + "2", self.source)
         self.assertEqual(result["status"], "error")
         self.assertEqual(result["network_requests"], 0)
         self.assertEqual(connection.request.call_count, 1)
-        self.assertEqual(self.fetcher._dns.call_count, 2)
+        self.assertEqual(factory.call_count, 1)
+        self.assertEqual(self.fetcher._dns.call_count, 1)
 
     def test_real_http_parser_keeps_one_socket_for_two_responses(self):
         class KeepaliveWire:

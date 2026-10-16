@@ -51,6 +51,7 @@ def main():
             else:
                 page.locator('[data-workflow-step="sources"]').click()
         page.locator('[data-panel="sources"]').wait_for()
+        page.locator('#workflow-auto-analyze').uncheck()
         page.locator('#workflow-mode-local').click()
         page.locator('#workflow-sources-next').click()
         page.locator('[data-panel="news"]').wait_for()

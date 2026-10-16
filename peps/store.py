@@ -853,6 +853,29 @@ class Store:
             self._audit(con, 'jobs_requeued', {'count': n})
             return n
 
+    def retry_news_jobs(self, job_ids):
+        """Explicit targeted retry; transport backoff and live leases remain intact."""
+        if (not isinstance(job_ids, list) or not 1 <= len(job_ids) <= 100
+                or any(not isinstance(value, str) or len(value) != 64
+                       or any(char not in '0123456789abcdef' for char in value) for value in job_ids)):
+            raise ValueError('Selecciona entre 1 y 100 IDs válidos de tareas de noticias')
+        selected = list(dict.fromkeys(job_ids))
+        retried, skipped, previous = [], [], []
+        with self.connection() as con:
+            con.execute('BEGIN IMMEDIATE')
+            for identifier in selected:
+                row = con.execute('SELECT kind,status,error,due FROM jobs WHERE id=?', (identifier,)).fetchone()
+                if row is None or not row['kind'].startswith('news_') or row['status'] not in ('blocked', 'dead'):
+                    skipped.append({'id': identifier, 'status': row['status'] if row else None})
+                    continue
+                con.execute("UPDATE jobs SET status='queued',attempts=0,due=max(due,?),lease_until=NULL,owner=NULL,error='',updated_at=? WHERE id=?",
+                            (time.time(), now(), identifier))
+                retried.append(identifier)
+                previous.append({'id': identifier, 'status': row['status'], 'error': (row['error'] or '')[:500]})
+            self._audit(con, 'news_jobs_requeued', {'requested': selected, 'retried': retried, 'previous': previous,
+                                                  'skipped': skipped, 'transport_backoff_preserved': True})
+        return {'requested': len(selected), 'retried': len(retried), 'job_ids': retried, 'skipped': skipped}
+
     def stats(self):
         with self.connection() as con:
             counts = {table: con.execute('SELECT count(*) FROM ' + table).fetchone()[0]

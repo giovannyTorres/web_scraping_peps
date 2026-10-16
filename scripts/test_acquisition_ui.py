@@ -159,8 +159,8 @@ def main():
                             before = permissions(page)
                             expect(page.locator('#workflow-permission-summary')).to_contain_text('0 con texto autorizado')
                             source = page.locator('#news-sources .source').filter(has_text='Archivo enteramente sintético de pruebas')
-                            expect(source.get_by_label('Descargar texto para analizar', exact=True)).not_to_be_checked()
-                            expect(source.get_by_label('Uso del texto autorizado', exact=True)).not_to_be_checked()
+                            expect(source.locator('input[type=checkbox]').nth(1)).not_to_be_checked()
+                            assert source.locator('input[type=checkbox]').count() == 2
                             checked('metadata_permissions_are_explicit_and_initially_unchecked')
                             for seconds in (1800, 3600, 7200):
                                 page.locator('#workflow-time-budget').select_option(str(seconds))
@@ -182,7 +182,9 @@ def main():
                             checked('saving_budgets_does_not_auto_enable_or_approve_any_source', permissions(page) == before)
                             expect(page.locator('#workflow-time-budget-field')).to_be_hidden()
                             screenshot(page, 'desktop-budget', page.locator('.execution-budget'))
-                            page.locator('#workflow-sources-next').click()
+                            page.locator('#workflow-auto-analyze').uncheck()
+                            assert api(page, 'workflow-confirm-sources', {})['status'] == 200
+                            page.locator('[data-tab="news"]').click()
                             expect(page.locator('[data-panel="news"]')).to_be_visible()
                             expect(page.locator('#workflow-session-budget')).to_contain_text('Rápido · hasta 2 min')
                             expect(page.locator('#workflow-session-budget')).to_contain_text('24 de 300')

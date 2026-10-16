@@ -1,5 +1,11 @@
 # Descubrimiento compartido para listas grandes
 
+La estrategia adicional **Web abierta y fuentes públicas** incorpora Mwmbl,
+DuckDuckGo HTML/Lite y enlaces sociales públicos sin claves de desarrollador.
+Sus formatos, comprobaciones reales y límites se describen en
+[búsqueda web abierta](DESCUBRIMIENTO_PUBLICO.md). Este documento explica el
+recorrido compartido por los archivos de los editores.
+
 La mejora principal para una lista de 300 entidades consiste en **compartir el
 descubrimiento entre todos los nombres**: descargar una página pequeña de
 metadatos del editor, cotejarla localmente contra el banco completo y solicitar

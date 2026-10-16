@@ -15,6 +15,7 @@ jobs:
       - run: python -m pip install playwright==1.62.0
       - run: python -m playwright install --with-deps chromium
       - run: python scripts/test_workflow_ui.py
+      - run: python scripts/test_streamlined_pipeline_ui.py
       - run: python scripts/test_download_recovery_ui.py
       - run: python scripts/test_acquisition_ui.py
       - run: python scripts/test_shared_acquisition_ui.py
@@ -29,6 +30,7 @@ jobs:
           name: guided-ui-validation
           path: |
             runtime/guided-ui-validation/
+            runtime/streamlined-pipeline-ui-validation/
             runtime/download-recovery-ui-validation/
             runtime/acquisition-ui-validation/
             runtime/shared-acquisition-ui-validation/

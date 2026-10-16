@@ -188,7 +188,7 @@ def main():
 
                         def observe(request):
                             requests.append(request.url)
-                            if request.url.endswith('/api/news-acquire') and request.method == 'POST':
+                            if request.url.endswith('/api/workflow-run') and request.method == 'POST':
                                 started_payloads.append(request.post_data_json)
 
                         context.on('request', observe)
@@ -241,7 +241,13 @@ def main():
                                 if query['source_id'] == 'fixture_archive' and query['start'].startswith('2016'))
                             report['search_config'], report['search_plan'] = config, plan
                             screenshot(page, 'targeted-historical-coverage')
-                            page.locator('#workflow-sources-next').click()
+                            page.locator('#workflow-auto-analyze').uncheck()
+                            assert api(page, 'workflow-confirm-sources', {})['status'] == 200
+                            page.evaluate('refresh(true)')
+                            if page.locator('#workflow-mobile-step').is_visible():
+                                page.locator('#workflow-mobile-step').select_option('news')
+                            else:
+                                page.locator('[data-tab="news"]').click()
                             page.locator('[data-panel="news"]').wait_for()
                             # This persisted receipt represents the already-running scope
                             # in the reported session, rather than a different old query.
@@ -300,15 +306,14 @@ def main():
                             checked('mobile_partial_close_is_reachable_by_scrolling', reachable(page, partial))
                             screenshot(page, 'mobile-235-news-64-pending')
                             partial.click()
-                            page.locator('[data-panel="analysis"]').wait_for()
-                            flow = api(page, 'workflow')['body']
+                            analyzed = idle(page, 'analysis')
+                            flow = analyzed['workflow']
                             checked('inactive_partial_close_keeps_all_64_jobs_and_records_limitations',
                                     jobs_snapshot(engine.store) == baseline and flow['coverage']['accepted_partial'] and
                                     flow['coverage']['closed_partial'] and bool(flow['coverage']['limitations']) and
-                                    flow['actions']['analyze']['enabled'] and engine.store.stats()['scores'] == 0)
+                                    flow['analysis_current'] and engine.store.stats()['scores'] > 0)
                             checked('partial_close_does_not_claim_full_download_completion',
                                     flow['counts']['pending_downloads'] == 64 and flow['coverage']['partial'])
-                            page.locator('#workflow-analyze').click()
                             analyzed = idle(page, 'analysis')
                             checked('actual_analysis_completes_with_the_unchanged_inactive_queue',
                                     analyzed['operation']['status'] == 'completed' and
@@ -373,8 +378,6 @@ def main():
                             partial = page.locator('#workflow-accept-partial')
                             checked('partial_close_remains_available_after_user_pause', reachable(page, partial))
                             partial.click()
-                            page.locator('[data-panel="analysis"]').wait_for()
-                            page.locator('#workflow-analyze').click()
                             final = idle(page, 'analysis')
                             checked('analysis_can_be_repeated_after_another_explicit_inactive_close',
                                     final['workflow']['analysis_current'] and news.stats()['articles'] == 235 and
@@ -387,7 +390,13 @@ def main():
                             page.locator('#workflow-save-search').click()
                             wait_until(page, lambda: api(page, 'news-search')['body']['config']['end'] == '2025-12-31',
                                        'The changed historical scope was not saved')
-                            page.locator('#workflow-sources-next').click()
+                            page.locator('#workflow-auto-analyze').uncheck()
+                            assert api(page, 'workflow-confirm-sources', {})['status'] == 200
+                            page.evaluate('refresh(true)')
+                            if page.locator('#workflow-mobile-step').is_visible():
+                                page.locator('#workflow-mobile-step').select_option('news')
+                            else:
+                                page.locator('[data-tab="news"]').click()
                             page.locator('[data-panel="news"]').wait_for()
                             changed_scope = api(page, 'workflow')['body']
                             checked('changing_the_historical_range_requires_a_new_search_without_rewriting_old_jobs',

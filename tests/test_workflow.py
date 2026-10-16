@@ -52,6 +52,27 @@ class OperationTrackerTests(unittest.TestCase):
         self.tracker.update(completed=3)
         self.assertIsNone(self.tracker.snapshot()['eta_seconds'])
 
+    def test_pipeline_keeps_three_phases_and_clears_download_only_details(self):
+        self.tracker.start('pipeline', phase='download')
+        self.assertEqual(['download', 'attribution', 'scoring'],
+                         [phase['id'] for phase in self.tracker.snapshot()['task_progress']['phases']])
+        self.tracker.update({'event': 'finish'}, completed=4, total=4, pending=0,
+                            deferred=0, queue_complete=True, next_retry_at=1100,
+                            current_source='Fuente de prueba', jobs={'done': 4})
+        self.tracker.update(phase='attribution', completed=0, total=2)
+        snapshot = self.tracker.snapshot()
+        self.assertEqual('completed', snapshot['task_progress']['phases'][0]['status'])
+        self.assertNotIn('next_retry_at', snapshot)
+        self.assertNotIn('current_source', snapshot)
+        self.assertNotIn('jobs', snapshot)
+        self.tracker.update({'event': 'finish'}, completed=2, total=2)
+        self.tracker.update(phase='scoring', completed=0, total=1)
+        self.tracker.update({'event': 'finish'}, completed=1, total=1)
+        self.tracker.finish()
+        snapshot = self.tracker.snapshot()
+        self.assertEqual('completed', snapshot['status'])
+        self.assertTrue(all(phase['status'] == 'completed' for phase in snapshot['task_progress']['phases']))
+
     def test_paused_and_failed_downloads_never_claim_one_hundred_percent(self):
         for status in ('paused', 'failed'):
             self.tracker.start('download', total=3)

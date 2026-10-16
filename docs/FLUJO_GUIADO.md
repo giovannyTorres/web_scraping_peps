@@ -1,12 +1,12 @@
 # De la lista al scoring
 
-La interfaz de WebScope 2.4.0 guía el trabajo en cinco pasos. La barra lateral indica
+La interfaz de WebScope 2.9.0 guía el trabajo en cinco pasos. La barra lateral indica
 qué terminó, qué está activo y qué falta. Los botones muestran el motivo cuando
 una acción todavía no está disponible.
 
-![Inicio del flujo guiado en escritorio](images/flujo-guiado-escritorio.png)
+![Preparación del flujo 2.9 en escritorio, con datos sintéticos](images/flujo-2-9-escritorio.png)
 
-La [vista móvil](images/flujo-guiado-movil.png) conserva el mismo recorrido con un
+La [vista móvil](images/flujo-2-9-movil.png) conserva el mismo recorrido con un
 selector de pasos y controles adaptados a la pantalla.
 
 ## 1. Cargar lista
@@ -22,24 +22,35 @@ Elija uno de los dos recorridos:
 
 - **Noticias en línea:** habilite las fuentes cuyas condiciones haya revisado.
   Los permisos para leer un feed y conservar el cuerpo son independientes.
-  Confirme la selección antes de continuar.
+  Configure el alcance y pulse **Guardar e iniciar**. Puede filtrar el catálogo
+  por nombre y explorar más fuentes sin recorrer todas las tarjetas.
 - **Documentos locales:** use información ya incorporada al banco, sin descarga
   de internet. Confirme ese alcance. Si no hay documentos, el resultado indicará
   la falta de evidencia; no se presentará como una búsqueda completada.
 
-Cambiar los permisos, las fuentes o el modo requiere confirmar nuevamente la
-selección. Las fuentes empiezan deshabilitadas; elegir el modo online no las
-autoriza por sí solo.
+**Consultar** registra que revisó las condiciones de esa fuente; **Conservar texto**
+registra por separado el permiso para sus cuerpos editoriales. Los buscadores
+que sólo ofrecen referencias no muestran un permiso ficticio de cuerpo.
+Las fuentes empiezan deshabilitadas; elegir el modo online no las autoriza.
+El botón principal espera a que termine de guardarse cualquier cambio de permisos.
 
 En **Búsqueda dirigida e histórica**, elija el período, el enfoque y el presupuesto
 de consultas. El plan se prepara localmente: no conecta con las fuentes ni calcula
-scores. Revise sus avisos antes de confirmarlo. El período solicitado puede ser
+scores. Revise sus avisos antes de iniciar. El período solicitado puede ser
 mayor que el historial accesible de una fuente. Consulte la
 [guía de búsqueda y recuperación](RECUPERACION_DESCARGA.md).
 
 ## 3. Descargar noticias
 
-Autorice la conexión de la sesión e inicie la descarga. El sistema muestra las
+Elija cómo usar las copias guardadas:
+
+- **Reutilizar caché:** aprovecha respuestas vigentes antes de consultar internet.
+- **Comprobar cambios:** revalida las URLs que procesa el lote, con peticiones
+  condicionales cuando la fuente las admite.
+- **Sólo caché local:** consulta lo ya conservado sin DNS ni conexiones a internet.
+  Una copia antigua conserva su fecha; un enlace sin copia queda pendiente.
+
+Autorice la conexión para los dos primeros modos. El sistema muestra las
 tareas realmente terminadas y el tiempo transcurrido. Al descubrir enlaces puede
 aumentar el trabajo pendiente; mientras no se conoce el total, la barra es
 indeterminada y no promete un porcentaje ni un tiempo de finalización.
@@ -51,10 +62,15 @@ se mantienen los bloqueos. **Reanudar** trabaja sobre la cola conservada.
 Un límite de tiempo, un aplazamiento o un error no convierten la adquisición en
 completa. El panel distingue tareas listas, aplazadas, activas y fallidas; muestra
 la causa de la pausa y el próximo intento permitido cuando se conoce.
+El panel distingue peticiones de red, reutilizaciones de caché, cuerpos nuevos
+y reutilizados y candidatos duplicados. Los contadores corresponden a la sesión
+identificada; una métrica no disponible aparece como **—**. Abra **Detalle de tareas**
+para filtrar estados e inspeccionar errores. Un reintento individual conserva
+las pausas del proveedor y no inicia una descarga por sí mismo.
 
 Si quedan tareas pendientes y ya no hay trabajadores activos, elija entre
-**Reanudar descarga** y **Usar noticias disponibles y continuar**. La segunda opción
-habilita el análisis parcial mediante una decisión explícita. No borra noticias,
+**Reanudar descarga** y **Analizar lo disponible**. La segunda opción
+registra la decisión explícita e inicia el análisis parcial en una sola acción. No borra noticias,
 no elimina la cola y no marca esos trabajos como terminados. La evaluación guarda
 cuántas tareas quedaron pendientes y qué información estaba disponible. Reanudar
 después invalida el resultado vigente hasta volver a analizar. Los metadatos de un
@@ -65,7 +81,10 @@ continuar con el alcance confirmado.
 
 ## 4. Analizar y calcular
 
-El cálculo empieza únicamente al pulsar **Analizar y calcular**. Primero se
+El cálculo empieza al pulsar **Analizar y calcular**, **Analizar lo disponible**
+o al terminar una adquisición completa si eligió **Analizar al terminar**.
+La continuación automática se detiene cuando hay pendientes o limitaciones que
+requieren aceptar expresamente la cobertura disponible. Primero se
 atribuyen noticias y menciones al banco; después se calculan las entidades. Las
 fases muestran contadores de artículos o entidades ya procesados y guardados.
 Una estimación de tiempo aparece cuando hay suficientes unidades y tiempo medidos

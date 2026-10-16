@@ -23,6 +23,18 @@ def _boolean(value, field):
     return value
 
 
+def _cache_options(data):
+    mode = data.get('cache_mode', 'reuse')
+    if mode not in ('reuse', 'revalidate', 'local'):
+        raise ValueError('cache_mode debe ser reuse, revalidate o local')
+    online = _boolean(data.get('online', False), 'online')
+    if mode == 'local' and online:
+        raise ValueError('Sólo caché local requiere online=false')
+    if mode != 'local' and not online:
+        raise ValueError('Active la conexión autorizada para descargar noticias')
+    return mode, online
+
+
 def create_server(engine, port=0):
     from .news import NewsAcquirer
     news = NewsAcquirer(engine)
@@ -35,16 +47,16 @@ def create_server(engine, port=0):
     import_operations = {}
     import_ttl = 30 * 60
 
-    def start_operation(kind, action, phase='', online=False, message=''):
+    def start_operation(kind, action, phase='', online=None, message=''):
         with lock:
             workflow.require(action, tracker.snapshot())
             operation_id = tracker.start(kind, phase=phase, message=message)
-            if online:
-                engine.online = True
+            if online is not None:
+                engine.online = online
             engine.stop_event.clear()
             return operation_id
 
-    def background(fn, online=False, kind='analysis', action='analyze', phase='', message=''):
+    def background(fn, online=None, kind='analysis', action='analyze', phase='', message=''):
         operation_id = start_operation(kind, action, phase, online, message)
         def execute():
             try:
@@ -55,9 +67,9 @@ def create_server(engine, port=0):
                                operation_id=operation_id,
                                message=(result.get('message') if isinstance(result, dict) else None) or
                                    ('Descarga en pausa. Puedes reanudarla o cerrar con la cobertura disponible.'
-                                    if paused and kind == 'download' else 'Proceso pausado.' if paused else 'Paso terminado.'))
+                                    if paused and kind in ('download', 'pipeline') else 'Proceso pausado.' if paused else 'Paso terminado.'))
             except Exception as exc:
-                if kind == 'download':
+                if kind in ('download', 'pipeline') and tracker.snapshot()['phase'] == 'download':
                     workflow.mark_download(status='failed', details={'error': str(exc)})
                 tracker.finish(status='failed', message=f'{type(exc).__name__}: {exc}', operation_id=operation_id)
         threading.Thread(target=execute, daemon=True).start()
@@ -73,7 +85,7 @@ def create_server(engine, port=0):
             tracker.finish(status='failed', message=str(exc))
             raise
 
-    def acquire_news(resume=False):
+    def acquire_news(resume=False, cache_mode='reuse'):
         workflow.mark_download(status='running', resume=resume,
                                details=None if resume else {'acquisition_context': {'search': news.search_config()}})
         settings = news.search_config()
@@ -82,10 +94,25 @@ def create_server(engine, port=0):
             entities = con.execute('SELECT count(*) FROM entities').fetchone()[0]
         result = news.acquire(workers=8, seconds=settings['session_seconds'], max_articles=10000, queue=not resume,
                               progress=tracker.update, reset_stop=False, relevant_only=True,
-                              per_entity_body_limit=per_entity, body_budget=min(10000, per_entity * entities))
+                              per_entity_body_limit=per_entity, body_budget=min(10000, per_entity * entities),
+                              cache_mode=cache_mode)
         incomplete = result.get('cancelled') or result.get('pending', 0) or result.get('failed', 0)
-        workflow.mark_download(status='paused' if incomplete else 'completed', details=result)
-        return dict(result, status='paused' if incomplete else result.get('status', 'ok'))
+        status = workflow.mark_download(status='paused' if incomplete else 'completed', details=result)
+        return dict(result, status='paused' if status == 'paused' else result.get('status', 'ok'))
+
+    def run_pipeline(resume, cache_mode, analyze_after):
+        downloaded = acquire_news(resume, cache_mode)
+        if not analyze_after or downloaded.get('status') == 'paused' or engine.stop_event.is_set():
+            return downloaded
+        # The operation still owns the server lockout. Ignore only that busy
+        # flag while checking every persisted analysis prerequisite again.
+        ready = workflow.snapshot({'status': 'idle', 'busy': False})
+        if not ready['actions']['analyze']['enabled']:
+            return dict(downloaded, status='paused',
+                        message='La búsqueda terminó con cobertura limitada. Revisa el resumen y elige «Analizar lo disponible» o amplía la búsqueda.')
+        analyzed = analyze_bank()
+        return dict(analyzed, download=downloaded,
+                    message='Resultados preparados.' if analyzed.get('status') != 'paused' else 'Análisis en pausa.')
 
     def acquisition_context():
         """Archive the actual acquisition limits with each evaluation."""
@@ -103,6 +130,45 @@ def create_server(engine, port=0):
                 'limitations': copy.deepcopy(coverage.get('limitations', [])),
                 'observed': acquisition_coverage(engine.store, news.sources()),
                 'last_session_limits': copy.deepcopy(coverage.get('session_limits', {}))}
+
+    def news_tasks(query):
+        """Read a bounded queue page only when the user opens task details."""
+        from .public_search import safe_result_url
+        status = query.get('status', [''])[0]
+        if status and status not in ('queued', 'deferred', 'running', 'blocked', 'dead', 'done', 'cancelled'):
+            raise ValueError('Estado de tarea no válido')
+        try:
+            limit = int(query.get('limit', ['25'])[0])
+            offset = int(query.get('offset', ['0'])[0])
+        except (TypeError, ValueError):
+            raise ValueError('Paginación no válida') from None
+        if not 1 <= limit <= 100 or not 0 <= offset <= 1000000:
+            raise ValueError('Paginación fuera de rango')
+        source = query.get('source_id', [''])[0]
+        if len(source) > 200:
+            raise ValueError('Fuente no válida')
+        conditions, params = ["kind LIKE 'news_%'"], []
+        if status:
+            conditions.append('status=?')
+            params.append(status)
+        if source:
+            conditions.append("json_extract(CASE WHEN json_valid(payload) THEN payload ELSE '{}' END,'$.source_id')=?")
+            params.append(source)
+        where = ' AND '.join(conditions)
+        with engine.store.connection() as con:
+            total = con.execute('SELECT count(*) FROM jobs WHERE ' + where, params).fetchone()[0]
+            rows = con.execute('SELECT id,kind,status,payload,attempts,due,error,updated_at FROM jobs WHERE ' + where +
+                               ' ORDER BY updated_at DESC,id LIMIT ? OFFSET ?', (*params, limit, offset)).fetchall()
+        labels = {source['id']: source.get('source_name') or source.get('name') or source['id'] for source in news.sources()}
+        stamp, items = time.time(), []
+        for row in rows:
+            payload = json.loads(row['payload'])
+            source_id = payload.get('source_id')
+            url = safe_result_url(payload.get('url') or payload.get('search_url') or '') or ''
+            items.append({key: row[key] for key in ('id', 'kind', 'status', 'attempts', 'due', 'error', 'updated_at')})
+            items[-1].update(source_id=source_id, label=labels.get(source_id, source_id or 'Documento'),
+                             url=url, next_retry_seconds=max(0., row['due'] - stamp) if row['status'] == 'deferred' else None)
+        return {'items': items, 'total': total, 'limit': limit, 'offset': offset, 'has_more': offset + len(items) < total}
 
     def analyze_bank():
         workflow.mark_analysis(status='running')
@@ -323,6 +389,15 @@ def create_server(engine, port=0):
                     self.reply(value)
                 elif path == '/api/news-search':
                     self.reply({'config': news.search_config(), 'plan': news.search_plan()})
+                elif path == '/api/news-tasks':
+                    self.reply(news_tasks(query))
+                elif path == '/api/public-search':
+                    from .public_search import public_search_links
+                    entity = engine.store.get_entity(query.get('id', [''])[0])
+                    if not entity:
+                        self.reply({'error': 'Entidad inexistente'}, 404)
+                    else:
+                        self.reply(public_search_links(entity))
                 elif path == '/api/export':
                     workflow.require('export', tracker.snapshot())
                     # Exportación completa y streaming: memoria acotada para bancos grandes.
@@ -377,6 +452,45 @@ def create_server(engine, port=0):
                                               message='Vinculando noticias con las entidades de tu lista…')
                     self.reply({'ok': True, 'operation_id': operation_id})
                     return
+                elif self.path == '/api/workflow-run':
+                    cache_mode, online = _cache_options(data)
+                    resume = _boolean(data.get('resume', False), 'resume')
+                    analyze_after = _boolean(data.get('analyze_after_download', False), 'analyze_after_download')
+                    settings = data.get('search')
+                    if settings is not None and not isinstance(settings, dict):
+                        raise ValueError('search requiere un objeto de configuración')
+                    if resume and settings:
+                        raise ValueError('Reanude con el alcance guardado; cambie la búsqueda al iniciar una nueva adquisición')
+                    with lock:
+                        current = workflow.require('configure_sources', tracker.snapshot())
+                        if not current['counts']['entities']:
+                            raise WorkflowError('Importe primero un banco de entidades.')
+                        if current['mode'] != 'online':
+                            raise WorkflowError('Seleccione el modo de búsqueda para descargar o consultar la caché.')
+                        if not current['counts']['sources']:
+                            raise WorkflowError('Seleccione una fuente habilitada con permisos aprobados.')
+                        if resume and not current['coverage'].get('resume_available'):
+                            raise WorkflowError('La cola no corresponde al alcance vigente o no tiene tareas pendientes; inicie una nueva búsqueda.')
+                        if settings is not None:
+                            news.set_search_config(settings)
+                        if not resume and not news.search_plan()['query_count']:
+                            raise WorkflowError('El plan no contiene consultas. Ajuste las fuentes o el tipo de búsqueda antes de iniciar.')
+                        workflow.confirm_sources(tracker.snapshot())
+                        operation_id = background(lambda: run_pipeline(resume, cache_mode, analyze_after), online=online,
+                                                  kind='pipeline' if analyze_after else 'download', action='download', phase='download',
+                                                  message='Consultando la caché local…' if cache_mode == 'local' else
+                                                      'Reanudando las tareas pendientes…' if resume else 'Preparando la búsqueda…')
+                    self.reply({'ok': True, 'operation_id': operation_id})
+                    return
+                elif self.path == '/api/workflow-analyze-available':
+                    with lock:
+                        # The user's explicit action records the incomplete
+                        # coverage and starts analysis without another prompt.
+                        workflow.accept_partial(tracker.snapshot())
+                        operation_id = background(analyze_bank, kind='analysis', action='analyze', phase='attribution',
+                                                  message='Analizando la información disponible con su cobertura registrada…')
+                    self.reply({'ok': True, 'operation_id': operation_id})
+                    return
                 elif self.path == '/api/workflow-mode':
                     with lock:
                         value = workflow.set_mode(data.get('mode'), tracker.snapshot())
@@ -411,6 +525,12 @@ def create_server(engine, port=0):
                     with lock:
                         workflow.require('configure_sources', tracker.snapshot())
                         engine.store.retry_failed()
+                elif self.path == '/api/news-retry':
+                    with lock:
+                        workflow.require('configure_sources', tracker.snapshot())
+                        result = engine.store.retry_news_jobs(data.get('job_ids'))
+                    self.reply({'ok': True, **result, 'requeued': result['retried']})
+                    return
                 elif self.path == '/api/source':
                     enabled = _boolean(data['enabled'], 'enabled')
                     approved = _boolean(data['terms_approved'], 'terms_approved')
@@ -433,8 +553,7 @@ def create_server(engine, port=0):
                     self.reply(engine.replay_score(str(data['run_id'])))
                     return
                 elif self.path == '/api/news-acquire':
-                    if not _boolean(data.get('online', False), 'online'):
-                        raise ValueError('Active la conexión autorizada para descargar noticias')
+                    cache_mode, online = _cache_options(data)
                     resume = _boolean(data.get('resume', False), 'resume')
                     with lock:
                         value = workflow.require('download', tracker.snapshot())
@@ -442,7 +561,7 @@ def create_server(engine, port=0):
                             raise WorkflowError('La cola no corresponde al alcance vigente o no tiene tareas pendientes; inicie una nueva búsqueda.')
                         if not resume and not news.search_plan()['query_count']:
                             raise WorkflowError('El plan no contiene consultas. Vuelva a Preparar fuentes: habilite una fuente de búsqueda dirigida o elija Feeds generales, y confirme el alcance.')
-                        operation_id = background(lambda: acquire_news(resume), online=True, kind='download', action='download', phase='download',
+                        operation_id = background(lambda: acquire_news(resume, cache_mode), online=online, kind='download', action='download', phase='download',
                                                   message='Reanudando las tareas pendientes…' if resume else 'Preparando las búsquedas y descubriendo noticias…')
                     self.reply({'ok': True, 'operation_id': operation_id})
                     return

@@ -31,6 +31,8 @@ from urllib.parse import parse_qs, unquote, urljoin, urlsplit, urlunsplit
 from urllib.request import getproxies_environment, proxy_bypass_environment
 from urllib.robotparser import RobotFileParser
 
+from .robots_policy import robots_allowed
+
 
 def _iso(timestamp: float | None = None) -> str:
     return datetime.fromtimestamp(time.time() if timestamp is None else timestamp, timezone.utc).isoformat()
@@ -237,7 +239,7 @@ class SafeFetcher:
             if "last_at" not in {row[1] for row in db.execute("PRAGMA table_info(hosts)")}:
                 db.execute("ALTER TABLE hosts ADD COLUMN last_at REAL NOT NULL DEFAULT 0")
             cache_columns = {row[1] for row in db.execute("PRAGMA table_info(http_cache)")}
-            for column in ("cache_control", "cache_expires", "final_url"):
+            for column in ("cache_control", "cache_expires", "final_url", "pagination_headers"):
                 if column not in cache_columns:
                     db.execute(f"ALTER TABLE http_cache ADD COLUMN {column} TEXT NOT NULL DEFAULT ''")
 
@@ -305,7 +307,7 @@ class SafeFetcher:
             rows = db.execute("""SELECT request_kind, SUM(network_requests) network_requests,
                 SUM(wire_bytes) wire_bytes, SUM(decoded_bytes) decoded_bytes,
                 SUM(elapsed_seconds) elapsed_seconds,
-                SUM(CASE WHEN cache_status IN ('fresh','revalidated') THEN 1 ELSE 0 END) cache_hits,
+                SUM(CASE WHEN cache_status IN ('fresh','revalidated','local') THEN 1 ELSE 0 END) cache_hits,
                 SUM(reused_connection) reused_connections FROM request_history GROUP BY request_kind""").fetchall()
             for row in rows:
                 values = {key: row[key] or 0 for key in totals}
@@ -425,7 +427,7 @@ class SafeFetcher:
         except (UnicodeError, AttributeError) as exc:
             raise CollectionError("Invalid hostname") from exc
 
-    def _validate_url(self, url: str, source: dict) -> tuple[str, str, list[tuple]]:
+    def _validate_url(self, url: str, source: dict, *, resolve=True) -> tuple[str, str, list[tuple]]:
         if not isinstance(url, str) or any(ord(char) < 33 or ord(char) == 127 for char in url):
             raise CollectionError("Invalid URL characters")
         try:
@@ -442,6 +444,9 @@ class SafeFetcher:
             raise CollectionError("Host is not in the source allowlist: " + host)
         if host in {"localhost", "metadata.google.internal"} or host.endswith((".local", ".internal", ".localhost")):
             raise CollectionError("Private hostnames are forbidden")
+        normalized = urlunsplit(("https", host, parts.path or "/", parts.query, ""))
+        if not resolve:
+            return normalized, host, []
         try:
             records = self._dns(host, 443, type=socket.SOCK_STREAM)
         except OSError as exc:
@@ -457,7 +462,6 @@ class SafeFetcher:
                     or getattr(address, "sixtofour", None) is not None
                     or getattr(address, "teredo", None) is not None):
                 raise CollectionError("Non-public addresses are forbidden")
-        normalized = urlunsplit(("https", host, parts.path or "/", parts.query, ""))
         return normalized, host, records
 
     def _transport(self, url: str, headers: dict, timeout: float, max_bytes: int,
@@ -735,7 +739,7 @@ class SafeFetcher:
                     db.execute("DELETE FROM robots_refresh WHERE origin=? AND lease_until=?", (origin, lease_until))
         parser = RobotFileParser(origin + "/robots.txt")
         parser.parse(body.splitlines())
-        if not parser.can_fetch(self.user_agent, url):
+        if not robots_allowed(body, self.user_agent, url):
             return self._result(url, "robots_denied", error="robots.txt disallows this URL")
         # Honor explicit crawl-delay in addition to configured politeness.
         delay = parser.crawl_delay(self.user_agent) or parser.crawl_delay("*")
@@ -771,7 +775,7 @@ class SafeFetcher:
     @staticmethod
     def _captcha(body: str) -> bool:
         lower = body[:100_000].lower()
-        return any(marker in lower for marker in ("<title>just a moment", "<title>access denied", "cf-chl-", "id=\"captcha\"", "id='captcha'", "class=\"g-recaptcha\"", "class='g-recaptcha'", "verify you are human", "unusual traffic from your computer"))
+        return any(marker in lower for marker in ("<title>just a moment", "<title>access denied", "cf-chl-", "id=\"captcha\"", "id='captcha'", "class=\"g-recaptcha\"", "class='g-recaptcha'", "verify you are human", "unusual traffic from your computer", "id=\"anomaly-modal\"", "id='anomaly-modal'", "class=\"anomaly-modal", "class='anomaly-modal", "action=\"/anomaly.js", "action='/anomaly.js"))
 
     def _cache_policy(self, headers: dict, source: dict) -> tuple[float, bool]:
         ttl = max(0.0, min(float(source.get("cache_ttl_seconds", self.config.get("cache_ttl_seconds", 900))), 86400))
@@ -815,30 +819,74 @@ class SafeFetcher:
         finally:
             self._local.fetch_events = None
 
+    def cached_response_url(self, url: str) -> str | None:
+        with self._db() as db:
+            row = db.execute('SELECT final_url FROM http_cache WHERE url=?', (url,)).fetchone()
+        return (row['final_url'] or None) if row else None
+
+    def cached_policy_error(self, url: str, source: dict, final_url: str | None = None) -> dict | None:
+        """Apply current scope and known robots restrictions without networking.
+
+        Missing or expired robots data cannot establish a new permission; this
+        check only restricts reuse of a representation already held locally.
+        Both ends of a previously followed redirect remain subject to policy.
+        """
+        if not source.get('enabled') or not source.get('terms_approved'):
+            return self._result(url, 'blocked', error='Source must be enabled and terms must be reviewed explicitly')
+        final_url = final_url or self.cached_response_url(url)
+        for target in dict.fromkeys((url, final_url or url)):
+            try:
+                normalized, _, _ = self._validate_url(target, source, resolve=False)
+            except (CollectionError, ValueError, TypeError) as exc:
+                return self._result(url, 'blocked', error='Cached response is outside the current source scope: ' + str(exc))
+            if source.get('robots_required', True):
+                origin = 'https://' + urlsplit(normalized).netloc
+                with self._db() as db:
+                    known = db.execute('SELECT body FROM robots WHERE origin=? AND expires_at>?',
+                                       (origin, self._clock())).fetchone()
+                if known and not robots_allowed(known['body'], self.user_agent, normalized):
+                    return self._result(url, 'robots_denied', error='Current cached robots policy disallows this URL')
+        return None
+
     def _fetch(self, url: str, source: dict) -> dict:
         if self._closed:
             return self._result(url, "error", error="Fetcher is closed")
-        if self.offline:
+        mode = source.get('_cache_mode', self.config.get('cache_mode', 'reuse'))
+        if mode not in ('reuse', 'revalidate', 'local'):
+            return self._result(url, 'error', error='cache_mode must be reuse, revalidate or local')
+        if self.offline and mode != 'local':
             return self._result(url, "offline", error="Network collection is disabled")
         if not source.get("enabled", False) or not source.get("terms_approved", False):
             return self._result(url, "blocked", error="Source must be enabled and terms must be reviewed explicitly")
         source = dict(source)
         try:
-            normalized, host, _ = self._validate_url(url, source)
+            normalized, host, _ = self._validate_url(url, source, resolve=False)
         except (CollectionError, ValueError, TypeError) as exc:
             return self._result(url, "error", error=str(exc)[:500])
-        if source.get("robots_required", True):
-            decision = self._robots_allowed(normalized, source)
-            if decision:
-                return decision
         now = self._clock()
         with self._db() as db:
             cached = db.execute("SELECT * FROM http_cache WHERE url=?", (normalized,)).fetchone()
         # Older cache rows have no response URL; revalidate before resolving
         # relative links against a base that may have redirected elsewhere.
-        if cached and cached["expires_at"] > now and cached["final_url"]:
-            self._record_event(normalized, "content", network_requests=0, outcome="cache_hit", cache_status="fresh")
-            return self._result(normalized, "not_modified", body=cached["body"], content_type=cached["content_type"], retrieved_at=cached["retrieved_at"], sha256=cached["sha256"], etag=cached["etag"], last_modified=cached["last_modified"], final_url=cached["final_url"] or normalized, from_cache=True, cache_status="fresh", cache_valid_until=_iso(cached["expires_at"]))
+        fresh = cached and cached['expires_at'] > now and cached['final_url']
+        if cached and ((mode == 'reuse' and fresh) or mode == 'local'):
+            decision = self.cached_policy_error(normalized, source, cached['final_url'])
+            if decision:
+                return decision
+            cache_status = 'local' if mode == 'local' else 'fresh'
+            self._record_event(normalized, "content", network_requests=0, outcome="cache_hit", cache_status=cache_status)
+            result = self._result(normalized, "not_modified", body=cached["body"], content_type=cached["content_type"], retrieved_at=cached["retrieved_at"], sha256=cached["sha256"], etag=cached["etag"], last_modified=cached["last_modified"], final_url=cached["final_url"] or normalized, from_cache=True, cache_status=cache_status, cache_valid_until=_iso(cached["expires_at"]), validated_at=_iso(cached['fetched_at']), local_reuse_only=mode == 'local', cache_stale=not bool(fresh))
+            if cached['pagination_headers']:
+                result['pagination_headers'] = json.loads(cached['pagination_headers'])
+            return result
+        if mode == 'local':
+            return self._result(normalized, 'cache_miss', error_code='local_cache_miss',
+                error='local_cache_miss: No hay una copia local; cambia a reutilizar o revalidar para consultar esta URL.',
+                retry_at=_iso(now), local_reuse_only=True)
+        if source.get('robots_required', True):
+            decision = self._robots_allowed(normalized, source)
+            if decision:
+                return decision
         headers = {}
         if cached:
             if cached["etag"]:
@@ -853,17 +901,22 @@ class SafeFetcher:
             # A 304 can omit cache directives; keep the original freshness policy.
             response_headers.setdefault("cache-control", cached["cache_control"])
             response_headers.setdefault("expires", cached["cache_expires"])
+        pagination_headers = {key: value.strip() for key in ('x-wp-total', 'x-wp-totalpages')
+                              if isinstance(value := response_headers.get(key), str)
+                              and re.fullmatch(r'[0-9]{1,12}', value.strip())}
+        if status == 304 and cached and not pagination_headers and cached['pagination_headers']:
+            pagination_headers = json.loads(cached['pagination_headers'])
         ttl, store_cache = self._cache_policy(response_headers, source)
         if status == 304:
             if not cached:
                 return self._result(normalized, "error", http_status=304, error="304 without a cached representation")
             with self._db() as db:
                 if store_cache:
-                    db.execute("UPDATE http_cache SET fetched_at=?,expires_at=?,final_url=? WHERE url=?", (now, now + ttl, final_url, normalized))
+                    db.execute("UPDATE http_cache SET fetched_at=?,expires_at=?,final_url=?,pagination_headers=? WHERE url=?", (now, now + ttl, final_url, json.dumps(pagination_headers), normalized))
                 else:
                     db.execute("DELETE FROM http_cache WHERE url=?", (normalized,))
             self._record_event(normalized, "content", network_requests=0, outcome="cache_revalidated", cache_status="revalidated")
-            return self._result(normalized, "not_modified", http_status=304, body=cached["body"], content_type=cached["content_type"], retrieved_at=cached["retrieved_at"], sha256=cached["sha256"], etag=cached["etag"], last_modified=cached["last_modified"], final_url=final_url, validated_at=_iso(now), from_cache=True, cache_status="revalidated", cache_valid_until=_iso(now + ttl), original_retrieved_at=cached["retrieved_at"])
+            return self._result(normalized, "not_modified", http_status=304, body=cached["body"], content_type=cached["content_type"], retrieved_at=cached["retrieved_at"], sha256=cached["sha256"], etag=cached["etag"], last_modified=cached["last_modified"], final_url=final_url, validated_at=_iso(now), from_cache=True, cache_status="revalidated", cache_valid_until=_iso(now + ttl), original_retrieved_at=cached["retrieved_at"], pagination_headers=pagination_headers)
         # Without X-WP-TotalPages a full page implies a tentative next page.
         # WordPress reports the end with a specific 400 envelope. Only that
         # inferred continuation at the configured posts endpoint becomes an
@@ -941,10 +994,7 @@ class SafeFetcher:
         etag, modified = response_headers.get("etag"), response_headers.get("last-modified")
         with self._db() as db:
             if store_cache:
-                db.execute("INSERT OR REPLACE INTO http_cache(url,body,content_type,etag,last_modified,sha256,retrieved_at,fetched_at,expires_at,cache_control,cache_expires,final_url) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)", (normalized, body, content_type, etag, modified, digest, retrieved, now, now + ttl, response_headers.get("cache-control", ""), response_headers.get("expires", ""), final_url))
+                db.execute("INSERT OR REPLACE INTO http_cache(url,body,content_type,etag,last_modified,sha256,retrieved_at,fetched_at,expires_at,cache_control,cache_expires,final_url,pagination_headers) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)", (normalized, body, content_type, etag, modified, digest, retrieved, now, now + ttl, response_headers.get("cache-control", ""), response_headers.get("expires", ""), final_url, json.dumps(pagination_headers)))
             else:
                 db.execute("DELETE FROM http_cache WHERE url=?", (normalized,))
-        pagination_headers = {key: value.strip() for key in ("x-wp-total", "x-wp-totalpages")
-                              if isinstance(value := response_headers.get(key), str)
-                              and re.fullmatch(r"[0-9]{1,12}", value.strip())}
-        return self._result(normalized, "ok", http_status=status, body=body, content_type=content_type, retrieved_at=retrieved, sha256=digest, etag=etag, last_modified=modified, final_url=final_url, cache_status="refreshed" if cached else "miss", pagination_headers=pagination_headers, cache_valid_until=_iso(now + ttl if store_cache else now))
+        return self._result(normalized, "ok", http_status=status, body=body, content_type=content_type, retrieved_at=retrieved, sha256=digest, etag=etag, last_modified=modified, final_url=final_url, cache_status="refreshed" if cached else "miss", pagination_headers=pagination_headers, cache_valid_until=_iso(now + ttl if store_cache else now), validated_at=_iso(now))

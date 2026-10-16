@@ -1,0 +1,351 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-10-16T04:53:21.321650+00:00",
+  "synthetic": true,
+  "method": "Fresh temporary SQLite; real production read/cache paths; injected HTTP only; no public network.",
+  "limits": [
+    "Local wall times are not public-network speed or coverage guarantees.",
+    "The corpus has relevant articles for only one fifth of entity IDs by construction.",
+    "The precursor baseline used a persistent fixture and did not measure a versioned projection rebuild.",
+    "Connection tracing adds overhead; no latency threshold determines success."
+  ],
+  "python": "3.12.14",
+  "sqlite": "3.53.1",
+  "platform": "Linux-6.18.44-x86_64-with-glibc2.41",
+  "git": {
+    "head": "e352f53647a16ccf76a6c61b0cfc3fd32ac37a70",
+    "dirty": true
+  },
+  "script_sha256": "ba3c567640c6062979c3564c01fb28460d53eb02576413dec66b624710756575",
+  "source_sha256": {
+    "peps/news.py": "d34212564d8fda95529c854c786ae943f47af2985f3ffa6caacbabcb13df6946",
+    "peps/collector.py": "2776d429b9ec4e1d9630d244749fb1f03e0954551f83edf97d7be0b61b6359b9",
+    "peps/store.py": "6030daceba09890841044904d9bebf47cc1784fc3bd2b2dabed6a50e2e7506c7",
+    "peps/acquisition_coverage.py": "bda454eb0de2f640378b9ca5802dbbdcbad066e7a7a3b742cbf1d2b65fedbf26",
+    "peps/news_projection.py": "a895637979de365e9e7ff8435445207c9fd4a803fab35c86c42335f1863f23ca",
+    "peps/news_session.py": "0460f0e9e32f112ed5349ef74cd2271d165811020b5679138531597198595a77",
+    "peps/relevance.py": "2c2fc48a62b5b88c0c7633486ef4f10010da17d9a6cd5fdac3a867078d2b9ebc"
+  },
+  "measurements": {
+    "rescue_no_bodies": {
+      "seconds": 3.694759032005095,
+      "connections_opened": 3,
+      "sql_statements": 9075,
+      "result": {
+        "body_skipped_budget": 1800
+      }
+    },
+    "rescue_no_bodies_repeat": {
+      "seconds": 3.332615794002777,
+      "connections_opened": 3,
+      "sql_statements": 9075,
+      "result": {
+        "body_skipped_budget": 1800
+      }
+    },
+    "current_bank_projection_build": {
+      "seconds": 3.14641291800217,
+      "connections_opened": 1,
+      "sql_statements": 10849,
+      "result": true
+    },
+    "coverage_read": {
+      "seconds": 0.014582338997570332,
+      "connections_opened": 1,
+      "sql_statements": 16,
+      "result": {
+        "entities_total": 300,
+        "entities_queried": 0,
+        "entities_with_candidates": 60,
+        "entities_with_bodies": 0,
+        "body_articles": 0,
+        "relevant_articles": 1800,
+        "metadata_only_articles": 1800,
+        "excluded_records": 0,
+        "shared_pages_read": 0,
+        "shared_records_checked": 0,
+        "entities_checked_locally": 0,
+        "shared_pages_pending": 0,
+        "shared_pages_limited": 0,
+        "local_documents": 0,
+        "local_entities_with_bodies": 0,
+        "permissions": {
+          "prepared_sources": 1,
+          "body_authorized_sources": 1,
+          "discovery_only_sources": 0
+        },
+        "current_bank_index_ready": true,
+        "current_bank_revision": "1",
+        "session_matches_bank": null,
+        "session": null
+      }
+    },
+    "coverage_read_warm": {
+      "seconds": 0.0006117730008554645,
+      "connections_opened": 1,
+      "sql_statements": 6,
+      "result": {
+        "entities_total": 300,
+        "entities_queried": 0,
+        "entities_with_candidates": 60,
+        "entities_with_bodies": 0,
+        "body_articles": 0,
+        "relevant_articles": 1800,
+        "metadata_only_articles": 1800,
+        "excluded_records": 0,
+        "shared_pages_read": 0,
+        "shared_records_checked": 0,
+        "entities_checked_locally": 0,
+        "shared_pages_pending": 0,
+        "shared_pages_limited": 0,
+        "local_documents": 0,
+        "local_entities_with_bodies": 0,
+        "permissions": {
+          "prepared_sources": 1,
+          "body_authorized_sources": 1,
+          "discovery_only_sources": 0
+        },
+        "current_bank_index_ready": true,
+        "current_bank_revision": "1",
+        "session_matches_bank": null,
+        "session": null
+      }
+    },
+    "observation_lookup": {
+      "query_plan": [
+        "SEARCH news_observations USING INDEX news_observation_latest (article_id=?)"
+      ],
+      "repeats": 200,
+      "seconds": 0.0017205580006702803
+    },
+    "collector_cold_warm": {
+      "http_transport_calls": 1,
+      "dns_calls": 1,
+      "cold_status": "ok",
+      "warm_status": "not_modified",
+      "local_status": "not_modified",
+      "local_miss_status": "cache_miss",
+      "cold_network_requests": 1,
+      "warm_network_requests": 0,
+      "local_network_requests": 0,
+      "cold_pagination": {
+        "kind": "wordpress_rest",
+        "page": 3,
+        "per_page": 100,
+        "total": 300,
+        "total_pages": 3,
+        "next_page": null,
+        "observed_items": 100,
+        "retained_items": 100,
+        "excluded_urls": 0,
+        "truncated": false,
+        "pagination_inferred": false
+      },
+      "warm_pagination": {
+        "kind": "wordpress_rest",
+        "page": 3,
+        "per_page": 100,
+        "total": 300,
+        "total_pages": 3,
+        "next_page": null,
+        "observed_items": 100,
+        "retained_items": 100,
+        "excluded_urls": 0,
+        "truncated": false,
+        "pagination_inferred": false
+      }
+    },
+    "unchanged_body_revalidation": {
+      "first_result": {
+        "status": "upgraded",
+        "document_id": "93b0bf3d804bf1f453c1d140d44baf7b342c16747e07457e4dcdaf15abef1b86"
+      },
+      "second_result": {
+        "status": "unchanged",
+        "document_id": "93b0bf3d804bf1f453c1d140d44baf7b342c16747e07457e4dcdaf15abef1b86"
+      },
+      "attributed_signature_present_before": true,
+      "attributed_signature_present_after": true,
+      "redundant_articles_attributed": 0
+    }
+  },
+  "checks": {
+    "exact_fixture_counts": true,
+    "rescue_reports_all_relevant_budget_exclusions": true,
+    "rescue_repeat_is_idempotent": true,
+    "coverage_matches_current_synthetic_bank": true,
+    "coverage_warm_is_identical": true,
+    "latest_observations_use_index_without_sort": true,
+    "rescue_did_not_queue_bodies": true,
+    "warm_and_local_do_not_resolve_or_fetch": true,
+    "cache_preserves_terminal_pagination": true,
+    "local_miss_never_uses_network": true,
+    "unchanged_body_preserves_attribution_signature": true,
+    "unchanged_body_skips_redundant_attribution": true,
+    "audit_chains_valid": true,
+    "no_real_dns_or_sockets_attempted": true,
+    "production_files_unchanged_during_measurement": true,
+    "baseline_unchanged": true
+  },
+  "baseline": {
+    "file": "baseline-read-only-audit.json",
+    "sha256": "dc6696ca1e660c2615f0b8e000c3774789d556f529c45d49aadad32cbbc14faf",
+    "report": {
+      "generated_at": "2026-10-16T04:26:36.378905+00:00",
+      "method": "Production read paths and SQLite, synthetic300entity/9000article/95000observation fixture; no public network, no production files edited. Optional index is created only in fixture.",
+      "python": "3.12.14",
+      "source_sha256": {
+        "peps/news.py": "b633f6f4324359e860e7c448372e6149af4cb47ac022cb03130da700c8982c20",
+        "peps/collector.py": "5bafe447703aa0b622b8b0f36b9ca8e82121236e5b50151b76c7000f43815aef",
+        "peps/store.py": "2c5928e7c685b92207ecc2f992b29a1ba08fc8fb23968e44066d4458a2bf6885",
+        "peps/acquisition_coverage.py": "7508693a83587574ff1125bfcbb3bab886cfdc262eaa251426bf438925883e2a"
+      },
+      "measurements": {
+        "rescue_no_bodies": {
+          "seconds": 55.39439084500191,
+          "connections_opened": 7275,
+          "sql_statements": 7275,
+          "result": {
+            "body_skipped_budget": 1800
+          }
+        },
+        "coverage_read": {
+          "seconds": 0.07319322400144301,
+          "counts": {
+            "entities_total": 300,
+            "entities_queried": 0,
+            "entities_with_candidates": 60,
+            "entities_with_bodies": 0,
+            "body_articles": 0,
+            "relevant_articles": 1800,
+            "metadata_only_articles": 1800,
+            "excluded_records": 0,
+            "shared_pages_read": 0,
+            "shared_records_checked": 0,
+            "entities_checked_locally": 0,
+            "shared_pages_pending": 0,
+            "shared_pages_limited": 0,
+            "local_documents": 0,
+            "local_entities_with_bodies": 0,
+            "permissions": {
+              "prepared_sources": 1,
+              "body_authorized_sources": 1,
+              "discovery_only_sources": 0
+            }
+          }
+        },
+        "observation_lookup_before": {
+          "query_plan": [
+            "SEARCH news_observations USING INDEX news_observation_article (article_id=?)",
+            "USE TEMP B-TREE FOR ORDER BY"
+          ],
+          "seconds_for_200": 0.3751576069989824
+        },
+        "observation_lookup_after_fixture_index": {
+          "query_plan": [
+            "SEARCH news_observations USING INDEX audit_test_observation_latest (article_id=?)"
+          ],
+          "seconds_for_200": 0.001774946998921223
+        },
+        "collector_cold_warm": {
+          "http_transport_calls": 1,
+          "dns_calls": 3,
+          "cold_status": "ok",
+          "warm_status": "not_modified",
+          "cold_network_requests": 1,
+          "warm_network_requests": 0,
+          "cold_pagination": {
+            "kind": "wordpress_rest",
+            "page": 3,
+            "per_page": 100,
+            "total": 300,
+            "total_pages": 3,
+            "next_page": null,
+            "observed_items": 100,
+            "retained_items": 100,
+            "excluded_urls": 0,
+            "truncated": false,
+            "pagination_inferred": false
+          },
+          "warm_pagination": {
+            "kind": "wordpress_rest",
+            "page": 3,
+            "per_page": 100,
+            "total": null,
+            "total_pages": null,
+            "next_page": 4,
+            "observed_items": 100,
+            "retained_items": 100,
+            "excluded_urls": 0,
+            "truncated": false,
+            "pagination_inferred": true
+          }
+        },
+        "unchanged_body_revalidation": {
+          "first_result": {
+            "status": "upgraded",
+            "document_id": "93b0bf3d804bf1f453c1d140d44baf7b342c16747e07457e4dcdaf15abef1b86"
+          },
+          "second_result": {
+            "status": "unchanged",
+            "document_id": "93b0bf3d804bf1f453c1d140d44baf7b342c16747e07457e4dcdaf15abef1b86"
+          },
+          "attributed_signature_present_before": true,
+          "attributed_signature_present_after": false,
+          "redundant_articles_attributed": 1
+        }
+      },
+      "fixture_database_bytes": 95211520
+    }
+  },
+  "fixture": {
+    "entities": 300,
+    "news_articles": 9000,
+    "news_observations": 95000,
+    "setup_seconds": 2.044262287003221,
+    "relevant_articles": 1800,
+    "entities_with_candidates": 60,
+    "observations_per_article": 10,
+    "extra_popular_observations": 5000,
+    "synthetic_source": {
+      "id": "fixture",
+      "kind": "wordpress_api",
+      "url": "https://example.org/wp-json/wp/v2/posts",
+      "api_url": "https://example.org/wp-json/wp/v2/posts",
+      "allowed_hosts": [
+        "example.org"
+      ],
+      "enabled": true,
+      "terms_approved": true,
+      "download_articles": true,
+      "article_terms_approved": true,
+      "refresh_seconds": 86400,
+      "robots_required": false,
+      "min_interval_seconds": 0
+    },
+    "fresh_temporary_databases": true
+  },
+  "fixture_database_bytes": 96759808,
+  "network_guard": {
+    "real_network_allowed": false
+  },
+  "source_sha256_after": {
+    "peps/news.py": "d34212564d8fda95529c854c786ae943f47af2985f3ffa6caacbabcb13df6946",
+    "peps/collector.py": "2776d429b9ec4e1d9630d244749fb1f03e0954551f83edf97d7be0b61b6359b9",
+    "peps/store.py": "6030daceba09890841044904d9bebf47cc1784fc3bd2b2dabed6a50e2e7506c7",
+    "peps/acquisition_coverage.py": "bda454eb0de2f640378b9ca5802dbbdcbad066e7a7a3b742cbf1d2b65fedbf26",
+    "peps/news_projection.py": "a895637979de365e9e7ff8435445207c9fd4a803fab35c86c42335f1863f23ca",
+    "peps/news_session.py": "0460f0e9e32f112ed5349ef74cd2271d165811020b5679138531597198595a77",
+    "peps/relevance.py": "2c2fc48a62b5b88c0c7633486ef4f10010da17d9a6cd5fdac3a867078d2b9ebc"
+  },
+  "comparison": {
+    "scope": "Precursor instrumentation and current versioned projection differences are explicit above.",
+    "same_corpus_cardinalities": true,
+    "rescue_seconds_before": 55.39439084500191,
+    "rescue_seconds_after": 3.694759032005095,
+    "rescue_speedup": 14.992693803617318,
+    "rescue_connections_before": 7275,
+    "rescue_connections_after": 3
+  },
+  "ok": true
+}
