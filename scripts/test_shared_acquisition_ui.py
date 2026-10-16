@@ -50,9 +50,14 @@ def main():
         report['screenshots'].append('runtime/shared-acquisition-ui-validation/' + name + '.png')
 
     def permissions(page):
+        response = api(page, 'news')
+        assert response['status'] == 200, ('GET /api/news failed while reading source permissions: '
+            f"HTTP {response['status']} · {json.dumps(response['body'], ensure_ascii=False)[:1000]}")
+        sources = response['body'].get('sources')
+        assert isinstance(sources, list), 'GET /api/news did not return a complete source catalogue'
         return {source['id']: {key: bool(source.get(key)) for key in
                 ('enabled', 'terms_approved', 'download_articles', 'article_terms_approved', 'body_terms_approved')}
-                for source in api(page, 'news')['body']['sources']}
+                for source in sources}
 
     try:
         with tempfile.TemporaryDirectory(prefix='webscope-shared-ui-') as tmp:

@@ -15,6 +15,7 @@ Además, un resultado del editor se descartaba cuando el nombre no aparecía en 
 - Los artículos originales ya encontrados tienen prioridad frente a nuevas consultas cuando están listos. La prueba de cola reproduce 652 consultas que antes podían adelantarse a un cuerpo disponible; la prioridad conserva reintentos, intentos y reservas vigentes.
 - La pantalla principal muestra nombres consultados en la web, entidades con candidatos y entidades con texto. El contraste local de índices y el archivo histórico tienen alcances separados.
 - La espera identifica fuente, error y próximo intento permitido. Pausar y analizar espera el cierre real del trabajador; sin textos pertinentes se ofrece buscar por nombre.
+- Los cambios de permisos se publican mediante sustitución atómica del archivo JSON. Una regresión con HTTP real reproduce la lectura simultánea que antes devolvía un catálogo vacío o incompleto; ahora siempre se lee la versión anterior o la nueva, ambas completas.
 
 ## Comprobación de red real
 
@@ -42,7 +43,7 @@ La copia local se ejecutó dos veces en **0,321 s**, con DNS, TCP y transporte H
 
 Las regresiones del adaptador y del pipeline comprueban permiso separado del original, frase exacta, cambios de banco, límites de cuerpos, caché, cuerpos negativos y procedencia. Los benchmarks masivos usan fuentes sintéticas: miden trabajo local y conservación de las reglas, no velocidad ni resultados de buscadores reales.
 
-La validación local final descubrió **890 pruebas unitarias**, con resultado correcto y siete omisiones correspondientes a capacidades opcionales. Ocho escenarios sintéticos con 652 entidades comprobaron filtrado, atribución, caché y separación entre cuerpos y metadatos. Las seis pruebas de navegador del flujo y recuperación sumaron 225 comprobaciones; importación y explicación se verificaron además por separado.
+La validación local final descubrió **897 pruebas unitarias**, con resultado correcto y siete omisiones correspondientes a capacidades opcionales. Ocho escenarios sintéticos con 652 entidades comprobaron filtrado, atribución, caché y separación entre cuerpos y metadatos. Las seis pruebas de navegador del flujo y recuperación sumaron 225 comprobaciones; importación y explicación se verificaron además por separado.
 
 `scripts/benchmark_search_state.py` crea 652 entidades y 100.001 tareas en SQLite, sin red. Verificó 1.001 tareas de la lista actual frente al total histórico, el uso del índice de ámbito y ausencia de documentos o scores. La primera lectura tardó **88 ms** y la mediana posterior **21 ms**. Es una medición local de consulta de estado, no de adquisición web. Los benchmarks se repitieron con el código estable durante cada medición; sus informes están en `runtime/search-clarity/`.
 

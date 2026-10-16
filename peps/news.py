@@ -557,6 +557,7 @@ class NewsAcquirer:
         return normalize_search_config(self.config().get('search'))
 
     def set_search_config(self, settings):
+        from .engine import _write_config_atomic
         from .news_search import normalize_search_config
         if not isinstance(settings, dict):
             raise ValueError('La búsqueda requiere un objeto de configuración')
@@ -565,13 +566,7 @@ class NewsAcquirer:
         config['search'] = normalize_search_config({**current, **settings})
         if config['search'] == current:
             return current
-        with tempfile.NamedTemporaryFile(mode='w', encoding='utf-8', dir=self.config_path.parent, delete=False) as output:
-            temporary = Path(output.name)
-            json.dump(config, output, ensure_ascii=False, indent=2)
-        try:
-            os.replace(temporary, self.config_path)
-        finally:
-            temporary.unlink(missing_ok=True)
+        _write_config_atomic(self.config_path, config)
         self.store.audit('news_search_configured', {'config_hash': digest(canonical(config['search']))})
         return config['search']
 
@@ -590,6 +585,7 @@ class NewsAcquirer:
             return deepcopy(summary)
 
     def set_source(self, source_id, enabled, terms_approved, download_articles=False, body_terms_approved=False):
+        from .engine import _write_config_atomic
         config = self.config()
         source = next((s for s in config['sources'] if s['id'] == source_id), None)
         if source is None:
@@ -598,7 +594,7 @@ class NewsAcquirer:
             raise ValueError('Esta fuente sólo descubre enlaces; autoriza el editor de destino para conservar cuerpos.')
         source.update(enabled=bool(enabled), terms_approved=bool(terms_approved),
                       download_articles=bool(download_articles), article_terms_approved=bool(body_terms_approved))
-        self.config_path.write_text(json.dumps(config, ensure_ascii=False, indent=2), encoding='utf-8')
+        _write_config_atomic(self.config_path, config)
         self.store.audit('news_source_configured', {'id': source_id, 'config_hash': digest(canonical(source))})
 
     def queue(self, window=None, start=None, end=None, *, cache_mode='reuse', deadline=None):
