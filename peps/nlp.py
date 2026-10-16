@@ -12,8 +12,9 @@ import unicodedata
 from datetime import date
 from typing import Any
 
-MODEL_VERSION = "es-gazetteer-rules-1.0.0"
+MODEL_VERSION = "es-gazetteer-rules-1.0.1"
 RULES_VERSION = "mx-reputational-2026-10-15"
+SENTENCE_PATTERN = r"[^\r\n.!?;]+(?:[.!?;]+|(?=\r?\n|$))"
 
 
 def _fold(value: str) -> str:
@@ -72,7 +73,7 @@ FAMILY_PATTERN = re.compile(r"\b(?:ti[oa]s?|prim[oa]s?|herman[oa]s?|padre|madre|
 ASSOCIATE_PATTERN = re.compile(r"\b(?:soci[oa]s?|colaborador(?:a|es)?|excolaborador|amig[oa]s?|empresa de|empleado de)\b")
 NEGATION_PATTERN = re.compile(r"\b(?:no|nunca|jamas|sin)\b(?:\s+\w+){0,5}\s*$")
 RULES_HASH = hashlib.sha256(json.dumps({"categories": CATEGORY_PATTERNS,
-    "stages": STAGE_PATTERNS, "severity": CATEGORY_SEVERITY},
+    "stages": STAGE_PATTERNS, "severity": CATEGORY_SEVERITY, "sentences": SENTENCE_PATTERN},
     sort_keys=True, ensure_ascii=False).encode()).hexdigest()
 
 MONTHS = {"enero": 1, "febrero": 2, "marzo": 3, "abril": 4, "mayo": 5,
@@ -119,7 +120,7 @@ def _mentions(text: str, entity: dict[str, Any]) -> list[dict[str, Any]]:
 
 def _sentences(text: str, mentions: list[dict[str, Any]]):
     # Semicolons split independent allegations; periods inside initials do not.
-    for match in re.finditer(r"[^\n.!?;]+(?:[.!?;]+|$)", text):
+    for match in re.finditer(SENTENCE_PATTERN, text):
         start = match.start()
         # Explicit new-subject clauses must not donate offenses or resolutions
         # to the named entity in the previous clause.

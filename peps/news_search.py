@@ -13,6 +13,7 @@ from datetime import date, datetime, time, timedelta, timezone
 import re
 from urllib.parse import urlencode, urlsplit
 
+from .identity import COMPANY_KINDS, GENERIC_CONTEXT, LEGAL_SUFFIXES, STOP, _fold, _tokens
 from .store import canonical, digest
 
 PRESETS = {
@@ -102,6 +103,38 @@ def _phrase(value):
     return ' '.join(re.sub(r'["\\\x00-\x1f]', ' ', value).split())[:300]
 
 
+_GENERIC_COMPANY_WORDS = STOP | GENERIC_CONTEXT | frozenset({
+    'grupo', 'sociedad', 'corporacion', 'compania', 'holding', 'holdings',
+}) | frozenset(token for suffix in LEGAL_SUFFIXES for token in suffix)
+
+
+def _is_company(entity):
+    return _fold(entity.get('kind', 'person')) in COMPANY_KINDS
+
+
+def _distinctive_company_letters(value):
+    # Same retrieval floor as RelevanceIndex: corporate aliases need four
+    # non-generic letters. This does not validate their identity or conduct.
+    return sum(char.isalpha() for token in _tokens(value)
+               if token.value not in _GENERIC_COMPANY_WORDS for char in token.value)
+
+
+def _company_core(value):
+    tokens = _tokens(value)
+    sequence = tuple(token.value for token in tokens)
+    for suffix in LEGAL_SUFFIXES:
+        if len(sequence) > len(suffix) and sequence[-len(suffix):] == suffix:
+            core = value[:tokens[len(tokens) - len(suffix) - 1].end]
+            # Do not turn generic legal labels such as Grupo S.A. into a
+            # standalone broad query. Canonical short brands remain usable.
+            return core if _distinctive_company_letters(core) >= 2 else value
+    return value
+
+
+def _uncontextual_corporate_alias(entity, value):
+    return _is_company(entity) and _distinctive_company_letters(value) >= 4
+
+
 def _variants(entity, aliases):
     name = _phrase(entity.get('name'))
     values = [name]
@@ -109,7 +142,7 @@ def _variants(entity, aliases):
         values.extend(entity.get('aliases') or [])
         context = entity.get('context') or {}
         if isinstance(context, dict):
-            for key in ('legal_name', 'legal_names', 'trade_names', 'verified_aliases', 'abbreviations'):
+            for key in ('legal_name', 'legal_names', 'trade_names', 'business_names', 'verified_aliases', 'abbreviations'):
                 extra = context.get(key) or []
                 if isinstance(extra, dict):
                     extra = [dict(value, name=key) if isinstance(value, dict) else key for key, value in extra.items()]
@@ -121,9 +154,14 @@ def _variants(entity, aliases):
                 continue
             value = value.get('name') or value.get('value') or value.get('alias')
         value = _phrase(value)
-        if value and value.casefold() not in seen:
-            seen.add(value.casefold())
-            result.append(value)
+        # Exact corporate cores retrieve the spelling used by publishers;
+        # preserve the full legal label as another query. Personal names and
+        # personal aliases are never shortened by this normalization.
+        forms = [_company_core(value), value] if _is_company(entity) else [value]
+        for form in forms:
+            if form and form.casefold() not in seen:
+                seen.add(form.casefold())
+                result.append(form)
     return result[:51]
 
 
@@ -145,7 +183,8 @@ def entity_queries(entity, config, max_chars=500):
     for variant in variants:
         # Short nicknames/acronyms need another literal clue to avoid flooding
         # the corpus with a generic word. The legal/full name remains broad.
-        short_alias = variant != variants[0] and len(variant.split()) == 1
+        short_alias = (variant != variants[0] and len(variant.split()) == 1
+                       and not _uncontextual_corporate_alias(entity, variant))
         if short_alias and not hint_query:
             continue
         phrase = '"' + variant + '"'
@@ -181,7 +220,8 @@ def wordpress_queries(entity, config, *, variants=None):
     terms = [''] if config['preset'] == 'identity' else ['gobierno', 'funcionario', 'contrato'] if config['preset'] == 'public_role' else ['corrupción', 'fraude', 'sanción', '"lavado de dinero"']
     queries = []
     for index, name in enumerate(variants):
-        short = index > 0 and len(name.split()) == 1
+        short = (index > 0 and len(name.split()) == 1
+                 and not _uncontextual_corporate_alias(entity, name))
         if short and not hints:
             continue
         phrase = '"' + name + '"' + (' "' + hints[0] + '"' if short else '')
@@ -195,7 +235,7 @@ def wordpress_queries(entity, config, *, variants=None):
 
 
 def _gdelt_batch_queries(entities, source, config, suffix, max_chars):
-    """One flat OR of canonical names, one risk term; never nested ORs.
+    """One flat OR of primary names/corporate brands; never nested ORs.
 
     Publisher WordPress search is deliberately excluded: it does not document
     the same Boolean semantics. Alias/context requests follow the first sweep.
@@ -203,8 +243,14 @@ def _gdelt_batch_queries(entities, source, config, suffix, max_chars):
     terms = [''] if config['preset'] == 'identity' else ['gobierno', 'funcionario', 'contrato'] if config['preset'] == 'public_role' else ['corrupción', 'fraude', 'sanción', '"lavado de dinero"']
     names = {}
     for entity in entities:
-        name = _phrase(entity.get('name'))
-        if name:
+        variants = _variants(entity, config['include_aliases']) if _is_company(entity) else [_phrase(entity.get('name'))]
+        for index, name in enumerate(variants):
+            # Keep corporate brands in the first sweep instead of waiting for
+            # all personal aliases. Longer legal spellings remain available in
+            # separate secondary queries, without inflating the flat OR batch.
+            if (not name or (index and (_company_core(name) != name
+                                       or not _uncontextual_corporate_alias(entity, name)))):
+                continue
             value = names.setdefault(name.casefold(), {'name': name, 'ids': {}})
             value['ids'][str(entity['id'])] = None
     limit = min(50, max(1, int(source.get('batch_size', 6))))
@@ -351,7 +397,12 @@ def build_search_plan(entities, sources, config=None, *, start=None, end=None, n
         if a >= b:
             plan['warnings'].append(source['id'] + ': el período solicitado queda fuera del alcance temporal de la fuente.')
             continue
-        unit = config['window'] if config['window'] != 'auto' else 'year' if (google or wordpress) and (b - a).days > 730 else 'month'
+        # A quick discovery pass starts with annual windows even for a single
+        # year. Creating all twelve monthly queries before seeing candidates
+        # multiplies a large bank's initial queue without improving the first
+        # result. Explicit monthly searches and extended defaults stay intact.
+        unit = (config['window'] if config['window'] != 'auto' else
+                'year' if (google or wordpress) and (quick or (b - a).days > 730) else 'month')
         # GDELT supports the recent interval directly. Monthly subdivisions are
         # a response-limit recovery strategy, not mandatory work before results.
         # Both execution modes start from one shared recent interval. Extended

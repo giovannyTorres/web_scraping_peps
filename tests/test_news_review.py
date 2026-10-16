@@ -429,6 +429,23 @@ class SyntheticLoadHarnessReview(unittest.TestCase):
         self.assertEqual(result['documents'], 4)
         self.assertEqual(result['bank']['content_clusters'], 2)
 
+    def test_virtual_clock_advances_without_fetch_and_incomplete_phases_cannot_pass(self):
+        from scripts.benchmark_news_load import VirtualClock, run_case
+        with patch('scripts.benchmark_news_load.time.monotonic', side_effect=[10., 10., 12.]):
+            clock = VirtualClock()
+            first = clock.now()
+            self.assertEqual(clock.now() - first, 2.)
+        with patch('socket.socket', side_effect=AssertionError('Real sockets forbidden in load fixture')):
+            result = run_case(20, 2, bank_size=40, seconds=.000001)
+        self.assertFalse(result['passed'])
+        self.assertFalse(result['checks']['cold_phase_completed'])
+        self.assertFalse(result['checks']['warm_phase_completed'])
+        self.assertFalse(result['checks']['no_pending_jobs'])
+        for phase in (result['cold'], result['warm']):
+            self.assertFalse(phase['completed'])
+            self.assertGreater(phase['pending_jobs'], 0)
+            self.assertIsNone(phase['unique_articles_per_local_second'])
+
 
 if __name__ == '__main__':
     unittest.main()

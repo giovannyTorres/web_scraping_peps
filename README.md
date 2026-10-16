@@ -1,10 +1,12 @@
-# WebScope 2.7.0
+# WebScope 2.8.0
 
 Banco local de noticias y documentos públicos sobre personas, empresas y organizaciones mexicanas. Separa la adquisición de fuentes autorizadas de la atribución local de identidad, conserva procedencia y versiones, y ordena la revisión documental con una puntuación explicable.
 
 **WebScope** es el nuevo nombre de la herramienta de web scraping y análisis documental antes llamada PEPS MX. La interfaz combina azules marino y principal con acentos aqua, Lato para texto y controles y Source Serif 4 para títulos. Las fuentes se distribuyen con sus licencias y se cargan desde el propio paquete, sin servicios de tipografía externos. Tras instalar el wheel puede usar `webscope` o el comando compatible `peps`; el módulo Python y las rutas de datos existentes se conservan.
 
 La interfaz organiza el trabajo en cinco pasos: **cargar lista → preparar fuentes → descargar noticias → analizar y calcular → revisar resultados**. Cada paso muestra su estado, el avance disponible y el motivo de cualquier bloqueo. Importar datos ya no ejecuta scoring; el cálculo se inicia explícitamente después de terminar la adquisición. Consulte [FLUJO_GUIADO.md](docs/FLUJO_GUIADO.md) para recorrerlo y [VALIDACION_2_3_0.md](docs/VALIDACION_2_3_0.md) para sus comprobaciones.
+
+La versión 2.8 corrige fallos encontrados con **Peña Nieto y siete empresas reales**: búsquedas por nombres comerciales, selección de textos para revisión, extracción de artículos frente a tarjetas relacionadas, separación de párrafos y reanudación mediante proxy. Conserva los candidatos neutros, negaciones y absoluciones; la prioridad de descarga no agrega puntos. La [validación pública 2.8.0](docs/VALIDACION_2_8_0.md) documenta las peticiones reales, tiempos, correcciones y cobertura pendiente, separándolos del benchmark sintético de 300 entidades.
 
 La versión 2.4 corrige las descargas que quedaban en pausa sin una salida: distingue tareas listas, aplazadas y agotadas, muestra el próximo intento permitido y reanuda sin crear nuevas consultas. También permite **cerrar la descarga con cobertura parcial** cuando ya no hay ningún trabajador activo. Conserva las noticias y la cola pendiente; la evaluación guarda esa limitación. La [guía de recuperación y búsqueda histórica](docs/RECUPERACION_DESCARGA.md) explica cómo retomar un banco existente y preparar consultas dirigidas por nombre y fechas. La [validación 2.4.0](docs/VALIDACION_2_4_0.md) incluye el caso de 235 referencias y 64 pendientes y la actualización desde un wheel 2.3.1 auténtico.
 

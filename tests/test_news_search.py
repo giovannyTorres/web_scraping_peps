@@ -11,7 +11,8 @@ from unittest.mock import patch
 from peps.engine import Engine
 from peps.news import NewsAcquirer
 from peps.news_search import (build_search_plan, default_search_config, entity_queries,
-                              merge_source_defaults, normalize_search_config, query_url, split_query_windows)
+                              merge_source_defaults, normalize_search_config, query_url, split_query_windows,
+                              wordpress_queries)
 
 NOW = datetime(2026, 10, 15, 12, tzinfo=timezone.utc)
 ENTITY = {'id': 'synthetic', 'name': 'Persona Sintética Inventada', 'aliases': ['Alias Sintético'],
@@ -24,6 +25,119 @@ GDELT = {'id': 'index', 'kind': 'gdelt', 'base_url': 'https://api.gdeltproject.o
 
 
 class SearchPlanTests(unittest.TestCase):
+    def test_quick_auto_yearly_first_sweep_removes_twelvefold_queue_for_8_and_300_entities(self):
+        for count in (8, 300):
+            with self.subTest(entities=count):
+                entities = [{'id': str(i), 'name': f'Persona Pública Sintética {i}'} for i in range(count)]
+                settings = {'execution_mode': 'quick', 'preset': 'identity', 'start': '2022-01-01',
+                            'end': '2022-12-31', 'include_aliases': False, 'use_context': False,
+                            'max_queries': 10000}
+                annual = build_search_plan(entities, [WP], settings, now=NOW)
+                monthly = build_search_plan(entities, [WP], dict(settings, window='month'), now=NOW)
+                self.assertEqual(annual['query_count'], count)
+                self.assertEqual(monthly['query_count'], count * 12)
+                self.assertEqual(annual['sources'][0]['window_unit'], 'year')
+                self.assertEqual(annual['sources'][0]['windows'], 1)
+                self.assertTrue(all(query['split_policy'] == 'defer' for query in annual['queries']))
+                for query in annual['queries']:
+                    self.assertEqual((query['start'], query['end']), ('20220101000000', '20230101000000'))
+                    args = parse_qs(urlsplit(query['url']).query)
+                    self.assertEqual(args['year'], ['2022'])
+                    self.assertNotIn('monthnum', args)
+                extended = build_search_plan(entities, [WP], dict(settings, execution_mode='extended'), now=NOW)
+                self.assertEqual(extended['query_count'], count * 12)
+                self.assertEqual(extended['sources'][0]['window_unit'], 'month')
+
+    def test_quick_auto_annual_payload_preserves_partial_date_bounds_and_google_filters(self):
+        google = dict(WP, id='google', search_kind='google_news_rss',
+                      base_url='https://news.google.com/rss/search')
+        settings = {'execution_mode': 'quick', 'preset': 'identity', 'start': '2021-11-17',
+                    'end': '2022-03-08', 'include_aliases': False, 'use_context': False}
+        for source in (WP, google):
+            with self.subTest(source=source['id']):
+                plan = build_search_plan([ENTITY], [source], settings, now=NOW)
+                self.assertEqual([(query['start'], query['end']) for query in plan['queries']],
+                                 [('20220101000000', '20220309000000'),
+                                  ('20211117000000', '20220101000000')])
+                if source['search_kind'] == 'google_news_rss':
+                    for query in plan['queries']:
+                        args = parse_qs(urlsplit(query['url']).query)
+                        first = datetime.strptime(query['start'], '%Y%m%d%H%M%S').date().isoformat()
+                        last = datetime.strptime(query['end'], '%Y%m%d%H%M%S').date().isoformat()
+                        self.assertIn('after:' + first, args['q'][0])
+                        self.assertIn('before:' + last, args['q'][0])
+
+    def test_corporate_queries_keep_legal_name_and_prioritize_suffix_free_editorial_name(self):
+        config = normalize_search_config({'preset': 'identity', 'use_context': False}, NOW)
+        for legal, core in (('CEMEX, S.A.B. de C.V.', 'CEMEX'),
+                            ('Altos Hornos de México S.A.B. de C.V.', 'Altos Hornos de México'),
+                            ('ACME Sociedad Anónima de Capital Variable', 'ACME')):
+            with self.subTest(legal=legal):
+                company = {'id': 'company', 'kind': 'empresa', 'name': legal}
+                queries = wordpress_queries(company, config)
+                self.assertEqual(queries[0], {'query': '"' + core + '"', 'query_type': 'identity'})
+                self.assertTrue(any('"' + legal + '"' in query['query'] for query in queries))
+                google_query = entity_queries(company, config)[0]['query']
+                self.assertIn('"' + core + '"', google_query)
+                self.assertIn('"' + legal + '"', google_query)
+
+    def test_business_names_corporate_brands_retrieve_without_relaxing_personal_aliases(self):
+        config = normalize_search_config({'preset': 'identity', 'use_context': False}, NOW)
+        company = {'id': 'pemex', 'kind': 'company', 'name': 'Petróleos Mexicanos',
+                   'context': {'business_names': ['Pemex', 'AHMSA', 'CEMEX', 'Grupo', 'ABC',
+                       {'name': 'Revocada', 'status': 'revoked'}, {'name': 'NoValidada', 'validated': False}]}}
+        for builder in (entity_queries, wordpress_queries):
+            queries = [query['query'] for query in builder(company, config)]
+            text = ' '.join(queries)
+            for brand in ('Pemex', 'AHMSA', 'CEMEX'):
+                self.assertIn('"' + brand + '"', text)
+            for omitted in ('Grupo', 'ABC', 'Revocada', 'NoValidada'):
+                self.assertNotIn('"' + omitted + '"', text)
+            person = {**company, 'kind': 'person', 'name': 'Persona Sintética Inventada'}
+            personal = ' '.join(query['query'] for query in builder(person, config))
+            for brand in ('Pemex', 'AHMSA', 'CEMEX'):
+                self.assertNotIn('"' + brand + '"', personal)
+        disabled = normalize_search_config({'include_aliases': False, 'use_context': False}, NOW)
+        self.assertTrue(all('Pemex' not in query['query'] for query in wordpress_queries(company, disabled)))
+
+    def test_legal_suffix_normalization_is_company_only_and_does_not_emit_generic_core(self):
+        config = normalize_search_config({'preset': 'identity', 'use_context': False,
+                                          'include_aliases': False}, NOW)
+        for builder in (entity_queries, wordpress_queries):
+            person = {'id': 'person', 'name': 'Persona Sintética S.A.', 'kind': 'person'}
+            queries = builder(person, config)
+            self.assertTrue(all('"Persona Sintética S.A."' in query['query'] for query in queries))
+            self.assertFalse(any('"Persona Sintética"' in query['query'] for query in queries))
+            generic = builder({'id': 'company', 'name': 'Grupo S.A.', 'kind': 'company'}, config)
+            self.assertFalse(any('"Grupo"' in query['query'] for query in generic))
+            company = builder({'id': 'company', 'name': 'CEMEX S.A.B. de C.V.', 'kind': 'company'}, config)
+            self.assertIn('"CEMEX"', company[0]['query'])
+
+    def test_gdelt_first_sweep_corporate_cores_and_brands_respect_character_and_query_budgets(self):
+        entities = [{'id': 'cemex', 'kind': 'company', 'name': 'CEMEX, S.A.B. de C.V.'},
+                    {'id': 'pemex', 'kind': 'company', 'name': 'Petróleos Mexicanos',
+                     'context': {'business_names': ['Pemex']}},
+                    {'id': 'ahmsa', 'kind': 'company', 'name': 'Altos Hornos de México, S.A.B. de C.V.',
+                     'context': {'business_names': ['AHMSA']}}]
+        settings = {'preset': 'identity', 'use_context': False, 'max_queries': 100,
+                    'start': '2026-10-01', 'end': '2026-10-15'}
+        source = dict(GDELT, max_query_chars=250, batch_size=6)
+        plan = build_search_plan(entities, [source], settings, now=NOW)
+        first = plan['queries'][0]
+        for name in ('CEMEX', 'Petróleos Mexicanos', 'Pemex', 'Altos Hornos de México', 'AHMSA'):
+            self.assertIn('"' + name + '"', first['query'])
+        self.assertNotIn('S.A.B.', first['query'])
+        all_queries = ' '.join(query['query'] for query in plan['queries'])
+        self.assertIn('"CEMEX, S.A.B. de C.V."', all_queries)
+        self.assertIn('"Altos Hornos de México, S.A.B. de C.V."', all_queries)
+        for query in plan['queries']:
+            self.assertLessEqual(len(query['query']), 250)
+            self.assertLessEqual(query['query'].count('('), 1)
+        limited = build_search_plan(entities, [source], dict(settings, max_queries=1), now=NOW)
+        self.assertEqual(limited['query_count'], 1)
+        self.assertTrue(limited['truncated'])
+        self.assertEqual(set(limited['queries'][0]['entity_ids']), {'cemex', 'pemex', 'ahmsa'})
+
     def test_legacy_settings_keep_original_period_preset_and_900_second_budget(self):
         legacy = {'preset': 'identity', 'start': '2020-01-01', 'end': '2020-12-31', 'include_aliases': False}
         normalized = normalize_search_config(legacy, NOW)

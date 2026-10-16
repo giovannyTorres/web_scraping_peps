@@ -7,6 +7,7 @@ metadata cache permits re-filtering new bank names without downloading again.
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
+import re
 from urllib.parse import urlencode, urlsplit
 
 
@@ -65,15 +66,32 @@ def next_pages(source, payload, parsed):
                 yield dict(payload, url=item['url'], depth=payload.get('depth', 0) + 1)
 
 
-def in_period(record, payload):
-    """Only a publication date can restrict publication coverage, not lastmod."""
-    value = record.get('published_at')
-    if not value:
-        return True
+def _period_timestamp(value):
     try:
-        stamp = datetime.fromisoformat(value.replace('Z', '+00:00'))
-        if stamp.tzinfo is None:
-            stamp = stamp.replace(tzinfo=timezone.utc)
-        return datetime.fromisoformat(payload['start']) <= stamp < datetime.fromisoformat(payload['end'])
-    except (ValueError, TypeError):
-        return True
+        stamp = (datetime.strptime(value, '%Y%m%d%H%M%S')
+                 if isinstance(value, str) and re.fullmatch(r'\d{14}', value)
+                 else datetime.fromisoformat(value.replace('Z', '+00:00')))
+        return stamp.replace(tzinfo=timezone.utc) if stamp.tzinfo is None else stamp.astimezone(timezone.utc)
+    except (ValueError, TypeError, AttributeError):
+        return None
+
+
+def publication_period_status(record, payload):
+    """Classify publication dates against exact half-open UTC boundaries.
+
+    Targeted jobs use compact 14-digit timestamps; shared pages use ISO dates.
+    Missing/invalid publication dates remain unknown candidates, never covered
+    dates. Sitemap lastmod is not a publication date.
+    """
+    stamp = _period_timestamp(record.get('published_at'))
+    if stamp is None:
+        return 'publication_date_unknown'
+    first, last = [_period_timestamp(payload.get(key)) for key in ('start', 'end')]
+    if first is None or last is None or first >= last:
+        return 'period_bounds_unknown'
+    return 'in_period' if first <= stamp < last else 'outside_period'
+
+
+def in_period(record, payload):
+    """Only a known publication date can exclude a candidate, not lastmod."""
+    return publication_period_status(record, payload) != 'outside_period'

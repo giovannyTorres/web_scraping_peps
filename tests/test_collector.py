@@ -15,7 +15,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from unittest.mock import Mock, patch
 
-from peps.collector import CollectionError, SafeFetcher, _PinnedHTTPSConnection, _DeadlineReader
+from peps.collector import CollectionError, SafeFetcher, _PinnedHTTPSConnection, _ProxyHTTPSConnection, _DeadlineReader
 from peps.sources import build_search_url, extract_text, parse_results
 
 
@@ -42,7 +42,7 @@ class SafeFetcherTests(unittest.TestCase):
         self.directory = tempfile.TemporaryDirectory()
         self.addCleanup(self.directory.cleanup)
         self.now = [1_800_000_000.0]
-        self.fetcher = SafeFetcher({"cache_ttl_seconds": 0}, Path(self.directory.name))
+        self.fetcher = SafeFetcher({"cache_ttl_seconds": 0, "trust_env_proxy": False}, Path(self.directory.name))
         self.addCleanup(self.fetcher.close)
         self.fetcher._clock = lambda: self.now[0]
         self.fetcher._dns = lambda *args, **kwargs: PUBLIC_DNS
@@ -158,6 +158,179 @@ class SafeFetcherTests(unittest.TestCase):
         self.assertEqual(self.fetcher._tls_context.verify_mode, ssl.CERT_REQUIRED)
         self.assertTrue(self.fetcher._tls_context.check_hostname)
 
+    def proxy_environment(self, **values):
+        # Do not inherit the runner's actual proxy, CA paths or credentials.
+        return patch.dict('os.environ', values, clear=True)
+
+    def test_inherited_https_proxy_lowercase_precedence_and_http_fallback(self):
+        self.fetcher.config['trust_env_proxy'] = True
+        with self.proxy_environment(HTTPS_PROXY='http://uppercase.example:8000',
+                                    https_proxy='http://lowercase.example:8080'):
+            proxy = self.fetcher._proxy_for_host('news.example')
+            self.assertEqual((proxy['host'], proxy['port']), ('lowercase.example', 8080))
+        with self.proxy_environment(HTTP_PROXY='http://fallback.example:8888'):
+            self.assertEqual(self.fetcher._proxy_for_host('news.example')['port'], 8888)
+        with self.proxy_environment(https_proxy='http://forward.example:8080', no_proxy='.example'):
+            self.assertIsNone(self.fetcher._proxy_for_host('news.example'))
+        with self.proxy_environment(https_proxy='http://forward.example:8080'):
+            self.fetcher.config['trust_env_proxy'] = False
+            self.assertIsNone(self.fetcher._proxy_for_host('news.example'))
+
+    def test_invalid_proxy_fails_closed_with_redacted_error(self):
+        self.fetcher.config['trust_env_proxy'] = True
+        for value in ('https://secret:password@proxy.example:443',
+                      'socks5://secret:password@proxy.example:1080',
+                      'http://secret:password@proxy.example:99999',
+                      'http://secret:password@proxy.example/path?token=private'):
+            with self.subTest(value=value), self.proxy_environment(https_proxy=value):
+                with patch('peps.collector._PinnedHTTPSConnection') as direct:
+                    result = self.fetcher.fetch(self.url, self.source)
+                self.assertEqual(result['status'], 'error')
+                self.assertIn('proxy configuration', result['error'])
+                for secret in ('secret', 'password', 'private'):
+                    self.assertNotIn(secret, result['error'])
+                direct.assert_not_called()
+
+    def test_proxy_validates_destination_dns_and_source_allowlist_before_connect(self):
+        self.fetcher.config['trust_env_proxy'] = True
+        with self.proxy_environment(https_proxy='http://forward.example:8080'):
+            with patch('peps.collector._ProxyHTTPSConnection') as proxy:
+                self.assertEqual(self.fetcher.fetch('https://other.example/', self.source)['status'], 'error')
+                self.fetcher._dns = lambda *args, **kwargs: [
+                    (socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_TCP, '', ('127.0.0.1', 443))]
+                self.assertEqual(self.fetcher.fetch(self.url, self.source)['status'], 'error')
+            proxy.assert_not_called()
+
+    def test_proxy_connect_targets_approved_hostname_with_verified_tls_and_private_gateway(self):
+        self.fetcher.config['trust_env_proxy'] = True
+        raw, wrapped, context = Mock(), Mock(), Mock()
+        context.wrap_socket.return_value = wrapped
+        gateway = [(socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_TCP, '', ('10.0.0.2', 8080))]
+        with self.proxy_environment(https_proxy='http://user:p%40ss@forward.example:8080'):
+            config = self.fetcher._proxy_for_host('news.example')
+        connection = _ProxyHTTPSConnection('news.example', config, 5, context, PUBLIC_DNS)
+        self.assertEqual(connection._tunnel_host, 'news.example')
+        self.assertEqual(connection._tunnel_port, 443)
+        self.assertEqual(connection._tunnel_headers['Proxy-Authorization'], 'Basic dXNlcjpwQHNz')
+        with patch('peps.collector.socket.getaddrinfo', return_value=gateway), \
+                patch('peps.collector.socket.socket', return_value=raw), \
+                patch.object(connection, '_tunnel') as tunnel:
+            connection.connect()
+        raw.connect.assert_called_once_with(('10.0.0.2', 8080))
+        tunnel.assert_called_once()
+        context.wrap_socket.assert_called_once_with(raw, server_hostname='news.example')
+        self.assertIs(connection.sock, wrapped)
+
+    def test_proxy_credentials_never_reach_publisher_headers_and_pool_isolates_gateway(self):
+        self.fetcher.config['trust_env_proxy'] = True
+        first, _, _ = self.wire_connection(b'one')
+        second, _, _ = self.wire_connection(b'two')
+        with patch('peps.collector._ProxyHTTPSConnection', side_effect=[first, second]) as proxy:
+            with self.proxy_environment(https_proxy='http://user:secret@first.example:8080'):
+                one = self.fetcher.fetch(self.url, self.source)
+            with self.proxy_environment(https_proxy='http://user:secret@second.example:8080'):
+                two = self.fetcher.fetch(self.url + '?second=1', self.source)
+        self.assertEqual((one['body'], two['body']), ('one', 'two'))
+        self.assertEqual(proxy.call_count, 2)
+        for connection in (first, second):
+            self.assertNotIn('Proxy-Authorization', connection.request.call_args.kwargs['headers'])
+        self.assertNotIn('secret', repr(self.fetcher._local.pool.keys()))
+        self.assertEqual(len(self.fetcher._local.pool), 2)
+
+    def test_proxy_failure_is_redacted_and_never_falls_back_to_direct_connection(self):
+        from peps.news import NewsAcquirer
+        from peps.store import Store
+        self.fetcher.config['trust_env_proxy'] = True
+        raw = Mock()
+        raw.connect.side_effect = OSError('sensitive proxy credentials in upstream error')
+        gateway = [(socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_TCP, '', ('10.0.0.2', 8080))]
+        with self.proxy_environment(https_proxy='http://user:secret@forward.example:8080'), \
+                patch('peps.collector.socket.getaddrinfo', return_value=gateway), \
+                patch('peps.collector.socket.socket', return_value=raw), \
+                patch('peps.collector._PinnedHTTPSConnection') as direct:
+            result = self.fetcher.fetch(self.url, self.source)
+        self.assertEqual(result['status'], 'deferred')
+        self.assertEqual(result['error_code'], 'network_failure')
+        self.assertEqual(result['error'], 'Transient network failure: OSError')
+        self.assertIsNotNone(result['retry_at'])
+        direct.assert_not_called()
+        self.assertEqual(result['network_requests'], 1)
+        news = object.__new__(NewsAcquirer)
+        news.store = Store(Path(self.directory.name) / 'proxy-failure-queue.sqlite3')
+        job_id = news.store.enqueue('news_feed', {'url': self.url}, due=0)
+        job = news.store.claim(owner='proxy-test')
+        self.assertTrue(news._failure(job, result))
+        with news.store.connection() as con:
+            queued = con.execute('SELECT status,attempts,due FROM jobs WHERE id=?', (job_id,)).fetchone()
+        self.assertEqual((queued['status'], queued['attempts']), ('deferred', 1))
+        self.assertGreater(queued['due'], self.now[0])
+
+    def test_proxy_connect_and_tls_share_a_single_connection_deadline(self):
+        raw, context = Mock(), Mock()
+        config = {'host': 'forward.example', 'port': 8080, 'authorization': None}
+        connection = _ProxyHTTPSConnection('news.example', config, 5, context, PUBLIC_DNS)
+        gateway = [(socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_TCP, '', ('10.0.0.2', 8080))]
+        with patch('peps.collector.socket.getaddrinfo', return_value=gateway), \
+                patch('peps.collector.socket.socket', return_value=raw), \
+                patch.object(connection, '_tunnel'), \
+                patch('peps.collector.time.monotonic', side_effect=[0, 0, 4, 5.1]):
+            with self.assertRaisesRegex(TimeoutError, 'TimeoutError'):
+                connection.connect()
+        self.assertEqual(raw.settimeout.call_args_list[0].args, (5,))
+        self.assertEqual(raw.settimeout.call_args_list[1].args, (1,))
+        context.wrap_socket.assert_not_called()
+
+    def test_proxy_session_timeout_remains_deferred_and_preserves_queue_attempts(self):
+        from peps.news import NewsAcquirer
+        from peps.store import Store
+        self.fetcher.config['trust_env_proxy'] = True
+        clock, raw = [10.], Mock()
+        gateway = [(socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_TCP, '', ('10.0.0.2', 8080))]
+        def expired_tunnel(_connection):
+            clock[0] = 10.07
+            raise TimeoutError('private gateway timeout details and credentials')
+        with self.proxy_environment(https_proxy='http://user:secret@forward.example:8080'), \
+                patch('peps.collector.time.monotonic', side_effect=lambda: clock[0]), \
+                patch('peps.collector.socket.getaddrinfo', return_value=gateway), \
+                patch('peps.collector.socket.socket', return_value=raw), \
+                patch.object(_ProxyHTTPSConnection, '_tunnel', expired_tunnel):
+            result = self.fetcher.fetch(self.url, dict(self.source, _deadline_monotonic=10.05))
+        self.assertEqual(result['status'], 'deferred')
+        self.assertEqual(result['error_code'], 'session_limit')
+        self.assertIsNotNone(result['retry_at'])
+        self.assertNotIn('secret', result['error'])
+        with self.fetcher._db() as con:
+            host = con.execute("SELECT failures FROM hosts WHERE host='news.example'").fetchone()
+        self.assertEqual(host['failures'], 0)
+        # Exercise the actual queue decision too: a normal session cutoff must
+        # remain resumable even if several prior sessions ended at this point.
+        news = object.__new__(NewsAcquirer)
+        news.store = Store(Path(self.directory.name) / 'session-cutoff-queue.sqlite3')
+        job_id = news.store.enqueue('news_feed', {'url': self.url}, due=0)
+        for _ in range(6):
+            job = news.store.claim(owner='session-test')
+            self.assertIsNotNone(job)
+            self.assertTrue(news._failure(job, dict(result, retry_at=0)))
+        with news.store.connection() as con:
+            queued = con.execute('SELECT status,attempts FROM jobs WHERE id=?', (job_id,)).fetchone()
+        self.assertEqual((queued['status'], queued['attempts']), ('deferred', 0))
+
+    def test_proxy_timeout_before_session_deadline_retries_as_network_failure(self):
+        self.fetcher.config['trust_env_proxy'] = True
+        raw = Mock()
+        gateway = [(socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_TCP, '', ('10.0.0.2', 8080))]
+        with self.proxy_environment(https_proxy='http://user:secret@forward.example:8080'), \
+                patch('peps.collector.socket.getaddrinfo', return_value=gateway), \
+                patch('peps.collector.socket.socket', return_value=raw), \
+                patch.object(_ProxyHTTPSConnection, '_tunnel', side_effect=TimeoutError('secret timeout')):
+            result = self.fetcher.fetch(self.url, self.source)
+        self.assertEqual(result['status'], 'deferred')
+        self.assertEqual(result['error_code'], 'network_failure')
+        self.assertEqual(result['error'], 'Transient network failure: TimeoutError')
+        with self.fetcher._db() as con:
+            host = con.execute("SELECT failures FROM hosts WHERE host='news.example'").fetchone()
+        self.assertEqual(host['failures'], 1)
+
     def test_multiple_addresses_share_one_connect_budget(self):
         first, second, wrapped, context = Mock(), Mock(), Mock(), Mock()
         first.connect.side_effect = OSError("unreachable")
@@ -224,7 +397,7 @@ class SafeFetcherTests(unittest.TestCase):
 
     def test_parallel_fetchers_share_one_host_reservation(self):
         def reserve(_):
-            fetcher = SafeFetcher({}, Path(self.directory.name))
+            fetcher = SafeFetcher({"trust_env_proxy": False}, Path(self.directory.name))
             # Cleanups run after the ThreadPoolExecutor has joined its workers,
             # before TemporaryDirectory cleanup closes the shared Windows files.
             self.addCleanup(fetcher.close)
@@ -272,7 +445,7 @@ class SafeFetcherTests(unittest.TestCase):
         self.assertEqual(result["status"], "deferred")
         expected = datetime.fromtimestamp(self.now[0] + 120, timezone.utc).isoformat()
         self.assertEqual(result["retry_at"], expected)
-        other = SafeFetcher({}, Path(self.directory.name))
+        other = SafeFetcher({"trust_env_proxy": False}, Path(self.directory.name))
         self.addCleanup(other.close)
         other._clock, other._dns, other._transport = self.fetcher._clock, self.fetcher._dns, transport
         self.assertEqual(other.fetch(self.url, self.source)["status"], "deferred")
@@ -418,6 +591,35 @@ class SafeFetcherTests(unittest.TestCase):
     def test_unsupported_binary_type(self):
         self.transport({self.url: [(200, {"content-type": "application/pdf"}, b"%PDF")]})
         self.assertEqual(self.fetcher.fetch(self.url, self.source)["status"], "error")
+
+    def test_missing_search_resource_is_manual_review_not_empty_feed_or_host_penalty(self):
+        from peps.news import NewsAcquirer
+        from peps.store import Store
+        for status, body in ((404, b'<!doctype html><html><body>Not found</body></html>'),
+                             (410, b'<html><body>Gone</body></html>'),
+                             (404, b'<rss><channel><title>Empty</title></channel></rss>')):
+            with self.subTest(status=status, body=body[:20]):
+                url = self.url + '?case=' + hashlib.sha256(body).hexdigest()
+                self.transport({url: [(status, {'content-type': 'text/html'}, body)]})
+                result = self.fetcher.fetch(url, dict(self.source, kind='rss', search_kind='wordpress_rss'))
+                self.assertEqual(result['status'], 'blocked')
+                self.assertEqual(result['http_status'], status)
+                self.assertEqual(result['error_code'], 'resource_not_found')
+                self.assertEqual(result['body'], '')
+                self.assertEqual(result['sha256'], hashlib.sha256(body).hexdigest())
+                self.assertEqual(result['network_requests'], 1)
+                with self.fetcher._db() as con:
+                    host = con.execute("SELECT failures,blocked_until FROM hosts WHERE host='news.example'").fetchone()
+                    cached = con.execute('SELECT body FROM http_cache WHERE url=?', (url,)).fetchone()
+                self.assertEqual((host['failures'], host['blocked_until']), (0, 0))
+                self.assertIsNone(cached)
+                news = object.__new__(NewsAcquirer)
+                news.store = Store(Path(self.directory.name) / ('missing-' + str(status) + '-' + str(len(body)) + '.sqlite3'))
+                job_id = news.store.enqueue('news_feed', {'url': url}, due=0)
+                self.assertTrue(news._failure(news.store.claim(owner='missing-resource'), result))
+                self.assertIsNone(news.store.claim(owner='must-not-repeat'))
+                with news.store.connection() as con:
+                    self.assertEqual(con.execute('SELECT status FROM jobs WHERE id=?', (job_id,)).fetchone()[0], 'blocked')
 
     @staticmethod
     def wire_connection(data, encoding="identity", length=True, peer="93.184.216.34"):
@@ -717,7 +919,7 @@ class SafeFetcherTests(unittest.TestCase):
         self.assertEqual((warm["wire_bytes"], warm["decoded_bytes"]), (0, 0))
         self.assertFalse(warm["request_attempted"])
         self.assertEqual(warm["cache_status"], "fresh")
-        other = SafeFetcher({}, Path(self.directory.name))
+        other = SafeFetcher({"trust_env_proxy": False}, Path(self.directory.name))
         self.addCleanup(other.close)
         metrics = other.metrics_snapshot()
         self.assertEqual(metrics["network_requests"], len(transport.calls))
@@ -754,7 +956,7 @@ class SafeFetcherTests(unittest.TestCase):
                 return 200, {}, b"User-agent: *\nDisallow: /article\n"
             raise AssertionError("Article was forbidden")
         self.fetcher._transport = transport
-        other = SafeFetcher({}, Path(self.directory.name))
+        other = SafeFetcher({"trust_env_proxy": False}, Path(self.directory.name))
         self.addCleanup(other.close)
         other._clock, other._dns, other._transport = self.fetcher._clock, self.fetcher._dns, transport
         with ThreadPoolExecutor(max_workers=2) as pool:

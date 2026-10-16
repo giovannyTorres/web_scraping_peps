@@ -1,8 +1,9 @@
 """Fast acquisition relevance, deliberately separate from identity and scoring.
 
 A literal name is enough to retrieve a candidate article, never to validate its
-identity or an adverse fact. Aliases need a nearby bank context hint. No offence
-keywords are needed: victim, denial and neutral stories remain retrievable.
+identity or an adverse fact. Personal aliases need a nearby bank context hint;
+distinct corporate names also retrieve candidates without asserting identity.
+No offence keywords are needed: victim, denial and neutral stories remain retrievable.
 """
 from __future__ import annotations
 
@@ -10,9 +11,13 @@ from collections import Counter, defaultdict
 from bisect import bisect_left, bisect_right
 from dataclasses import dataclass
 
-from .identity import _sequence, _tokens
+from .identity import COMPANY_KINDS, GENERIC_CONTEXT, LEGAL_SUFFIXES, STOP, _fold, _sequence, _tokens
 
-MODEL_VERSION = 'metadata-relevance-1.0.0'
+MODEL_VERSION = 'metadata-relevance-1.1.0'
+
+_GENERIC_COMPANY_WORDS = STOP | GENERIC_CONTEXT | frozenset({
+    'grupo', 'sociedad', 'corporacion', 'compania', 'holding', 'holdings',
+}) | frozenset(token for suffix in LEGAL_SUFFIXES for token in suffix)
 
 
 @dataclass(frozen=True)
@@ -22,6 +27,9 @@ class _Phrase:
     tokens: tuple
     kind: str
     context: tuple
+    original_tokens: tuple
+    corporate_candidate: bool
+    corporate_core: bool
 
 
 class RelevanceIndex:
@@ -31,6 +39,7 @@ class RelevanceIndex:
         phrases = []
         for entity in entities:
             entity_id = str(entity['id'])
+            company = _fold(entity.get('kind', 'person')) in COMPANY_KINDS
             context = entity.get('context') or {}
             hints = []
             if isinstance(context, dict):
@@ -44,7 +53,7 @@ class RelevanceIndex:
             variants = [(entity.get('name'), 'name')]
             variants.extend((alias, 'alias') for alias in entity.get('aliases') or [])
             if isinstance(context, dict):
-                for key in ('verified_aliases', 'legal_name', 'legal_names', 'trade_names', 'abbreviations'):
+                for key in ('verified_aliases', 'legal_name', 'legal_names', 'trade_names', 'business_names', 'abbreviations'):
                     values = context.get(key) or []
                     if isinstance(values, dict):
                         values = [dict(value, name=name) if isinstance(value, dict) else name for name, value in values.items()]
@@ -59,8 +68,34 @@ class RelevanceIndex:
                     value = value.get('name') or value.get('value') or value.get('alias')
                 if not isinstance(value, str) or not (sequence := _sequence(value)) or len(sequence) > 32 or sequence in seen:
                     continue
-                seen.add(sequence)
-                phrases.append(_Phrase(entity_id, value, sequence, kind, tuple(hints)))
+                forms = [(value, sequence)]
+                if company:
+                    for suffix in LEGAL_SUFFIXES:
+                        if len(sequence) > len(suffix) and sequence[-len(suffix):] == suffix:
+                            core = sequence[:-len(suffix)]
+                            # Keep editorial text and offsets human-readable;
+                            # normalization and suffix rules are the same as
+                            # the identity resolver, without copying its verdict.
+                            end = _tokens(value)[len(core) - 1].end
+                            forms.append((value[:end], core))
+                            break
+                for phrase_text, phrase_tokens in forms:
+                    if phrase_tokens in seen:
+                        continue
+                    seen.add(phrase_tokens)
+                    token = phrase_tokens[0] if len(phrase_tokens) == 1 else None
+                    distinctive = token is not None and token not in _GENERIC_COMPANY_WORDS
+                    alias_letters = sum(char.isalpha() for word in phrase_tokens
+                                        if word not in _GENERIC_COMPANY_WORDS for char in word)
+                    # The bank's canonical company name may be a single word
+                    # (or a short brand). Corporate aliases have a higher floor
+                    # to keep unexplained short acronyms contextual. Every hit
+                    # remains a retrieval lead and never validates identity.
+                    corporate_candidate = company and (
+                        (kind == 'name' and (token is None or (distinctive and len(token) >= 2 and not token.isdigit())))
+                        or (kind == 'alias' and alias_letters >= 4))
+                    phrases.append(_Phrase(entity_id, phrase_text, phrase_tokens, kind, tuple(hints),
+                                           sequence, corporate_candidate, phrase_tokens != sequence))
         frequency = Counter(token for phrase in phrases for token in set(phrase.tokens))
         anchors = defaultdict(list)
         for phrase in phrases:
@@ -86,7 +121,7 @@ class RelevanceIndex:
                 for anchor, phrase in self._anchors.get(token.value, ()):
                     if allowed_ids is not None and phrase.entity_id not in allowed_ids:
                         continue
-                    if allowed_names is not None and phrase.tokens not in allowed_names:
+                    if allowed_names is not None and phrase.tokens not in allowed_names and phrase.original_tokens not in allowed_names:
                         continue
                     start, end = index - anchor, index - anchor + len(phrase.tokens)
                     if start < 0 or end > len(tokens) or words[start:end] != phrase.tokens:
@@ -99,15 +134,17 @@ class RelevanceIndex:
                     supported = any(any(local[offset:offset + len(hint)] == hint
                                          and (nearby[offset + len(hint) - 1].end <= global_start or nearby[offset].start >= global_end)
                                          for offset in range(len(local) - len(hint) + 1)) for hint in phrase.context)
-                    if (phrase.kind == 'alias' or len(phrase.tokens) == 1) and not supported:
+                    if (phrase.kind == 'alias' or len(phrase.tokens) == 1) and not supported and not phrase.corporate_candidate:
                         uncorroborated_alias = True
                         continue
                     matches.append({'entity_id': phrase.entity_id, 'phrase': phrase.text, 'kind': phrase.kind,
                                     'part': part, 'start': char_start, 'end': char_end,
-                                    'text': text[char_start:char_end], 'context_supported': supported})
+                                    'text': text[char_start:char_end], 'context_supported': supported,
+                                    'corporate_core': phrase.corporate_core})
         matches.sort(key=lambda match: (match['part'] != 'title', match['start'], match['entity_id'], match['kind']))
         identities = sorted({match['entity_id'] for match in matches})
-        priority = max((100 if match['kind'] == 'name' and match['part'] == 'title' else
+        priority = max(((80 if match['part'] == 'title' else 60) if match['corporate_core'] else
+                        100 if match['kind'] == 'name' and match['part'] == 'title' else
                         80 if match['kind'] == 'name' else 60 if match['part'] == 'title' else 40
                         for match in matches), default=0)
         return {'relevant': bool(matches), 'rank': priority, 'entity_ids': identities, 'matches': matches,
