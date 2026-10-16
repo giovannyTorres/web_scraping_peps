@@ -36,7 +36,7 @@ class SearchPlanTests(unittest.TestCase):
         self.assertEqual(merged['search']['preset'], 'identity')
 
     def test_new_install_defaults_are_quick_adverse_without_source_permissions(self):
-        news = json.loads((Path(__file__).resolve().parents[1] / 'peps/defaults/news_sources.json').read_text())
+        news = json.loads((Path(__file__).resolve().parents[1] / 'peps/defaults/news_sources.json').read_text(encoding='utf-8'))
         settings = normalize_search_config(news['search'], NOW)
         self.assertEqual((settings['execution_mode'], settings['session_seconds'], settings['preset']), ('quick', 120, 'adverse'))
         self.assertTrue(all(source.get('enabled') is False and source.get('terms_approved') is False for source in news['sources']))
@@ -49,8 +49,8 @@ class SearchPlanTests(unittest.TestCase):
 
     def test_publisher_search_additions_preserve_existing_catalogue_and_require_permission(self):
         root = Path(__file__).resolve().parents[1]
-        defaults = json.loads((root / 'peps/defaults/news_sources.json').read_text())
-        self.assertEqual(defaults, json.loads((root / 'config/news_sources.example.json').read_text()))
+        defaults = json.loads((root / 'peps/defaults/news_sources.json').read_text(encoding='utf-8'))
+        self.assertEqual(defaults, json.loads((root / 'config/news_sources.example.json').read_text(encoding='utf-8')))
         additions = [source for source in defaults['sources'] if source['id'] in ('contralinea_search', 'aristegui_search')]
         self.assertEqual([source['id'] for source in additions], ['contralinea_search', 'aristegui_search'])
         existing = deepcopy([source for source in defaults['sources'] if source['id'] not in
@@ -100,7 +100,7 @@ class SearchPlanTests(unittest.TestCase):
                              for warning in complete_years['warnings']))
 
     def test_shared_sources_are_added_disabled_and_old_permissions_remain_exact(self):
-        defaults = json.loads((Path(__file__).resolve().parents[1] / 'peps/defaults/news_sources.json').read_text())
+        defaults = json.loads((Path(__file__).resolve().parents[1] / 'peps/defaults/news_sources.json').read_text(encoding='utf-8'))
         sources = [source for source in defaults['sources'] if source['kind'] in ('wordpress_api', 'sitemap')]
         self.assertEqual(len(sources), 6)
         for source in sources:
