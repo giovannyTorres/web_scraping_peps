@@ -3058,7 +3058,7 @@
         "Retrieval relevance does not prove identity, culpability or absence of risk.",
         "Positive/zero scores are heuristic pipeline outputs; unresolved identity needs review."
       ],
-      "stage": "final_directed_annual_run_frozen_production",
+      "stage": "last_live_network_run_followed_by_offline_semantic_corrections_on_same_html",
       "selected_bodies": [
         {
           "id": "c51fce9aba8d657ea4c34b7eeb812f3d7153f0c0d8d449d884485f45c5ee4996",
@@ -3724,13 +3724,13 @@
     "explicit_editorial_container": "elementor-widget-theme-post-content",
     "local_reparse_only": true,
     "paragraphs": 18,
-    "current_extraction_version": "article-main-3"
+    "current_extraction_version": "article-main-4"
   },
   "same_real_html_extraction_comparison": {
-    "recorded_at": "2026-10-16T03:56:29.209648+00:00",
+    "recorded_at": "2026-10-16T04:12:02.785401+00:00",
     "method": "Offline only: raw HTML from first live run network.sqlite3 http_cache, read-only SQLite URI. Compare original saved document text with current production article_text; canonical nlp.analyze and IdentityResolver used in memory, no reviews or score changes, no raw article bodies exported.",
-    "extraction_version": "article-main-3",
-    "news_code_sha256": "fc34c9af11483c2d3607c8a01d68c4138c1e1ff7a9e861144d6c14db66ef9667",
+    "extraction_version": "article-main-4",
+    "news_code_sha256": "b633f6f4324359e860e7c448372e6149af4cb47ac022cb03130da700c8982c20",
     "db_hashes_before": {
       "runtime/real-news-validation/baseline-bank/peps.sqlite3": "5eb65d67e8dc222b42e5835c3b2be9381a539b998829880dd772239727cfafdb",
       "runtime/real-news-validation/baseline-bank/network.sqlite3": "09356cbcab7b0e930b041387799b4a29487204e11fc3bfef562d873e9d4763b9"
@@ -4307,11 +4307,13 @@
     ]
   },
   "local_existing_bank_upgrade": {
-    "recorded_at": "2026-10-16T03:57:07.062146+00:00",
-    "method": "Production local snapshot upgrade on an isolated copy of the first real public-source bank; no network and no identity confirmations. Original bank and source bodies preserved.",
-    "extraction_version": "article-main-3",
-    "attribution_seconds": 0.9655742460017791,
-    "scoring_seconds": 0.20884617599949706,
+    "recorded_at": "2026-10-16T04:10:55.454360+00:00",
+    "method": "Final production local upgrade, attribution and scoring on isolated copies of actual public-source banks; no HTTP and no identity confirmations. Original banks/bodies preserved.",
+    "source_bank": "baseline-bank",
+    "extraction_version": "article-main-4",
+    "nlp_version": "es-gazetteer-rules-1.0.2",
+    "attribution_seconds": 0.40875028400478186,
+    "scoring_seconds": 0.18326081499981228,
     "attribution": {
       "articles_processed": 8,
       "identity_links": {
@@ -4366,7 +4368,7 @@
           "discovery_index_is_not_article_evidence": 48,
           "identity_ambiguous_or_requires_selected_spans": 1
         },
-        "run_id": "085a772d7eb18478b8f0ba5b81c66deb25938671bc97bc091a3790f1170e588f",
+        "run_id": "363202d76b4063d804f0289f0644a6951f0052bfef0f50b1c3b781e4cbb03900",
         "replay_matched": true
       },
       {
@@ -4402,7 +4404,7 @@
           "discovery_index_is_not_article_evidence": 62,
           "identity_ambiguous_or_requires_selected_spans": 3
         },
-        "run_id": "1caa0f10bc0a2a0af106f909a76bc7ec2f14aa1ca5bdec2ab84abacbf229290b",
+        "run_id": "074311904b402a13a3221146a07f5d559ecf337aa590b717bab51c0b926cf7ce",
         "replay_matched": true
       },
       {
@@ -4438,7 +4440,7 @@
           "discovery_index_is_not_article_evidence": 5,
           "identity_ambiguous_or_requires_selected_spans": 2
         },
-        "run_id": "d8c55b387f969cbe64b19b9a7893fdde37f06723d0dfa9f0fbb5412870eae8ac",
+        "run_id": "fda0eee543cd587d9766d245b67a852516b50c3698a6d0c1561c885a1aa254fa",
         "replay_matched": true
       },
       {
@@ -4474,7 +4476,7 @@
           "discovery_index_is_not_article_evidence": 2,
           "identity_ambiguous_or_requires_selected_spans": 2
         },
-        "run_id": "3e18a71dfd9b4515c46c2dc77668dd7a61aee66abf475bed09bd2a4953cd32f0",
+        "run_id": "204e7af26d606591b62f248985a82ef5485703c62c31352709863bd916f54af2",
         "replay_matched": true
       },
       {
@@ -4503,7 +4505,7 @@
         "exclusion_counts": {
           "discovery_index_is_not_article_evidence": 1
         },
-        "run_id": "5d7e4ce5028926adfbc50c29a5a2cbc39b0ac605ba54c2e1cbe4411b03bfd11e",
+        "run_id": "575e582ec9ba8313c33803ff37b349528f8eeba021b2c3f679dbb405cb301a8f",
         "replay_matched": true
       },
       {
@@ -4532,7 +4534,7 @@
         "exclusion_counts": {
           "discovery_index_is_not_article_evidence": 1
         },
-        "run_id": "81fbf62b4c79859d34e2d75dbd70e2f948e20b0ea0be6642912061795bff0428",
+        "run_id": "d2486a16f8ad149b1adc852f12fab4515ae79f82600c0904441853cd4b82db38",
         "replay_matched": true
       },
       {
@@ -4561,7 +4563,7 @@
         "exclusion_counts": {
           "identity_ambiguous_or_requires_selected_spans": 1
         },
-        "run_id": "96758302543e4db78fd9f9b4bb407a6bda6e4894f0d8375fca1d3d6f4377049d",
+        "run_id": "812b044f781729d111df7875e2df3e923fc716362b1ffb0a333c80a1b78115ef",
         "replay_matched": true
       },
       {
@@ -4586,14 +4588,121 @@
         "evidence_items": 0,
         "identity_statuses": {},
         "exclusion_counts": {},
-        "run_id": "cddb2d8994e1fee8e5f60e8f70e18508d06c174e1a4b1fda0d2c2d9a636fc332",
+        "run_id": "881595c8da591d5867c67852cd17bade4d942fa43453c622c6ea64e53f99399f",
         "replay_matched": true
+      }
+    ],
+    "selected_bodies": [
+      {
+        "id": "26e8062aca514483a4d7f625a37bddebe0db4bf345b29a4b3016e38a068ce20a",
+        "canonical_url": "https://contralinea.com.mx/interno/semana/en-2-anos-mas-pemex-lograra-desmontar-red-de-empresas-en-paraisos-fiscales/",
+        "title": "En 2 años más, Pemex logrará desmontar red de empresas en paraísos fiscales",
+        "scope": "full_article",
+        "status": "fetched",
+        "document_id": "5c16ef90c60f4e07d6b40597db05f789ac3ff1120f965766aaa4381cf55acfc7",
+        "body_chars": 1791,
+        "body_sha256": "d9ef06a1beedfee5b5d6fd1f32a93b4b85511ddad0b3783f30cf49f281f96280",
+        "body_target_mentions": [
+          "pemex"
+        ]
+      },
+      {
+        "id": "20d89a12f2b41349e184e009b0e5897c4b32754ed5b0415d8885603fdcd4ddf8",
+        "canonical_url": "https://contralinea.com.mx/interno/semana/no-aumentara-edad-de-jubilacion-para-trabajadores-y-empleados-de-pemex-amlo/",
+        "title": "No aumentará edad de jubilación para trabajadores y empleados de Pemex: AMLO",
+        "scope": "full_article",
+        "status": "fetched",
+        "document_id": "9f46fd7caef05e336aa138ed58f7e290bdde431b4f106af18c10feb0539a31cc",
+        "body_chars": 3631,
+        "body_sha256": "44e0c92f58289d22fd9f8b4e84dd4132535495f9b7dc031f4a70b18716d26c10",
+        "body_target_mentions": [
+          "pemex"
+        ]
+      },
+      {
+        "id": "3ca5c7ac77aaa86468f413023770d50f7df12358325cd53b72ccbd59e6bb3ce7",
+        "canonical_url": "https://editorial.aristeguinoticias.com/3112/mexico/aldama-un-grito-en-la-oscuridad-video/",
+        "title": "#Aldama: un grito en la oscuridad (Video)",
+        "scope": "full_article",
+        "status": "fetched",
+        "document_id": "b5076854c8aeb78054b4729a74fa49cee0ba32993747ed8772bdb0fc4b0827d6",
+        "body_chars": 402,
+        "body_sha256": "494ffd32d9eb6b1dde696dbfbc0db39b91f05f1ae148cbe09c8c55307046c12e",
+        "body_target_mentions": [
+          "epn"
+        ]
+      },
+      {
+        "id": "281622af0d0005a3a6829a428e450f4062a324716ad36e8bfbba83edd113c2c0",
+        "canonical_url": "https://editorial.aristeguinoticias.com/2912/mundo/incendio-en-el-bronx-mesa-del-parlament-y-odebrecht-en-primeras-planas-del-mundo/",
+        "title": "Incendio en el Bronx, Mesa del Parlament y Odebrecht, en primeras planas del mundo",
+        "scope": "full_article",
+        "status": "fetched",
+        "document_id": "46e287ddcd5dbeab4f66d472c5d16a946ccfa455cdfeb674ef3b89c70bf636c7",
+        "body_chars": 1462,
+        "body_sha256": "b404f9bc4142ca8039506870d3796498bb5074ecaee1ed6cf6e4694eb16c8a95",
+        "body_target_mentions": [
+          "odebrecht"
+        ]
+      },
+      {
+        "id": "649eb49a1fd069b215ec1e6952e63a3cf1870d42b46a90652914b11ecd662741",
+        "canonical_url": "https://editorial.aristeguinoticias.com/2812/mundo/interrogan-a-kuczynski-y-keiko-fujimori-por-caso-odebrecht/",
+        "title": "Interrogan a Kuczynski y Keiko Fujimori por caso Odebrecht",
+        "scope": "full_article",
+        "status": "fetched",
+        "document_id": "bcf7ed99a50555f8f4600cdddc86199f4a512bf74eb0180d1ebef0e8f9c4917e",
+        "body_chars": 3196,
+        "body_sha256": "622c4dd383a00a8611452c5407bdab470d55fc97f5e89e76ff6371ddf8177e82",
+        "body_target_mentions": [
+          "odebrecht"
+        ]
+      },
+      {
+        "id": "40e3fa383b5c84ebce698ea00e91d970b27e9b2e44f12cd2a3d128f44743fa6d",
+        "canonical_url": "https://editorial.aristeguinoticias.com/3012/dinero-y-economia/cemex-vende-sus-operaciones-en-costa-rica-y-el-salvador-por-cerca-de-335-mdd/",
+        "title": "Cemex vende sus operaciones en Costa Rica y El Salvador por cerca de 335 mdd",
+        "scope": "full_article",
+        "status": "fetched",
+        "document_id": "8df5aa55e80b44bbec98651d75ec4e7d667c24268b58984aef979ab4fd547704",
+        "body_chars": 1806,
+        "body_sha256": "b2c10eea6573282606750960dfcd1ddda97844d6b2380bff25a9fc1ea5aaf7c3",
+        "body_target_mentions": [
+          "cemex"
+        ]
+      },
+      {
+        "id": "940abfe3a612ea78c11dfa0a4c65f58c0c745bce60cf5eead610a0163a3f27cf",
+        "canonical_url": "https://contralinea.com.mx/interno/semana/altos-hornos-de-alonso-ancira-repara-54-millones-de-dolares-a-pemex-pero-denuncia-a-cfe/",
+        "title": "Altos Hornos, de Alonso Ancira, repara 54 millones de dólares a Pemex pero denuncia a CFE",
+        "scope": "full_article",
+        "status": "fetched",
+        "document_id": "cb26d504fd8556522480972299ec1c22d12006e4fbbe50fb7deb3a462aea02c7",
+        "body_chars": 3710,
+        "body_sha256": "a70f2c8ff6d5cd2477cab9db1d1b4a3c26acfe5c6507d57545b0121bf1b9a492",
+        "body_target_mentions": [
+          "ahmsa",
+          "pemex"
+        ]
+      },
+      {
+        "id": "b0a1eb4c9b543c181c4850d2b00b810c0687abc68a776009a54e54d65ab1de83",
+        "canonical_url": "https://contralinea.com.mx/interno/semana/ahmsa-no-sera-rescatada-ancira-hasta-patrocino-a-los-moreira-amlo/",
+        "title": "AHMSA no será rescatada; Ancira hasta patrocinó a los Moreira: AMLO",
+        "scope": "full_article",
+        "status": "fetched",
+        "document_id": "d2c02b35e9d4a9b18a6681d34776dbc80bf833ecf115b425545cf217571f5059",
+        "body_chars": 2857,
+        "body_sha256": "1cf6c235448a768331c9931ce0b11b4ec97a90d1ac45467da583387d0ab5bb30",
+        "body_target_mentions": [
+          "ahmsa"
+        ]
       }
     ],
     "audit": {
       "ok": true,
       "checked": 835,
-      "head_hash": "a4980d31fbb50b174c83188c80efcca47fc959c8d320d283e71c603f8d3b4958",
+      "head_hash": "739359839881e636502e21c39b59c7b0990813dafda0cd41465b40f8c20b0b7c",
       "score_runs_checked": 16,
       "scope": "event_chain_document_content_current_scores_and_historical_score_runs_with_document_metadata",
       "limitation": "Una reescritura completa requiere detectar con un hash o respaldo externo."
@@ -4601,18 +4710,49 @@
     "checks": {
       "original_bank_unchanged": true,
       "audit_prefix_preserved": true,
-      "old_active_body_evidence_retired": true,
+      "replaced_old_active_body_evidence_retired": true,
       "original_immutable_documents_preserved": true
     },
     "retired_links": 10,
-    "progress_events": 20
+    "receipts": [
+      {
+        "version": "article-main-4",
+        "n": 8
+      }
+    ],
+    "source_code_sha256": {
+      "peps/relevance.py": "2c2fc48a62b5b88c0c7633486ef4f10010da17d9a6cd5fdac3a867078d2b9ebc",
+      "peps/news.py": "b633f6f4324359e860e7c448372e6149af4cb47ac022cb03130da700c8982c20",
+      "peps/collector.py": "5bafe447703aa0b622b8b0f36b9ca8e82121236e5b50151b76c7000f43815aef",
+      "peps/news_search.py": "86df92497efd247a7529cfd9764410052e665f452d7fde5b03abe868d01955b2",
+      "peps/official.py": "c864c512d84b06a1caf3b458c1cadf5820b805a2be7dc6f1c4c59cae0cfb66cf",
+      "peps/identity.py": "f05524947d5b1d765803da6faa145f3b422a61a10971a1caca3c6983f3436d2f",
+      "peps/sources.py": "05875aa5ff4a42ff97f32de0dd8bc33921c6a0c6f056beb72beae1d384bc7f1a",
+      "peps/importing.py": "54fc447531cecb986c3e4be4570d0d3f2280a4f86d5dd50e60c0109bf008e310",
+      "peps/workflow.py": "ff2fd82056ce71d8f3a7a1a2d802ea049e0eee2669ece2ac0ffa23748e5f5e95",
+      "peps/contextual.py": "7713ec854c309e1f4ca807fb31f2b464af5495fbd05e4f77ca42865e4baa40d8",
+      "peps/cli.py": "058c0826b124e26ed71ea026a4efa26aa8ad3f0c390f262e81ee96eb9c6670af",
+      "peps/nlp.py": "9b947a8ec53446fed346fc1ca3efbf2bb07224cb37640a2396fbbeb10cab6196",
+      "peps/store.py": "2c5928e7c685b92207ecc2f992b29a1ba08fc8fb23968e44066d4458a2bf6885",
+      "peps/advanced_nlp.py": "1ac3b13daeaef6b76da4f553bfe367604790c04d670d0f4a6418d0f2fbb547cc",
+      "peps/__main__.py": "3129adff95e0f38b87ab34cddfc27082c7892bcaec267ff5d40f160fdf55b44a",
+      "peps/scoring.py": "ff4e9e9f19cb0c781f02c06b68c2e2eaa00ee08f22dd8f71219fa5042879fe7e",
+      "peps/engine.py": "3f1f948bd2860674aaf9422636b50e1a829e051f3456a0f43cee6bedac076b37",
+      "peps/explainability.py": "5556420200f2d97436313af04c7d7303fbf008752bea4e38bc940838961b3b4e",
+      "peps/__init__.py": "b70e39a72e09c3de60207ac16a6b91b3f7818c301bd672a58349649e1c8f7a80",
+      "peps/shared_crawl.py": "84644aba7017989031360e86598da0f4eb282fecfcd7f0cbe251fbe2fb842d3e",
+      "peps/acquisition_coverage.py": "7508693a83587574ff1125bfcbb3bab886cfdc262eaa251426bf438925883e2a",
+      "peps/app.py": "2b3885b72bfbae6c5cf869296b0a5f7e30a2ca87d2ed7d21e0ef6c159ea00689",
+      "peps/context_model.py": "ada181d47cc0bd45c4bb3124db9920ee52fdb4e7115643a582c05f56de30a59b",
+      "peps/shared_discovery.py": "9b192dbb3dea8a0595a97109a877ef1443d1c8739510087172e3ee84a60a9fe2"
+    }
   },
   "synthetic_300_separate_from_real_web": {
     "schema": "webscope.shared_discovery.synthetic_benchmark.v1",
-    "recorded_at_utc": "2026-10-16T03:56:43.359133+00:00",
+    "recorded_at_utc": "2026-10-16T04:10:32.311270+00:00",
     "python": "3.12.14",
     "platform": "Linux-6.18.44-x86_64-with-glibc2.41",
-    "wall_seconds": 23.368594152001606,
+    "wall_seconds": 22.016050269005063,
     "method": {
       "synthetic_only": true,
       "real_public_network": false,
@@ -4644,7 +4784,7 @@
     },
     "script_sha256": "5f14e08f7415562cf0ec05615d8634eae9053df5100a5cc81695821dde51b739",
     "production_sha256_before": {
-      "peps/news.py": "fc34c9af11483c2d3607c8a01d68c4138c1e1ff7a9e861144d6c14db66ef9667",
+      "peps/news.py": "b633f6f4324359e860e7c448372e6149af4cb47ac022cb03130da700c8982c20",
       "peps/news_search.py": "86df92497efd247a7529cfd9764410052e665f452d7fde5b03abe868d01955b2",
       "peps/shared_crawl.py": "84644aba7017989031360e86598da0f4eb282fecfcd7f0cbe251fbe2fb842d3e",
       "peps/shared_discovery.py": "9b192dbb3dea8a0595a97109a877ef1443d1c8739510087172e3ee84a60a9fe2",
@@ -4654,7 +4794,7 @@
       "peps/engine.py": "3f1f948bd2860674aaf9422636b50e1a829e051f3456a0f43cee6bedac076b37"
     },
     "production_sha256_after": {
-      "peps/news.py": "fc34c9af11483c2d3607c8a01d68c4138c1e1ff7a9e861144d6c14db66ef9667",
+      "peps/news.py": "b633f6f4324359e860e7c448372e6149af4cb47ac022cb03130da700c8982c20",
       "peps/news_search.py": "86df92497efd247a7529cfd9764410052e665f452d7fde5b03abe868d01955b2",
       "peps/shared_crawl.py": "84644aba7017989031360e86598da0f4eb282fecfcd7f0cbe251fbe2fb842d3e",
       "peps/shared_discovery.py": "9b192dbb3dea8a0595a97109a877ef1443d1c8739510087172e3ee84a60a9fe2",
@@ -4685,9 +4825,9 @@
         "phases": {
           "cold": {
             "context_reimport_seconds": 0.0,
-            "queue_wall_seconds": 0.004344896005932242,
-            "acquire_wall_seconds": 10.510794961999636,
-            "acquire_cpu_seconds": 0.659630064,
+            "queue_wall_seconds": 0.004689571003837045,
+            "acquire_wall_seconds": 10.351054987993848,
+            "acquire_cpu_seconds": 0.48484850199999996,
             "fixture_http_requests": 3,
             "fixture_response_bytes": 102945,
             "requested_pages": [
@@ -4696,8 +4836,8 @@
               3
             ],
             "real_request_intervals_seconds": [
-              5.149966113996925,
-              5.116151980997529
+              5.115385766002873,
+              5.10278118000133
             ],
             "queue": {
               "queued": null,
@@ -4709,7 +4849,7 @@
               "completed": 3,
               "pending": 0,
               "stop_reason": "completed",
-              "elapsed_seconds": 10.505,
+              "elapsed_seconds": 10.3496,
               "discovery_records": 300,
               "relevant_records": 300,
               "excluded_records": 0,
@@ -4783,10 +4923,10 @@
             "checks_passed": true
           },
           "warm": {
-            "context_reimport_seconds": 0.012473533999582287,
-            "queue_wall_seconds": 0.0063586620017304085,
-            "acquire_wall_seconds": 0.4195664599974407,
-            "acquire_cpu_seconds": 0.39238223400000005,
+            "context_reimport_seconds": 0.00809498899616301,
+            "queue_wall_seconds": 0.004031966003822163,
+            "acquire_wall_seconds": 0.24581954399764072,
+            "acquire_cpu_seconds": 0.2439219560000001,
             "fixture_http_requests": 0,
             "fixture_response_bytes": 0,
             "requested_pages": [],
@@ -4801,7 +4941,7 @@
               "completed": 3,
               "pending": 0,
               "stop_reason": "completed",
-              "elapsed_seconds": 0.4171,
+              "elapsed_seconds": 0.2445,
               "discovery_records": 300,
               "relevant_records": 300,
               "excluded_records": 0,
@@ -4909,9 +5049,9 @@
         "phases": {
           "cold": {
             "context_reimport_seconds": 0.0,
-            "queue_wall_seconds": 0.004628388000128325,
-            "acquire_wall_seconds": 10.513104603000102,
-            "acquire_cpu_seconds": 0.6080088359999998,
+            "queue_wall_seconds": 0.004349221999291331,
+            "acquire_wall_seconds": 10.266753594005422,
+            "acquire_cpu_seconds": 0.39400190299999993,
             "fixture_http_requests": 3,
             "fixture_response_bytes": 95275,
             "requested_pages": [
@@ -4920,8 +5060,8 @@
               3
             ],
             "real_request_intervals_seconds": [
-              5.1153874450028525,
-              5.2866077099970425
+              5.072563353001897,
+              5.099166904998128
             ],
             "queue": {
               "queued": null,
@@ -4933,7 +5073,7 @@
               "completed": 3,
               "pending": 0,
               "stop_reason": "completed",
-              "elapsed_seconds": 10.5104,
+              "elapsed_seconds": 10.2656,
               "discovery_records": 300,
               "relevant_records": 30,
               "excluded_records": 270,
@@ -5007,10 +5147,10 @@
             "checks_passed": true
           },
           "warm": {
-            "context_reimport_seconds": 0.009013628005050123,
-            "queue_wall_seconds": 0.005055472000094596,
-            "acquire_wall_seconds": 0.20712889099377207,
-            "acquire_cpu_seconds": 0.20781164500000004,
+            "context_reimport_seconds": 0.007635909001692198,
+            "queue_wall_seconds": 0.003833695998764597,
+            "acquire_wall_seconds": 0.1639632000005804,
+            "acquire_cpu_seconds": 0.15492259600000002,
             "fixture_http_requests": 0,
             "fixture_response_bytes": 0,
             "requested_pages": [],
@@ -5025,7 +5165,7 @@
               "completed": 3,
               "pending": 0,
               "stop_reason": "completed",
-              "elapsed_seconds": 0.2058,
+              "elapsed_seconds": 0.1628,
               "discovery_records": 300,
               "relevant_records": 30,
               "excluded_records": 270,
@@ -5117,10 +5257,10 @@
   },
   "validation": {
     "unit": {
-      "total": 616,
-      "passed": 609,
+      "total": 623,
+      "passed": 616,
       "optional_skipped": 7,
-      "elapsed_seconds": 41.492
+      "elapsed_seconds": 34.063
     },
     "local_browser_checks": 170,
     "legacy_231_upgrade": {
@@ -5454,7 +5594,7 @@
     },
     "wheel_source_comparison": {
       "wheel": "peps_mx-2.8.0-py3-none-any.whl",
-      "sha256": "2c06c3fc5bafe3b3d8917a90a86feeacc94b5485e6c359aa135b7b2c88c2bbe8",
+      "sha256": "be5508ea521eaf2b8c320f5a7f4712720d486231a8b9092e40b56c29ed672c7b",
       "files_compared": 40,
       "identical": true,
       "mismatches": []
@@ -5604,5 +5744,1695 @@
       "Distinct publisher copies survive; repeated normalized content within a publisher shares one document.",
       "This run exercises acquisition only; identity attribution and reputational scoring are separate."
     ]
+  },
+  "final_real_semantic_spotcheck": {
+    "recorded_at": "2026-10-16T04:12:02.173644+00:00",
+    "method": "Offline read-only spotcheck of all 19 actual full articles from final live run; raw original HTML from network.sqlite3 HTTP cache, saved prior analyses compared with current canonical article_text and nlp.analyze in memory. No review confirmation, bank changes, score recomputation or risk conclusions. Raw article bodies and full source quotes not exported.",
+    "source_versions": {
+      "news_sha256": "b633f6f4324359e860e7c448372e6149af4cb47ac022cb03130da700c8982c20",
+      "nlp_sha256": "9b947a8ec53446fed346fc1ca3efbf2bb07224cb37640a2396fbbeb10cab6196",
+      "extraction_version": "article-main-4",
+      "nlp_version": "es-gazetteer-rules-1.0.2",
+      "nlp_rules_hash": "deca8055cbff5ab3e7d5dd3012cb109d95f2f3b48f81e69f9bd3f54167846405"
+    },
+    "database_hashes_before": {
+      "runtime/real-news-validation/final-bank/peps.sqlite3": "ad7230bc38d2583bfd31f52f07bcc300c77e942495bb3d31e36cf1b9e72b2258",
+      "runtime/real-news-validation/final-bank/network.sqlite3": "c32d93845669f6058b29e6ce4c687fd4e187edb9e9a3e8c26f21f616e53ada80"
+    },
+    "database_hashes_after": {
+      "runtime/real-news-validation/final-bank/peps.sqlite3": "ad7230bc38d2583bfd31f52f07bcc300c77e942495bb3d31e36cf1b9e72b2258",
+      "runtime/real-news-validation/final-bank/network.sqlite3": "c32d93845669f6058b29e6ce4c687fd4e187edb9e9a3e8c26f21f616e53ada80"
+    },
+    "databases_unchanged": true,
+    "distinct_real_documents": 19,
+    "entity_body_links": 23,
+    "records": [
+      {
+        "entity_id": "ahmsa",
+        "document_id": "d2c02b35e9d4a9b18a6681d34776dbc80bf833ecf115b425545cf217571f5059",
+        "title": "AHMSA no será rescatada; Ancira hasta patrocinó a los Moreira: AMLO",
+        "source_url": "https://contralinea.com.mx/interno/semana/ahmsa-no-sera-rescatada-ancira-hasta-patrocino-a-los-moreira-amlo/",
+        "published_at": "2022-12-06T20:05:24+00:00",
+        "raw_html_sha256": "bdf09c0f6a3d2c2c4be4b2508f30af558f39cb32802c09e4d0cd62e3b0abf46c",
+        "identity_status_in_unchanged_bank": "candidate",
+        "before": {
+          "body_sha256": "1cf6c235448a768331c9931ce0b11b4ec97a90d1ac45467da583387d0ab5bb30",
+          "body_chars": 2857,
+          "mentions": 1,
+          "findings": [],
+          "nlp_rules_hash": "e8a6e89eefc5c84edf16ca5d994ce15a88ae9e0710dab1fca403cf8b5b1a471e"
+        },
+        "after": {
+          "body_sha256": "1cf6c235448a768331c9931ce0b11b4ec97a90d1ac45467da583387d0ab5bb30",
+          "body_chars": 2857,
+          "mentions": 1,
+          "findings": [],
+          "nlp_rules_hash": "deca8055cbff5ab3e7d5dd3012cb109d95f2f3b48f81e69f9bd3f54167846405"
+        },
+        "navigation_checks": {
+          "lee_mas_before": false,
+          "lee_mas_after": false
+        }
+      },
+      {
+        "entity_id": "ahmsa",
+        "document_id": "cb26d504fd8556522480972299ec1c22d12006e4fbbe50fb7deb3a462aea02c7",
+        "title": "Altos Hornos, de Alonso Ancira, repara 54 millones de dólares a Pemex pero denuncia a CFE",
+        "source_url": "https://contralinea.com.mx/interno/semana/altos-hornos-de-alonso-ancira-repara-54-millones-de-dolares-a-pemex-pero-denuncia-a-cfe/",
+        "published_at": "2022-12-03T19:48:57+00:00",
+        "raw_html_sha256": "17af80f45263c31cf00b48bfe7a77cf08cec2d622cbf4c768dac92ed61c9dd61",
+        "identity_status_in_unchanged_bank": "candidate",
+        "before": {
+          "body_sha256": "a70f2c8ff6d5cd2477cab9db1d1b4a3c26acfe5c6507d57545b0121bf1b9a492",
+          "body_chars": 3710,
+          "mentions": 4,
+          "findings": [
+            {
+              "category": "reputational",
+              "stage": "allegation",
+              "relationship": "context",
+              "negated": false,
+              "start": 1230,
+              "end": 1661,
+              "trigger_start": 1371,
+              "trigger_end": 1379,
+              "uncertain": false
+            },
+            {
+              "category": "reputational",
+              "stage": "allegation",
+              "relationship": "context",
+              "negated": false,
+              "start": 2013,
+              "end": 2314,
+              "trigger_start": 2019,
+              "trigger_end": 2024,
+              "uncertain": false
+            }
+          ],
+          "nlp_rules_hash": "e8a6e89eefc5c84edf16ca5d994ce15a88ae9e0710dab1fca403cf8b5b1a471e"
+        },
+        "after": {
+          "body_sha256": "a70f2c8ff6d5cd2477cab9db1d1b4a3c26acfe5c6507d57545b0121bf1b9a492",
+          "body_chars": 3710,
+          "mentions": 4,
+          "findings": [
+            {
+              "category": "reputational",
+              "stage": "allegation",
+              "relationship": "context",
+              "negated": false,
+              "start": 1230,
+              "end": 1661,
+              "trigger_start": 1371,
+              "trigger_end": 1379,
+              "uncertain": false
+            },
+            {
+              "category": "reputational",
+              "stage": "allegation",
+              "relationship": "context",
+              "negated": false,
+              "start": 2013,
+              "end": 2314,
+              "trigger_start": 2019,
+              "trigger_end": 2024,
+              "uncertain": false
+            }
+          ],
+          "nlp_rules_hash": "deca8055cbff5ab3e7d5dd3012cb109d95f2f3b48f81e69f9bd3f54167846405"
+        },
+        "navigation_checks": {
+          "lee_mas_before": false,
+          "lee_mas_after": false
+        }
+      },
+      {
+        "entity_id": "pemex",
+        "document_id": "cb26d504fd8556522480972299ec1c22d12006e4fbbe50fb7deb3a462aea02c7",
+        "title": "Altos Hornos, de Alonso Ancira, repara 54 millones de dólares a Pemex pero denuncia a CFE",
+        "source_url": "https://contralinea.com.mx/interno/semana/altos-hornos-de-alonso-ancira-repara-54-millones-de-dolares-a-pemex-pero-denuncia-a-cfe/",
+        "published_at": "2022-12-03T19:48:57+00:00",
+        "raw_html_sha256": "17af80f45263c31cf00b48bfe7a77cf08cec2d622cbf4c768dac92ed61c9dd61",
+        "identity_status_in_unchanged_bank": "candidate",
+        "before": {
+          "body_sha256": "a70f2c8ff6d5cd2477cab9db1d1b4a3c26acfe5c6507d57545b0121bf1b9a492",
+          "body_chars": 3710,
+          "mentions": 6,
+          "findings": [],
+          "nlp_rules_hash": "e8a6e89eefc5c84edf16ca5d994ce15a88ae9e0710dab1fca403cf8b5b1a471e"
+        },
+        "after": {
+          "body_sha256": "a70f2c8ff6d5cd2477cab9db1d1b4a3c26acfe5c6507d57545b0121bf1b9a492",
+          "body_chars": 3710,
+          "mentions": 6,
+          "findings": [],
+          "nlp_rules_hash": "deca8055cbff5ab3e7d5dd3012cb109d95f2f3b48f81e69f9bd3f54167846405"
+        },
+        "navigation_checks": {
+          "lee_mas_before": false,
+          "lee_mas_after": false
+        }
+      },
+      {
+        "entity_id": "ahmsa",
+        "document_id": "29599e8502c6f4cacedef9098e5fda1d6ec140f1c4c9a2bd78d76a24e41c9c22",
+        "title": "CFE: AHMSA miente; se cortó electricidad por falta de pagos",
+        "source_url": "https://contralinea.com.mx/interno/semana/cfe-ahmsa-miente-se-corto-electricidad-por-falta-de-pagos/",
+        "published_at": "2022-12-03T19:53:52+00:00",
+        "raw_html_sha256": "1472bd19d6c48bb4ac9261436cca2250a4d78fdb917e3bbd485715d8641a267b",
+        "identity_status_in_unchanged_bank": "candidate",
+        "before": {
+          "body_sha256": "dcfef0fce233fdef178a2b718f34a65e1e50d12aa69c2d88963d6e766b48d0ac",
+          "body_chars": 4990,
+          "mentions": 9,
+          "findings": [],
+          "nlp_rules_hash": "e8a6e89eefc5c84edf16ca5d994ce15a88ae9e0710dab1fca403cf8b5b1a471e"
+        },
+        "after": {
+          "body_sha256": "dcfef0fce233fdef178a2b718f34a65e1e50d12aa69c2d88963d6e766b48d0ac",
+          "body_chars": 4990,
+          "mentions": 9,
+          "findings": [],
+          "nlp_rules_hash": "deca8055cbff5ab3e7d5dd3012cb109d95f2f3b48f81e69f9bd3f54167846405"
+        },
+        "navigation_checks": {
+          "lee_mas_before": false,
+          "lee_mas_after": false
+        }
+      },
+      {
+        "entity_id": "cemex",
+        "document_id": "1e8eda212b3c43c62e5004f1ba8971a0c1f1185c84e1255c9f807fd1da2dbfd0",
+        "title": "Cofece multa con 9.7 mdp a Cemex, ABC Capital y ABC Holding por no avisar sobre dos transacciones",
+        "source_url": "https://editorial.aristeguinoticias.com/2106/dinero-y-economia/cofece-multa-con-9-7-mdp-a-cemex-abc-capital-y-abc-holding-por-no-avisar-sobre-dos-transacciones/",
+        "published_at": "2022-06-21T13:24:57+00:00",
+        "raw_html_sha256": "7fb071300027ad6bb63a514f9a02c5013eda21e45922f7a37cd8c7e75161cf49",
+        "identity_status_in_unchanged_bank": "candidate",
+        "before": {
+          "body_sha256": "a6cec2cb08e27c3673fabeab500293b278ad4bd2bcbab5d130ae60f485420d06",
+          "body_chars": 1968,
+          "mentions": 3,
+          "findings": [],
+          "nlp_rules_hash": "e8a6e89eefc5c84edf16ca5d994ce15a88ae9e0710dab1fca403cf8b5b1a471e"
+        },
+        "after": {
+          "body_sha256": "a6cec2cb08e27c3673fabeab500293b278ad4bd2bcbab5d130ae60f485420d06",
+          "body_chars": 1968,
+          "mentions": 3,
+          "findings": [
+            {
+              "category": "sanctions",
+              "stage": "sanction",
+              "relationship": "direct",
+              "negated": false,
+              "start": 361,
+              "end": 720,
+              "trigger_start": 427,
+              "trigger_end": 432,
+              "uncertain": false
+            }
+          ],
+          "nlp_rules_hash": "deca8055cbff5ab3e7d5dd3012cb109d95f2f3b48f81e69f9bd3f54167846405"
+        },
+        "navigation_checks": {
+          "lee_mas_before": false,
+          "lee_mas_after": false
+        }
+      },
+      {
+        "entity_id": "epn",
+        "document_id": "bdffbc3df86a02050f64529235483dbac796aefbb5d69fe8bded9e51f255dcd0",
+        "title": "Constructora española OHLA afirma que colaborará en investigación contra EPN",
+        "source_url": "https://editorial.aristeguinoticias.com/0308/mexico/constructora-espanola-ohla-afirma-que-colaborara-en-investigacion-contra-epn/",
+        "published_at": "2022-08-03T19:43:35+00:00",
+        "raw_html_sha256": "e85462833f7fbf1ca4e565d84228da3e348c1902cf0e397414aae809b1cb6246",
+        "identity_status_in_unchanged_bank": "candidate",
+        "before": {
+          "body_sha256": "64514b3b9c9d218a65516af1893ae76cfea0c2ef724a73b332c9daf2e2cfcd95",
+          "body_chars": 4118,
+          "mentions": 5,
+          "findings": [
+            {
+              "category": "reputational",
+              "stage": "investigation",
+              "relationship": "direct",
+              "negated": false,
+              "start": 843,
+              "end": 1025,
+              "trigger_start": 939,
+              "trigger_end": 956,
+              "uncertain": false
+            },
+            {
+              "category": "reputational",
+              "stage": "investigation",
+              "relationship": "direct",
+              "negated": false,
+              "start": 2131,
+              "end": 2255,
+              "trigger_start": 2215,
+              "trigger_end": 2231,
+              "uncertain": false
+            }
+          ],
+          "nlp_rules_hash": "e8a6e89eefc5c84edf16ca5d994ce15a88ae9e0710dab1fca403cf8b5b1a471e"
+        },
+        "after": {
+          "body_sha256": "e4cfea9290e5cb5e843e7c3d69e5d7dda6a6eb1d418a673ed697a64256e9b13f",
+          "body_chars": 3819,
+          "mentions": 3,
+          "findings": [
+            {
+              "category": "reputational",
+              "stage": "investigation",
+              "relationship": "direct",
+              "negated": false,
+              "start": 768,
+              "end": 950,
+              "trigger_start": 864,
+              "trigger_end": 881,
+              "uncertain": false
+            }
+          ],
+          "nlp_rules_hash": "deca8055cbff5ab3e7d5dd3012cb109d95f2f3b48f81e69f9bd3f54167846405"
+        },
+        "navigation_checks": {
+          "lee_mas_before": true,
+          "lee_mas_after": false
+        }
+      },
+      {
+        "entity_id": "ohl",
+        "document_id": "bdffbc3df86a02050f64529235483dbac796aefbb5d69fe8bded9e51f255dcd0",
+        "title": "Constructora española OHLA afirma que colaborará en investigación contra EPN",
+        "source_url": "https://editorial.aristeguinoticias.com/0308/mexico/constructora-espanola-ohla-afirma-que-colaborara-en-investigacion-contra-epn/",
+        "published_at": "2022-08-03T19:43:35+00:00",
+        "raw_html_sha256": "e85462833f7fbf1ca4e565d84228da3e348c1902cf0e397414aae809b1cb6246",
+        "identity_status_in_unchanged_bank": "candidate",
+        "before": {
+          "body_sha256": "64514b3b9c9d218a65516af1893ae76cfea0c2ef724a73b332c9daf2e2cfcd95",
+          "body_chars": 4118,
+          "mentions": 4,
+          "findings": [],
+          "nlp_rules_hash": "e8a6e89eefc5c84edf16ca5d994ce15a88ae9e0710dab1fca403cf8b5b1a471e"
+        },
+        "after": {
+          "body_sha256": "e4cfea9290e5cb5e843e7c3d69e5d7dda6a6eb1d418a673ed697a64256e9b13f",
+          "body_chars": 3819,
+          "mentions": 4,
+          "findings": [],
+          "nlp_rules_hash": "deca8055cbff5ab3e7d5dd3012cb109d95f2f3b48f81e69f9bd3f54167846405"
+        },
+        "navigation_checks": {
+          "lee_mas_before": true,
+          "lee_mas_after": false
+        }
+      },
+      {
+        "entity_id": "odebrecht",
+        "document_id": "2bbf6564474d299c2202e6d1ad498950318a54008d690d05ee06855bc3b2f495",
+        "title": "Contralínea 803 - Contralínea",
+        "source_url": "https://contralinea.com.mx/historico/contralinea-803/",
+        "published_at": "2022-06-20T00:04:09+00:00",
+        "raw_html_sha256": "4234690090a9b5e453584b5971c09498e8e16e2dd696fbfd97c88dc48f6443bd",
+        "identity_status_in_unchanged_bank": "candidate",
+        "before": {
+          "body_sha256": "f110008490e72b45f628cabc6f6f8ae94908c1608647bfdaad72190c30bfe7f1",
+          "body_chars": 4310,
+          "mentions": 1,
+          "findings": [],
+          "nlp_rules_hash": "e8a6e89eefc5c84edf16ca5d994ce15a88ae9e0710dab1fca403cf8b5b1a471e"
+        },
+        "after": {
+          "body_sha256": "f110008490e72b45f628cabc6f6f8ae94908c1608647bfdaad72190c30bfe7f1",
+          "body_chars": 4310,
+          "mentions": 1,
+          "findings": [],
+          "nlp_rules_hash": "deca8055cbff5ab3e7d5dd3012cb109d95f2f3b48f81e69f9bd3f54167846405"
+        },
+        "navigation_checks": {
+          "lee_mas_before": false,
+          "lee_mas_after": false
+        }
+      },
+      {
+        "entity_id": "ohl",
+        "document_id": "3d857973ffedf5efc18366358544962eda185f9cbfdc850d92bfb9dcc817b070",
+        "title": "Denuncias contra Scherer pueden ser ‘el inicio de un maxiproceso’: Díez | Entérate",
+        "source_url": "https://editorial.aristeguinoticias.com/2802/aristegui-en-vivo/enterate/denuncias-contra-scherer-pueden-ser-el-inicio-de-un-maxiproceso-diez-enterate/",
+        "published_at": "2022-02-28T17:53:57+00:00",
+        "raw_html_sha256": "3be50f3873e751f754ed396b0e7046aaf49c1f4e2fc3bae0595ce3cb7d689c53",
+        "identity_status_in_unchanged_bank": "candidate",
+        "before": {
+          "body_sha256": "76d9ee24897a372e00488e60091f1117e8b922cc0ec7a0485a01e590ccdba7d5",
+          "body_chars": 608,
+          "mentions": 1,
+          "findings": [],
+          "nlp_rules_hash": "e8a6e89eefc5c84edf16ca5d994ce15a88ae9e0710dab1fca403cf8b5b1a471e"
+        },
+        "after": {
+          "body_sha256": "76d9ee24897a372e00488e60091f1117e8b922cc0ec7a0485a01e590ccdba7d5",
+          "body_chars": 608,
+          "mentions": 1,
+          "findings": [],
+          "nlp_rules_hash": "deca8055cbff5ab3e7d5dd3012cb109d95f2f3b48f81e69f9bd3f54167846405"
+        },
+        "navigation_checks": {
+          "lee_mas_before": false,
+          "lee_mas_after": false
+        }
+      },
+      {
+        "entity_id": "odebrecht",
+        "document_id": "66e4e261c0bc1be2c37af26da053afc989fae9a696ebf499f4fec6354b7e4a99",
+        "title": "Devolverá EU a Perú miles de dólares incautados al expresidente Toledo | Odebrecht",
+        "source_url": "https://editorial.aristeguinoticias.com/3108/mundo/devolvera-eu-a-peru-miles-de-dolares-incautados-al-expresidente-toledo-odebrecht/",
+        "published_at": "2022-08-31T22:58:54+00:00",
+        "raw_html_sha256": "20cb03b916e42f22b7849969e81c57ba5cfed959acff8020bf546f7783af929f",
+        "identity_status_in_unchanged_bank": "candidate",
+        "before": {
+          "body_sha256": "f1d054df4156497c08c111cd0b9b90424f653dd040135bcbca002336bc8fc89c",
+          "body_chars": 2414,
+          "mentions": 7,
+          "findings": [],
+          "nlp_rules_hash": "e8a6e89eefc5c84edf16ca5d994ce15a88ae9e0710dab1fca403cf8b5b1a471e"
+        },
+        "after": {
+          "body_sha256": "f1d054df4156497c08c111cd0b9b90424f653dd040135bcbca002336bc8fc89c",
+          "body_chars": 2414,
+          "mentions": 7,
+          "findings": [],
+          "nlp_rules_hash": "deca8055cbff5ab3e7d5dd3012cb109d95f2f3b48f81e69f9bd3f54167846405"
+        },
+        "navigation_checks": {
+          "lee_mas_before": false,
+          "lee_mas_after": false
+        }
+      },
+      {
+        "entity_id": "epn",
+        "document_id": "1fe51196d89abac8c4d495c3e0556536be64dd507fdc29bf7cd9763245fe0533",
+        "title": "Exdirector de TeleMax rompe el silencio y cuenta la historia de la Estafa Maestra en Sonora",
+        "source_url": "https://editorial.aristeguinoticias.com/0512/aristegui-en-vivo/enlaces-en-vivo/exdirector-de-telemax-rompe-el-silencio-y-cuenta-la-historia-de-la-estafa-maestra-en-sonora/",
+        "published_at": "2022-12-05T17:28:37+00:00",
+        "raw_html_sha256": "64371fa0c00a4e042b3716cf025632be7b58e279c8b048dcb8b7f4b4738b3220",
+        "identity_status_in_unchanged_bank": "candidate",
+        "before": {
+          "body_sha256": "9efdba48c82ec0caa05dabe70d3308e65b39a26c0ff6eba68e410497ccf8f9dd",
+          "body_chars": 783,
+          "mentions": 1,
+          "findings": [],
+          "nlp_rules_hash": "e8a6e89eefc5c84edf16ca5d994ce15a88ae9e0710dab1fca403cf8b5b1a471e"
+        },
+        "after": {
+          "body_sha256": "9efdba48c82ec0caa05dabe70d3308e65b39a26c0ff6eba68e410497ccf8f9dd",
+          "body_chars": 783,
+          "mentions": 1,
+          "findings": [],
+          "nlp_rules_hash": "deca8055cbff5ab3e7d5dd3012cb109d95f2f3b48f81e69f9bd3f54167846405"
+        },
+        "navigation_checks": {
+          "lee_mas_before": false,
+          "lee_mas_after": false
+        }
+      },
+      {
+        "entity_id": "bimbo",
+        "document_id": "0acef24cab296c4551fbff05954ebcc6f786e486c74f05815b107d3d0baac964",
+        "title": "Grupo Bimbo prevé aumentar sus precios debido a la inflación",
+        "source_url": "https://editorial.aristeguinoticias.com/2704/mexico/grupo-bimbo-preve-aumentar-sus-precios-debido-a-la-inflacion/",
+        "published_at": "2022-04-27T13:38:13+00:00",
+        "raw_html_sha256": "f2019eb8f699c3eb9a42b93b90096f13b0937cc3a49212b741556ec4bcbf98ae",
+        "identity_status_in_unchanged_bank": "candidate",
+        "before": {
+          "body_sha256": "42f6df75e33aaa9e32e085f5b5596a026de9f72ba96b450ef41a0dcab8241db7",
+          "body_chars": 1852,
+          "mentions": 3,
+          "findings": [],
+          "nlp_rules_hash": "e8a6e89eefc5c84edf16ca5d994ce15a88ae9e0710dab1fca403cf8b5b1a471e"
+        },
+        "after": {
+          "body_sha256": "42f6df75e33aaa9e32e085f5b5596a026de9f72ba96b450ef41a0dcab8241db7",
+          "body_chars": 1852,
+          "mentions": 3,
+          "findings": [],
+          "nlp_rules_hash": "deca8055cbff5ab3e7d5dd3012cb109d95f2f3b48f81e69f9bd3f54167846405"
+        },
+        "navigation_checks": {
+          "lee_mas_before": false,
+          "lee_mas_after": false
+        }
+      },
+      {
+        "entity_id": "bimbo",
+        "document_id": "de2151bf5af38b058b41191f90fffc1cc0f1a5fa764b713a50181e55cc5ecf4a",
+        "title": "Grupo Bimbo suspende ventas e inversiones en Rusia",
+        "source_url": "https://editorial.aristeguinoticias.com/1403/mundo/grupo-bimbo-suspende-ventas-e-inversiones-en-rusia/",
+        "published_at": "2022-03-14T14:59:50+00:00",
+        "raw_html_sha256": "d9397992e0326353f9bf33b1216ebbbe05eda105613bb989f4a0ec8dfad9f9b9",
+        "identity_status_in_unchanged_bank": "candidate",
+        "before": {
+          "body_sha256": "a60a4aee8dc5d61e1149af8183d48df65cf923f2aa5f0b2bfad45752d8b78ef8",
+          "body_chars": 1250,
+          "mentions": 3,
+          "findings": [],
+          "nlp_rules_hash": "e8a6e89eefc5c84edf16ca5d994ce15a88ae9e0710dab1fca403cf8b5b1a471e"
+        },
+        "after": {
+          "body_sha256": "a60a4aee8dc5d61e1149af8183d48df65cf923f2aa5f0b2bfad45752d8b78ef8",
+          "body_chars": 1250,
+          "mentions": 3,
+          "findings": [],
+          "nlp_rules_hash": "deca8055cbff5ab3e7d5dd3012cb109d95f2f3b48f81e69f9bd3f54167846405"
+        },
+        "navigation_checks": {
+          "lee_mas_before": false,
+          "lee_mas_after": false
+        }
+      },
+      {
+        "entity_id": "odebrecht",
+        "document_id": "123a0ecc248ebe81107c3ae22c623b75c522cebbc47f7852913dbe4a6251bb56",
+        "title": "Investigaciones contra panistas, por presuntos sobornos de Odebrecht: AMLO",
+        "source_url": "https://contralinea.com.mx/uncategorized/investigaciones-contra-panistas-por-presuntos-sobornos-de-odebrecht-amlo/",
+        "published_at": "2022-06-22T18:28:11+00:00",
+        "raw_html_sha256": "afa985b9a7df34978413983d80ac6dc1e16591d065098df065d2e91aa6a9f4af",
+        "identity_status_in_unchanged_bank": "candidate",
+        "before": {
+          "body_sha256": "c6c985d31fff0d8a2b06f6deeb8711cd232328e1a2acfddc02e1481be63e85ee",
+          "body_chars": 5792,
+          "mentions": 1,
+          "findings": [
+            {
+              "category": "reputational",
+              "stage": "investigation",
+              "relationship": "direct",
+              "negated": false,
+              "start": 5192,
+              "end": 5482,
+              "trigger_start": 5246,
+              "trigger_end": 5258,
+              "uncertain": false
+            }
+          ],
+          "nlp_rules_hash": "e8a6e89eefc5c84edf16ca5d994ce15a88ae9e0710dab1fca403cf8b5b1a471e"
+        },
+        "after": {
+          "body_sha256": "c6c985d31fff0d8a2b06f6deeb8711cd232328e1a2acfddc02e1481be63e85ee",
+          "body_chars": 5792,
+          "mentions": 1,
+          "findings": [
+            {
+              "category": "reputational",
+              "stage": "investigation",
+              "relationship": "context",
+              "negated": false,
+              "start": 5192,
+              "end": 5482,
+              "trigger_start": 5246,
+              "trigger_end": 5258,
+              "uncertain": false
+            }
+          ],
+          "nlp_rules_hash": "deca8055cbff5ab3e7d5dd3012cb109d95f2f3b48f81e69f9bd3f54167846405"
+        },
+        "navigation_checks": {
+          "lee_mas_before": false,
+          "lee_mas_after": false
+        }
+      },
+      {
+        "entity_id": "pemex",
+        "document_id": "123a0ecc248ebe81107c3ae22c623b75c522cebbc47f7852913dbe4a6251bb56",
+        "title": "Investigaciones contra panistas, por presuntos sobornos de Odebrecht: AMLO",
+        "source_url": "https://contralinea.com.mx/uncategorized/investigaciones-contra-panistas-por-presuntos-sobornos-de-odebrecht-amlo/",
+        "published_at": "2022-06-22T18:28:11+00:00",
+        "raw_html_sha256": "afa985b9a7df34978413983d80ac6dc1e16591d065098df065d2e91aa6a9f4af",
+        "identity_status_in_unchanged_bank": "candidate",
+        "before": {
+          "body_sha256": "c6c985d31fff0d8a2b06f6deeb8711cd232328e1a2acfddc02e1481be63e85ee",
+          "body_chars": 5792,
+          "mentions": 4,
+          "findings": [
+            {
+              "category": "reputational",
+              "stage": "arrest",
+              "relationship": "direct",
+              "negated": false,
+              "start": 1699,
+              "end": 1877,
+              "trigger_start": 1748,
+              "trigger_end": 1756,
+              "uncertain": false
+            },
+            {
+              "category": "reputational",
+              "stage": "investigation",
+              "relationship": "direct",
+              "negated": false,
+              "start": 5192,
+              "end": 5482,
+              "trigger_start": 5246,
+              "trigger_end": 5258,
+              "uncertain": false
+            }
+          ],
+          "nlp_rules_hash": "e8a6e89eefc5c84edf16ca5d994ce15a88ae9e0710dab1fca403cf8b5b1a471e"
+        },
+        "after": {
+          "body_sha256": "c6c985d31fff0d8a2b06f6deeb8711cd232328e1a2acfddc02e1481be63e85ee",
+          "body_chars": 5792,
+          "mentions": 4,
+          "findings": [
+            {
+              "category": "reputational",
+              "stage": "arrest",
+              "relationship": "context",
+              "negated": false,
+              "start": 1699,
+              "end": 1877,
+              "trigger_start": 1748,
+              "trigger_end": 1756,
+              "uncertain": false
+            },
+            {
+              "category": "reputational",
+              "stage": "investigation",
+              "relationship": "context",
+              "negated": false,
+              "start": 5192,
+              "end": 5482,
+              "trigger_start": 5246,
+              "trigger_end": 5258,
+              "uncertain": false
+            }
+          ],
+          "nlp_rules_hash": "deca8055cbff5ab3e7d5dd3012cb109d95f2f3b48f81e69f9bd3f54167846405"
+        },
+        "navigation_checks": {
+          "lee_mas_before": false,
+          "lee_mas_after": false
+        }
+      },
+      {
+        "entity_id": "epn",
+        "document_id": "4b9bff29b0220f886167508a6fbc4d3218ef6c3ae7e59b1fbc2574ad75369b6b",
+        "title": "Investigación contra Peña no es politiquería; la resolverá FGR: AMLO",
+        "source_url": "https://contralinea.com.mx/interno/semana/investigacion-contra-pena-no-es-politiqueria-la-resolvera-fgr-amlo/",
+        "published_at": "2022-07-11T19:26:36+00:00",
+        "raw_html_sha256": "9000b5371bb363aaab405a7d7542bc781e7249a492b24e41b24c3fc93ef3c2cc",
+        "identity_status_in_unchanged_bank": "candidate",
+        "before": {
+          "body_sha256": "57efba6eea4b972fc665b3a9f7c18748dd2165b05981b6611024a3615c1aa8a4",
+          "body_chars": 4375,
+          "mentions": 3,
+          "findings": [
+            {
+              "category": "reputational",
+              "stage": "allegation",
+              "relationship": "direct",
+              "negated": false,
+              "start": 594,
+              "end": 795,
+              "trigger_start": 661,
+              "trigger_end": 673,
+              "uncertain": false
+            },
+            {
+              "category": "reputational",
+              "stage": "allegation",
+              "relationship": "direct",
+              "negated": false,
+              "start": 1748,
+              "end": 2116,
+              "trigger_start": 1791,
+              "trigger_end": 1806,
+              "uncertain": false
+            }
+          ],
+          "nlp_rules_hash": "e8a6e89eefc5c84edf16ca5d994ce15a88ae9e0710dab1fca403cf8b5b1a471e"
+        },
+        "after": {
+          "body_sha256": "57efba6eea4b972fc665b3a9f7c18748dd2165b05981b6611024a3615c1aa8a4",
+          "body_chars": 4375,
+          "mentions": 3,
+          "findings": [
+            {
+              "category": "reputational",
+              "stage": "allegation",
+              "relationship": "direct",
+              "negated": false,
+              "start": 594,
+              "end": 795,
+              "trigger_start": 661,
+              "trigger_end": 673,
+              "uncertain": false
+            },
+            {
+              "category": "reputational",
+              "stage": "allegation",
+              "relationship": "direct",
+              "negated": false,
+              "start": 1748,
+              "end": 2116,
+              "trigger_start": 1791,
+              "trigger_end": 1806,
+              "uncertain": false
+            }
+          ],
+          "nlp_rules_hash": "deca8055cbff5ab3e7d5dd3012cb109d95f2f3b48f81e69f9bd3f54167846405"
+        },
+        "navigation_checks": {
+          "lee_mas_before": false,
+          "lee_mas_after": false
+        }
+      },
+      {
+        "entity_id": "femsa",
+        "document_id": "ebdc31c1b447ac29c775631c0279fae0124b29fbd1e503535053b955e5b99185",
+        "title": "La mexicana Femsa comprará la suiza Valora por 1.150 millones de dólares para ‘entrar’ en Europa",
+        "source_url": "https://editorial.aristeguinoticias.com/0507/mundo/la-mexicana-femsa-comprara-la-suiza-valora-por-1-150-millones-de-dolares-para-entrar-en-europa/",
+        "published_at": "2022-07-05T13:04:53+00:00",
+        "raw_html_sha256": "bf2ad19cb2c9c82e5ef960d9af30c2b46c40d2f137fde9d341badbd9de150347",
+        "identity_status_in_unchanged_bank": "candidate",
+        "before": {
+          "body_sha256": "6ce43011bf0c15c58593906bd59d7dada08bd2be2bfab0a02080d94c1656441d",
+          "body_chars": 4143,
+          "mentions": 13,
+          "findings": [],
+          "nlp_rules_hash": "e8a6e89eefc5c84edf16ca5d994ce15a88ae9e0710dab1fca403cf8b5b1a471e"
+        },
+        "after": {
+          "body_sha256": "6ce43011bf0c15c58593906bd59d7dada08bd2be2bfab0a02080d94c1656441d",
+          "body_chars": 4143,
+          "mentions": 13,
+          "findings": [],
+          "nlp_rules_hash": "deca8055cbff5ab3e7d5dd3012cb109d95f2f3b48f81e69f9bd3f54167846405"
+        },
+        "navigation_checks": {
+          "lee_mas_before": false,
+          "lee_mas_after": false
+        }
+      },
+      {
+        "entity_id": "epn",
+        "document_id": "83e8ec320cbf2c9b5075ec09246b24165f37101aa454e477a286fd2fbf4e7d29",
+        "title": "Morenistas y \"libertad de expresión\": Columnas 30/12/2022",
+        "source_url": "https://editorial.aristeguinoticias.com/3012/mexico/morenistas-se-escudan-en-su-libertad-de-expresion-y-mas-columnas-politicas-30-12-2022/",
+        "published_at": "2022-12-30T13:40:24+00:00",
+        "raw_html_sha256": "6b4d44cfcad979707ffb13d6f0ec0c593c46bed0359cbfa07e2c11597bf3d932",
+        "identity_status_in_unchanged_bank": "candidate",
+        "before": {
+          "body_sha256": "cca8fb8305cda12fa1762f88adb0c0849cb761b3e739572bb1e4ba7d5f2bfb81",
+          "body_chars": 2785,
+          "mentions": 2,
+          "findings": [],
+          "nlp_rules_hash": "e8a6e89eefc5c84edf16ca5d994ce15a88ae9e0710dab1fca403cf8b5b1a471e"
+        },
+        "after": {
+          "body_sha256": "cca8fb8305cda12fa1762f88adb0c0849cb761b3e739572bb1e4ba7d5f2bfb81",
+          "body_chars": 2785,
+          "mentions": 2,
+          "findings": [],
+          "nlp_rules_hash": "deca8055cbff5ab3e7d5dd3012cb109d95f2f3b48f81e69f9bd3f54167846405"
+        },
+        "navigation_checks": {
+          "lee_mas_before": false,
+          "lee_mas_after": false
+        }
+      },
+      {
+        "entity_id": "pemex",
+        "document_id": "9cb10da7c7ff625fd65708c69f97382b57236e4703ef96279ce5a9035609af60",
+        "title": "Médicos residentes de Pemex en paro; retan a AMLO y más | Columnas políticas 23/12/2022",
+        "source_url": "https://editorial.aristeguinoticias.com/2312/mexico/medicos-residentes-de-pemex-en-paro-retan-a-amlo-y-mas-columnas-politicas-22-12-2022/",
+        "published_at": "2022-12-23T12:28:42+00:00",
+        "raw_html_sha256": "67d673e89a8d6c720d659fca98f25b377c24622602b94c1e2cd75472cce19f3b",
+        "identity_status_in_unchanged_bank": "candidate",
+        "before": {
+          "body_sha256": "3495be014acbca56382d123a15b709960de560fd1a457cff582b9d45fd3bcf37",
+          "body_chars": 3125,
+          "mentions": 3,
+          "findings": [],
+          "nlp_rules_hash": "e8a6e89eefc5c84edf16ca5d994ce15a88ae9e0710dab1fca403cf8b5b1a471e"
+        },
+        "after": {
+          "body_sha256": "3495be014acbca56382d123a15b709960de560fd1a457cff582b9d45fd3bcf37",
+          "body_chars": 3125,
+          "mentions": 3,
+          "findings": [],
+          "nlp_rules_hash": "deca8055cbff5ab3e7d5dd3012cb109d95f2f3b48f81e69f9bd3f54167846405"
+        },
+        "navigation_checks": {
+          "lee_mas_before": false,
+          "lee_mas_after": false
+        }
+      },
+      {
+        "entity_id": "cemex",
+        "document_id": "05ccdf5ab45f7bb9da8b054d828f90056c6e7de8c2800c53dec35df3d7593e72",
+        "title": "Peso y Bolsa Mexicana caen; Cemex y Televisa encabezan pérdidas",
+        "source_url": "https://editorial.aristeguinoticias.com/0505/dinero-y-economia/peso-y-bolsa-mexicana-caen-cemex-y-televisa-encabezan-perdidas/",
+        "published_at": "2022-05-05T19:37:24+00:00",
+        "raw_html_sha256": "221e8ea020758519dcac21714d502c4ed92ca2be8ae7f02d669561456fa49920",
+        "identity_status_in_unchanged_bank": "candidate",
+        "before": {
+          "body_sha256": "ba2c3a974a14e62ed78a62e9ed538e5b0208566ed6428719699de44723e5cee4",
+          "body_chars": 2202,
+          "mentions": 2,
+          "findings": [],
+          "nlp_rules_hash": "e8a6e89eefc5c84edf16ca5d994ce15a88ae9e0710dab1fca403cf8b5b1a471e"
+        },
+        "after": {
+          "body_sha256": "ba2c3a974a14e62ed78a62e9ed538e5b0208566ed6428719699de44723e5cee4",
+          "body_chars": 2202,
+          "mentions": 2,
+          "findings": [],
+          "nlp_rules_hash": "deca8055cbff5ab3e7d5dd3012cb109d95f2f3b48f81e69f9bd3f54167846405"
+        },
+        "navigation_checks": {
+          "lee_mas_before": false,
+          "lee_mas_after": false
+        }
+      },
+      {
+        "entity_id": "bimbo",
+        "document_id": "39d12e3b9d58ba2c723e739eaa20b3832579910b13f519075c15800526176347",
+        "title": "Subirán los precios de algunos productos de Grupo Bimbo | Consulta la lista",
+        "source_url": "https://editorial.aristeguinoticias.com/1507/dinero-y-economia/subiran-los-precios-de-algunos-productos-de-grupo-bimbo-consulta-la-lista/",
+        "published_at": "2022-07-15T23:20:21+00:00",
+        "raw_html_sha256": "e2a6d569cbd4d7dfc457e7d2dbb2482534bafabf9822d7aee91469e9a682b246",
+        "identity_status_in_unchanged_bank": "candidate",
+        "before": {
+          "body_sha256": "80c9123a80e3ab0810ec340d26f3153c061cee26211da7f7fe4370a7e358a7eb",
+          "body_chars": 2452,
+          "mentions": 3,
+          "findings": [],
+          "nlp_rules_hash": "e8a6e89eefc5c84edf16ca5d994ce15a88ae9e0710dab1fca403cf8b5b1a471e"
+        },
+        "after": {
+          "body_sha256": "80c9123a80e3ab0810ec340d26f3153c061cee26211da7f7fe4370a7e358a7eb",
+          "body_chars": 2452,
+          "mentions": 3,
+          "findings": [],
+          "nlp_rules_hash": "deca8055cbff5ab3e7d5dd3012cb109d95f2f3b48f81e69f9bd3f54167846405"
+        },
+        "navigation_checks": {
+          "lee_mas_before": false,
+          "lee_mas_after": false
+        }
+      },
+      {
+        "entity_id": "femsa",
+        "document_id": "b7f0445a975012c96e4880237528a2e9a6d0c2c16fa936fdd394d985b4ee691d",
+        "title": "Trasnacionales codician recursos naturales en territorios zapatistas: Sedena",
+        "source_url": "https://contralinea.com.mx/interno/semana/trasnacionales-codician-recursos-naturales-en-territorios-zapatistas-sedena/",
+        "published_at": "2022-12-19T01:48:37+00:00",
+        "raw_html_sha256": "acf9aa71ccd3969cb7b8845f3818e39ff83ca52581e3a0840b03d33a2a417457",
+        "identity_status_in_unchanged_bank": "candidate",
+        "before": {
+          "body_sha256": "e898dfe6286f2bd1f3ec3c558fc9c7e8f34c221a85d52eeee9b09b9bbb9bd862",
+          "body_chars": 11593,
+          "mentions": 2,
+          "findings": [],
+          "nlp_rules_hash": "e8a6e89eefc5c84edf16ca5d994ce15a88ae9e0710dab1fca403cf8b5b1a471e"
+        },
+        "after": {
+          "body_sha256": "e898dfe6286f2bd1f3ec3c558fc9c7e8f34c221a85d52eeee9b09b9bbb9bd862",
+          "body_chars": 11593,
+          "mentions": 2,
+          "findings": [],
+          "nlp_rules_hash": "deca8055cbff5ab3e7d5dd3012cb109d95f2f3b48f81e69f9bd3f54167846405"
+        },
+        "navigation_checks": {
+          "lee_mas_before": false,
+          "lee_mas_after": false
+        }
+      },
+      {
+        "entity_id": "pemex",
+        "document_id": "b7f0445a975012c96e4880237528a2e9a6d0c2c16fa936fdd394d985b4ee691d",
+        "title": "Trasnacionales codician recursos naturales en territorios zapatistas: Sedena",
+        "source_url": "https://contralinea.com.mx/interno/semana/trasnacionales-codician-recursos-naturales-en-territorios-zapatistas-sedena/",
+        "published_at": "2022-12-19T01:48:37+00:00",
+        "raw_html_sha256": "acf9aa71ccd3969cb7b8845f3818e39ff83ca52581e3a0840b03d33a2a417457",
+        "identity_status_in_unchanged_bank": "candidate",
+        "before": {
+          "body_sha256": "e898dfe6286f2bd1f3ec3c558fc9c7e8f34c221a85d52eeee9b09b9bbb9bd862",
+          "body_chars": 11593,
+          "mentions": 4,
+          "findings": [],
+          "nlp_rules_hash": "e8a6e89eefc5c84edf16ca5d994ce15a88ae9e0710dab1fca403cf8b5b1a471e"
+        },
+        "after": {
+          "body_sha256": "e898dfe6286f2bd1f3ec3c558fc9c7e8f34c221a85d52eeee9b09b9bbb9bd862",
+          "body_chars": 11593,
+          "mentions": 4,
+          "findings": [],
+          "nlp_rules_hash": "deca8055cbff5ab3e7d5dd3012cb109d95f2f3b48f81e69f9bd3f54167846405"
+        },
+        "navigation_checks": {
+          "lee_mas_before": false,
+          "lee_mas_after": false
+        }
+      }
+    ],
+    "constructed_role_controls": [
+      {
+        "id": "executive_arrest",
+        "fixture_kind": "constructed_not_real_claim",
+        "text": "El exdirector de Aceros del Norte fue detenido por fraude.",
+        "expected": "no_direct_adverse",
+        "passed": true,
+        "findings": [
+          {
+            "category": "fraud",
+            "stage": "arrest",
+            "relationship": "context",
+            "negated": false,
+            "start": 0,
+            "end": 58,
+            "trigger_start": 38,
+            "trigger_end": 46,
+            "uncertain": false
+          }
+        ]
+      },
+      {
+        "id": "executive_investigation",
+        "fixture_kind": "constructed_not_real_claim",
+        "text": "El director general de Aceros del Norte fue investigado por fraude.",
+        "expected": "no_direct_adverse",
+        "passed": true,
+        "findings": [
+          {
+            "category": "fraud",
+            "stage": "investigation",
+            "relationship": "context",
+            "negated": false,
+            "start": 0,
+            "end": 67,
+            "trigger_start": 44,
+            "trigger_end": 55,
+            "uncertain": false
+          }
+        ]
+      },
+      {
+        "id": "representative_conviction",
+        "fixture_kind": "constructed_not_real_claim",
+        "text": "El representante legal de Aceros del Norte fue condenado por fraude.",
+        "expected": "no_direct_adverse",
+        "passed": true,
+        "findings": [
+          {
+            "category": "fraud",
+            "stage": "conviction",
+            "relationship": "context",
+            "negated": false,
+            "start": 0,
+            "end": 68,
+            "trigger_start": 47,
+            "trigger_end": 56,
+            "uncertain": false
+          }
+        ]
+      },
+      {
+        "id": "employees_arrest",
+        "fixture_kind": "constructed_not_real_claim",
+        "text": "Los empleados de Aceros del Norte fueron detenidos por fraude.",
+        "expected": "no_direct_adverse",
+        "passed": true,
+        "findings": [
+          {
+            "category": "fraud",
+            "stage": "arrest",
+            "relationship": "context",
+            "negated": false,
+            "start": 0,
+            "end": 62,
+            "trigger_start": 41,
+            "trigger_end": 50,
+            "uncertain": false
+          }
+        ]
+      },
+      {
+        "id": "genuine_company_investigation",
+        "fixture_kind": "constructed_not_real_claim",
+        "text": "Aceros del Norte fue investigada por fraude.",
+        "expected": "direct_investigation",
+        "passed": true,
+        "findings": [
+          {
+            "category": "fraud",
+            "stage": "investigation",
+            "relationship": "direct",
+            "negated": false,
+            "start": 0,
+            "end": 44,
+            "trigger_start": 21,
+            "trigger_end": 32,
+            "uncertain": false
+          }
+        ]
+      },
+      {
+        "id": "genuine_company_sanction",
+        "fixture_kind": "constructed_not_real_claim",
+        "text": "Aceros del Norte fue sancionada por corrupción.",
+        "expected": "direct_sanction",
+        "passed": true,
+        "findings": [
+          {
+            "category": "corruption",
+            "stage": "sanction",
+            "relationship": "direct",
+            "negated": false,
+            "start": 0,
+            "end": 47,
+            "trigger_start": 21,
+            "trigger_end": 31,
+            "uncertain": false
+          },
+          {
+            "category": "sanctions",
+            "stage": "sanction",
+            "relationship": "direct",
+            "negated": false,
+            "start": 0,
+            "end": 47,
+            "trigger_start": 21,
+            "trigger_end": 31,
+            "uncertain": false
+          }
+        ]
+      },
+      {
+        "id": "separate_officer_and_company",
+        "fixture_kind": "constructed_not_real_claim",
+        "text": "El exdirector de Aceros del Norte fue detenido por fraude; Aceros del Norte fue investigada por sobornos.",
+        "expected": "direct_investigation",
+        "passed": true,
+        "findings": [
+          {
+            "category": "fraud",
+            "stage": "arrest",
+            "relationship": "context",
+            "negated": false,
+            "start": 0,
+            "end": 58,
+            "trigger_start": 38,
+            "trigger_end": 46,
+            "uncertain": false
+          },
+          {
+            "category": "corruption",
+            "stage": "investigation",
+            "relationship": "direct",
+            "negated": false,
+            "start": 58,
+            "end": 105,
+            "trigger_start": 80,
+            "trigger_end": 91,
+            "uncertain": false
+          }
+        ]
+      },
+      {
+        "id": "quoted_third_party_investigation",
+        "fixture_kind": "constructed_not_real_claim",
+        "text": "Acerca del caso de los políticos actualmente investigados, la autoridad indicó: las investigaciones tenían que ver con Aceros del Norte.",
+        "expected": "no_direct_adverse",
+        "passed": true,
+        "findings": [
+          {
+            "category": "reputational",
+            "stage": "investigation",
+            "relationship": "context",
+            "negated": false,
+            "start": 0,
+            "end": 136,
+            "trigger_start": 45,
+            "trigger_end": 57,
+            "uncertain": false
+          }
+        ]
+      },
+      {
+        "id": "genuine_company_allegation",
+        "fixture_kind": "constructed_not_real_claim",
+        "text": "La empresa Aceros del Norte fue acusada de fraude.",
+        "expected": "direct_allegation",
+        "passed": true,
+        "findings": [
+          {
+            "category": "fraud",
+            "stage": "allegation",
+            "relationship": "direct",
+            "negated": false,
+            "start": 0,
+            "end": 50,
+            "trigger_start": 32,
+            "trigger_end": 39,
+            "uncertain": false
+          }
+        ]
+      }
+    ],
+    "constructed_parser_controls": [
+      {
+        "id": "tags_in_editorial",
+        "passed": true
+      },
+      {
+        "id": "related_heading_as_prose",
+        "passed": true
+      },
+      {
+        "id": "labels_in_editorial",
+        "passed": true
+      }
+    ],
+    "limits": [
+      "Every real body identity remains candidate in unchanged bank; raw NLP candidates below are neither scored contributions nor facts validated here.",
+      "Real source adjudication is document-specific. No overall guilt, corporate risk level, precision or exhaustive coverage is estimated.",
+      "A captured news body about a fine is an administrative-sanction candidate; Spanish lexicon coverage and identity review must be distinguished from source absence."
+    ]
+  },
+  "final_real_pipeline_without_new_http": {
+    "recorded_at": "2026-10-16T04:10:56.796282+00:00",
+    "method": "Final production local upgrade, attribution and scoring on isolated copies of actual public-source banks; no HTTP and no identity confirmations. Original banks/bodies preserved.",
+    "source_bank": "final-bank",
+    "extraction_version": "article-main-4",
+    "nlp_version": "es-gazetteer-rules-1.0.2",
+    "attribution_seconds": 0.7415373510011705,
+    "scoring_seconds": 0.37009987099736463,
+    "attribution": {
+      "articles_processed": 19,
+      "identity_links": {
+        "candidate": 23
+      },
+      "entities_scored": 0,
+      "entities_affected": 8,
+      "pending": 0,
+      "cancelled": false,
+      "identity_module": "es-mx-identity-indexed-1.0.0",
+      "name_only_is_not_unique_identity": true,
+      "reextraction": {
+        "unchanged": 18,
+        "upgraded": 1,
+        "examined": 19
+      }
+    },
+    "scored_entities": 8,
+    "second_pass": {
+      "examined": 0
+    },
+    "assessments": [
+      {
+        "id": "epn",
+        "name": "Enrique Peña Nieto",
+        "score": 0,
+        "assessment": {
+          "state": "pending_identity",
+          "label": "Identidad pendiente de corroboración",
+          "display_score": null,
+          "reason_codes": [
+            "identity_pending"
+          ],
+          "zero_reasons": [
+            {
+              "code": "identity_pending",
+              "label": "La identidad o mención requiere corroboración; una coincidencia nominal no valida a la persona.",
+              "count": 4
+            }
+          ]
+        },
+        "evidence_items": 4,
+        "identity_statuses": {
+          "candidate": 4
+        },
+        "exclusion_counts": {
+          "identity_ambiguous_or_requires_selected_spans": 4
+        },
+        "run_id": "632db6d77c33dc92ff3486fecf4764d43cbb4b1187a2f4a578698effb9af646f",
+        "replay_matched": true
+      },
+      {
+        "id": "pemex",
+        "name": "Pemex",
+        "score": 0,
+        "assessment": {
+          "state": "pending_identity",
+          "label": "Identidad pendiente de corroboración",
+          "display_score": null,
+          "reason_codes": [
+            "identity_pending",
+            "metadata_only_not_body"
+          ],
+          "zero_reasons": [
+            {
+              "code": "identity_pending",
+              "label": "La identidad o mención requiere corroboración; una coincidencia nominal no valida a la persona.",
+              "count": 4
+            },
+            {
+              "code": "metadata_only_not_body",
+              "label": "Sólo hay metadatos de descubrimiento; falta el cuerpo original del artículo.",
+              "count": 14
+            }
+          ]
+        },
+        "evidence_items": 18,
+        "identity_statuses": {
+          "candidate": 18
+        },
+        "exclusion_counts": {
+          "identity_ambiguous_or_requires_selected_spans": 4,
+          "discovery_index_is_not_article_evidence": 14
+        },
+        "run_id": "f5ba655c4bb01fa521c21832393105c61ef5f325e56e28efa67ada2323918166",
+        "replay_matched": true
+      },
+      {
+        "id": "odebrecht",
+        "name": "Odebrecht",
+        "score": 0,
+        "assessment": {
+          "state": "pending_identity",
+          "label": "Identidad pendiente de corroboración",
+          "display_score": null,
+          "reason_codes": [
+            "identity_pending",
+            "metadata_only_not_body"
+          ],
+          "zero_reasons": [
+            {
+              "code": "identity_pending",
+              "label": "La identidad o mención requiere corroboración; una coincidencia nominal no valida a la persona.",
+              "count": 3
+            },
+            {
+              "code": "metadata_only_not_body",
+              "label": "Sólo hay metadatos de descubrimiento; falta el cuerpo original del artículo.",
+              "count": 6
+            }
+          ]
+        },
+        "evidence_items": 9,
+        "identity_statuses": {
+          "candidate": 9
+        },
+        "exclusion_counts": {
+          "identity_ambiguous_or_requires_selected_spans": 3,
+          "discovery_index_is_not_article_evidence": 6
+        },
+        "run_id": "423288c379c1e085bfdedb8f03f89c16b7a48213f04908cf2fccca02e5b32f80",
+        "replay_matched": true
+      },
+      {
+        "id": "ahmsa",
+        "name": "Altos Hornos de México, S.A.B. de C.V.",
+        "score": 0,
+        "assessment": {
+          "state": "pending_identity",
+          "label": "Identidad pendiente de corroboración",
+          "display_score": null,
+          "reason_codes": [
+            "identity_pending",
+            "metadata_only_not_body"
+          ],
+          "zero_reasons": [
+            {
+              "code": "identity_pending",
+              "label": "La identidad o mención requiere corroboración; una coincidencia nominal no valida a la persona.",
+              "count": 3
+            },
+            {
+              "code": "metadata_only_not_body",
+              "label": "Sólo hay metadatos de descubrimiento; falta el cuerpo original del artículo.",
+              "count": 2
+            }
+          ]
+        },
+        "evidence_items": 5,
+        "identity_statuses": {
+          "candidate": 5
+        },
+        "exclusion_counts": {
+          "discovery_index_is_not_article_evidence": 2,
+          "identity_ambiguous_or_requires_selected_spans": 3
+        },
+        "run_id": "6b0cb1262d2aee54a86e461b34537df51dea028cb93e07fa9904918beea35fb9",
+        "replay_matched": true
+      },
+      {
+        "id": "bimbo",
+        "name": "Grupo Bimbo, S.A.B. de C.V.",
+        "score": 0,
+        "assessment": {
+          "state": "pending_identity",
+          "label": "Identidad pendiente de corroboración",
+          "display_score": null,
+          "reason_codes": [
+            "identity_pending",
+            "metadata_only_not_body"
+          ],
+          "zero_reasons": [
+            {
+              "code": "identity_pending",
+              "label": "La identidad o mención requiere corroboración; una coincidencia nominal no valida a la persona.",
+              "count": 3
+            },
+            {
+              "code": "metadata_only_not_body",
+              "label": "Sólo hay metadatos de descubrimiento; falta el cuerpo original del artículo.",
+              "count": 1
+            }
+          ]
+        },
+        "evidence_items": 4,
+        "identity_statuses": {
+          "candidate": 4
+        },
+        "exclusion_counts": {
+          "identity_ambiguous_or_requires_selected_spans": 3,
+          "discovery_index_is_not_article_evidence": 1
+        },
+        "run_id": "8bd3dce752e931c4a916d87207d758fd2bfc9377870b61fc3c78aa60dc9534ec",
+        "replay_matched": true
+      },
+      {
+        "id": "femsa",
+        "name": "Fomento Económico Mexicano, S.A.B. de C.V.",
+        "score": 0,
+        "assessment": {
+          "state": "pending_identity",
+          "label": "Identidad pendiente de corroboración",
+          "display_score": null,
+          "reason_codes": [
+            "identity_pending",
+            "metadata_only_not_body"
+          ],
+          "zero_reasons": [
+            {
+              "code": "identity_pending",
+              "label": "La identidad o mención requiere corroboración; una coincidencia nominal no valida a la persona.",
+              "count": 2
+            },
+            {
+              "code": "metadata_only_not_body",
+              "label": "Sólo hay metadatos de descubrimiento; falta el cuerpo original del artículo.",
+              "count": 3
+            }
+          ]
+        },
+        "evidence_items": 5,
+        "identity_statuses": {
+          "candidate": 5
+        },
+        "exclusion_counts": {
+          "discovery_index_is_not_article_evidence": 3,
+          "identity_ambiguous_or_requires_selected_spans": 2
+        },
+        "run_id": "b21d9485fea4de33121079bde3c287465c06d757b9102061e75198e09591261d",
+        "replay_matched": true
+      },
+      {
+        "id": "cemex",
+        "name": "CEMEX, S.A.B. de C.V.",
+        "score": 0,
+        "assessment": {
+          "state": "pending_identity",
+          "label": "Identidad pendiente de corroboración",
+          "display_score": null,
+          "reason_codes": [
+            "identity_pending",
+            "metadata_only_not_body"
+          ],
+          "zero_reasons": [
+            {
+              "code": "identity_pending",
+              "label": "La identidad o mención requiere corroboración; una coincidencia nominal no valida a la persona.",
+              "count": 2
+            },
+            {
+              "code": "metadata_only_not_body",
+              "label": "Sólo hay metadatos de descubrimiento; falta el cuerpo original del artículo.",
+              "count": 2
+            }
+          ]
+        },
+        "evidence_items": 4,
+        "identity_statuses": {
+          "candidate": 4
+        },
+        "exclusion_counts": {
+          "identity_ambiguous_or_requires_selected_spans": 2,
+          "discovery_index_is_not_article_evidence": 2
+        },
+        "run_id": "c0af83de4ea142d1f8037b535f07b6ae173c93d7241c2afb92352b70677e8954",
+        "replay_matched": true
+      },
+      {
+        "id": "ohl",
+        "name": "OHL México, S.A.B. de C.V.",
+        "score": 0,
+        "assessment": {
+          "state": "pending_identity",
+          "label": "Identidad pendiente de corroboración",
+          "display_score": null,
+          "reason_codes": [
+            "identity_pending",
+            "metadata_only_not_body"
+          ],
+          "zero_reasons": [
+            {
+              "code": "identity_pending",
+              "label": "La identidad o mención requiere corroboración; una coincidencia nominal no valida a la persona.",
+              "count": 2
+            },
+            {
+              "code": "metadata_only_not_body",
+              "label": "Sólo hay metadatos de descubrimiento; falta el cuerpo original del artículo.",
+              "count": 1
+            }
+          ]
+        },
+        "evidence_items": 3,
+        "identity_statuses": {
+          "candidate": 3
+        },
+        "exclusion_counts": {
+          "identity_ambiguous_or_requires_selected_spans": 2,
+          "discovery_index_is_not_article_evidence": 1
+        },
+        "run_id": "b527314fdfa114c95e62e087d78831567ca6c359e749b6d814573f6280e0b56f",
+        "replay_matched": true
+      }
+    ],
+    "selected_bodies": [
+      {
+        "id": "c51fce9aba8d657ea4c34b7eeb812f3d7153f0c0d8d449d884485f45c5ee4996",
+        "canonical_url": "https://editorial.aristeguinoticias.com/0308/mexico/constructora-espanola-ohla-afirma-que-colaborara-en-investigacion-contra-epn/",
+        "title": "Constructora española OHLA afirma que colaborará en investigación contra EPN",
+        "scope": "full_article",
+        "status": "fetched",
+        "document_id": "b22a11f88d7666d156e08af545126c8247372772c71dd192ecdfb0d83c1d1cbd",
+        "body_chars": 3819,
+        "body_sha256": "e4cfea9290e5cb5e843e7c3d69e5d7dda6a6eb1d418a673ed697a64256e9b13f",
+        "body_target_mentions": [
+          "epn",
+          "ohl"
+        ]
+      },
+      {
+        "id": "1707f718d5048d5886d8da0453c46b1ecc03c2db5d49c153998fab6e695f98a8",
+        "canonical_url": "https://editorial.aristeguinoticias.com/2802/aristegui-en-vivo/enterate/denuncias-contra-scherer-pueden-ser-el-inicio-de-un-maxiproceso-diez-enterate/",
+        "title": "Denuncias contra Scherer pueden ser ‘el inicio de un maxiproceso’: Díez | Entérate",
+        "scope": "full_article",
+        "status": "fetched",
+        "document_id": "3d857973ffedf5efc18366358544962eda185f9cbfdc850d92bfb9dcc817b070",
+        "body_chars": 608,
+        "body_sha256": "76d9ee24897a372e00488e60091f1117e8b922cc0ec7a0485a01e590ccdba7d5",
+        "body_target_mentions": [
+          "ohl"
+        ]
+      },
+      {
+        "id": "71f7ace30e5c1696374040aecc5cee9764f9d9e1d7223d387f3710c4b31fbf5f",
+        "canonical_url": "https://editorial.aristeguinoticias.com/2312/mexico/medicos-residentes-de-pemex-en-paro-retan-a-amlo-y-mas-columnas-politicas-22-12-2022/",
+        "title": "Médicos residentes de Pemex en paro; retan a AMLO y más | Columnas políticas 23/12/2022",
+        "scope": "full_article",
+        "status": "fetched",
+        "document_id": "9cb10da7c7ff625fd65708c69f97382b57236e4703ef96279ce5a9035609af60",
+        "body_chars": 3125,
+        "body_sha256": "3495be014acbca56382d123a15b709960de560fd1a457cff582b9d45fd3bcf37",
+        "body_target_mentions": [
+          "pemex"
+        ]
+      },
+      {
+        "id": "09ac8be3a7cc9b3e3dee3e295e166ba20d6965c827d4b252c05f9f6a74515fea",
+        "canonical_url": "https://contralinea.com.mx/uncategorized/investigaciones-contra-panistas-por-presuntos-sobornos-de-odebrecht-amlo/",
+        "title": "Investigaciones contra panistas, por presuntos sobornos de Odebrecht: AMLO",
+        "scope": "full_article",
+        "status": "fetched",
+        "document_id": "123a0ecc248ebe81107c3ae22c623b75c522cebbc47f7852913dbe4a6251bb56",
+        "body_chars": 5792,
+        "body_sha256": "c6c985d31fff0d8a2b06f6deeb8711cd232328e1a2acfddc02e1481be63e85ee",
+        "body_target_mentions": [
+          "odebrecht",
+          "pemex"
+        ]
+      },
+      {
+        "id": "6d568c91112746dbedbc53207def83dfc37c66a2cdff923bc66c9936c021eb3a",
+        "canonical_url": "https://contralinea.com.mx/historico/contralinea-803/",
+        "title": "Contralínea 803 - Contralínea",
+        "scope": "full_article",
+        "status": "fetched",
+        "document_id": "2bbf6564474d299c2202e6d1ad498950318a54008d690d05ee06855bc3b2f495",
+        "body_chars": 4310,
+        "body_sha256": "f110008490e72b45f628cabc6f6f8ae94908c1608647bfdaad72190c30bfe7f1",
+        "body_target_mentions": [
+          "odebrecht"
+        ]
+      },
+      {
+        "id": "0a4d4ecba22143ad3768c3b34f00253a94d73d96ca93a75a0dcffd5157651c91",
+        "canonical_url": "https://editorial.aristeguinoticias.com/1507/dinero-y-economia/subiran-los-precios-de-algunos-productos-de-grupo-bimbo-consulta-la-lista/",
+        "title": "Subirán los precios de algunos productos de Grupo Bimbo | Consulta la lista",
+        "scope": "full_article",
+        "status": "fetched",
+        "document_id": "39d12e3b9d58ba2c723e739eaa20b3832579910b13f519075c15800526176347",
+        "body_chars": 2452,
+        "body_sha256": "80c9123a80e3ab0810ec340d26f3153c061cee26211da7f7fe4370a7e358a7eb",
+        "body_target_mentions": [
+          "bimbo"
+        ]
+      },
+      {
+        "id": "38e138a7e5a95b49c9e75f2b3351fc42fe4d3f97ed57ddfce1d5ce25ce90f057",
+        "canonical_url": "https://editorial.aristeguinoticias.com/2704/mexico/grupo-bimbo-preve-aumentar-sus-precios-debido-a-la-inflacion/",
+        "title": "Grupo Bimbo prevé aumentar sus precios debido a la inflación",
+        "scope": "full_article",
+        "status": "fetched",
+        "document_id": "0acef24cab296c4551fbff05954ebcc6f786e486c74f05815b107d3d0baac964",
+        "body_chars": 1852,
+        "body_sha256": "42f6df75e33aaa9e32e085f5b5596a026de9f72ba96b450ef41a0dcab8241db7",
+        "body_target_mentions": [
+          "bimbo"
+        ]
+      },
+      {
+        "id": "d193d72b07bbdcd3d9519a925923d87c37a84a0c70cf7668312df38c3aa3c548",
+        "canonical_url": "https://editorial.aristeguinoticias.com/1403/mundo/grupo-bimbo-suspende-ventas-e-inversiones-en-rusia/",
+        "title": "Grupo Bimbo suspende ventas e inversiones en Rusia",
+        "scope": "full_article",
+        "status": "fetched",
+        "document_id": "de2151bf5af38b058b41191f90fffc1cc0f1a5fa764b713a50181e55cc5ecf4a",
+        "body_chars": 1250,
+        "body_sha256": "a60a4aee8dc5d61e1149af8183d48df65cf923f2aa5f0b2bfad45752d8b78ef8",
+        "body_target_mentions": [
+          "bimbo"
+        ]
+      },
+      {
+        "id": "d00a134116be2e955408e4781608578390dc5d564a17de9281cd88ee02f69126",
+        "canonical_url": "https://contralinea.com.mx/interno/semana/trasnacionales-codician-recursos-naturales-en-territorios-zapatistas-sedena/",
+        "title": "Trasnacionales codician recursos naturales en territorios zapatistas: Sedena",
+        "scope": "full_article",
+        "status": "fetched",
+        "document_id": "b7f0445a975012c96e4880237528a2e9a6d0c2c16fa936fdd394d985b4ee691d",
+        "body_chars": 11593,
+        "body_sha256": "e898dfe6286f2bd1f3ec3c558fc9c7e8f34c221a85d52eeee9b09b9bbb9bd862",
+        "body_target_mentions": [
+          "femsa",
+          "pemex"
+        ]
+      },
+      {
+        "id": "d43bb61d20fe763c6adca15e299eb9fab2b87586ae6e9797c411442791d98979",
+        "canonical_url": "https://editorial.aristeguinoticias.com/2106/dinero-y-economia/cofece-multa-con-9-7-mdp-a-cemex-abc-capital-y-abc-holding-por-no-avisar-sobre-dos-transacciones/",
+        "title": "Cofece multa con 9.7 mdp a Cemex, ABC Capital y ABC Holding por no avisar sobre dos transacciones",
+        "scope": "full_article",
+        "status": "fetched",
+        "document_id": "1e8eda212b3c43c62e5004f1ba8971a0c1f1185c84e1255c9f807fd1da2dbfd0",
+        "body_chars": 1968,
+        "body_sha256": "a6cec2cb08e27c3673fabeab500293b278ad4bd2bcbab5d130ae60f485420d06",
+        "body_target_mentions": [
+          "cemex"
+        ]
+      },
+      {
+        "id": "bed139712ad225482e5de29908dd2de0ba714e9375612139603616e9fb74b9cb",
+        "canonical_url": "https://editorial.aristeguinoticias.com/0505/dinero-y-economia/peso-y-bolsa-mexicana-caen-cemex-y-televisa-encabezan-perdidas/",
+        "title": "Peso y Bolsa Mexicana caen; Cemex y Televisa encabezan pérdidas",
+        "scope": "full_article",
+        "status": "fetched",
+        "document_id": "05ccdf5ab45f7bb9da8b054d828f90056c6e7de8c2800c53dec35df3d7593e72",
+        "body_chars": 2202,
+        "body_sha256": "ba2c3a974a14e62ed78a62e9ed538e5b0208566ed6428719699de44723e5cee4",
+        "body_target_mentions": [
+          "cemex"
+        ]
+      },
+      {
+        "id": "940abfe3a612ea78c11dfa0a4c65f58c0c745bce60cf5eead610a0163a3f27cf",
+        "canonical_url": "https://contralinea.com.mx/interno/semana/altos-hornos-de-alonso-ancira-repara-54-millones-de-dolares-a-pemex-pero-denuncia-a-cfe/",
+        "title": "Altos Hornos, de Alonso Ancira, repara 54 millones de dólares a Pemex pero denuncia a CFE",
+        "scope": "full_article",
+        "status": "fetched",
+        "document_id": "cb26d504fd8556522480972299ec1c22d12006e4fbbe50fb7deb3a462aea02c7",
+        "body_chars": 3710,
+        "body_sha256": "a70f2c8ff6d5cd2477cab9db1d1b4a3c26acfe5c6507d57545b0121bf1b9a492",
+        "body_target_mentions": [
+          "ahmsa",
+          "pemex"
+        ]
+      },
+      {
+        "id": "b0a1eb4c9b543c181c4850d2b00b810c0687abc68a776009a54e54d65ab1de83",
+        "canonical_url": "https://contralinea.com.mx/interno/semana/ahmsa-no-sera-rescatada-ancira-hasta-patrocino-a-los-moreira-amlo/",
+        "title": "AHMSA no será rescatada; Ancira hasta patrocinó a los Moreira: AMLO",
+        "scope": "full_article",
+        "status": "fetched",
+        "document_id": "d2c02b35e9d4a9b18a6681d34776dbc80bf833ecf115b425545cf217571f5059",
+        "body_chars": 2857,
+        "body_sha256": "1cf6c235448a768331c9931ce0b11b4ec97a90d1ac45467da583387d0ab5bb30",
+        "body_target_mentions": [
+          "ahmsa"
+        ]
+      },
+      {
+        "id": "4ddf7ed687b23ab5c7328bff13d74a7090fca1e475ce5b6d2348c5769c7c87ce",
+        "canonical_url": "https://contralinea.com.mx/interno/semana/cfe-ahmsa-miente-se-corto-electricidad-por-falta-de-pagos/",
+        "title": "CFE: AHMSA miente; se cortó electricidad por falta de pagos",
+        "scope": "full_article",
+        "status": "fetched",
+        "document_id": "29599e8502c6f4cacedef9098e5fda1d6ec140f1c4c9a2bd78d76a24e41c9c22",
+        "body_chars": 4990,
+        "body_sha256": "dcfef0fce233fdef178a2b718f34a65e1e50d12aa69c2d88963d6e766b48d0ac",
+        "body_target_mentions": [
+          "ahmsa"
+        ]
+      },
+      {
+        "id": "49becd68431099ee90ad4fb314323136dde47cd790080abacb45dbe2438e6383",
+        "canonical_url": "https://editorial.aristeguinoticias.com/0512/aristegui-en-vivo/enlaces-en-vivo/exdirector-de-telemax-rompe-el-silencio-y-cuenta-la-historia-de-la-estafa-maestra-en-sonora/",
+        "title": "Exdirector de TeleMax rompe el silencio y cuenta la historia de la Estafa Maestra en Sonora",
+        "scope": "full_article",
+        "status": "fetched",
+        "document_id": "1fe51196d89abac8c4d495c3e0556536be64dd507fdc29bf7cd9763245fe0533",
+        "body_chars": 783,
+        "body_sha256": "9efdba48c82ec0caa05dabe70d3308e65b39a26c0ff6eba68e410497ccf8f9dd",
+        "body_target_mentions": [
+          "epn"
+        ]
+      },
+      {
+        "id": "e41eb3b5ab60ae3b7d621a1b35d71fa243801af31efe4eb8e6bca128b774f031",
+        "canonical_url": "https://editorial.aristeguinoticias.com/3012/mexico/morenistas-se-escudan-en-su-libertad-de-expresion-y-mas-columnas-politicas-30-12-2022/",
+        "title": "Morenistas y \"libertad de expresión\": Columnas 30/12/2022",
+        "scope": "full_article",
+        "status": "fetched",
+        "document_id": "83e8ec320cbf2c9b5075ec09246b24165f37101aa454e477a286fd2fbf4e7d29",
+        "body_chars": 2785,
+        "body_sha256": "cca8fb8305cda12fa1762f88adb0c0849cb761b3e739572bb1e4ba7d5f2bfb81",
+        "body_target_mentions": [
+          "epn"
+        ]
+      },
+      {
+        "id": "1b0c1ee9f7807a9357e1a09d29714320885966315d58bc147a1dbd11cd5f26a1",
+        "canonical_url": "https://contralinea.com.mx/interno/semana/investigacion-contra-pena-no-es-politiqueria-la-resolvera-fgr-amlo/",
+        "title": "Investigación contra Peña no es politiquería; la resolverá FGR: AMLO",
+        "scope": "full_article",
+        "status": "fetched",
+        "document_id": "4b9bff29b0220f886167508a6fbc4d3218ef6c3ae7e59b1fbc2574ad75369b6b",
+        "body_chars": 4375,
+        "body_sha256": "57efba6eea4b972fc665b3a9f7c18748dd2165b05981b6611024a3615c1aa8a4",
+        "body_target_mentions": [
+          "epn"
+        ]
+      },
+      {
+        "id": "7c449ade4f2aa23f5a2cdcf88a1dd21e8d77b56a16ad4e6b5ada7efa8d39c3d4",
+        "canonical_url": "https://editorial.aristeguinoticias.com/3108/mundo/devolvera-eu-a-peru-miles-de-dolares-incautados-al-expresidente-toledo-odebrecht/",
+        "title": "Devolverá EU a Perú miles de dólares incautados al expresidente Toledo | Odebrecht",
+        "scope": "full_article",
+        "status": "fetched",
+        "document_id": "66e4e261c0bc1be2c37af26da053afc989fae9a696ebf499f4fec6354b7e4a99",
+        "body_chars": 2414,
+        "body_sha256": "f1d054df4156497c08c111cd0b9b90424f653dd040135bcbca002336bc8fc89c",
+        "body_target_mentions": [
+          "odebrecht"
+        ]
+      },
+      {
+        "id": "e9cd28eaf0c852dedcdfd530a7229c2c1f1f4fbafdf6a8cc190620ba495f8ae1",
+        "canonical_url": "https://editorial.aristeguinoticias.com/0507/mundo/la-mexicana-femsa-comprara-la-suiza-valora-por-1-150-millones-de-dolares-para-entrar-en-europa/",
+        "title": "La mexicana Femsa comprará la suiza Valora por 1.150 millones de dólares para ‘entrar’ en Europa",
+        "scope": "full_article",
+        "status": "fetched",
+        "document_id": "ebdc31c1b447ac29c775631c0279fae0124b29fbd1e503535053b955e5b99185",
+        "body_chars": 4143,
+        "body_sha256": "6ce43011bf0c15c58593906bd59d7dada08bd2be2bfab0a02080d94c1656441d",
+        "body_target_mentions": [
+          "femsa"
+        ]
+      }
+    ],
+    "audit": {
+      "ok": true,
+      "checked": 740,
+      "head_hash": "d03914f213a33862756beb1bbb3365cc7e1df528b32d553d44ea4ae616ea8f85",
+      "score_runs_checked": 16,
+      "scope": "event_chain_document_content_current_scores_and_historical_score_runs_with_document_metadata",
+      "limitation": "Una reescritura completa requiere detectar con un hash o respaldo externo."
+    },
+    "checks": {
+      "original_bank_unchanged": true,
+      "audit_prefix_preserved": true,
+      "replaced_old_active_body_evidence_retired": true,
+      "original_immutable_documents_preserved": true
+    },
+    "retired_links": 2,
+    "receipts": [
+      {
+        "version": "article-main-4",
+        "n": 19
+      }
+    ],
+    "source_code_sha256": {
+      "peps/relevance.py": "2c2fc48a62b5b88c0c7633486ef4f10010da17d9a6cd5fdac3a867078d2b9ebc",
+      "peps/news.py": "b633f6f4324359e860e7c448372e6149af4cb47ac022cb03130da700c8982c20",
+      "peps/collector.py": "5bafe447703aa0b622b8b0f36b9ca8e82121236e5b50151b76c7000f43815aef",
+      "peps/news_search.py": "86df92497efd247a7529cfd9764410052e665f452d7fde5b03abe868d01955b2",
+      "peps/official.py": "c864c512d84b06a1caf3b458c1cadf5820b805a2be7dc6f1c4c59cae0cfb66cf",
+      "peps/identity.py": "f05524947d5b1d765803da6faa145f3b422a61a10971a1caca3c6983f3436d2f",
+      "peps/sources.py": "05875aa5ff4a42ff97f32de0dd8bc33921c6a0c6f056beb72beae1d384bc7f1a",
+      "peps/importing.py": "54fc447531cecb986c3e4be4570d0d3f2280a4f86d5dd50e60c0109bf008e310",
+      "peps/workflow.py": "ff2fd82056ce71d8f3a7a1a2d802ea049e0eee2669ece2ac0ffa23748e5f5e95",
+      "peps/contextual.py": "7713ec854c309e1f4ca807fb31f2b464af5495fbd05e4f77ca42865e4baa40d8",
+      "peps/cli.py": "058c0826b124e26ed71ea026a4efa26aa8ad3f0c390f262e81ee96eb9c6670af",
+      "peps/nlp.py": "9b947a8ec53446fed346fc1ca3efbf2bb07224cb37640a2396fbbeb10cab6196",
+      "peps/store.py": "2c5928e7c685b92207ecc2f992b29a1ba08fc8fb23968e44066d4458a2bf6885",
+      "peps/advanced_nlp.py": "1ac3b13daeaef6b76da4f553bfe367604790c04d670d0f4a6418d0f2fbb547cc",
+      "peps/__main__.py": "3129adff95e0f38b87ab34cddfc27082c7892bcaec267ff5d40f160fdf55b44a",
+      "peps/scoring.py": "ff4e9e9f19cb0c781f02c06b68c2e2eaa00ee08f22dd8f71219fa5042879fe7e",
+      "peps/engine.py": "3f1f948bd2860674aaf9422636b50e1a829e051f3456a0f43cee6bedac076b37",
+      "peps/explainability.py": "5556420200f2d97436313af04c7d7303fbf008752bea4e38bc940838961b3b4e",
+      "peps/__init__.py": "b70e39a72e09c3de60207ac16a6b91b3f7818c301bd672a58349649e1c8f7a80",
+      "peps/shared_crawl.py": "84644aba7017989031360e86598da0f4eb282fecfcd7f0cbe251fbe2fb842d3e",
+      "peps/acquisition_coverage.py": "7508693a83587574ff1125bfcbb3bab886cfdc262eaa251426bf438925883e2a",
+      "peps/app.py": "2b3885b72bfbae6c5cf869296b0a5f7e30a2ca87d2ed7d21e0ef6c159ea00689",
+      "peps/context_model.py": "ada181d47cc0bd45c4bb3124db9920ee52fdb4e7115643a582c05f56de30a59b",
+      "peps/shared_discovery.py": "9b192dbb3dea8a0595a97109a877ef1443d1c8739510087172e3ee84a60a9fe2"
+    }
   }
 }

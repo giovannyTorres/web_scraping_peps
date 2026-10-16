@@ -12,7 +12,7 @@ relojes ni textos. No se emplearon datos internos ni se confirmaron identidades.
 | --- | --- | ---: | ---: | ---: | ---: |
 | Primera, con arreglos iniciales | 2014–2022, índices compartidos | 119.02 s | 123 | 8 | 5/8 |
 | Diagnóstico dirigido | 2022, ventanas mensuales automáticas anteriores | 119.72 s | 26 | 7 | 3/8 |
-| Final, código estable | 2022, primer barrido anual dirigido | **118.57 s** | **48** | **19** | **8/8** |
+| Barrido anual dirigido | 2022, primer barrido anual dirigido | **118.57 s** | **48** | **19** | **8/8** |
 
 Las fuentes fueron Contralínea, Aristegui Noticias y Desinformémonos. La primera
 sesión leyó 49 páginas de índice, contrastó 4,900 registros y excluyó 4,777 sin
@@ -60,7 +60,10 @@ Los 19 cuerpos incluyen notas neutras; no todos contienen conductas puntuables.
    de países distintos en una sola frase. La reextracción del mismo HTML elimina
    esos candidatos falsos, conserva párrafos y no elimina la mención real de Peña
    ni el control neutral de Cemex. También se corrigió NLP para analizar líneas
-   sin punto final conservando los offsets: separar párrafos no debe perderlas.
+   sin punto final conservando los offsets: separar párrafos no debe perderlas. La revisión final también elimina «Lee más»,
+   distingue acciones de exdirectores y políticos de las empresas mencionadas y
+   reconoce multas como sanciones administrativas, sin convertirlas en condenas
+   penales ni cambiar los pesos del scoring.
 6. **Proxy y pausas.** El transporte ignoraba el proxy heredado del entorno. Ahora
    usa CONNECT y TLS verificado, sin publicar credenciales. Un corte de sesión
    no consume intentos ni penaliza al host; un fallo transitorio de red sí aplica
@@ -84,7 +87,7 @@ cambios. La deduplicación distingue cambios de párrafos aunque las palabras
 normalizadas coincidan.
 
 En una copia aislada del primer banco real se actualizaron **los ocho cuerpos en
-0.97 s**, incluida la atribución. Se retiraron diez vínculos anteriores, se
+0.41 s**, incluida la atribución. Se retiraron diez vínculos anteriores, se
 conservó el prefijo completo de auditoría y todos los documentos originales. La
 segunda pasada encontró cero capturas pendientes. El banco original quedó idéntico.
 Una captura ausente, inválida o sin texto editorial suficiente deja la noticia
@@ -99,8 +102,14 @@ respeta la revisión de identidad. La investigación periodística no acredita u
 condena. No se confirmaron personas o empresas automáticamente para conseguir
 puntuaciones positivas.
 
+Tras el último barrido de red se comprobaron los mismos 19 HTML reales y 23
+vínculos con el extractor 4 y NLP final. La multa publicada de Cofece/Cemex queda
+como candidato de sanción; los casos de exdirector y políticos quedan como
+contexto de la empresa. Después se repitieron reparación, atribución y cálculo
+sobre una copia aislada: 0.74 s de atribución y 0.37 s de scoring, sin HTTP nuevo.
+
 Se reprodujeron las ocho evaluaciones generadas con el código final y se verificó
-la auditoría. NLP cambia a `es-gazetteer-rules-1.0.1`: los snapshots de cálculo
+la auditoría. NLP cambia a `es-gazetteer-rules-1.0.2`: los snapshots de cálculo
 anteriores permanecen archivados y su reproducción con código diferente devuelve
 `unsupported`, sin reinterpretar silenciosamente la historia.
 
@@ -108,11 +117,11 @@ anteriores permanecen archivados y su reproducción con código diferente devuel
 
 | Comprobación | Resultado |
 | --- | --- |
-| Suite completa | 616 pruebas: 609 correctas, 7 opcionales de spaCy omitidas |
+| Suite completa | 623 pruebas: 616 correctas, 7 opcionales de spaCy omitidas |
 | Navegador local: flujo, descarga, recuperación y fuentes compartidas | 170 comprobaciones correctas |
 | Actualización desde wheel auténtico 2.3.1 | 12 comprobaciones correctas |
 | Wheel instalado sin dependencias | 15 comandos, 16 recursos, 40 archivos idénticos al código validado |
-| Índice sintético de 300 entidades, reloj y SQLite reales | 74 condiciones correctas; 10.51 s sin caché y 0.21–0.42 s con caché |
+| Índice sintético de 300 entidades, reloj y SQLite reales | 74 condiciones correctas; 10.27–10.35 s sin caché y 0.16–0.25 s con caché |
 
 El benchmark de 300 utiliza tres páginas HTTP **sintéticas**, prohíbe sockets y
 respeta intervalos reales de cinco segundos. Mide procesamiento local y cola;
