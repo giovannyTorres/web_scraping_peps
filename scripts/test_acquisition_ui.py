@@ -35,6 +35,8 @@ SCENARIOS = [
 def seed_case(engine):
     """Seed recorded synthetic observations, never fabricated scores or API JSON."""
     from peps.news import NewsAcquirer
+    from peps.news_projection import ensure_projection, projection_signature
+    from peps.relevance import RelevanceIndex
     from peps.store import canonical, now
 
     entities = [{'id': f'acquisition-{i:03d}', 'name': f'Entidad Sintética de Prueba {i:03d}',
@@ -54,6 +56,7 @@ def seed_case(engine):
     news = NewsAcquirer(engine)
     with engine.store.connection() as con:
         con.execute('BEGIN IMMEDIATE')
+        bank_revision = projection_signature(con)['bank_revision']
         for i in range(235):
             article_id, url = f'synthetic-article-{i}', f'https://fixture.invalid/article-{i}'
             title = entities[i]['name'] + ': referencia sintética' if i < 8 else f'Referencia ajena sintética {i}'
@@ -63,10 +66,12 @@ def seed_case(engine):
             con.execute('INSERT INTO news_observations(id,article_id,source_id,discovery_url,observed_url,retrieved_at,details) '
                         'VALUES(?,?,?,?,?,?,?)', (f'observation-{i}', article_id, source['id'], source['url'], url, now(),
                         canonical({'retrieval_relevance': {'relevant': i < 8,
-                            'entity_ids': [entities[i]['id']] if i < 8 else [], 'identity_verified': False}})))
+                            'entity_ids': [entities[i]['id']] if i < 8 else [],
+                            'bank_revision': bank_revision, 'identity_verified': False}})))
         engine.store._audit(con, 'news_discovery_completed', {'synthetic_fixture': True, 'records': 235})
     for i in range(24):
-        job_id = engine.store.enqueue('news_query', {'entity_ids': [entities[i]['id']]}, key=f'synthetic-query-{i}')
+        job_id = engine.store.enqueue('news_query', {'entity_ids': [entities[i]['id']],
+            'bank_revision': bank_revision, 'source_id': source['id']}, key=f'synthetic-query-{i}')
         with engine.store.connection() as con:
             con.execute('INSERT INTO news_discovery_runs VALUES(?,?,?,?,?,?,?,?)',
                         (job_id, source['id'], 'news_query', 'https://fixture.invalid/search', 235 if i == 0 else 0,
@@ -81,6 +86,10 @@ def seed_case(engine):
             'title': 'Boletín enteramente ficticio de prueba', 'source_kind': 'official',
             'published_at': datetime.now(timezone.utc).date().isoformat(),
             'entity_ids': [entity['id']], 'text': entity['name'] + ' ' + ending}])
+    # The fixture records observed work for this bank revision. Build the same
+    # disposable local relevance index as acquisition rather than assuming old
+    # observations still describe whichever bank is currently loaded.
+    assert ensure_projection(news, RelevanceIndex(entities))
     return news, entities
 
 
@@ -159,8 +168,8 @@ def main():
                             before = permissions(page)
                             expect(page.locator('#workflow-permission-summary')).to_contain_text('0 con texto autorizado')
                             source = page.locator('#news-sources .source').filter(has_text='Archivo enteramente sintético de pruebas')
-                            expect(source.get_by_label('Descargar texto para analizar', exact=True)).not_to_be_checked()
-                            expect(source.get_by_label('Uso del texto autorizado', exact=True)).not_to_be_checked()
+                            expect(source.locator('input[type=checkbox]').nth(1)).not_to_be_checked()
+                            assert source.locator('input[type=checkbox]').count() == 2
                             checked('metadata_permissions_are_explicit_and_initially_unchecked')
                             for seconds in (1800, 3600, 7200):
                                 page.locator('#workflow-time-budget').select_option(str(seconds))
@@ -182,7 +191,9 @@ def main():
                             checked('saving_budgets_does_not_auto_enable_or_approve_any_source', permissions(page) == before)
                             expect(page.locator('#workflow-time-budget-field')).to_be_hidden()
                             screenshot(page, 'desktop-budget', page.locator('.execution-budget'))
-                            page.locator('#workflow-sources-next').click()
+                            page.locator('#workflow-auto-analyze').uncheck()
+                            assert api(page, 'workflow-confirm-sources', {})['status'] == 200
+                            page.locator('[data-tab="news"]').click()
                             expect(page.locator('[data-panel="news"]')).to_be_visible()
                             expect(page.locator('#workflow-session-budget')).to_contain_text('Rápido · hasta 2 min')
                             expect(page.locator('#workflow-session-budget')).to_contain_text('24 de 300')
@@ -190,6 +201,7 @@ def main():
                             checked('budget_and_no_body_warning_are_visible_before_start')
                             coverage = api(page, 'stats')['body']['acquisition']
                             checked('real_sqlite_coverage_has_expected_300_235_distinctions',
+                                    coverage['current_bank_index_ready'] is True and
                                     coverage['entities_total'] == 300 and coverage['entities_queried'] == 24 and
                                     coverage['entities_with_candidates'] == 8 and coverage['entities_with_bodies'] == 0 and
                                     coverage['relevant_articles'] == 8 and coverage['metadata_only_articles'] == 8 and

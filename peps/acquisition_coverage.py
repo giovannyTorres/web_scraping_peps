@@ -7,6 +7,9 @@ Local source documents are reported separately from acquired news articles.
 from __future__ import annotations
 
 import json
+from copy import deepcopy
+
+from .news_projection import projection_ready, projection_signature
 
 
 def _permissions(sources):
@@ -84,7 +87,7 @@ def _shared_coverage(con, tables, result, *, json_sql):
         "WHERE json_type(payload,'$.shared_index')='true' AND json_extract(payload,'$.bank_revision')=?", (revision,)).fetchone()[0]
 
 
-def _fallback(con, tables, result):
+def _fallback(con, tables, result, revision):
     ids = {row[0] for row in con.execute('SELECT id FROM entities')}
     queried, pairs, bodies = set(), set(), set()
     article_rows = list(con.execute('SELECT id,document_id,scope FROM news_articles')) if 'news_articles' in tables else []
@@ -94,23 +97,26 @@ def _fallback(con, tables, result):
         for row in con.execute('SELECT j.kind,j.payload,r.parser_metadata FROM news_discovery_runs r JOIN jobs j ON j.id=r.job_id'):
             payload = _json(row['payload'])
             targets = {str(value) for value in payload.get('entity_ids', [])} & ids
+            if str(payload.get('bank_revision')) != revision:
+                continue
             if row['kind'] == 'news_query':
                 queried.update(targets)
             if row['kind'] == 'news_feed' or targets:
                 count = _json(row['parser_metadata']).get('candidate_filter') or {}
                 if isinstance(count, dict) and type(count.get('excluded_records')) is int:
                     result['excluded_records'] += max(0, count['excluded_records'])
-    if 'news_observations' in tables:
-        for row in con.execute('SELECT article_id,details FROM news_observations'):
-            relevant = _json(row['details']).get('retrieval_relevance') or {}
-            if isinstance(relevant, dict) and relevant.get('relevant') is True:
-                pairs.update((row['article_id'], str(value)) for value in relevant.get('entity_ids', []) if str(value) in ids)
+    if result['current_bank_index_ready']:
+        pairs.update((row['article_id'], row['entity_id']) for row in con.execute(
+            'SELECT article_id,entity_id FROM news_current_candidates WHERE bank_revision=? AND relevance_version=?',
+            (revision, projection_signature(con)['relevance_version'])) if row['entity_id'] in ids)
     if 'news_identity_links' in tables:
         by_document = {}
         for article, document in articles.items():
             by_document.setdefault(document, []).append(article)
         for row in con.execute('SELECT document_id,entity_id,resolution FROM news_identity_links'):
-            if row['entity_id'] in ids and _json(row['resolution']).get('status') != 'rejected':
+            resolution = _json(row['resolution'])
+            if (row['entity_id'] in ids and resolution.get('status') != 'rejected'
+                    and str(resolution.get('bank_revision')) == revision):
                 pairs.update((article, row['entity_id']) for article in by_document.get(row['document_id'], []))
     valid_documents = set()
     for row in con.execute("SELECT id,metadata FROM documents WHERE source_kind NOT IN ('discovery','legacy')"):
@@ -140,40 +146,68 @@ def acquisition_coverage(store, sources):
               'metadata_only_articles': 0, 'excluded_records': 0,
               'shared_pages_read': 0, 'shared_records_checked': 0, 'entities_checked_locally': 0,
               'shared_pages_pending': 0, 'shared_pages_limited': 0,
-              'local_documents': 0, 'local_entities_with_bodies': 0, 'permissions': _permissions(sources)}
+              'local_documents': 0, 'local_entities_with_bodies': 0, 'permissions': _permissions(sources),
+              'current_bank_index_ready': False, 'current_bank_revision': None,
+              'session_matches_bank': None, 'session': None}
     with store.connection() as con:
         con.execute('BEGIN')
+        signature = projection_signature(con)
+        revision = signature['bank_revision']
+        meta = dict(con.execute("SELECT key,value FROM meta WHERE key IN ('news_data_revision','news_last_session')"))
+        ready = projection_ready(con)
+        result.update(current_bank_index_ready=ready, current_bank_revision=revision)
+        try:
+            session = json.loads(meta.get('news_last_session', 'null'))
+        except (ValueError, TypeError):
+            session = None
+        if not isinstance(session, dict):
+            session = None
+        session_revision = session.get('bank_revision') if session is not None else None
+        session_fields = {'session': session, 'current_bank_revision': revision,
+                          'session_matches_bank': str(session_revision) == revision if session_revision is not None else None}
+        token = (meta.get('news_data_revision'), revision, signature['relevance_version'], ready, store._audit_json)
+        cache = getattr(store, '_news_acquisition_coverage_cache', None)
+        if meta.get('news_data_revision') is not None and cache is not None and cache[0] == token:
+            value = deepcopy(cache[1])
+            value.update(session_fields, permissions=_permissions(sources))
+            return value
         result['entities_total'] = con.execute('SELECT count(*) FROM entities').fetchone()[0]
         tables = {row[0] for row in con.execute("SELECT name FROM sqlite_master WHERE type='table'")}
         _shared_coverage(con, tables, result, json_sql=store._audit_json)
         if not store._audit_json:
-            return _fallback(con, tables, result)
-        observed = ("SELECT o.article_id,CAST(v.value AS TEXT) AS entity_id FROM news_observations o "
-                    "JOIN json_each(CASE WHEN json_valid(o.details) THEN o.details ELSE '{}' END,'$.retrieval_relevance.entity_ids') v "
-                    "JOIN entities e ON e.id=CAST(v.value AS TEXT) WHERE json_extract(o.details,'$.retrieval_relevance.relevant')=1") if 'news_observations' in tables else "SELECT NULL AS article_id,NULL AS entity_id WHERE 0"
+            result = _fallback(con, tables, result, revision)
+            store._news_acquisition_coverage_cache = (token, deepcopy(result))
+            result.update(session_fields)
+            return result
+        observed = ("SELECT p.article_id,p.entity_id FROM news_current_candidates p JOIN entities e ON e.id=p.entity_id "
+                    "WHERE p.bank_revision=? AND p.relevance_version=?") if ready and 'news_current_candidates' in tables else "SELECT NULL AS article_id,NULL AS entity_id WHERE 0 AND ?=?"
         linked = ("SELECT n.id AS article_id,l.entity_id FROM news_identity_links l JOIN entities e ON e.id=l.entity_id "
                   "JOIN news_articles n ON n.document_id=l.document_id "
-                  "WHERE COALESCE(json_extract(l.resolution,'$.status'),'candidate')!='rejected'") if 'news_articles' in tables else "SELECT NULL AS article_id,NULL AS entity_id WHERE 0"
+                  "WHERE COALESCE(json_extract(CASE WHEN json_valid(l.resolution) THEN l.resolution ELSE '{}' END,'$.status'),'candidate')!='rejected' "
+                  "AND CAST(json_extract(CASE WHEN json_valid(l.resolution) THEN l.resolution ELSE '{}' END,'$.bank_revision') AS TEXT)=?") if 'news_articles' in tables else "SELECT NULL AS article_id,NULL AS entity_id WHERE 0 AND ? IS NULL"
         body_sql = ("SELECT n.id AS article_id FROM news_articles n JOIN documents d ON d.id=n.document_id "
                     "WHERE n.scope='full_article' AND d.source_kind NOT IN ('discovery','legacy') "
                     "AND NOT COALESCE(json_extract(d.metadata,'$.discovery_only'),0) "
                     "AND NOT COALESCE(json_extract(d.metadata,'$.requires_source_revalidation'),0)") if 'news_articles' in tables else "SELECT NULL AS article_id WHERE 0"
         counts = con.execute('WITH pairs AS (' + observed + ' UNION ' + linked + '), bodies AS (' + body_sql + ') '
                              'SELECT count(DISTINCT p.entity_id),count(DISTINCT CASE WHEN b.article_id IS NOT NULL THEN p.entity_id END),'
-                             'count(DISTINCT p.article_id),count(DISTINCT b.article_id) FROM pairs p LEFT JOIN bodies b ON b.article_id=p.article_id').fetchone()
+                             'count(DISTINCT p.article_id),count(DISTINCT b.article_id) FROM pairs p LEFT JOIN bodies b ON b.article_id=p.article_id',
+                             (revision, signature['relevance_version'], revision)).fetchone()
         result.update(entities_with_candidates=counts[0], entities_with_bodies=counts[1],
                       relevant_articles=counts[2], body_articles=counts[3], metadata_only_articles=counts[2] - counts[3])
         if 'news_discovery_runs' in tables:
             result['entities_queried'] = con.execute("SELECT count(DISTINCT e.id) FROM news_discovery_runs r "
                 "JOIN jobs j ON j.id=r.job_id JOIN json_each(j.payload,'$.entity_ids') v JOIN entities e ON e.id=CAST(v.value AS TEXT) "
-                "WHERE j.kind='news_query'").fetchone()[0]
+                "WHERE j.kind='news_query' AND CAST(json_extract(j.payload,'$.bank_revision') AS TEXT)=?", (revision,)).fetchone()[0]
             result['excluded_records'] = con.execute("SELECT COALESCE(sum(max(0,COALESCE(json_extract(r.parser_metadata,'$.candidate_filter.excluded_records'),0))),0) "
-                "FROM news_discovery_runs r JOIN jobs j ON j.id=r.job_id WHERE j.kind='news_feed' OR EXISTS "
-                "(SELECT 1 FROM json_each(j.payload,'$.entity_ids') v JOIN entities e ON e.id=CAST(v.value AS TEXT))").fetchone()[0]
+                "FROM news_discovery_runs r JOIN jobs j ON j.id=r.job_id WHERE CAST(json_extract(j.payload,'$.bank_revision') AS TEXT)=? AND (j.kind='news_feed' OR EXISTS "
+                "(SELECT 1 FROM json_each(j.payload,'$.entity_ids') v JOIN entities e ON e.id=CAST(v.value AS TEXT)))", (revision,)).fetchone()[0]
         news_guard = 'AND d.id NOT IN (SELECT document_id FROM news_articles WHERE document_id IS NOT NULL)' if 'news_articles' in tables else ''
         local = con.execute("SELECT count(DISTINCT d.id),count(DISTINCT e.entity_id) FROM evidence e "
             "JOIN entities current ON current.id=e.entity_id JOIN documents d ON d.id=e.document_id "
             "WHERE d.source_kind NOT IN ('discovery','legacy') AND NOT COALESCE(json_extract(d.metadata,'$.discovery_only'),0) "
             "AND NOT COALESCE(json_extract(d.metadata,'$.requires_source_revalidation'),0) " + news_guard).fetchone()
         result.update(local_documents=local[0], local_entities_with_bodies=local[1])
+        store._news_acquisition_coverage_cache = (token, deepcopy(result))
+        result.update(session_fields)
     return result

@@ -1,0 +1,321 @@
+{
+  "recorded_at": "2026-10-16T05:07:45.914168+00:00",
+  "method": {
+    "live_transport": true,
+    "response_substitution": false,
+    "public_examples_only": true,
+    "body_download": false,
+    "identity_or_prediction_quality_validated": false,
+    "local_phase": "Real downloaded cache, DNS/TCP guarded; no synthesized HTTP responses"
+  },
+  "cases": [
+    {
+      "id": "epn",
+      "name": "Enrique Peña Nieto",
+      "kind": "person"
+    },
+    {
+      "id": "pemex",
+      "name": "Pemex",
+      "kind": "company"
+    },
+    {
+      "id": "bimbo",
+      "name": "Grupo Bimbo",
+      "kind": "company"
+    }
+  ],
+  "sources": [
+    "duckduckgo_web",
+    "mwmbl_web"
+  ],
+  "checks": {
+    "actual_search_responses_observed": true,
+    "no_dns_in_local_mode": true,
+    "no_tcp_in_local_mode": true,
+    "local_mode_did_not_add_candidates": true,
+    "local_mode_did_not_duplicate_observations": true,
+    "no_article_bodies_or_evidence_created": true,
+    "canonical_urls_unique": true,
+    "audit_ok": true,
+    "production_unchanged_during_run": true
+  },
+  "timings_seconds": {
+    "live": 21.01220745700266,
+    "local": 0.2304017569986172
+  },
+  "http_status_counts": {
+    "200": 7,
+    "404": 1
+  },
+  "http_events": [
+    {
+      "url": "https://html.duckduckgo.com/robots.txt",
+      "status": 200,
+      "decoded_bytes": 148,
+      "seconds": 0.199181
+    },
+    {
+      "url": "https://mwmbl.org/robots.txt",
+      "status": 404,
+      "decoded_bytes": 3750,
+      "seconds": 0.590906
+    },
+    {
+      "url": "https://html.duckduckgo.com/html/?q=Enrique+Pe%C3%B1a+Nieto",
+      "status": 200,
+      "decoded_bytes": 36774,
+      "seconds": 0.689084
+    },
+    {
+      "url": "https://mwmbl.org/api/v2/search/?q=Pemex",
+      "status": 200,
+      "decoded_bytes": 21033,
+      "seconds": 0.436023
+    },
+    {
+      "url": "https://html.duckduckgo.com/html/?q=Pemex",
+      "status": 200,
+      "decoded_bytes": 32919,
+      "seconds": 0.613659
+    },
+    {
+      "url": "https://mwmbl.org/api/v2/search/?q=Enrique+Pe%C3%B1a+Nieto",
+      "status": 200,
+      "decoded_bytes": 18231,
+      "seconds": 0.578234
+    },
+    {
+      "url": "https://html.duckduckgo.com/html/?q=Grupo+Bimbo",
+      "status": 200,
+      "decoded_bytes": 33606,
+      "seconds": 0.538426
+    },
+    {
+      "url": "https://mwmbl.org/api/v2/search/?q=Grupo+Bimbo",
+      "status": 200,
+      "decoded_bytes": 11358,
+      "seconds": 0.176027
+    }
+  ],
+  "counts_before_local": {
+    "news_articles": 132,
+    "documents": 0,
+    "evidence": 0,
+    "news_observations": 135,
+    "score_runs": 0
+  },
+  "counts_after_local": {
+    "news_articles": 132,
+    "documents": 0,
+    "evidence": 0,
+    "news_observations": 135,
+    "score_runs": 0
+  },
+  "coverage": {
+    "entities_total": 3,
+    "entities_queried": 3,
+    "entities_with_candidates": 3,
+    "entities_with_bodies": 0,
+    "body_articles": 0,
+    "relevant_articles": 132,
+    "metadata_only_articles": 132,
+    "excluded_records": 34,
+    "shared_pages_read": 0,
+    "shared_records_checked": 0,
+    "entities_checked_locally": 0,
+    "shared_pages_pending": 0,
+    "shared_pages_limited": 0,
+    "local_documents": 0,
+    "local_entities_with_bodies": 0,
+    "permissions": {
+      "prepared_sources": 2,
+      "body_authorized_sources": 0,
+      "discovery_only_sources": 2
+    },
+    "current_bank_index_ready": true,
+    "current_bank_revision": "1",
+    "session_matches_bank": true,
+    "session": {
+      "bank_revision": "1",
+      "bodies_new": 0,
+      "bodies_reused": 0,
+      "cache_mode": "local",
+      "duplicate_candidates": 135,
+      "excluded_records": 17,
+      "finished_at": "2026-10-16T05:07:45.903923+00:00",
+      "http_cache_hits": 6,
+      "id": "6088d1b1cb36456ebd09df8e8704a7ea",
+      "metadata_cache_hits": 0,
+      "network_requests": 0,
+      "scope_hash": "6239cf5ed99995f49600cdb3de5d7cc2445eb02cbada5e5d0211cc41987ebce4",
+      "started_at": "2026-10-16T05:07:45.677877+00:00"
+    }
+  },
+  "source_code_sha256": {
+    "relevance.py": "2c2fc48a62b5b88c0c7633486ef4f10010da17d9a6cd5fdac3a867078d2b9ebc",
+    "news_projection.py": "a895637979de365e9e7ff8435445207c9fd4a803fab35c86c42335f1863f23ca",
+    "social_discovery.py": "db994a48be023e555d07a40f51b862e1eab6a410be3a460d386eb1bb3442ab29",
+    "news.py": "12103164950948bfc00f0d05a74938bbabdfc19228477242203475e2b3617780",
+    "collector.py": "2776d429b9ec4e1d9630d244749fb1f03e0954551f83edf97d7be0b61b6359b9",
+    "news_session.py": "0460f0e9e32f112ed5349ef74cd2271d165811020b5679138531597198595a77",
+    "news_search.py": "a99c74f5aac14cd0ae0a36488c848e5ce7d56cf4537211d8a35746d8fb6ff6fa",
+    "official.py": "c864c512d84b06a1caf3b458c1cadf5820b805a2be7dc6f1c4c59cae0cfb66cf",
+    "identity.py": "f05524947d5b1d765803da6faa145f3b422a61a10971a1caca3c6983f3436d2f",
+    "sources.py": "f24351c8d22a194eef1cad8572e7fe33224bfb8b4e0cf2e4614f941b4814fc5d",
+    "importing.py": "54fc447531cecb986c3e4be4570d0d3f2280a4f86d5dd50e60c0109bf008e310",
+    "workflow.py": "9cd710346dc8b0c64b00a957cd4291276f163230053a0d77b72adf32c2c8243b",
+    "robots_policy.py": "33293cbaa7ca859ce37ae3104b8e84ab9478fb60e867d7643d88830513c2e453",
+    "contextual.py": "7713ec854c309e1f4ca807fb31f2b464af5495fbd05e4f77ca42865e4baa40d8",
+    "cli.py": "857805ccadf39ef6bedf6c808283b17805ea9274d65df8bd8952c0eeb39dbf31",
+    "nlp.py": "9b947a8ec53446fed346fc1ca3efbf2bb07224cb37640a2396fbbeb10cab6196",
+    "store.py": "6030daceba09890841044904d9bebf47cc1784fc3bd2b2dabed6a50e2e7506c7",
+    "advanced_nlp.py": "1ac3b13daeaef6b76da4f553bfe367604790c04d670d0f4a6418d0f2fbb547cc",
+    "__main__.py": "3129adff95e0f38b87ab34cddfc27082c7892bcaec267ff5d40f160fdf55b44a",
+    "public_search.py": "95713965eb905796fffb3024a7430808c9de425443f0fabc2ce3144982a189a3",
+    "scoring.py": "ff4e9e9f19cb0c781f02c06b68c2e2eaa00ee08f22dd8f71219fa5042879fe7e",
+    "engine.py": "3f1f948bd2860674aaf9422636b50e1a829e051f3456a0f43cee6bedac076b37",
+    "explainability.py": "5556420200f2d97436313af04c7d7303fbf008752bea4e38bc940838961b3b4e",
+    "__init__.py": "8b143d09730c86a9cadca233f1663dd1a24f53706730a94d621a537fcbb1905c",
+    "shared_crawl.py": "84644aba7017989031360e86598da0f4eb282fecfcd7f0cbe251fbe2fb842d3e",
+    "acquisition_coverage.py": "bda454eb0de2f640378b9ca5802dbbdcbad066e7a7a3b742cbf1d2b65fedbf26",
+    "app.py": "ed62327646d664e903a533e4d52f7f76b07d0969016cf525f66e2cef45710e63",
+    "context_model.py": "ada181d47cc0bd45c4bb3124db9920ee52fdb4e7115643a582c05f56de30a59b",
+    "shared_discovery.py": "9b192dbb3dea8a0595a97109a877ef1443d1c8739510087172e3ee84a60a9fe2"
+  },
+  "limitations": [
+    "Bounded discovery sample; coverage and relevance require review.",
+    "Metadata excerpts are not article text or verified identity.",
+    "Local cache reflects previous acquisitions, not current internet coverage."
+  ],
+  "live_session": {
+    "id": "d3cd255fda65431c89beb9e546d091c9",
+    "started_at": "2026-10-16T05:07:24.664858+00:00",
+    "finished_at": "2026-10-16T05:07:45.673225+00:00",
+    "cache_mode": "reuse",
+    "network_requests": 8,
+    "http_cache_hits": 0,
+    "metadata_cache_hits": 0,
+    "bodies_new": 0,
+    "bodies_reused": 0,
+    "duplicate_candidates": 3,
+    "excluded_records": 17,
+    "bank_revision": "1",
+    "scope_hash": "6239cf5ed99995f49600cdb3de5d7cc2445eb02cbada5e5d0211cc41987ebce4"
+  },
+  "local_session": {
+    "id": "6088d1b1cb36456ebd09df8e8704a7ea",
+    "started_at": "2026-10-16T05:07:45.677877+00:00",
+    "finished_at": "2026-10-16T05:07:45.903923+00:00",
+    "cache_mode": "local",
+    "network_requests": 0,
+    "http_cache_hits": 6,
+    "metadata_cache_hits": 0,
+    "bodies_new": 0,
+    "bodies_reused": 0,
+    "duplicate_candidates": 135,
+    "excluded_records": 17,
+    "bank_revision": "1",
+    "scope_hash": "6239cf5ed99995f49600cdb3de5d7cc2445eb02cbada5e5d0211cc41987ebce4"
+  },
+  "observed_query_counts": {
+    "live_acquisition": {
+      "processed": 16,
+      "completed": 6,
+      "pending": 0,
+      "failed": 0,
+      "stop_reason": "completed"
+    },
+    "local_acquisition": {
+      "processed": 6,
+      "completed": 6,
+      "pending": 0,
+      "failed": 0,
+      "stop_reason": "completed"
+    }
+  },
+  "captured_editorial_body_regression": {
+    "recorded_at": "2026-10-16T05:07:25.356618+00:00",
+    "method": "Offline replay of actual previously captured 19 editorial HTML bodies; constructed fetch receipts, not actual HTTP 304. Original bank unchanged.",
+    "seconds": 0.5362907369999448,
+    "before": {
+      "documents": 49,
+      "evidence": 52,
+      "score_runs": 16,
+      "scores": 8
+    },
+    "after": {
+      "documents": 49,
+      "evidence": 52,
+      "score_runs": 16,
+      "scores": 8
+    },
+    "first_attribute": {
+      "articles_processed": 0,
+      "identity_links": {},
+      "entities_scored": 0,
+      "entities_affected": 0,
+      "pending": 0,
+      "cancelled": false,
+      "identity_module": "es-mx-identity-indexed-1.0.0",
+      "name_only_is_not_unique_identity": true,
+      "reextraction": {
+        "examined": 0
+      }
+    },
+    "repeated_attribute": {
+      "articles_processed": 0,
+      "identity_links": {},
+      "entities_scored": 0,
+      "entities_affected": 0,
+      "pending": 0,
+      "cancelled": false,
+      "identity_module": "es-mx-identity-indexed-1.0.0",
+      "name_only_is_not_unique_identity": true,
+      "reextraction": {
+        "examined": 0
+      }
+    },
+    "checks": {
+      "no_dns": true,
+      "no_tcp": true,
+      "no_documents_evidence_or_runs_added": true,
+      "all_captured_bodies_unchanged": true,
+      "no_redundant_attribution": true,
+      "all_eight_existing_runs_replay": true,
+      "audit_ok": true,
+      "source_code_stable": true
+    },
+    "source_code_sha256": {
+      "relevance.py": "2c2fc48a62b5b88c0c7633486ef4f10010da17d9a6cd5fdac3a867078d2b9ebc",
+      "news_projection.py": "a895637979de365e9e7ff8435445207c9fd4a803fab35c86c42335f1863f23ca",
+      "social_discovery.py": "db994a48be023e555d07a40f51b862e1eab6a410be3a460d386eb1bb3442ab29",
+      "news.py": "12103164950948bfc00f0d05a74938bbabdfc19228477242203475e2b3617780",
+      "collector.py": "2776d429b9ec4e1d9630d244749fb1f03e0954551f83edf97d7be0b61b6359b9",
+      "news_session.py": "0460f0e9e32f112ed5349ef74cd2271d165811020b5679138531597198595a77",
+      "news_search.py": "a99c74f5aac14cd0ae0a36488c848e5ce7d56cf4537211d8a35746d8fb6ff6fa",
+      "official.py": "c864c512d84b06a1caf3b458c1cadf5820b805a2be7dc6f1c4c59cae0cfb66cf",
+      "identity.py": "f05524947d5b1d765803da6faa145f3b422a61a10971a1caca3c6983f3436d2f",
+      "sources.py": "f24351c8d22a194eef1cad8572e7fe33224bfb8b4e0cf2e4614f941b4814fc5d",
+      "importing.py": "54fc447531cecb986c3e4be4570d0d3f2280a4f86d5dd50e60c0109bf008e310",
+      "workflow.py": "9cd710346dc8b0c64b00a957cd4291276f163230053a0d77b72adf32c2c8243b",
+      "robots_policy.py": "33293cbaa7ca859ce37ae3104b8e84ab9478fb60e867d7643d88830513c2e453",
+      "contextual.py": "7713ec854c309e1f4ca807fb31f2b464af5495fbd05e4f77ca42865e4baa40d8",
+      "cli.py": "857805ccadf39ef6bedf6c808283b17805ea9274d65df8bd8952c0eeb39dbf31",
+      "nlp.py": "9b947a8ec53446fed346fc1ca3efbf2bb07224cb37640a2396fbbeb10cab6196",
+      "store.py": "6030daceba09890841044904d9bebf47cc1784fc3bd2b2dabed6a50e2e7506c7",
+      "advanced_nlp.py": "1ac3b13daeaef6b76da4f553bfe367604790c04d670d0f4a6418d0f2fbb547cc",
+      "__main__.py": "3129adff95e0f38b87ab34cddfc27082c7892bcaec267ff5d40f160fdf55b44a",
+      "public_search.py": "95713965eb905796fffb3024a7430808c9de425443f0fabc2ce3144982a189a3",
+      "scoring.py": "ff4e9e9f19cb0c781f02c06b68c2e2eaa00ee08f22dd8f71219fa5042879fe7e",
+      "engine.py": "3f1f948bd2860674aaf9422636b50e1a829e051f3456a0f43cee6bedac076b37",
+      "explainability.py": "5556420200f2d97436313af04c7d7303fbf008752bea4e38bc940838961b3b4e",
+      "__init__.py": "8b143d09730c86a9cadca233f1663dd1a24f53706730a94d621a537fcbb1905c",
+      "shared_crawl.py": "84644aba7017989031360e86598da0f4eb282fecfcd7f0cbe251fbe2fb842d3e",
+      "acquisition_coverage.py": "bda454eb0de2f640378b9ca5802dbbdcbad066e7a7a3b742cbf1d2b65fedbf26",
+      "app.py": "ed62327646d664e903a533e4d52f7f76b07d0969016cf525f66e2cef45710e63",
+      "context_model.py": "ada181d47cc0bd45c4bb3124db9920ee52fdb4e7115643a582c05f56de30a59b",
+      "shared_discovery.py": "9b192dbb3dea8a0595a97109a877ef1443d1c8739510087172e3ee84a60a9fe2"
+    }
+  }
+}

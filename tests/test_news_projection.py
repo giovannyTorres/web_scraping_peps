@@ -1,0 +1,331 @@
+"""Current-bank coverage is a derived cache, never historical ID membership."""
+import json
+import tempfile
+import time
+import unittest
+from unittest.mock import patch
+
+from peps.acquisition_coverage import acquisition_coverage
+from peps.engine import Engine
+from peps.news import NewsAcquirer
+from peps.news_projection import ensure_projection, projection_ready, update_projection
+from peps.relevance import RelevanceIndex
+from peps.store import canonical, now
+
+
+class NewsProjectionTests(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.engine = Engine(self.temp.name)
+        self.store = self.engine.store
+        self.news = NewsAcquirer(self.engine)
+        self.entities = [{'id': 'one', 'name': 'Primera Persona Sintética'},
+                         {'id': 'two', 'name': 'Segunda Persona Sintética'}]
+        self.store.import_entities(self.entities)
+        self.serial = 0
+
+    def index(self):
+        return RelevanceIndex(self.store.iter_entities())
+
+    def article(self, title='Primera Persona Sintética compareció.', summary=''):
+        self.serial += 1
+        article = f'article-{self.serial:05}'
+        with self.store.connection() as con:
+            con.execute('INSERT INTO news_articles(id,canonical_url,publisher_id,source_id,title,summary,discovered_at,scope,status) '
+                        'VALUES(?,?,?,?,?,?,?,?,?)',
+                        (article, f'https://synthetic.invalid/{article}', 'synthetic', 'synthetic', title, summary,
+                         now(), 'feed_metadata_only', 'discovered'))
+        return article
+
+    def observe(self, article, title, *, update=True, ids=None):
+        self.serial += 1
+        candidate = self.index().rank(title, '')
+        if ids is not None:
+            candidate.update(relevant=bool(ids), entity_ids=ids)
+        with self.store.connection() as con:
+            con.execute('INSERT INTO news_observations(id,article_id,source_id,discovery_url,observed_url,retrieved_at,details) '
+                        'VALUES(?,?,?,?,?,?,?)', (f'observation-{self.serial:05}', article, 'synthetic',
+                        'https://synthetic.invalid/feed', f'https://synthetic.invalid/{article}', now(),
+                        canonical({'title': title, 'summary': '', 'retrieval_relevance': candidate})))
+            if update:
+                revision = con.execute("SELECT value FROM meta WHERE key='news_identity_revision'").fetchone()[0]
+                update_projection(con, article, candidate, bank_revision=revision)
+
+    def coverage(self):
+        return acquisition_coverage(self.store, [])
+
+    def rebuild(self):
+        return ensure_projection(self.news, self.index())
+
+    def test_unbuilt_projection_does_not_trust_old_observation_entity_ids(self):
+        article = self.article('Nota general sin nombre actual.')
+        self.observe(article, 'Nota antigua', update=False, ids=['one'])
+        before = self.coverage()
+        self.assertFalse(before['current_bank_index_ready'])
+        self.assertEqual(before['entities_with_candidates'], 0)
+        self.assertTrue(self.rebuild())
+        self.assertTrue(self.coverage()['current_bank_index_ready'])
+        self.assertEqual(self.coverage()['entities_with_candidates'], 0)
+
+    def test_same_id_renamed_bank_drops_stale_candidates_and_preserves_raw_history(self):
+        article = self.article()
+        self.observe(article, 'Primera Persona Sintética compareció.')
+        self.assertEqual(self.coverage()['entities_with_candidates'], 1)
+        with self.store.connection() as con:
+            raw = [tuple(row) for row in con.execute('SELECT * FROM news_observations')]
+        self.store.import_entities([{'id': 'one', 'name': 'Persona Completamente Distinta'}])
+        self.assertFalse(self.coverage()['current_bank_index_ready'])
+        self.assertEqual(self.coverage()['entities_with_candidates'], 0)
+        self.assertTrue(self.rebuild())
+        self.assertEqual(self.coverage()['entities_with_candidates'], 0)
+        with self.store.connection() as con:
+            self.assertEqual([tuple(row) for row in con.execute('SELECT * FROM news_observations')], raw)
+        self.assertTrue(self.store.verify_audit()['ok'])
+
+    def test_new_bank_id_can_match_stored_metadata_without_network_or_nlp(self):
+        article = self.article('Tercera Persona Sintética presentó informe.')
+        self.observe(article, 'Tercera Persona Sintética presentó informe.')
+        self.rebuild()
+        self.store.import_entities([{'id': 'three', 'name': 'Tercera Persona Sintética'}])
+        with patch('peps.nlp.analyze', side_effect=AssertionError('NLP on coverage')), \
+             patch('socket.create_connection', side_effect=AssertionError('network on projection')):
+            self.assertTrue(self.rebuild())
+            self.assertEqual(self.coverage()['entities_with_candidates'], 1)
+        with self.store.connection() as con:
+            self.assertEqual([row[0] for row in con.execute('SELECT entity_id FROM news_current_candidates')], ['three'])
+
+    def test_relevant_article_view_uses_current_projection_after_same_id_rename(self):
+        article = self.article()
+        self.observe(article, 'Primera Persona Sintética compareció.')
+        self.assertEqual([row['id'] for row in self.news.articles(relevant_only=True)], [article])
+        self.store.import_entities([{'id': 'one', 'name': 'Persona Completamente Distinta'}])
+        self.assertEqual(self.news.articles(relevant_only=True), [])
+        self.assertEqual([row['id'] for row in self.news.articles()], [article])
+        self.assertTrue(self.rebuild())
+        self.assertEqual(self.news.articles(relevant_only=True), [])
+        self.observe(article, 'Persona Completamente Distinta compareció.')
+        self.assertEqual([row['id'] for row in self.news.articles(relevant_only=True)], [article])
+
+    def test_repeated_url_observations_add_ids_without_overwriting_previous_candidate(self):
+        article = self.article()
+        self.observe(article, 'Primera Persona Sintética compareció.')
+        self.observe(article, 'Segunda Persona Sintética compareció.')
+        value = self.coverage()
+        self.assertTrue(value['current_bank_index_ready'])
+        self.assertEqual(value['entities_with_candidates'], 2)
+        self.assertEqual(value['relevant_articles'], 1)
+        with self.store.connection() as con:
+            pairs = {row[0] for row in con.execute('SELECT entity_id FROM news_current_candidates')}
+        self.assertEqual(pairs, {'one', 'two'})
+
+    def test_candidate_from_old_bank_cannot_be_stamped_as_current_after_same_id_rename(self):
+        old_index = self.index()
+        with self.store.connection() as con:
+            old_revision = con.execute("SELECT value FROM meta WHERE key='news_identity_revision'").fetchone()[0]
+        stale = old_index.rank('Primera Persona Sintética compareció.', '')
+        self.store.import_entities([{'id': 'one', 'name': 'Persona Completamente Distinta'}])
+        article = self.article()
+        with self.store.connection() as con:
+            update_projection(con, article, stale, bank_revision=old_revision)
+        value = self.coverage()
+        self.assertFalse(value['current_bank_index_ready'])
+        self.assertEqual(value['entities_with_candidates'], 0)
+        self.rebuild()
+        self.assertEqual(self.coverage()['entities_with_candidates'], 0)
+
+    def test_candidate_with_unknown_bank_provenance_requests_local_rebuild(self):
+        article = self.article()
+        self.rebuild()
+        with self.store.connection() as con:
+            update_projection(con, article, self.index().rank('Primera Persona Sintética compareció.', ''))
+        self.assertFalse(self.coverage()['current_bank_index_ready'])
+        self.assertEqual(self.coverage()['entities_with_candidates'], 0)
+        self.rebuild()
+        self.assertEqual(self.coverage()['entities_with_candidates'], 1)
+
+    def test_rebuild_preserves_all_current_ids_from_latest_unique_snippets(self):
+        article = self.article()
+        self.observe(article, 'Primera Persona Sintética compareció.', update=False)
+        self.observe(article, 'Segunda Persona Sintética compareció.', update=False)
+        self.assertTrue(self.rebuild())
+        self.assertEqual(self.coverage()['entities_with_candidates'], 2)
+
+    def test_malformed_observation_details_are_skipped_without_altering_raw_history(self):
+        article = self.article('Nota general sin personas.')
+        self.observe(article, 'Segunda Persona Sintética compareció.', update=False)
+        with self.store.connection() as con:
+            for identifier, details in (('broken-json', '{incomplete'), ('list-json', '[]'),
+                                        ('null-json', 'null'), ('string-json', '"legacy text"')):
+                con.execute('INSERT INTO news_observations(id,article_id,source_id,discovery_url,observed_url,retrieved_at,details) '
+                            'VALUES(?,?,?,?,?,?,?)', (identifier, article, 'synthetic',
+                            'https://synthetic.invalid/feed', f'https://synthetic.invalid/{article}', now(), details))
+            original = [tuple(row) for row in con.execute('SELECT * FROM news_observations ORDER BY id')]
+        self.assertTrue(self.rebuild())
+        value = self.coverage()
+        self.assertTrue(value['current_bank_index_ready'])
+        self.assertEqual(value['entities_with_candidates'], 1)
+        self.assertEqual(value['relevant_articles'], 1)
+        with self.store.connection() as con:
+            self.assertEqual([tuple(row) for row in con.execute('SELECT * FROM news_observations ORDER BY id')], original)
+            self.assertEqual([row[0] for row in con.execute('SELECT entity_id FROM news_current_candidates')], ['two'])
+        self.assertTrue(self.store.verify_audit()['ok'])
+
+    def test_rebuild_is_once_per_bank_and_relevance_model_version(self):
+        self.article()
+        with patch.object(self.news, '_stored_candidate', wraps=self.news._stored_candidate) as ranked:
+            self.assertTrue(self.rebuild())
+            self.assertTrue(self.rebuild())
+            self.assertEqual(ranked.call_count, 1)
+            with patch('peps.relevance.MODEL_VERSION', 'synthetic-next-model'):
+                self.assertFalse(self.coverage()['current_bank_index_ready'])
+                self.assertTrue(self.rebuild())
+                self.assertEqual(ranked.call_count, 2)
+        with self.store.connection() as con:
+            audits = [json.loads(row[0]) for row in con.execute(
+                "SELECT payload FROM audit WHERE action='news_current_candidates_rebuilt'")]
+        self.assertEqual(len(audits), 2)
+        self.assertEqual(audits[-1]['articles_checked'], 1)
+        self.assertEqual(audits[-1]['candidate_pairs'], 1)
+
+    def test_cancelled_rebuild_rolls_back_derived_rows_and_ready_marker(self):
+        first = self.article()
+        self.observe(first, 'Primera Persona Sintética compareció.')
+        self.article('Segunda Persona Sintética compareció.')
+        self.store.import_entities([{'id': 'one', 'name': 'Persona Completamente Distinta'}])
+        original = self.news._stored_candidate
+        def cancel_after_one(*args, **kwargs):
+            result = original(*args, **kwargs)
+            self.engine.stop_event.set()
+            return result
+        with patch.object(self.news, '_stored_candidate', side_effect=cancel_after_one):
+            self.assertFalse(self.rebuild())
+        self.assertFalse(self.coverage()['current_bank_index_ready'])
+        with self.store.connection() as con:
+            self.assertEqual(con.execute('SELECT count(*) FROM news_current_candidates').fetchone()[0], 1)
+            self.assertEqual(con.execute("SELECT count(*) FROM audit WHERE action='news_current_candidates_rebuilt'").fetchone()[0], 0)
+        self.engine.stop_event.clear()
+        self.assertTrue(self.rebuild())
+        self.assertEqual(self.coverage()['entities_with_candidates'], 1)
+
+    def test_expired_deadline_does_not_publish_partial_projection(self):
+        self.article()
+        self.assertFalse(ensure_projection(self.news, self.index(), deadline=time.monotonic() - 1))
+        with self.store.connection() as con:
+            self.assertFalse(projection_ready(con))
+            self.assertEqual(con.execute('SELECT count(*) FROM news_current_candidates').fetchone()[0], 0)
+
+    def test_sqlite_writer_deadline_is_a_controlled_incomplete_rebuild(self):
+        self.article()
+        with self.store.connection() as writer:
+            writer.execute('BEGIN IMMEDIATE')
+            start = time.monotonic()
+            self.assertFalse(ensure_projection(self.news, self.index(), deadline=start + .05))
+            self.assertLess(time.monotonic() - start, .5)
+        self.assertFalse(self.coverage()['current_bank_index_ready'])
+        self.assertTrue(self.rebuild())
+
+    def test_current_identity_links_count_but_missing_stale_and_rejected_do_not(self):
+        document = self.store.add_document({'url': 'https://synthetic.invalid/body', 'text': 'Texto de prueba.',
+                                           'source_kind': 'news'}, [], lambda *_: {})
+        article = self.article('Nota general')
+        with self.store.connection() as con:
+            revision = int(con.execute("SELECT value FROM meta WHERE key='news_identity_revision'").fetchone()[0])
+            con.execute("UPDATE news_articles SET document_id=?,scope='full_article' WHERE id=?", (document, article))
+            con.execute('INSERT INTO news_identity_links VALUES(?,?,?)',
+                        (document, 'one', canonical({'status': 'candidate', 'bank_revision': revision - 1})))
+            con.execute('INSERT INTO news_identity_links VALUES(?,?,?)',
+                        (document, 'two', canonical({'status': 'candidate'})))
+        self.assertEqual(self.coverage()['entities_with_bodies'], 0)
+        with self.store.connection() as con:
+            con.execute('UPDATE news_identity_links SET resolution=? WHERE entity_id=?',
+                        (canonical({'status': 'candidate', 'bank_revision': revision}), 'one'))
+            con.execute('UPDATE news_identity_links SET resolution=? WHERE entity_id=?',
+                        (canonical({'status': 'rejected', 'bank_revision': revision}), 'two'))
+        self.assertEqual(self.coverage()['entities_with_bodies'], 1)
+        expected = self.coverage()
+        self.store._audit_json = False
+        self.assertEqual(self.coverage(), expected)
+
+    def test_read_cache_is_invalidated_by_observation_and_returns_independent_values(self):
+        article = self.article()
+        self.observe(article, 'Primera Persona Sintética compareció.')
+        import peps.acquisition_coverage as coverage_module
+        with patch.object(coverage_module, '_shared_coverage', wraps=coverage_module._shared_coverage) as counted:
+            initial = self.coverage()
+            initial['permissions']['prepared_sources'] = 999
+            second = self.coverage()
+            self.assertEqual(counted.call_count, 1)
+            self.assertEqual(second['permissions']['prepared_sources'], 0)
+            self.observe(article, 'Segunda Persona Sintética compareció.')
+            self.assertEqual(self.coverage()['entities_with_candidates'], 2)
+            self.assertEqual(counted.call_count, 2)
+
+    def test_session_heartbeats_are_current_without_recomputing_coverage(self):
+        self.article()
+        self.rebuild()
+        import peps.acquisition_coverage as coverage_module
+        with patch.object(coverage_module, '_shared_coverage', wraps=coverage_module._shared_coverage) as counted:
+            self.assertIsNone(self.coverage()['session'])
+            for elapsed in (1, 2):
+                with self.store.connection() as con:
+                    con.execute('INSERT INTO meta VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value',
+                                ('news_last_session', canonical({'elapsed_seconds': elapsed, 'nested': {'value': elapsed}})))
+                result = self.coverage()
+                self.assertEqual(result['session']['elapsed_seconds'], elapsed)
+                result['session']['nested']['value'] = 'mutated'
+            self.assertEqual(counted.call_count, 1)
+            self.assertEqual(self.coverage()['session']['nested']['value'], 2)
+
+    def test_session_bank_match_refreshes_on_same_id_rename_and_session_heartbeat(self):
+        with self.store.connection() as con:
+            revision = con.execute("SELECT value FROM meta WHERE key='news_identity_revision'").fetchone()[0]
+            con.execute('INSERT INTO meta VALUES(?,?)', ('news_last_session', canonical({'bank_revision': revision})))
+        import peps.acquisition_coverage as coverage_module
+        with patch.object(coverage_module, '_shared_coverage', wraps=coverage_module._shared_coverage) as counted:
+            first = self.coverage()
+            self.assertEqual(first['current_bank_revision'], revision)
+            self.assertIs(first['session_matches_bank'], True)
+            self.assertIs(self.coverage()['session_matches_bank'], True)
+            self.assertEqual(counted.call_count, 1)
+            self.store.import_entities([{'id': 'one', 'name': 'Persona Completamente Distinta'}])
+            renamed = self.coverage()
+            self.assertNotEqual(renamed['current_bank_revision'], revision)
+            self.assertIs(renamed['session_matches_bank'], False)
+            self.assertEqual(renamed['session']['bank_revision'], revision)
+            self.assertEqual(counted.call_count, 2)
+            with self.store.connection() as con:
+                con.execute('UPDATE meta SET value=? WHERE key=?',
+                            (canonical({'bank_revision': int(renamed['current_bank_revision'])}), 'news_last_session'))
+            self.assertIs(self.coverage()['session_matches_bank'], True)
+            self.assertEqual(counted.call_count, 2)
+            self.store._audit_json = False
+            self.assertIs(self.coverage()['session_matches_bank'], True)
+
+    def test_session_bank_match_is_unknown_when_unmeasured_or_revision_absent(self):
+        self.assertIsNone(self.coverage()['session_matches_bank'])
+        for payload in ({}, {'bank_revision': None}, [], 'invalid'):
+            with self.subTest(payload=payload):
+                with self.store.connection() as con:
+                    con.execute('INSERT INTO meta VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value',
+                                ('news_last_session', canonical(payload)))
+                self.assertIsNone(self.coverage()['session_matches_bank'])
+                self.assertIsNotNone(self.coverage()['current_bank_revision'])
+
+    def test_directed_search_receipts_do_not_survive_renaming_same_entity_id(self):
+        with self.store.connection() as con:
+            revision = con.execute("SELECT value FROM meta WHERE key='news_identity_revision'").fetchone()[0]
+        job = self.store.enqueue('news_query', {'entity_ids': ['one'], 'bank_revision': revision}, key='completed')
+        with self.store.connection() as con:
+            con.execute('INSERT INTO news_discovery_runs VALUES(?,?,?,?,?,?,?,?)',
+                        (job, 'synthetic', 'news_query', 'https://synthetic.invalid/search', 0,
+                         canonical({'candidate_filter': {'excluded_records': 3}}), 'hash', now()))
+        self.assertEqual(self.coverage()['entities_queried'], 1)
+        self.store.import_entities([{'id': 'one', 'name': 'Persona Completamente Distinta'}])
+        value = self.coverage()
+        self.assertEqual(value['entities_queried'], 0)
+        self.assertEqual(value['excluded_records'], 0)
+
+
+if __name__ == '__main__':
+    unittest.main()

@@ -129,6 +129,8 @@ def main():
             news_parser.add_argument('--max-tasks', type=int, default=1000)
             news_parser.add_argument('--all-articles', action='store_true', help='Descargar cuerpos permitidos sin prefiltrar por banco')
             news_parser.add_argument('--no-queue', action='store_true')
+            news_parser.add_argument('--cache-mode', choices=('reuse', 'revalidate', 'local'), default='reuse',
+                                     help='Reutilizar copias, comprobar cambios o trabajar sin red')
         if name == 'news-attribute':
             news_parser.add_argument('--limit', type=int, default=1000)
             news_parser.add_argument('--force', action='store_true')
@@ -162,7 +164,8 @@ def main():
             result = news.queue(start=args.start, end=args.end)
         elif command == 'news-acquire':
             result = news.acquire(workers=args.workers, seconds=args.seconds, max_articles=args.max_tasks,
-                                  download_all=args.all_articles, queue=not args.no_queue, start=args.start, end=args.end)
+                                  download_all=args.all_articles, queue=not args.no_queue, start=args.start, end=args.end,
+                                  cache_mode=args.cache_mode)
         elif command == 'news-attribute':
             result = news.attribute(limit=args.limit, force=args.force)
         elif command == 'news-stats':

@@ -1,0 +1,430 @@
+{
+  "schema_version": 1,
+  "version": "2.9.0",
+  "recorded_at_utc": "2026-10-16T04:40:10.418788+00:00",
+  "method": {
+    "real_http": true,
+    "inherited_proxy": true,
+    "tls_verified": true,
+    "public_examples_only": true,
+    "developer_accounts_or_keys": false,
+    "response_substitution": false,
+    "editorial_bodies_downloaded": false,
+    "raw_response_bodies_exported": false,
+    "sensitive_response_headers_exported": false,
+    "precision_recall_or_identity_validated": false
+  },
+  "web_search_observations": [
+    {
+      "provider": "duckduckgo_html",
+      "query_url": "https://html.duckduckgo.com/html/?q=%22Enrique+Pe%C3%B1a+Nieto%22",
+      "retrieved_at_utc": "2026-10-16T04:26:05.552672+00:00",
+      "response_body_sha256": "cd63526fa5381e8fa5c829b8d81d7c8111073daa2c3ae13397dea0b83c44c25b",
+      "response": {
+        "http_status": 200,
+        "wire_bytes": 6563,
+        "decoded_bytes": 37285,
+        "elapsed_seconds": 0.6827682869989076
+      },
+      "parser_limit_for_inspection": 100,
+      "retained_https_records": 10,
+      "parse_metadata": {
+        "observed_entries": 11,
+        "truncated": false,
+        "excluded_unsafe_or_non_https_urls": 1,
+        "scope": "public_web_top_results",
+        "publication_dates": "unknown",
+        "complete_archive": false,
+        "discovery_only": true
+      }
+    },
+    {
+      "provider": "duckduckgo_html",
+      "query_url": "https://html.duckduckgo.com/html/?q=%22Pemex%22+investigaci%C3%B3n",
+      "retrieved_at_utc": "2026-10-16T04:28:16.025142+00:00",
+      "response_body_sha256": "de92590a35e7ad1ad8dde3f4ca1cc2919d6e4df62fa41236b8b5a3ff09028f8d",
+      "response": {
+        "http_status": 200,
+        "wire_bytes": 6633,
+        "decoded_bytes": 36168,
+        "elapsed_seconds": 0.7173958290004521
+      },
+      "parser_limit_for_inspection": 100,
+      "retained_https_records": 10,
+      "parse_metadata": {
+        "observed_entries": 10,
+        "truncated": false,
+        "excluded_unsafe_or_non_https_urls": 0,
+        "scope": "public_web_top_results",
+        "publication_dates": "unknown",
+        "complete_archive": false,
+        "discovery_only": true
+      }
+    },
+    {
+      "provider": "duckduckgo_lite",
+      "query_url": "https://lite.duckduckgo.com/lite/?q=%22Enrique+Pe%C3%B1a+Nieto%22",
+      "retrieved_at_utc": "2026-10-16T04:26:05.492477+00:00",
+      "response_body_sha256": "6485a74569147c09a476d6ff63cd053d407d4304b63b042eb0e73a40ecd56e40",
+      "response": {
+        "http_status": 200,
+        "wire_bytes": 5591,
+        "decoded_bytes": 26342,
+        "elapsed_seconds": 0.6411235380001017
+      },
+      "parser_limit_for_inspection": 100,
+      "retained_https_records": 10,
+      "parse_metadata": {
+        "observed_entries": 11,
+        "truncated": false,
+        "excluded_unsafe_or_non_https_urls": 1,
+        "scope": "public_web_top_results",
+        "publication_dates": "unknown",
+        "complete_archive": false,
+        "discovery_only": true
+      }
+    },
+    {
+      "provider": "mwmbl",
+      "query_url": "https://mwmbl.org/api/v2/search/?q=Enrique+Pe%C3%B1a+Nieto",
+      "retrieved_at_utc": "2026-10-16T04:26:05.457368+00:00",
+      "response_body_sha256": "d41dfa707ffd4a5d8aa81bc26ef7c6706a3bffe51aeab733b674265540effb79",
+      "response": {
+        "http_status": 200,
+        "wire_bytes": 4241,
+        "decoded_bytes": 16531,
+        "elapsed_seconds": 0.38476679099403555
+      },
+      "parser_limit_for_inspection": 100,
+      "retained_https_records": 31,
+      "parse_metadata": {
+        "observed_entries": 48,
+        "truncated": false,
+        "excluded_unsafe_or_non_https_urls": 17,
+        "scope": "public_web_top_results",
+        "publication_dates": "unknown",
+        "complete_archive": false,
+        "discovery_only": true
+      }
+    },
+    {
+      "provider": "mwmbl",
+      "query_url": "https://mwmbl.org/api/v2/search/?q=Pemex",
+      "retrieved_at_utc": "2026-10-16T04:28:15.999342+00:00",
+      "response_body_sha256": "288353a8d4f4e215e13f12da517b6a296aba685ac1836ea205b565794d1a76fd",
+      "response": {
+        "http_status": 200,
+        "wire_bytes": 4509,
+        "decoded_bytes": 19371,
+        "elapsed_seconds": 0.5778793359932024
+      },
+      "parser_limit_for_inspection": 100,
+      "retained_https_records": 55,
+      "parse_metadata": {
+        "observed_entries": 74,
+        "truncated": false,
+        "excluded_unsafe_or_non_https_urls": 19,
+        "scope": "public_web_top_results",
+        "publication_dates": "unknown",
+        "complete_archive": false,
+        "discovery_only": true
+      }
+    }
+  ],
+  "robots_requests": [
+    {
+      "url": "https://html.duckduckgo.com/robots.txt",
+      "occurred_at": "2026-10-16T04:26:00.082723+00:00",
+      "http_status": 200,
+      "elapsed_seconds": 0.31833091000589775,
+      "wire_bytes": 138,
+      "decoded_bytes": 148
+    },
+    {
+      "url": "https://lite.duckduckgo.com/robots.txt",
+      "occurred_at": "2026-10-16T04:25:59.948721+00:00",
+      "http_status": 200,
+      "elapsed_seconds": 0.2508351799988304,
+      "wire_bytes": 137,
+      "decoded_bytes": 148
+    },
+    {
+      "url": "https://www.bing.com/robots.txt",
+      "occurred_at": "2026-10-16T04:26:00.014429+00:00",
+      "http_status": 200,
+      "elapsed_seconds": 0.3557234980034991,
+      "wire_bytes": 982,
+      "decoded_bytes": 2676
+    },
+    {
+      "url": "https://index.commoncrawl.org/robots.txt",
+      "occurred_at": "2026-10-16T04:26:00.174217+00:00",
+      "http_status": 200,
+      "elapsed_seconds": 0.3288650760005112,
+      "wire_bytes": 181,
+      "decoded_bytes": 181
+    },
+    {
+      "url": "https://web.archive.org/robots.txt",
+      "occurred_at": "2026-10-16T04:26:00.336927+00:00",
+      "http_status": 404,
+      "elapsed_seconds": 0.41458645399688976,
+      "wire_bytes": 146,
+      "decoded_bytes": 146
+    },
+    {
+      "url": "https://mwmbl.org/robots.txt",
+      "occurred_at": "2026-10-16T04:26:00.452445+00:00",
+      "http_status": 404,
+      "elapsed_seconds": 0.5510289359954186,
+      "wire_bytes": 1523,
+      "decoded_bytes": 3750
+    }
+  ],
+  "searches_not_sent": [
+    {
+      "provider": "BingRSS",
+      "query_url": "https://www.bing.com/search?q=%22Enrique+Pe%C3%B1a+Nieto%22&format=rss",
+      "reason": "robots Disallow:/search; no query was issued"
+    },
+    {
+      "provider": "SearXNG public instance",
+      "query_url": "https://opnxng.com/search?q=Enrique+Pe%C3%B1a+Nieto&format=json",
+      "reason": "robots wildcard denies q query; no POST alternative or instance rotation",
+      "robots_url": "https://opnxng.com/robots.txt",
+      "robots_http_status": 200,
+      "robots_elapsed_seconds": 10.507,
+      "robots_body_sha256": "ca3705e5ba57898518005c646d91c7cb9c5afd008283d25b4f8085e6d2a64acd",
+      "json_support": "unknown; not queried"
+    }
+  ],
+  "archive_probes": [
+    {
+      "service": "Common Crawl",
+      "url": "https://index.commoncrawl.org/collinfo.json",
+      "query_sent": false,
+      "reason": "older stdlib matcher incorrectly refused anchored Allow over Disallow:/; metadata endpoint was not fetched. URL/capture index is not full-text web search."
+    },
+    {
+      "service": "Internet Archive CDX",
+      "url": "https://web.archive.org/cdx/search/cdx?url=example.com&output=json&limit=2&filter=statuscode%3A200&fl=timestamp%2Coriginal%2Cstatuscode",
+      "status": "timeout",
+      "http_status": null,
+      "request_timeout_seconds": 12,
+      "retried": false,
+      "note": "URL capture query, not a query against all archived article text"
+    }
+  ],
+  "lemmy_public_probe": {
+    "scope": "real production SafeFetcher+sources.parse_results; inherited proxy, verified TLS, robots and60sec courtesy, no fixtures",
+    "observed_at_utc": "2026-10-16T04:35:57.172244+00:00",
+    "query_url": "https://lemmy.ml/api/v3/search?q=Enrique+Pe%C3%B1a+Nieto&type_=Posts&sort=TopAll&listing_type=All&limit=5&page=1",
+    "cold": {
+      "status": "ok",
+      "http_status": 200,
+      "retrieved_at": "2026-10-16T04:35:57.095957+00:00",
+      "sha256": "e4a2b45efc552552f3bec0e437c5ec84b8ccdfb6743bf17440f1cac79955862d",
+      "network_requests": 1,
+      "wire_bytes": 23297,
+      "decoded_bytes": 52682,
+      "elapsed_seconds": 6.495268580998527,
+      "cache_status": "miss"
+    },
+    "cold_wall_seconds": 6.495276,
+    "warm": {
+      "status": "not_modified",
+      "http_status": null,
+      "sha256": "e4a2b45efc552552f3bec0e437c5ec84b8ccdfb6743bf17440f1cac79955862d",
+      "network_requests": 0,
+      "elapsed_seconds": 0.0015352460031863302,
+      "cache_status": "fresh"
+    },
+    "warm_wall_seconds": 0.001541,
+    "courtesy_seconds": 60,
+    "final_parser_reparse_no_new_http": {
+      "scope": "current final parser against previously captured real HTTP JSON; no new network or fresh coverage claim",
+      "response_sha256": "e4a2b45efc552552f3bec0e437c5ec84b8ccdfb6743bf17440f1cac79955862d",
+      "response_retrieved_at": "2026-10-16T04:35:57.095957+00:00",
+      "social_sha256": "db994a48be023e555d07a40f51b862e1eab6a410be3a460d386eb1bb3442ab29",
+      "record_count": 5,
+      "relevant_records": 4,
+      "all_discovery_only": true,
+      "all_ugc_marked": true,
+      "editorial_dates_unknown": true,
+      "maximum_excerpt_chars": 500,
+      "parser_metadata": {
+        "observed_entries": 5,
+        "truncated": false,
+        "excluded_non_editorial": 0,
+        "duplicate_editorial_urls": 0,
+        "social_discovery": true,
+        "user_generated_content": true,
+        "discovery_only": true,
+        "scope": "one_instance_known_catalog",
+        "identity_verified": false,
+        "score_effect": "none",
+        "ugc_excerpt_limit": 500,
+        "post_dates_are_not_editorial_publication_dates": true
+      }
+    }
+  },
+  "metadata_url_audit": {
+    "parsed_https_candidates_across_five_samples": 116,
+    "unique_exact_urls": 107,
+    "unique_canonical_urls": 107,
+    "cross_sample_duplicates_before_canonicalization": 9,
+    "extra_canonical_collisions": 0,
+    "notes": [
+      "Duplicates are candidates about the same destination; counts are not unique facts or verified identities.",
+      "Mwmbl/HTML/Lite records retain original HTTPS spelling; no HTTP-to-HTTPS rewriting.",
+      "News observations retain provider/query provenance for a canonical article URL.",
+      "Lemmy duplicate links retain social referrers and bounded excerpts; no post body is promoted to editorial evidence."
+    ]
+  },
+  "catalogue_audit": {
+    "new_sources": [
+      {
+        "id": "mwmbl_web",
+        "kind": "mwmbl",
+        "url": "https://mwmbl.org/api/v2/search/",
+        "allowed_hosts": [
+          "mwmbl.org"
+        ],
+        "enabled": false,
+        "terms_approved": false,
+        "download_articles": false,
+        "article_terms_approved": false,
+        "body_terms_approved": false,
+        "discovery_only": true,
+        "min_interval_seconds": 5,
+        "max_records": 50,
+        "terms_url": "https://mwmbl.org/"
+      },
+      {
+        "id": "duckduckgo_web",
+        "kind": "duckduckgo_html",
+        "url": "https://html.duckduckgo.com/html/",
+        "allowed_hosts": [
+          "html.duckduckgo.com"
+        ],
+        "enabled": false,
+        "terms_approved": false,
+        "download_articles": false,
+        "article_terms_approved": false,
+        "body_terms_approved": false,
+        "discovery_only": true,
+        "min_interval_seconds": 5,
+        "max_records": 50,
+        "terms_url": "https://duckduckgo.com/terms"
+      },
+      {
+        "id": "duckduckgo_lite_web",
+        "kind": "duckduckgo_lite",
+        "url": "https://lite.duckduckgo.com/lite/",
+        "allowed_hosts": [
+          "lite.duckduckgo.com"
+        ],
+        "enabled": false,
+        "terms_approved": false,
+        "download_articles": false,
+        "article_terms_approved": false,
+        "body_terms_approved": false,
+        "discovery_only": true,
+        "min_interval_seconds": 5,
+        "max_records": 50,
+        "terms_url": "https://duckduckgo.com/terms"
+      },
+      {
+        "id": "lemmy_public_search",
+        "kind": "lemmy_search",
+        "url": "https://lemmy.ml/api/v3/search",
+        "allowed_hosts": [
+          "lemmy.ml"
+        ],
+        "enabled": false,
+        "terms_approved": false,
+        "download_articles": false,
+        "article_terms_approved": false,
+        "body_terms_approved": false,
+        "discovery_only": true,
+        "min_interval_seconds": 60,
+        "max_records": 10,
+        "terms_url": "https://lemmy.ml/"
+      }
+    ],
+    "all_disabled_by_default": true,
+    "all_metadata_only": true,
+    "body_host_wildcards": false,
+    "developer_credentials_required": false
+  },
+  "source_code_sha256": {
+    "peps/public_search.py": "95713965eb905796fffb3024a7430808c9de425443f0fabc2ce3144982a189a3",
+    "peps/social_discovery.py": "db994a48be023e555d07a40f51b862e1eab6a410be3a460d386eb1bb3442ab29",
+    "peps/robots_policy.py": "33293cbaa7ca859ce37ae3104b8e84ab9478fb60e867d7643d88830513c2e453",
+    "peps/sources.py": "f24351c8d22a194eef1cad8572e7fe33224bfb8b4e0cf2e4614f941b4814fc5d",
+    "peps/news_search.py": "a99c74f5aac14cd0ae0a36488c848e5ce7d56cf4537211d8a35746d8fb6ff6fa"
+  },
+  "documentation": [
+    "https://github.com/mwmbl/mwmbl/blob/main/mwmbl/tinysearchengine/search.py",
+    "https://duckduckgo.com/duckduckgo-help-pages/features/non-javascript",
+    "https://duckduckgo.com/terms",
+    "https://duckduckgo.com/acceptable-use",
+    "https://docs.searxng.org/dev/search_api.html",
+    "https://docs.searxng.org/admin/searx.limiter.html",
+    "https://commoncrawl.org/faq",
+    "https://www.commoncrawl.org/cdxj-index",
+    "https://github.com/internetarchive/wayback/tree/master/wayback-cdx-server"
+  ],
+  "limits": [
+    "Five successful public web-search responses and one public Lemmy response, not a throughput benchmark or coverage guarantee.",
+    "Local result inspection used100 vs catalogue50; relevance/identity filtering happens later.",
+    "Public search metadata dates are unknown; the requested interval is not certified historical coverage.",
+    "No promise of unlimited queries, global social access, complete history, or300 names in120seconds.",
+    "DuckDuckGo HTML/Lite has no stable machine API/SLA; conditions and robots must be checked.",
+    "Initial research preceded final collector robots/cache integration; end-to-end production validation is documented separately."
+  ],
+  "focused_query_contract": {
+    "identity": "nominal query first; configured aliases follow, no thematic requests",
+    "adverse": [
+      "name corrupción",
+      "name sanción"
+    ],
+    "public_role": [
+      "name contrato",
+      "name nombramiento"
+    ],
+    "ordering": "nominal sweep across entities, focused requests, then aliases",
+    "unsupported_operators_added": false,
+    "multiplied_by_year": false,
+    "global_max_queries_honored": true,
+    "score_effect": "none",
+    "validation": "91 focused offline adapter/planner/social/robots tests pass; public live samples above are separately identified and do not establish focused-query recall"
+  },
+  "metadata_guard_integration_regression": {
+    "scope": "synthetic isolated integration regression using actual parsers, SQLite and attribution; no network or editorial body",
+    "source_kind": "discovery",
+    "article_published_at": null,
+    "article_discovered_at": null,
+    "post_published_at": "2022-01-01T00:00:00+00:00",
+    "nlp_calls": 0,
+    "attribute_result": {
+      "articles_processed": 1,
+      "identity_links": {
+        "discovery_metadata_only": 1
+      },
+      "entities_scored": 0,
+      "entities_affected": 0,
+      "pending": 0,
+      "cancelled": false,
+      "identity_module": "es-mx-identity-indexed-1.0.0",
+      "name_only_is_not_unique_identity": true,
+      "reextraction": {
+        "examined": 0
+      }
+    },
+    "document_count": 0,
+    "evidence_count": 0,
+    "social_sha256": "db994a48be023e555d07a40f51b862e1eab6a410be3a460d386eb1bb3442ab29",
+    "news_sha256": "9f714024649c426b94b9a394a625248ed45abb29bf8d589704e12045675e72a7"
+  }
+}

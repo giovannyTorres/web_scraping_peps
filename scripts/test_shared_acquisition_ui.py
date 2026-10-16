@@ -104,11 +104,12 @@ def main():
                             page.evaluate('document.fonts.ready')
                             expect(page.locator('[data-panel="sources"]')).to_be_visible()
                             before = permissions(page)
+                            page.locator('#source-show-all').check()
                             for name in ('Índice WordPress ficticio', 'Sitemap ficticio'):
                                 source = page.locator('#news-sources .source').filter(has_text=name)
                                 expect(source).to_contain_text('Índice compartido · una página para toda la lista')
-                                expect(source.get_by_label('Descargar texto para analizar', exact=True)).not_to_be_checked()
-                                expect(source.get_by_label('Uso del texto autorizado', exact=True)).not_to_be_checked()
+                                expect(source.locator('input[type=checkbox]').nth(1)).not_to_be_checked()
+                                assert source.locator('input[type=checkbox]').count() == 2
                             checked('wordpress_and_sitemap_keep_normal_explicit_body_permissions')
                             page.locator('#workflow-search-strategy').select_option('shared')
                             expect(page.locator('#workflow-search-preset')).to_be_disabled()
@@ -129,10 +130,11 @@ def main():
                                 expect(source).to_contain_text(catalogue[source_id]['source_name'])
                             checked('all_six_real_source_cards_are_rendered_with_their_catalogue_names')
                             omitted = page.locator('#news-sources>.source[data-shared-index="false"]')
+                            omitted.first.locator('.source-conditions').evaluate('element=>element.open=true')
                             expect(omitted.first.locator('.source-shared-omitted')).to_be_visible()
                             checked('non_index_sources_stay_visible_with_scope_and_text_enrichment_explanation',
                                     omitted.count() == len(catalogue) - shared_count and
-                                    omitted.first.get_by_label('Consultar esta fuente', exact=True).is_visible())
+                                    omitted.first.locator('input[type=checkbox]').first.is_visible())
                             expect(page.locator('#workflow-shared-source-summary')).to_contain_text('sus permisos de texto siguen disponibles')
                             expect(page.locator('#workflow-shared-strategy-note')).to_contain_text('neutrales o adversas')
                             expect(page.locator('#workflow-budget-preview')).to_contain_text('Cada página se contrasta con toda la lista')
@@ -167,14 +169,16 @@ def main():
                             checked('saved_shared_strategy_reorders_real_catalogue_after_reload',
                                     page.locator('#news-sources>.source').evaluate_all('(rows,count)=>rows.slice(0,count).every(row=>row.dataset.sharedIndex==="true")', shared_count))
                             checked('shared_strategy_and_preset_lock_survive_reload')
-                            page.locator('#workflow-sources-next').click()
+                            page.locator('#workflow-auto-analyze').uncheck()
+                            assert api(page, 'workflow-confirm-sources', {})['status'] == 200
+                            page.locator('[data-tab="news"]').click()
                             expect(page.locator('[data-panel="news"]')).to_be_visible()
                             expect(page.locator('#workflow-session-budget')).to_contain_text('Índice compartido: 1 fuente preparada')
                             expect(page.locator('#workflow-session-budget')).not_to_contain_text('Primera sesión: hasta 0 de 300')
                             expect(page.locator('#workflow-shared-coverage')).to_be_visible()
                             expect(page.locator('#workflow-shared-progress-label')).to_have_text('Todavía no se han leído páginas del índice.')
                             checked('unstarted_index_has_zero_progress_and_no_false_full_coverage')
-                            shared_stats.update(shared_pages_read=6, shared_records_checked=600, shared_pages_pending=3,
+                            shared_stats.update(current_bank_index_ready=True, shared_pages_read=6, shared_records_checked=600, shared_pages_pending=3,
                                                 entities_checked_locally=300, entities_queried=0,
                                                 entities_with_candidates=7, entities_with_bodies=2)
                             wait_until(page, lambda: page.locator('#workflow-shared-pages').inner_text() == '6',
@@ -226,7 +230,8 @@ def main():
 
                             context.route('**/api/news-source', hold_permission_reply)
                             editable = page.locator('[data-source-id="desinformemonos_search"]')
-                            enabled_input = editable.get_by_label('Consultar esta fuente', exact=True)
+                            page.locator('#source-show-all').check()
+                            enabled_input = editable.locator('input[type=checkbox]').first
                             enabled_input.check()
                             wait_until(page, lambda: 'route' in held, 'The permission save was not held')
                             expect(enabled_input).to_be_disabled()

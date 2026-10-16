@@ -15,6 +15,7 @@ from urllib.parse import urlencode, urlsplit
 
 from .identity import COMPANY_KINDS, GENERIC_CONTEXT, LEGAL_SUFFIXES, STOP, _fold, _tokens
 from .store import canonical, digest
+from .public_search import PUBLIC_SEARCH_KINDS, public_search_url, public_queries
 
 PRESETS = {
     'identity': {'label': 'Todas las noticias de la entidad', 'terms': ''},
@@ -58,8 +59,8 @@ def normalize_search_config(value=None, now=None):
     seconds = result['session_seconds']
     if type(seconds) is not int or seconds not in ((120,) if result['execution_mode'] == 'quick' else (900, 1800, 3600, 7200)):
         raise ValueError('session_seconds requiere 120 para quick o 900, 1800, 3600, 7200 para extended')
-    if result['strategy'] not in ('targeted', 'shared', 'feeds'):
-        raise ValueError('strategy debe ser targeted, shared o feeds')
+    if result['strategy'] not in ('targeted', 'shared', 'feeds', 'public'):
+        raise ValueError('strategy debe ser targeted, shared, feeds o public')
     if result['preset'] not in PRESETS:
         raise ValueError('preset debe ser identity, public_role o adverse')
     if result['window'] not in ('auto', 'year', 'month'):
@@ -314,6 +315,8 @@ def _recent_floor(current, source):
 
 
 def query_url(source, payload):
+    if source.get('kind') in PUBLIC_SEARCH_KINDS:
+        return public_search_url(payload['query'], source)
     if source.get('search_kind') == 'wordpress_rss':
         first, last = [_bound(payload[key]) for key in ('start', 'end')]
         args = {'s': payload['query'], 'feed': 'rss2', 'year': first.year}
@@ -358,7 +361,29 @@ def build_search_plan(entities, sources, config=None, *, start=None, end=None, n
     entities = list(entities)
     shared_sources = []
     prepared = []
+    public_providers = set()
     for source in active:
+        public = source.get('kind') in PUBLIC_SEARCH_KINDS
+        if config['strategy'] == 'public' and not public:
+            continue
+        if public:
+            if config['strategy'] not in ('public', 'targeted'):
+                continue
+            provider = 'duckduckgo' if source['kind'].startswith('duckduckgo_') else source['id']
+            if provider in public_providers:
+                plan['warnings'].append(source['id'] + ': se usa un solo formato por motor; no se alternan endpoints ni se eluden bloqueos.')
+                continue
+            public_providers.add(provider)
+            prepared.append((source, [(first, last)]))
+            plan['sources'].append({'id': source['id'], 'source_name': source.get('source_name') or source['id'],
+                'scope': 'public_social_link_search' if source['kind'] == 'lemmy_search' else 'public_web_top_results',
+                'historical': False, 'complete_archive': False, 'date_filter_supported': False,
+                'start': first.isoformat(), 'end_exclusive': last.isoformat(), 'windows': 1,
+                'window_unit': 'unfiltered_search', 'max_records_per_response': min(100, int(source.get('max_records', 50)))})
+            plan['warnings'].append(source['id'] + ': búsqueda pública nominal sin clave; no garantiza archivo, actualidad ni fechas de publicación. El rango se comprobará sólo cuando exista fecha editorial verificable. Títulos y extractos son descubrimiento, no evidencia puntuable.')
+            if config['preset'] != 'identity':
+                plan['warnings'].append(source['id'] + ': tras el primer barrido nominal se añaden dos consultas con palabras del perfil, sin OR ni filtros temporales inventados. Esos términos orientan la búsqueda, no acreditan hallazgos ni generan puntos; los resultados pueden ser neutrales o parciales.')
+            continue
         google, gdelt = source.get('search_kind') == 'google_news_rss', source.get('kind') == 'gdelt'
         wordpress = source.get('search_kind') == 'wordpress_rss'
         if source.get('automated_search') is False:
@@ -424,7 +449,7 @@ def build_search_plan(entities, sources, config=None, *, start=None, end=None, n
     shared_required = len(plan['queries'])
     plan['queries'] = plan['queries'][:config['max_queries']]
     shared_initial = len(plan['queries'])
-    if config['strategy'] == 'targeted' and prepared:
+    if config['strategy'] in ('targeted', 'public') and prepared:
         entities = list(entities)
         total_ids = {str(entity['id']) for entity in entities}
         hosts = list(dict.fromkeys(urlsplit(source.get('search_url') or source.get('base_url') or source.get('url') or '').hostname or source['id']
@@ -447,7 +472,9 @@ def build_search_plan(entities, sources, config=None, *, start=None, end=None, n
                 plan['warnings'].append(source['id'] + ': nombres o términos que exceden el límite local de longitud no se pudieron incluir en lotes.')
             for entity in ordered:
                 variants = _variants(entity, config['include_aliases'])
-                if source.get('search_kind') == 'wordpress_rss' or source.get('kind') == 'gdelt':
+                if source.get('kind') in PUBLIC_SEARCH_KINDS:
+                    queries = public_queries(entity, config, variants)
+                elif source.get('search_kind') == 'wordpress_rss' or source.get('kind') == 'gdelt':
                     # GDELT rejects nested OR groups. Separate exact-phrase
                     # requests also keep short aliases bound to a context hint.
                     queries = wordpress_queries(entity, config, variants=variants)
@@ -504,7 +531,7 @@ def build_search_plan(entities, sources, config=None, *, start=None, end=None, n
         plan['truncated'] = required > len(plan['queries'])
     if plan['truncated']:
         plan['warnings'].append('Presupuesto local de consultas alcanzado: existen entidades o ventanas sin planificar. Amplíe el presupuesto o reduzca el período.')
-    if not prepared and not shared_sources and config['strategy'] in ('targeted', 'shared'):
+    if not prepared and not shared_sources and config['strategy'] in ('targeted', 'shared', 'public'):
         plan['warnings'].append('Habilite una fuente con búsqueda histórica del editor o GDELT reciente y registre sus permisos; los feeds generales no buscan a las entidades cargadas.')
     if shared_sources:
         plan['shared_discovery'] = {'sources': len(shared_sources), 'initial_pages': shared_initial,

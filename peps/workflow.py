@@ -79,7 +79,8 @@ class OperationTracker:
             self._started = self._phase_started = self._clock()
             self._phase_baseline, self._ended = 0, None
             self._tasks = {}
-            planned = ('attribution', 'scoring') if kind == 'analysis' else ('download',) if kind == 'download' else ()
+            planned = (('download', 'attribution', 'scoring') if kind == 'pipeline' else
+                       ('attribution', 'scoring') if kind == 'analysis' else ('download',) if kind == 'download' else ())
             self._phases = {name: self._new_phase(name) for name in planned}
             if phase:
                 self._begin_phase(phase, total, unit)
@@ -251,6 +252,9 @@ class OperationTracker:
                 previous = self._phases.get(self._state['phase'])
                 self._finish_phase('completed' if previous and previous['total'] == previous['completed'] and self._completion_allowed() else 'paused')
                 self._phase_started, self._phase_baseline = self._clock(), completed
+                # Retry/queue counters describe one phase. Download failures
+                # must never leak into a later, separately authorized analysis.
+                self._state['details'] = {}
             elif completed < self._state['completed']:
                 raise WorkflowError('El progreso no puede retroceder dentro de una fase.', 400)
             for key in ('phase', 'message', 'unit'):
@@ -355,7 +359,7 @@ class OperationTracker:
         queue_eta = current_eta
         if value.get('waiting'):
             queue_eta = (value.get('next_retry_seconds'), 'waiting', 'scheduled_retry', 0)
-        elif value['kind'] != 'download':
+        elif value['phase'] != 'download' and value['kind'] != 'download':
             queue_eta = (None, 'unknown', None, 0)
         queue = {'completed': done, 'pending': pending, 'ready': value.get('ready', 0),
                  'active': value.get('active_tasks', len(active)), 'deferred': value.get('deferred', 0), 'failed': failed,
@@ -648,6 +652,8 @@ class GuidedWorkflow:
             else:
                 status, reason = ('ready', '') if actions['view_results']['enabled'] else ('blocked', actions['view_results']['reason'])
             operation_step = {'import': 'data', 'download': 'download', 'acquire': 'download', 'analysis': 'analysis', 'analyze': 'analysis', 'rescore': 'analysis'}.get(op.get('kind'))
+            if op.get('kind') == 'pipeline':
+                operation_step = 'download' if op.get('phase') == 'download' else 'analysis'
             if busy and operation_step == step_id:
                 status, reason = 'running', op.get('message') or active_reason
             steps.append({'id': step_id, 'number': number, 'label': label, 'status': status, 'reason': reason})

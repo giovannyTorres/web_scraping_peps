@@ -5,6 +5,7 @@ import unittest
 from peps.acquisition_coverage import acquisition_coverage
 from peps.engine import Engine
 from peps.news import NewsAcquirer
+from peps.news_projection import update_projection
 from peps.nlp import analyze
 from peps.store import canonical, now
 
@@ -40,6 +41,8 @@ class AcquisitionCoverageTests(unittest.TestCase):
                         'VALUES(?,?,?,?,?,?,?)', ('observation-' + str(self.serial), article_id, 'synthetic', 'https://synthetic.invalid/feed',
                                                 'https://synthetic.invalid/' + article_id, now(),
                                                 canonical({'retrieval_relevance': {'relevant': relevant, 'entity_ids': ids, 'identity_verified': False}})))
+            revision = con.execute("SELECT value FROM meta WHERE key='news_identity_revision'").fetchone()[0]
+            update_projection(con, article_id, {'relevant': relevant, 'entity_ids': ids}, bank_revision=revision)
 
     def document(self, kind='news', linked=()):
         self.serial += 1
@@ -48,7 +51,9 @@ class AcquisitionCoverageTests(unittest.TestCase):
 
     def search(self, ids, *, completed=True, records=0, excluded=0, kind='news_query'):
         self.serial += 1
-        job_id = self.store.enqueue(kind, {'entity_ids': ids}, key='search-' + str(self.serial))
+        with self.store.connection() as con:
+            revision = con.execute("SELECT value FROM meta WHERE key='news_identity_revision'").fetchone()[0]
+        job_id = self.store.enqueue(kind, {'entity_ids': ids, 'bank_revision': revision}, key='search-' + str(self.serial))
         if completed:
             with self.store.connection() as con:
                 con.execute('INSERT INTO news_discovery_runs VALUES(?,?,?,?,?,?,?,?)',
@@ -104,7 +109,8 @@ class AcquisitionCoverageTests(unittest.TestCase):
         document = self.document()
         self.article(document, scope='full_article')
         with self.store.connection() as con:
-            con.execute('INSERT INTO news_identity_links VALUES(?,?,?)', (document, 'one', canonical({'status': 'candidate'})))
+            revision = int(con.execute("SELECT value FROM meta WHERE key='news_identity_revision'").fetchone()[0])
+            con.execute('INSERT INTO news_identity_links VALUES(?,?,?)', (document, 'one', canonical({'status': 'candidate', 'bank_revision': revision})))
             con.execute('INSERT INTO news_identity_links VALUES(?,?,?)', (document, 'two', canonical({'status': 'rejected'})))
         value = acquisition_coverage(self.store, self.sources)
         self.assertEqual(value['relevant_articles'], 1)

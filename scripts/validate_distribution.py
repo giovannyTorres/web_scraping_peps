@@ -181,6 +181,14 @@ def validate(executable=None):
             headers = {"X-PEPS-Token": token[1]}
             with urlopen(Request(base + "/api/stats", headers=headers), timeout=10) as response:
                 require(json.load(response)["entities"] == 1, "La UI no abrió el banco de la CLI.")
+            with urlopen(Request(base + "/api/news-tasks?limit=1", headers=headers), timeout=10) as response:
+                task_page = json.load(response)
+                require(task_page['limit'] == 1 and len(task_page['items']) <= 1,
+                        'La distribución no pudo leer el detalle acotado de tareas.')
+            with urlopen(Request(base + "/api/public-search?id=distribution", headers=headers), timeout=10) as response:
+                searches = json.load(response)
+                require(bool(searches['links']) and all(item['url'].startswith('https://') for item in searches['links']),
+                        'Faltan los enlaces públicos de búsqueda de la distribución.')
             with urlopen(Request(base + "/api/explanation?id=distribution&run_id=" + explanation["run"]["id"],
                     headers=headers), timeout=10) as response:
                 existing = json.load(response)

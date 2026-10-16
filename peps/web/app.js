@@ -8,6 +8,9 @@ function el(tag,text,cls){const e=document.createElement(tag);if(text!==undefine
 function action(id,fn){$(id).onclick=async()=>{if(window.pepsWorkflow&&!window.pepsWorkflow.canAction(id))return;$(id).disabled=true;try{await fn();await refresh(true);}catch(e){message(e.message,true);}finally{if(!['previous','next'].includes(id))$(id).disabled=false;if(window.pepsWorkflow)window.pepsWorkflow.update(lastStats);}};}
 const kinds={person:'Persona',company:'Empresa',organization:'Organismo'};
 let detailRequest=0, detailState=null, lastStats={}, renderedEntitiesKey=null, renderedNewsArticlesKey=null;
+const sourceSaves=new Set();
+window.pepsSourcesPending=()=>sourceSaves.size;
+window.pepsWaitSources=()=>Promise.allSettled([...sourceSaves]);
 const roleLabels={accused:'Posible sujeto de acusación',victim:'Posible víctima',complainant:'Posible denunciante',incidental:'Mención incidental',negated:'Afirmación negada',resolved:'Resolución reportada',indirect:'Relación indirecta',insufficient:'Evidencia contextual insuficiente'};
 const relevanceLabels={direct_adverse_candidate:'Candidato a revisión por señal directa',victim_context:'Contexto de víctima',reporter_context:'Contexto de denunciante',incidental:'Mención incidental',negated_claim:'Afirmación negada',reported_resolution:'Resolución reportada',insufficient:'Sin conclusión contextual',indirect_only:'Sólo relación indirecta'};
 const methodLabels={discriminative:'Clasificador discriminativo local',advanced:'NLP local con dependencias y NER',enriched:'Clasificador con extracciones NLP',hybrid:'Acuerdo experimental de clasificador y NLP'};
@@ -47,10 +50,21 @@ async function showDetail(item,runId=null){
     if(request!==detailRequest)return;
     const state={data,request,notes:new Map(),noteRequests:new Map(),shownEvidence:0};detailState=state;
     card.replaceChildren(el('p','EXPEDIENTE','eyebrow'),el('h2',data.entity.name),el('p',`${kinds[data.entity.kind]||data.entity.kind} · ID ${data.entity.id}`,'muted'));
-    renderHistory(card,state);renderExplanation(card,state);renderAuxiliary(card,state);renderEvidenceIndex(card,state);renderTechnical(card,state);
+    renderHistory(card,state);renderPublicSearch(card,state);renderExplanation(card,state);renderAuxiliary(card,state);renderEvidenceIndex(card,state);renderTechnical(card,state);
     const row=entities.find(entity=>entity.id===item.id);if(row&&!runId){row.score=data.result;row.assessment=data.assessment;renderEntities();}
   }catch(error){if(request===detailRequest){card.replaceChildren(el('h2','No se pudo abrir la evaluación'),el('p',error.message,'error'));message(error.message,true);}}
   finally{if(request===detailRequest)card.removeAttribute('aria-busy');}
+}
+function renderPublicSearch(card,state){
+  const details=el('details',undefined,'public-search-links');details.append(el('summary','Ampliar búsqueda en la web y redes públicas'));
+  const body=el('div');details.append(body);let loaded=false;
+  details.ontoggle=async()=>{if(!details.open||loaded)return;loaded=true;body.replaceChildren(el('p','Preparando enlaces de búsqueda…','muted'));
+    try{const data=await api('public-search?id='+encodeURIComponent(state.data.entity.id));if(detailState!==state)return;
+      body.replaceChildren(el('p',data.note||'Estos enlaces abren búsquedas manuales. No conectan cuentas ni incorporan resultados automáticamente.','muted'));
+      const links=Array.isArray(data.links)?data.links:[];for(const item of links){if(!item||!/^https?:\/\//i.test(item.url||''))continue;const row=el('p');row.append(sourceLink(item.url,item.label||item.channel||'Abrir búsqueda'));body.append(row);}
+      if(!links.length)body.append(el('p','No hay enlaces públicos disponibles para esta entidad.','muted'));
+    }catch(error){loaded=false;body.replaceChildren(el('p','No se pudieron preparar los enlaces: '+error.message,'muted'));}
+  };card.append(details);
 }
 function renderHistory(card,state){
   const {data}=state;const historical=data.run.historical;
@@ -178,9 +192,10 @@ function bindSourceChecks(checks,path,source,confirmation,onSaved=()=>{}){
   for(const input of Object.values(checks))input.onchange=async()=>{
     const values=Object.fromEntries(Object.entries(checks).map(([key,field])=>[key,field.checked]));
     for(const field of Object.values(checks)){field.dataset.permissionSaving='true';field.disabled=true;}
-    try{await api(path,{id:source.id,...values});saved=values;onSaved(values);message(confirmation);await refresh(true);}
-    catch(error){for(const [key,field]of Object.entries(checks))field.checked=saved[key];message(error.message,true);}
-    finally{for(const field of Object.values(checks)){delete field.dataset.permissionSaving;field.disabled=false;}window.pepsWorkflow?.update(lastStats);}
+    const task=(async()=>{try{await api(path,{id:source.id,...values});saved=values;onSaved(values);message(confirmation);await refresh(true);}
+      catch(error){for(const [key,field]of Object.entries(checks))field.checked=saved[key];message(error.message,true);}})();
+    sourceSaves.add(task);window.pepsWorkflow?.update(lastStats);
+    try{await task;}finally{sourceSaves.delete(task);for(const field of Object.values(checks)){delete field.dataset.permissionSaving;field.disabled=false;}window.pepsWorkflow?.update(lastStats);}
   };
 }
 async function loadSources(){const sources=await api('sources');if(pollStopped)return;const container=$('sources');container.replaceChildren();for(const source of sources){const row=el('div',undefined,'source');const info=el('div');info.append(el('strong',source.name||source.id),el('p',source.base_url||source.url||''),el('p',`Tipo: ${source.kind} · Pausa: ${source.min_interval_seconds||5}s · ${source.discovery?'Descubrimiento':'Contenido / importación'}`));const choices=el('div');const enabled=el('input');enabled.type='checkbox';enabled.checked=source.enabled;const terms=el('input');terms.type='checkbox';terms.checked=source.terms_approved;const l1=el('label');l1.append(enabled,document.createTextNode('Habilitada'));const l2=el('label');l2.append(terms,document.createTextNode('Condiciones de uso revisadas'));choices.append(l1,l2);bindSourceChecks({enabled,terms_approved:terms},'source',source,'Configuración de fuente guardada.');row.append(info,choices);container.append(row);}}
@@ -250,7 +265,7 @@ async function switchTab(tab){
 for(const btn of document.querySelectorAll('[data-tab]'))btn.onclick=()=>switchTab(btn.dataset.tab).catch(error=>message(error.message,true));
 let debounce;$('search').oninput=()=>{clearTimeout(debounce);debounce=setTimeout(()=>{offset=0;refresh(true).catch(e=>message(e.message,true));},250);};
 action('previous',async()=>{offset=Math.max(0,offset-100);});action('next',async()=>{offset+=100;});
-action('score',async()=>{await switchTab('analysis');message('Inicia el análisis desde este paso para conservar su progreso y explicación.');});
+action('score',async()=>{await api('workflow-analyze',{});await switchTab('analysis');message('Análisis iniciado. Puedes seguir las fases y consultar los resultados al terminar.');});
 action('import-entities',async()=>{await api('import-entities',{text:$('entity-text').value});message('Importación en curso.');});
 action('import-documents',async()=>{await api('import-documents',{text:$('doc-text').value});message('Guardando documentos. El análisis y el score se ejecutarán en el paso 4.');});
 for(const [input,text]of [['entity-file','entity-text'],['doc-file','doc-text']])$(input).onchange=async()=>{const f=$(input).files[0];if(f){if(f.size>16000000){message('Archivo mayor de 16 MB; use la CLI para esta carga.',true);return;}$(text).value=await f.text();}};
@@ -278,18 +293,62 @@ function orderNewsSources(){
   if(shared){const count=rows.filter(row=>row.dataset.sharedIndex==='true').length,text='Primero aparecen '+count+' fuentes con índice compartido. Las demás no aportan consultas ni feeds en este modo; sus permisos de texto siguen disponibles para enriquecer enlaces encontrados. Habilita y autoriza expresamente las fuentes que quieras utilizar.';if(summary.textContent!==text)summary.textContent=text;}
 }
 window.pepsOrderNewsSources=orderNewsSources;
-async function loadNews(includeSources=true){const data=await api(includeSources?'news?relevant=1':'news?summary=1&relevant=1');if(pollStopped)return;$('news-summary').textContent=JSON.stringify(data.stats,null,2);if(data.plan!==undefined)$('news-plan').textContent=JSON.stringify(data.plan,null,2);const articlesKey=JSON.stringify(data.articles||[]);if(articlesKey!==renderedNewsArticlesKey){renderedNewsArticlesKey=articlesKey;const articles=$('news-articles');articles.replaceChildren();for(const article of data.articles){const row=el('div',undefined,'evidence');row.append(el('strong',article.title||article.canonical_url),el('p',`${article.publisher_id} · ${article.scope==='full_article'?'Cuerpo conservado':'Metadatos de descubrimiento'} · ${article.status}`,'muted'));const a=el('a',article.canonical_url);a.href=article.canonical_url;a.target='_blank';a.rel='noopener noreferrer';row.append(a);articles.append(row);}if(!data.articles.length)articles.append(el('p','Aún no hay noticias adquiridas.','muted'));}if(!includeSources)return;const container=$('news-sources');container.replaceChildren();for(const source of data.sources){const row=el('div',undefined,'source');const info=el('div');info.append(el('strong',source.source_name||source.id));
-  const aggregator=source.kind==='gdelt'||source.search_kind==='google_news_rss';
-  const sharedIndex=['wordpress_api','sitemap'].includes(source.kind);row.dataset.sourceId=source.id;row.dataset.sharedIndex=String(sharedIndex);row.dataset.catalogueOrder=String(container.children.length);
-  if(sharedIndex){row.classList.add('shared-source');info.append(el('p','Índice compartido · una página para toda la lista','source-shared-kind'));}
-  else{const note=el('p','Sin consultas ni feeds en índice compartido. Sus permisos de texto pueden enriquecer enlaces encontrados.','source-shared-omitted');note.hidden=true;info.append(note);}
-  const permissionBadge=el('span',undefined,'badge');info.append(permissionBadge);
-  const updatePermissionBadge=values=>{const active=values.enabled&&values.terms_approved,text=active&&!aggregator&&values.download_articles&&(values.article_terms_approved||values.body_terms_approved);permissionBadge.textContent=source.automated_search===false?'Consulta manual':text?'Texto autorizado para análisis':active?'Sólo referencias; falta autorizar texto':'Fuente sin habilitar';};updatePermissionBadge(source);
-  if(aggregator)info.append(el('p','Descubre enlaces. Para conservar texto, autoriza por separado el editor del artículo.','muted'));
-  const address=source.url||source.base_url||'';
-  let host=address;try{host=new URL(address).hostname;}catch{}
-  info.append(sourceLink(address,host));
-  if(source.review_note){const conditions=el('details',undefined,'source-conditions');conditions.append(el('summary','Condiciones y alcance'),el('p',source.review_note));info.append(conditions);}const controls=el('div');const fields=[['enabled','Consultar esta fuente'],['terms_approved','Condiciones de consulta revisadas'],...(!aggregator?[['download_articles','Descargar texto para analizar'],['article_terms_approved','Uso del texto autorizado']]:[])];const checks={};for(const [key,labelText]of fields){const label=el('label');const input=el('input');input.type='checkbox';input.checked=!!source[key];checks[key]=input;label.append(input,document.createTextNode(labelText));controls.append(label);}bindSourceChecks(checks,'news-source',source,'Condiciones y alcance guardados en la bitácora.',updatePermissionBadge);row.append(info,controls);container.append(row);}orderNewsSources();}
+function filterNewsSources(){
+  const query=($('source-filter')?.value||'').trim().toLocaleLowerCase('es'),selectedOnly=!!$('source-selected-only')?.checked,showAll=!!$('source-show-all')?.checked;
+  let visible=0,total=0;for(const row of $('news-sources').children){total++;const selected=row.dataset.selected==='true';const show=(!query||row.dataset.searchText.includes(query))&&(!selectedOnly||selected)&&(!!query||showAll||selectedOnly||selected||row.dataset.recommended==='true');row.hidden=!show;if(show)visible++;}
+  $('source-filter-count').textContent=visible+' de '+total+' fuentes';
+}
+async function loadNews(includeSources=true){
+  const data=await api(includeSources?'news?relevant=1':'news?summary=1&relevant=1');if(pollStopped)return;
+  $('news-summary').textContent=JSON.stringify(data.stats,null,2);if(data.plan!==undefined)$('news-plan').textContent=JSON.stringify(data.plan,null,2);
+  const articlesKey=JSON.stringify(data.articles||[]);
+  if(articlesKey!==renderedNewsArticlesKey){renderedNewsArticlesKey=articlesKey;const articles=$('news-articles');articles.replaceChildren();
+    for(const article of data.articles){const row=el('div',undefined,'evidence');row.append(el('strong',article.title||article.canonical_url),el('p',`${article.publisher_id} · ${article.scope==='full_article'?'Cuerpo conservado':'Referencia sin cuerpo'} · ${{fetched:'Conservada',discovered:'Pendiente de texto',failed:'Con error'}[article.status]||article.status}`,'muted'),sourceLink(article.canonical_url));articles.append(row);}
+    if(!data.articles.length)articles.append(el('p','Aún no hay noticias adquiridas.','muted'));
+  }
+  if(!includeSources)return;
+  const container=$('news-sources');container.replaceChildren();
+  for(const source of data.sources){
+    const row=el('div',undefined,'source compact-source'),info=el('div',undefined,'compact-source-info'),controls=el('div',undefined,'compact-source-controls');
+    const name=source.source_name||source.id,aggregator=source.discovery_only===true||source.kind==='gdelt'||source.search_kind==='google_news_rss',sharedIndex=['wordpress_api','sitemap'].includes(source.kind);
+    row.dataset.recommended=String(['wordpress_api','mwmbl','duckduckgo_html'].includes(source.kind));row.dataset.sourceId=source.id;row.dataset.sharedIndex=String(sharedIndex);row.dataset.catalogueOrder=String(container.children.length);row.dataset.searchText=(name+' '+(source.url||source.base_url||'')).toLocaleLowerCase('es');
+    info.append(el('strong',name));if(sharedIndex)row.classList.add('shared-source');
+    const badge=el('span',undefined,'badge source-permission-badge');info.append(badge);
+    const details=el('details',undefined,'source-conditions');details.append(el('summary','Alcance y condiciones'));
+    details.append(sourceLink(source.url||source.base_url||'',source.url||source.base_url||'Fuente'),el('p',source.review_note||'Revisa las condiciones públicas de esta fuente antes de autorizar su consulta o conservar su texto.'));
+    if(sharedIndex)details.append(el('p','Índice compartido · una página para toda la lista','source-shared-kind'));
+    if(aggregator)details.append(el('p','Sólo enlaces y extractos. El texto se obtiene de editores autorizados por separado.'));
+    if(!sharedIndex){const note=el('p','En índice compartido no genera consultas. Puede aportar texto autorizado de los enlaces encontrados.','source-shared-omitted');note.hidden=true;details.append(note);}
+    info.append(details);
+    let saved={enabled:!!source.enabled,terms_approved:!!source.terms_approved,download_articles:!!source.download_articles,article_terms_approved:!!(source.article_terms_approved||source.body_terms_approved)};
+    const consult=el('input'),body=el('input');consult.type=body.type='checkbox';consult.checked=saved.enabled&&saved.terms_approved;body.checked=saved.download_articles&&saved.article_terms_approved;
+    consult.setAttribute('aria-label','Consultar '+name+'; condiciones revisadas');body.setAttribute('aria-label','Conservar texto de '+name+'; uso revisado');
+    const choice=(input,label)=>{const field=el('label',undefined,'source-consent');field.append(input,document.createTextNode(label));controls.append(field);};
+    choice(consult,'Consultar · condiciones revisadas');if(!aggregator)choice(body,'Conservar texto · uso revisado');
+    const update=()=>{const active=saved.enabled&&saved.terms_approved,text=active&&!aggregator&&saved.download_articles&&saved.article_terms_approved;row.dataset.selected=String(active);badge.textContent=source.automated_search===false?'Consulta manual':text?'Con texto autorizado':active?'Sólo referencias':'Sin seleccionar';row.classList.toggle('source-selected',active);filterNewsSources();};
+    const save=async()=>{
+      const fields=aggregator?[consult]:[consult,body],values={enabled:consult.checked,terms_approved:consult.checked,download_articles:!aggregator&&body.checked,article_terms_approved:!aggregator&&body.checked};
+      for(const field of fields){field.disabled=true;field.dataset.permissionSaving='true';}
+      const task=(async()=>{try{await api('news-source',{id:source.id,...values});saved=values;update();await refresh(true);}catch(error){consult.checked=saved.enabled&&saved.terms_approved;body.checked=saved.download_articles&&saved.article_terms_approved;message(error.message,true);}})();
+      sourceSaves.add(task);window.pepsWorkflow?.update(lastStats);
+      try{await task;}finally{sourceSaves.delete(task);for(const field of fields){delete field.dataset.permissionSaving;field.disabled=false;}window.pepsWorkflow?.update(lastStats);}
+    };
+    consult.onchange=save;body.onchange=save;if(source.automated_search===false)controls.replaceChildren(el('p','Consulta manual disponible en los expedientes.','muted'));row.append(info,controls);container.append(row);update();
+  }
+  orderNewsSources();filterNewsSources();
+}
+let manualEntityRequest=0,manualLinksRequest=0,manualTimer;
+function resetManualLinks(){manualLinksRequest++;$('manual-search-results').replaceChildren();$('manual-entity-select').value='';}
+async function loadManualEntities(){
+  const request=++manualEntityRequest;const status=$('manual-search-status'),select=$('manual-entity-select');resetManualLinks();select.disabled=true;status.textContent='Buscando en tu lista…';
+  try{const entities=await api('entities?summary=1&limit=100&q='+encodeURIComponent($('manual-entity-query').value));if(request!==manualEntityRequest||pollStopped)return;select.replaceChildren();const placeholder=el('option','Elige una entidad…');placeholder.value='';select.append(placeholder);for(const entity of entities){const option=el('option',entity.name);option.value=entity.id;select.append(option);}status.textContent=entities.length?entities.length+' entidades mostradas. Escribe parte del nombre para filtrar la lista.':'No hay coincidencias en tu lista.';}
+  catch(error){if(request===manualEntityRequest){select.replaceChildren();status.textContent='No se pudo consultar la lista: '+error.message;}}
+  finally{if(request===manualEntityRequest)select.disabled=false;}
+}
+$('workflow-manual-discovery').ontoggle=()=>{if($('workflow-manual-discovery').open){loadManualEntities();}};
+$('manual-entity-query').oninput=()=>{manualEntityRequest++;resetManualLinks();$('manual-entity-select').disabled=true;clearTimeout(manualTimer);manualTimer=setTimeout(loadManualEntities,250);};
+$('manual-entity-select').onchange=async()=>{const id=$('manual-entity-select').value,request=++manualLinksRequest,box=$('manual-search-results');box.replaceChildren();if(!id)return;box.append(el('p','Preparando enlaces de búsqueda…','muted'));try{const data=await api('public-search?id='+encodeURIComponent(id));if(request!==manualLinksRequest||pollStopped)return;box.replaceChildren(el('p',data.note||'Sólo búsquedas manuales en sitios públicos.','muted'));for(const item of data.links||[]){if(!/^https?:\/\//i.test(item.url||''))continue;const row=el('p');row.append(sourceLink(item.url,item.label||item.channel||'Abrir búsqueda'));box.append(row);}}catch(error){if(request===manualLinksRequest)box.replaceChildren(el('p','No se pudieron preparar los enlaces: '+error.message,'muted'));}};
+$('source-filter').oninput=filterNewsSources;$('source-selected-only').onchange=filterNewsSources;$('source-show-all').onchange=filterNewsSources;
 action('news-acquire',async()=>{await api('news-acquire',{online:$('news-online').checked});message('Adquisición en curso: fuentes compartidas y enlaces únicos.');});
 action('news-attribute',async()=>{await api('workflow-analyze',{});message('Atribución y cálculo iniciados. Las ambigüedades conservan su estado.');});
 

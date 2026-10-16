@@ -15,6 +15,9 @@ window.pepsWorkflow = (() => {
   function serverStep(tab) { const step=stepFor(tab);return state.workflow?.steps?.find(item=>item.id===step?.id); }
   function action(name) { return state.workflow?.actions?.[name] || {enabled:false,reason:'Consultando el estado del proceso…'}; }
   function busy() { return !!state.operation.busy || state.requesting; }
+  function downloading(op=state.operation){return op.kind==='download'||op.kind==='pipeline'&&['download','preparing'].includes(op.phase);}
+  function cacheMode(){return $('workflow-cache-mode').value||'reuse';}
+  function onlineAllowed(){return cacheMode()==='local'||$('news-online').checked;}
   function canOpenTab(tab,announce=false) {
     if(tab==='audit')return true;
     const step=serverStep(tab);
@@ -41,14 +44,14 @@ window.pepsWorkflow = (() => {
     const coverage=state.workflow?.coverage||{},op=state.operation;
     const pending=Number(coverage.pending_downloads??state.workflow?.counts?.pending_downloads??0);
     const workerActive=!!coverage.worker_active||Number(coverage.active_running||0)>0;
-    const result=op.kind==='download'?(op.last_result||op.result||{}):{};
+    const result=downloading(op)?(op.last_result||op.result||{}):{};
     const stopReason=coverage.stop_reason||result.stop_reason||'';
-    const attempted=['running','completed','paused','failed','closed_partial'].includes(coverage.status)||op.kind==='download';
+    const attempted=['running','completed','paused','failed','closed_partial'].includes(coverage.status)||downloading(op);
     return {coverage,pending,workerActive,stopReason,attempted,local:state.workflow?.mode==='local',
       canContinue:!busy()&&!workerActive&&canOpenTab('analysis')};
   }
   function retryDelay(context) {
-    const coverage=context.coverage,op=state.operation,result=op.kind==='download'?(op.last_result||op.result||{}):{};
+    const coverage=context.coverage,op=state.operation,result=downloading(op)?(op.last_result||op.result||{}):{};
     const stamp=coverage.next_retry_at??op.next_retry_at??result.next_retry_at;
     if(Number.isFinite(stamp))return Math.max(0,stamp-Date.now()/1000);
     const iso=coverage.next_retry||op.next_retry||result.next_retry;
@@ -66,10 +69,10 @@ window.pepsWorkflow = (() => {
     setText('workflow-tasks-retained',pending.toLocaleString('es-MX'));
     const reasons={time_limit:'La sesión alcanzó su límite de tiempo. El avance está guardado y puedes reanudar las tareas pendientes.',job_limit:'La sesión alcanzó su límite de tareas. Puedes continuar la descarga sin repetir las consultas terminadas.',cancelled:'La descarga se pausó por solicitud. Puedes retomarla o continuar con la información disponible.',backoff:'Las fuentes han pedido una pausa entre solicitudes. Las tareas esperan su próximo intento permitido.',scheduled:'Hay tareas programadas para un próximo intento. La información descargada permanece guardada.',external_lease:'Otro trabajador mantiene una descarga activa. Espera a que termine antes de analizar o cerrar la cobertura.'};
     const op=state.operation;
-    let activity=op.busy&&op.kind==='download'?(op.label||'Consultando las fuentes autorizadas…'):workerActive?reasons.external_lease:coverage.closed_partial?'Descarga cerrada con cobertura parcial. Las tareas pendientes se conservan para reanudar después.':reasons[stopReason]||(['paused','failed'].includes(coverage.status)?'La sesión se detuvo con tareas pendientes. Puedes reanudar o cerrar esta descarga con lo disponible.':coverage.status==='completed'?'La sesión de descarga terminó. Revisa la cobertura antes de continuar.':Number(completed||0)>0?'Hay tareas anteriores conservadas. Inicia una sesión con el alcance preparado para ampliar la cobertura.':'Todavía no se ha iniciado una descarga.');
+    let activity=op.busy&&downloading(op)?(op.label||'Consultando las fuentes autorizadas…'):workerActive?reasons.external_lease:coverage.closed_partial?'Descarga cerrada con cobertura parcial. Las tareas pendientes se conservan para reanudar después.':reasons[stopReason]||(['paused','failed'].includes(coverage.status)?'La sesión se detuvo con tareas pendientes. Puedes reanudar o cerrar esta descarga con lo disponible.':coverage.status==='completed'?'La sesión de descarga terminó. Revisa la cobertura antes de continuar.':Number(completed||0)>0?'Hay tareas anteriores conservadas. Inicia una sesión con el alcance preparado para ampliar la cobertura.':'Todavía no se ha iniciado una descarga.');
     if(!op.busy&&!workerActive&&coverage.needs_new_search)activity='El banco o el alcance cambió. Inicia una nueva búsqueda para aplicar el plan actual; las tareas anteriores se conservarán por separado en la cola.';
     setText('workflow-download-current',activity);
-    setText('workflow-queue-state',workerActive||op.busy&&op.kind==='download'?'Descarga activa':coverage.closed_partial?'Cobertura parcial aceptada':pending?'Pendientes guardadas':context.attempted?'Sesión terminada':'Sin actividad');
+    setText('workflow-queue-state',workerActive||op.busy&&downloading(op)?'Descarga activa':coverage.closed_partial?'Cobertura parcial aceptada':pending?'Pendientes guardadas':context.attempted?'Sesión terminada':'Sin actividad');
     const delay=retryDelay(context);
     setText('workflow-download-wait',pending?(workerActive?'Hay trabajo activo; el análisis seguirá bloqueado hasta que termine.':delay!==null&&delay>0?'Próximo intento permitido en aproximadamente '+formatTime(delay)+'. Reanuda la descarga para que procese las tareas cuando estén disponibles.':Number(coverage.queued||0)>0?'Hay tareas en cola listas para reanudar.':'No hay una espera estimable para las tareas restantes. Puedes reanudar o continuar con cobertura parcial.'):'No hay tareas pendientes de descarga.');
     const issues=$('workflow-download-issues');
@@ -104,7 +107,7 @@ window.pepsWorkflow = (() => {
   }
   function renderAcquisition() {
     const local=state.workflow?.mode==='local',data=state.acquisition,permissions=data?.permissions;
-    const showEntitySummary=!local&&!!data&&Number.isFinite(data.entities_with_bodies);
+    const showEntitySummary=!local&&!!data&&data.current_bank_index_ready!==false&&Number.isFinite(data.entities_with_bodies);
     $('workflow-summary-entities').hidden=!showEntitySummary;
     $('workflow-summary-entities').closest('article').dataset.entityCoverage=String(showEntitySummary);
     if(showEntitySummary){setText('workflow-summary-entity-count',data.entities_with_bodies.toLocaleString('es-MX'));setText('workflow-summary-entity-total','de '+Number(data.entities_total||0).toLocaleString('es-MX'));}
@@ -115,6 +118,7 @@ window.pepsWorkflow = (() => {
     if(noBodies)setText('workflow-session-permission-warning','No hay fuentes con texto autorizado. Esta sesión sólo puede descubrir referencias; no aportarán el cuerpo original para el score. Revisa «Fuentes y permisos» si cuentas con autorización para conservar el contenido.');
     $('workflow-entity-coverage').hidden=local||!data;
     if(data){const total=Number(data.entities_total||0),label=value=>Number.isFinite(value)?value.toLocaleString('es-MX')+' de '+total.toLocaleString('es-MX'):'Aún no disponible';setText('workflow-entities-queried',label(data.entities_queried));setText('workflow-entities-candidates',label(data.entities_with_candidates));setText('workflow-entities-bodies',label(data.entities_with_bodies));const counts=[];for(const [key,text] of [['relevant_articles','noticias candidatas para esta lista'],['body_articles','artículos con texto conservado'],['metadata_only_articles','referencias sin cuerpo'],['excluded_records','registros ajenos a la lista omitidos']])if(Number.isFinite(data[key]))counts.push(data[key].toLocaleString('es-MX')+' '+text);setText('workflow-relevant-articles',counts.join(' · '));}
+    if(data?.current_bank_index_ready===false){for(const id of ['workflow-entities-queried','workflow-entities-candidates','workflow-entities-bodies'])setText(id,'Por actualizar');setText('workflow-relevant-articles','Se actualizarán las coincidencias al iniciar la búsqueda. La información histórica se conserva.');}
     const shared=state.searchConfig.strategy==='shared'||Number(state.searchPlan.shared_discovery?.sources||0)>0||Number(data?.shared_pages_read||0)>0||Number(data?.shared_pages_pending||0)>0;
     $('workflow-shared-coverage').hidden=local||!data||!shared;
     if(data&&shared){
@@ -172,8 +176,8 @@ window.pepsWorkflow = (() => {
     const execution=plan.execution||{};
     if(Number.isFinite(execution.session_seconds)){const note=document.createElement('p');note.className='search-plan-estimate';note.textContent='Presupuesto guardado: '+(execution.mode==='quick'?'Rápido':'Ampliado')+' · hasta '+formatTime(execution.session_seconds)+' por sesión. '+(execution.scope_note||'La cobertura de la lista depende del ritmo y las respuestas de las fuentes; el avance pendiente se puede reanudar.');box.append(note);}
     if(config.strategy==='shared'||Number(sharedPlan.sources||0)>0){const shared=sharedPlan,note=document.createElement('p');note.className='search-plan-estimate';note.textContent=(Number.isFinite(shared.max_pages_per_source)?'Límite guardado: hasta '+shared.max_pages_per_source.toLocaleString('es-MX')+' páginas por fuente y recorrido. ':'')+(shared.scope_note||'Los filtros de fechas delimitan la búsqueda. El recorrido del índice puede quedar parcial; las páginas consultadas no equivalen a todo el archivo.')+' Reutiliza metadatos ya descargados al contrastar la lista, sin tratarlos como cuerpos de noticias ni como identidad confirmada.';box.append(note);}
-    if(config.strategy!=='shared'&&Number.isFinite(plan.estimated_entities_first_session)){const note=document.createElement('p');note.className='search-plan-estimate';note.textContent='Primera sesión: aproximadamente '+plan.estimated_entities_first_session.toLocaleString('es-MX')+' entidades podrían consultarse según la programación del plan. '+(plan.first_session_estimate_note||'Es una estimación de alcance, no de hallazgos ni de cobertura completa.');box.append(note);}
-    if(measured.queries>0&&Number.isFinite(plan.estimated_schedule_seconds)){
+    if(!['shared','feeds'].includes(config.strategy)&&Number.isFinite(plan.estimated_entities_first_session)){const note=document.createElement('p');note.className='search-plan-estimate';note.textContent='Primera sesión: aproximadamente '+plan.estimated_entities_first_session.toLocaleString('es-MX')+' entidades podrían consultarse según la programación del plan. '+(plan.first_session_estimate_note||'Es una estimación de alcance, no de hallazgos ni de cobertura completa.');box.append(note);}
+    if(measured.queries>0&&Number.isFinite(plan.estimated_schedule_seconds)&&plan.estimated_schedule_seconds>0){
       const estimate=document.createElement('p');estimate.className='search-plan-estimate';
       estimate.textContent='Tiempo mínimo programado entre '+(Number(sharedPlan.sources||0)>0?'solicitudes':'consultas')+': '+formatTime(plan.estimated_schedule_seconds)+'. No incluye la duración ni los reintentos de las descargas.';box.append(estimate);
     }
@@ -189,7 +193,8 @@ window.pepsWorkflow = (() => {
     }
     const warnings=[...(plan.warnings||[])];if(plan.truncated&&!warnings.some(item=>/presupuesto|límite de consultas/i.test(typeof item==='string'?item:item.message||'')))warnings.push('El plan alcanza el límite de consultas. Amplía el límite o acota el período para revisar la cobertura.');
     if(warnings.length){const list=document.createElement('ul');for(const warning of warnings){const item=document.createElement('li');item.textContent=typeof warning==='string'?warning:warning.message||warning.reason||'';list.append(item);}box.append(list);}
-    setText('workflow-search-status','Alcance preparado. Confirma las fuentes para continuar.');
+    const notes=[...box.children].slice(1);if(notes.length){const detail=document.createElement('details');detail.className='search-scope-details';const title=document.createElement('summary');title.textContent='Alcance y límites';detail.append(title,...notes);box.append(detail);}
+    setText('workflow-search-status','Alcance guardado. Puedes iniciar la revisión.');
   }
   async function loadSearch() {
     if(state.searchLoading||state.searchDirty)return;
@@ -255,7 +260,7 @@ window.pepsWorkflow = (() => {
     details.hidden=!data;
     setText('workflow-task-timing-title',compact?'Ver tiempos de las fases terminadas':tasks.length?'Ver tiempos de las tareas ('+tasks.length+' activas)':'Ver tiempos y esperas');
     $('workflow-task-empty').hidden=!!tasks.length||compact;
-    if(queue&&state.operation.kind==='download'){
+    if(queue&&downloading()){
       const estimate=timingEstimate(queue,!state.operation.busy&&state.operation.status==='paused');
       const next=queue.next_retry_seconds,context=downloadContext();
       setText('workflow-operation-eta',context.coverage.closed_partial?'Cobertura parcial guardada; las tareas restantes se conservan.':!state.operation.busy&&state.operation.status==='completed'&&Number(queue.pending||0)===0?'Operación terminada':!state.operation.busy&&state.operation.status==='failed'?'Operación detenida; consulta el error.':estimate.kind==='waiting'&&Number.isFinite(next)?'Próximo intento de la cola en ≈ '+formatTime(next):'Cola · '+estimate.text);
@@ -281,8 +286,8 @@ window.pepsWorkflow = (() => {
   }
   function renderOperation() {
     const op=state.operation;
-    const operationTab={import:'import',document_import:'sources',download:'news',analysis:'analysis'}[op.kind];
-    const completedHere=op.status==='completed'&&(operationTab===state.current||(op.kind==='analysis'&&state.current==='bank'));
+    const operationTab=op.kind==='pipeline'?(['attribution','scoring'].includes(op.phase)?'analysis':'news'):{import:'import',document_import:'sources',download:'news',analysis:'analysis'}[op.kind];
+    const completedHere=op.status==='completed'&&(operationTab===state.current||(['analysis','pipeline'].includes(op.kind)&&state.current==='bank'));
     const visible=!!op.busy||completedHere||['paused','error','failed','stopped'].includes(op.status);
     $('workflow-operation').hidden=!visible;if(!visible)return;
     $('workflow-operation').dataset.status=op.busy?'running':op.status==='failed'?'error':op.status;
@@ -303,7 +308,7 @@ window.pepsWorkflow = (() => {
     setText('workflow-operation-eta',op.busy?(Number.isFinite(op.eta_seconds)?'Tiempo restante estimado: '+formatTime(op.eta_seconds):'Tiempo restante: aún no estimable'):(op.status==='completed'?'Operación terminada':op.status==='paused'?'Puedes reanudar la descarga':'Consulta el estado antes de continuar'));
     $('workflow-operation-error').hidden=!op.error;
     setText('workflow-operation-error',op.error);
-    if(op.kind==='download'&&state.workflow){const context=downloadContext(),delay=retryDelay(context);if(!op.busy&&context.coverage.closed_partial){$('workflow-operation').dataset.status='completed';setText('workflow-operation-label','Descarga cerrada con cobertura parcial');setText('workflow-operation-eta','Las tareas pendientes se conservan para reanudar después.');}else if(!op.busy&&context.pending){setText('workflow-operation-label','Descarga en pausa · '+context.pending.toLocaleString('es-MX')+' tareas pendientes');setText('workflow-operation-eta',delay!==null&&delay>0?'Próximo intento permitido en aproximadamente '+formatTime(delay):'Reanuda la descarga o continúa con cobertura parcial.');}else if(op.busy&&delay!==null&&delay>0&&(context.coverage.waiting||op.waiting||(op.last_result||op.result||{}).waiting)){setText('workflow-operation-eta','Espera de la fuente: próximo intento en aproximadamente '+formatTime(delay));}}
+    if(downloading(op)&&state.workflow){const context=downloadContext(),delay=retryDelay(context);if(!op.busy&&context.coverage.closed_partial){$('workflow-operation').dataset.status='completed';setText('workflow-operation-label','Descarga cerrada con cobertura parcial');setText('workflow-operation-eta','Las tareas pendientes se conservan para reanudar después.');}else if(!op.busy&&context.pending){setText('workflow-operation-label','Descarga en pausa · '+context.pending.toLocaleString('es-MX')+' tareas pendientes');setText('workflow-operation-eta',delay!==null&&delay>0?'Próximo intento permitido en aproximadamente '+formatTime(delay):'Reanuda la descarga o continúa con cobertura parcial.');}else if(op.busy&&delay!==null&&delay>0&&(context.coverage.waiting||op.waiting||(op.last_result||op.result||{}).waiting)){setText('workflow-operation-eta','Espera de la fuente: próximo intento en aproximadamente '+formatTime(delay));}}
     renderTiming();
   }
   function renderNavigation() {
@@ -321,7 +326,7 @@ window.pepsWorkflow = (() => {
       setText('step-reason-'+step.id,data?.status==='blocked'?'Completa los pasos anteriores':hints[step.id]||labels[data?.status]||'Pendiente');
       button.title=data?.reason||hints[step.id]||'';
       const progress=$('workflow-step-progress-'+step.id);
-      const operationStep={import:'data',document_import:'sources',download:'download',acquire:'download',analysis:'analysis',analyze:'analysis',rescore:'analysis'}[state.operation.kind];
+      const operationStep=state.operation.kind==='pipeline'?(['attribution','scoring'].includes(state.operation.phase)?'analysis':'download'):{import:'data',document_import:'sources',download:'download',acquire:'download',analysis:'analysis',analyze:'analysis',rescore:'analysis'}[state.operation.kind];
       const isOperation=operationStep===step.id;
       const phase=state.operation.phase||'';
       const phaseLabel={saving:'guardado',download:'descarga',attribution:'atribución',scoring:'cálculo del score'}[phase]||phase||'actual';
@@ -382,7 +387,7 @@ window.pepsWorkflow = (() => {
   }
   function renderActions() {
     if(!state.workflow)return;
-    const opBusy=busy();const mode=state.workflow.mode||'online';const local=mode==='local';const counts=state.workflow.counts||{};
+    const opBusy=busy();const savingSources=Number(window.pepsSourcesPending?.()||0)>0;const mode=state.workflow.mode||'online';const local=mode==='local';const counts=state.workflow.counts||{};
     for(const name of ['online','local']) {
       const button=$('workflow-mode-'+name);const selected=mode===name;
       button.classList.toggle('selected',selected);button.setAttribute('aria-pressed',String(selected));button.disabled=opBusy||!action('configure_sources').enabled;
@@ -391,14 +396,22 @@ window.pepsWorkflow = (() => {
     setText('workflow-mode-status',local?'Modo local: la información se importa desde tu equipo. No se descargarán noticias.':'Modo con conexión: sólo se consultarán las fuentes que habilites y autorices.');
     const sourceCount=Number(counts.sources||0);setText('workflow-source-count',sourceCount+' '+(sourceCount===1?'fuente preparada':'fuentes preparadas'));
     setText('workflow-local-document-status',Number(counts.documents||0).toLocaleString('es-MX')+' documentos conservados. La importación no calcula el score.');
-    $('workflow-sources-next').textContent=local?'Continuar con mis documentos':'Confirmar fuentes y continuar';
-    setButton('workflow-sources-next',!opBusy&&action('configure_sources').enabled,action('configure_sources').reason||'Comprueba el origen de la evidencia antes de continuar.','workflow-sources-reason');
+    $('workflow-sources-next').textContent=local?'Continuar con mis documentos':savingSources?'Guardando selección…':$('workflow-auto-analyze').checked?'Guardar e iniciar revisión':'Guardar e iniciar descarga';
+    const prepared=Number(state.acquisition?.permissions?.prepared_sources??counts.sources??0),configured=prepared>0;
+    const noQueries=state.searchLoaded&&!state.searchDirty&&Number(state.searchPlan.query_count)===0;
+    const runReason=savingSources?'Guardando los permisos seleccionados…':!configured&&!local?'Selecciona al menos una fuente y revisa sus condiciones.':noQueries&&!local?'El alcance no tiene consultas. Ajusta las fuentes o las fechas.':!local&&!onlineAllowed()?'Autoriza la conexión de esta sesión o elige «Sólo caché local».':local?'Continúa con los documentos que ya conservaste.':$('workflow-auto-analyze').checked?'Descargará y analizará al terminar. Si queda cobertura parcial, te pedirá cómo continuar.':'Conservará la información sin iniciar el análisis.';
+    setButton('workflow-sources-next',!opBusy&&!savingSources&&action('configure_sources').enabled&&!state.searchLoading&&(local||configured&&!noQueries&&onlineAllowed()),runReason,'workflow-sources-reason');
+    const runOptions=$('workflow-run-options'),runSlot=$(state.current==='sources'?'workflow-source-run-options':'workflow-news-run-options');if(runOptions.parentElement!==runSlot)runSlot.append(runOptions);
+    const manual=$('workflow-manual-discovery'),manualSlot=$(state.current==='news'?'workflow-manual-news-slot':'workflow-manual-source-slot');if(manual.parentElement!==manualSlot)manualSlot.append(manual);manual.hidden=local;
+    runOptions.hidden=local;for(const field of runOptions.querySelectorAll('input,select'))field.disabled=opBusy||savingSources;
+    const localCache=cacheMode()==='local';$('workflow-network-consent').hidden=local||localCache;
+    setText('workflow-cache-explanation',localCache?'Sin solicitudes de red. Sólo copias locales; no se comprueba su vigencia en internet.':cacheMode()==='revalidate'?'Comprueba si las fuentes cambiaron, respetando sus pausas y condiciones. No borra la evidencia conservada.':'Reutiliza información guardada y consulta la red sólo cuando haga falta. Las fechas originales se conservan.');
     for(const field of document.querySelectorAll('#news-sources input,#sources input'))field.disabled=opBusy||!action('configure_sources').enabled||field.dataset.permissionSaving==='true';
     const context=downloadContext(),{coverage,pending,workerActive}=context;
-    $('workflow-network-consent').hidden=local||context.canContinue&&!pending;
+    $('workflow-network-consent').hidden=local||cacheMode()==='local'||context.canContinue&&!pending&&state.current!=='sources';
     $('workflow-search-fields').disabled=opBusy||state.searchLoading||!action('configure_sources').enabled;
     renderBudgetChoice();renderAcquisition();
-    setButton('workflow-save-search',!opBusy&&!state.searchLoading&&action('configure_sources').enabled);
+    setButton('workflow-save-search',!opBusy&&!savingSources&&!state.searchLoading&&action('configure_sources').enabled);
     $('workflow-search-preset').disabled=$('workflow-search-fields').disabled||['feeds','shared'].includes($('workflow-search-strategy').value);
     setText('workflow-download-mode',local?'Documentos locales':'Fuentes autorizadas');
     setText('workflow-download-card-title',local?'Tu evidencia ya está en el equipo':context.canContinue?'La información está lista para analizar':pending?'Tu avance está guardado':'Descargar noticias');
@@ -407,21 +420,21 @@ window.pepsWorkflow = (() => {
     setText('workflow-news-count-label',local?'documentos locales conservados':'referencias y noticias conservadas');
     setText('workflow-coverage-note',local?'Los documentos se analizarán en tu equipo.':Number(coverage.unfetched_articles||0)?Number(coverage.unfetched_articles).toLocaleString('es-MX')+' noticias conservan sólo la referencia o el resumen; todavía no tienen un cuerpo descargado.':'La cantidad de noticias indica cobertura, no riesgo ni una identidad confirmada.');
     const download=action('download');
-    const downloadReason=workerActive?'Hay un trabajador activo. Espera a que termine o solicita la pausa.':local?'Modo local: no necesitas descargar noticias.':opBusy?'Hay una operación en curso. Puedes consultar su actividad y progreso.':context.canContinue?(coverage.accepted_partial?'Continuarás con cobertura parcial; las tareas restantes se conservan.':'La evidencia disponible está lista para analizar.'):!download.enabled?download.reason:!$('news-online').checked?'Marca el permiso de conexión para iniciar o reanudar la descarga.':coverage.needs_new_search?'Se aplicará el plan actual y se conservará la cola anterior. Las tareas ya guardadas no se eliminan.':pending?'Se retomarán las tareas pendientes sin volver a crear las consultas terminadas.':'Sólo se consultarán las fuentes y el alcance que preparaste.';
+    const downloadReason=workerActive?'Hay un trabajador activo. Espera a que termine o solicita la pausa.':local?'Modo local: no necesitas descargar noticias.':opBusy?'Hay una operación en curso. Puedes consultar su actividad y progreso.':context.canContinue?(coverage.accepted_partial?'Continuarás con cobertura parcial; las tareas restantes se conservan.':'La evidencia disponible está lista para analizar.'):!download.enabled?download.reason:!onlineAllowed()?'Marca el permiso de conexión para iniciar o reanudar la descarga.':coverage.needs_new_search?'Se aplicará el plan actual y se conservará la cola anterior. Las tareas ya guardadas no se eliminan.':pending?'Se retomarán las tareas pendientes sin volver a crear las consultas terminadas.':'Sólo se consultarán las fuentes y el alcance que preparaste.';
     $('news-acquire').dataset.downloadAction=context.canContinue?'continue':coverage.needs_new_search?'start_new':pending?'resume':'start';
-    $('news-acquire').textContent=context.canContinue?'Continuar al análisis':opBusy&&state.operation.kind==='download'?'Descarga en curso…':coverage.needs_new_search?'Iniciar nueva búsqueda':pending?'Reanudar descarga':'Iniciar descarga';
-    setButton('news-acquire',context.canContinue||!local&&!opBusy&&!workerActive&&download.enabled&&$('news-online').checked&&state.searchLoaded&&!state.searchLoading,state.searchLoading?'Cargando el presupuesto guardado antes de iniciar.':downloadReason,'workflow-download-lock');
-    $('stop').hidden=!state.operation.busy||!(/download|acquir|collect/.test(state.operation.kind||state.operation.phase||''));
-    setButton('stop',!!state.operation.busy&&/download|acquir|collect/.test(state.operation.kind||state.operation.phase||''));
+    $('news-acquire').textContent=context.canContinue?($('workflow-auto-analyze').checked?'Analizar y ver resultados':'Continuar al análisis'):opBusy&&downloading()?'Descarga en curso…':coverage.needs_new_search?'Iniciar nueva búsqueda':pending?'Reanudar descarga':'Iniciar descarga';
+    setButton('news-acquire',context.canContinue||!local&&!opBusy&&!workerActive&&download.enabled&&onlineAllowed()&&state.searchLoaded&&!state.searchLoading,state.searchLoading?'Cargando el presupuesto guardado antes de iniciar.':downloadReason,'workflow-download-lock');
+    const pause=$('stop'),pauseSlot=state.operation.busy?$('workflow-operation-controls'):document.querySelector('.download-main-actions');if(pause.parentElement!==pauseSlot)pauseSlot.append(pause);pause.hidden=!state.operation.busy;pause.textContent='Pausar proceso';setButton('stop',!!state.operation.busy);
     $('news-online').disabled=opBusy||workerActive;
     const canResumeLater=!local&&pending>0&&!!coverage.accepted_partial;
     $('workflow-resume-download').hidden=!canResumeLater;
     $('workflow-resume-note').hidden=!canResumeLater;
-    setButton('workflow-resume-download',canResumeLater&&!opBusy&&!workerActive&&download.enabled&&$('news-online').checked,workerActive?'Hay un trabajador activo.':!$('news-online').checked?'Marca el permiso de conexión para reanudar.':'Ampliar la cobertura requiere volver a analizar; los resultados históricos se conservan.','workflow-resume-note');
-    const downloadState=serverStep('news');setText('workflow-download-status',local?'Sin descarga de red':coverage.closed_partial?'Cobertura parcial aceptada':workerActive||state.operation.busy&&state.operation.kind==='download'?'Descarga activa':pending?'En pausa · '+pending.toLocaleString('es-MX')+' pendientes':downloadState?.status==='ready'?'Preparado para descargar':labels[downloadState?.status]||'Esperando descarga');
+    setButton('workflow-resume-download',canResumeLater&&!opBusy&&!workerActive&&download.enabled&&onlineAllowed(),workerActive?'Hay un trabajador activo.':!onlineAllowed()?'Marca el permiso de conexión para reanudar.':'Ampliar la cobertura requiere volver a analizar; los resultados históricos se conservan.','workflow-resume-note');
+    const downloadState=serverStep('news');setText('workflow-download-status',local?'Sin descarga de red':coverage.closed_partial?'Cobertura parcial aceptada':workerActive||state.operation.busy&&downloading()?'Descarga activa':pending?'En pausa · '+pending.toLocaleString('es-MX')+' pendientes':downloadState?.status==='ready'?'Preparado para descargar':labels[downloadState?.status]||'Esperando descarga');
     const partial=action('accept_partial');
     $('workflow-partial-warning').hidden=local||!context.attempted||(!coverage.partial&&!pending)||!!coverage.accepted_partial;
     setText('workflow-partial-description','Se analizará únicamente la información que ya está guardada. '+(pending?pending.toLocaleString('es-MX')+' tareas pendientes se conservarán para reanudar después. ':'')+'Los resultados indicarán la cobertura parcial.');
+    $('workflow-accept-partial').textContent='Analizar lo disponible';
     setButton('workflow-accept-partial',!opBusy&&!workerActive&&partial.enabled,workerActive?'No puedes cerrar la cobertura mientras haya un trabajador activo.':opBusy?'Espera a que termine o se pause la operación actual.':partial.reason||'Esta decisión no elimina ni marca como completadas las tareas pendientes.','workflow-partial-reason');
     $('workflow-download-footer').hidden=true;
     setButton('workflow-download-next',context.canContinue,context.canContinue?'La información conservada está lista para el análisis.':serverStep('analysis')?.reason||action('analyze').reason,'workflow-download-reason');
@@ -445,13 +458,41 @@ window.pepsWorkflow = (() => {
     setButton('import-documents',!opBusy&&Number(counts.entities||0)>0,Number(counts.entities||0)>0?'':'Primero carga una lista de entidades.');
     for(const id of ['doc-text','doc-file','entity-text','entity-file'])if($(id))$(id).disabled=opBusy;
     if(state.current==='sources'&&state.searchLoading){setButton('workflow-sources-next',false,'Cargando la configuración de búsqueda…','workflow-sources-reason');}
-    renderPreflightEstimates();
+    renderPreflightEstimates();renderSessionMonitor();for(const retry of document.querySelectorAll('[data-task-retry]'))retry.disabled=opBusy;
     if(window.pepsImport?.syncButtons)window.pepsImport.syncButtons();
     renderPrimary();
   }
+  const metricNodes=new Map();let taskOffset=0,taskRequest=0;
+  function renderSessionMonitor(){
+    const data=state.acquisition||{},session=data.session,box=$('workflow-session-monitor');box.hidden=state.workflow?.mode==='local';
+    const metrics=$('workflow-session-metrics');
+    for(const [key,label] of [['network_requests','Solicitudes de red'],['http_cache_hits','Reusos de caché HTTP'],['metadata_cache_hits','Índices reutilizados'],['bodies_new','Textos nuevos'],['bodies_reused','Textos reutilizados'],['duplicate_candidates','Candidatos repetidos'],['excluded_records','Registros ajenos omitidos']]){
+      let node=metricNodes.get(key);if(!node){const cell=document.createElement('div'),title=document.createElement('dt');node=document.createElement('dd');title.textContent=label;cell.append(title,node);metrics.append(cell);metricNodes.set(key,node);}const value=session?.[key];node.textContent=typeof value==='number'&&Number.isFinite(value)?value.toLocaleString('es-MX'):'—';
+    }
+    const started=session?.started_at?new Date(session.started_at):null;
+    const startedLabel=started&&!Number.isNaN(started.getTime())?started.toLocaleString('es-MX'):'fecha no disponible';
+    const live=!!session&&!session.finished_at&&state.operation.busy&&downloading();
+    setText('workflow-session-scope',!session?'Aún sin medición':live?'Sesión en curso: '+startedLabel:'Última sesión: '+startedLabel+(session.finished_at?' · finalizada':' · sin cierre registrado'));
+    const localSession=session?.cache_mode==='local';
+    const bankNote=data.session_matches_bank===false?'La sesión corresponde a una lista anterior. ':data.session_matches_bank===true?'La sesión corresponde a la lista actual. ':'';
+    setText('workflow-session-freshness',bankNote+(localSession?'Sólo copias locales; no se comprobó su vigencia en internet. ':'')+'Los contadores corresponden a '+(session?'esa sesión':'una sesión medida')+'. «—» indica que no hay medición disponible.');
+    const sources=Array.isArray(data.source_breakdown)?data.source_breakdown:Array.isArray(session?.source_breakdown)?session.source_breakdown:[];
+    const container=$('workflow-source-activity'),key=JSON.stringify(sources);if(container.dataset.value===key)return;container.dataset.value=key;container.replaceChildren();
+    for(const source of sources){const row=document.createElement('div');row.className='source-activity-row';const name=document.createElement('strong'),detail=document.createElement('span');name.textContent=source.label||source.source_name||source.id||'Fuente';const status={running:'En curso',waiting:'En espera',paused:'En pausa',completed:'Terminada',error:'Con error',idle:'Sin actividad'}[source.state]||source.state||'Sin actividad';detail.textContent=status+(Number.isFinite(source.pending)?' · '+source.pending+' pendientes':'')+(Number.isFinite(source.failed)&&source.failed?' · '+source.failed+' con error':'');row.append(name,detail);container.append(row);}
+  }
+  async function loadTasks(reset=false){
+    if(reset)taskOffset=0;const request=++taskRequest,filter=$('workflow-task-filter').value;
+    $('workflow-task-refresh').disabled=true;setText('workflow-task-status','Consultando tareas guardadas…');
+    try{const data=await state.hooks.api('news-tasks?limit=25&offset='+taskOffset+(filter?'&status='+encodeURIComponent(filter):''));if(request!==taskRequest)return;const items=Array.isArray(data.items)?data.items:Array.isArray(data.tasks)?data.tasks:[];
+      const container=$('workflow-task-list');container.replaceChildren();for(const task of items){const row=document.createElement('article');row.className='queue-task';const title=document.createElement('strong'),detail=document.createElement('p');title.textContent=task.label||task.source_id||task.kind||'Tarea';const status={running:'En curso',queued:'En cola',deferred:'En espera',blocked:'Bloqueada',dead:'Con error',done:'Terminada'}[task.status]||task.status;detail.textContent=status+' · '+Number(task.attempts||0)+' intentos'+(Number.isFinite(task.next_retry_seconds)&&task.next_retry_seconds>0?' · próximo intento en ≈ '+formatTime(task.next_retry_seconds):'');row.append(title,detail);if(task.error){const note=document.createElement('p');note.className='muted';note.textContent=task.error;row.append(note);}if(['blocked','dead'].includes(task.status)){const retry=document.createElement('button');retry.type='button';retry.dataset.taskRetry=task.id;retry.textContent='Reintentar esta tarea';retry.disabled=busy();retry.onclick=async()=>{if(busy())return;retry.disabled=true;try{const retried=await state.hooks.api('news-retry',{job_ids:[task.id]});await loadTasks(false);await state.hooks.refresh(true);state.hooks.message(Number(retried.requeued??retried.retried)>0?'Tarea reencolada. Reanuda para procesarla; se respetan las pausas de la fuente.':'La tarea cambió de estado y no se reencoló. Actualiza la lista antes de volver a intentarlo.');}catch(error){state.hooks.message(error.message,true);retry.disabled=busy();}};row.append(retry);}container.append(row);}
+      if(!items.length){const empty=document.createElement('p');empty.className='muted';empty.textContent='No hay tareas en este filtro.';container.append(empty);}
+      setText('workflow-task-page',Math.floor(taskOffset/25)+1);$('workflow-task-previous').disabled=taskOffset===0;$('workflow-task-next').disabled=typeof data.total==='number'?taskOffset+items.length>=data.total:items.length<25;setText('workflow-task-status',items.length+' tareas mostradas. Las esperas respetan los límites de cada fuente.');
+    }catch(error){if(request===taskRequest)setText('workflow-task-status','No se pudieron consultar las tareas: '+error.message);}
+    finally{if(request===taskRequest)$('workflow-task-refresh').disabled=false;}
+  }
   function onNavigate(tab) {
     if(state.current!==tab)$('message').hidden=true;
-    state.current=tab;
+    state.current=tab;document.body.dataset.workflowTab=tab;renderActions();
     try { sessionStorage.setItem('peps-workflow-tab',tab); } catch {}
     renderNavigation();renderPrimary();renderOperation();
     if(tab==='sources'||tab==='news'&&!state.searchLoaded)loadSearch();
@@ -468,13 +509,19 @@ window.pepsWorkflow = (() => {
   }
   async function startDownload(resume=false) {
     const context=downloadContext();
-    if(context.local||busy()||context.workerActive||!action('download').enabled||!$('news-online').checked||!state.searchLoaded||state.searchLoading)return;
-    await perform(async()=>{await state.hooks.api('news-acquire',{online:true,resume});state.hooks.message(resume?'Reanudando las tareas pendientes. El avance anterior se conserva.':'Descarga iniciada con el alcance preparado.');});
+    if(context.local||busy()||context.workerActive||!action('download').enabled||!onlineAllowed()||!state.searchLoaded||state.searchLoading)return;
+    await window.pepsWaitSources?.();
+    await perform(async()=>{await state.hooks.api('workflow-run',{online:cacheMode()!=='local',resume,cache_mode:cacheMode(),analyze_after_download:$('workflow-auto-analyze').checked});state.hooks.message(resume?'Reanudando el trabajo guardado.':'Proceso iniciado. Puedes seguir las fases y la actividad de cada fuente.');});
   }
   async function confirmSources() {
-    if(!action('configure_sources').enabled||state.searchLoading)return;
+    if(!action('configure_sources').enabled||state.searchLoading||busy())return;
+    await window.pepsWaitSources?.();
     const config=state.searchDirty?searchPayload():null;if(state.searchDirty&&!config)return;
-    await perform(async()=>{if(config)renderSearch(await state.hooks.api('news-search',config));await state.hooks.api('workflow-confirm-sources',{});await state.hooks.refresh(true);if(canOpenTab('news'))await navigate('news');else state.hooks.message(serverStep('news')?.reason||'Completa la configuración de las fuentes.',true);});
+    await perform(async()=>{
+      if(state.workflow?.mode==='local'){await state.hooks.api('workflow-confirm-sources',{});await state.hooks.refresh(true);if(canOpenTab('news'))await navigate('news');return;}
+      const payload={online:cacheMode()!=='local',resume:false,cache_mode:cacheMode(),analyze_after_download:$('workflow-auto-analyze').checked};if(config)payload.search=config;
+      await state.hooks.api('workflow-run',payload);state.searchDirty=false;await state.hooks.refresh(true);if(canOpenTab('news'))await navigate('news');
+    });
   }
   async function primary() {
     if(state.current==='import') { if(canOpenTab('sources'))await navigate('sources');else{window.pepsImport?.open('csv');$('csv-file').focus();} }
@@ -499,7 +546,8 @@ window.pepsWorkflow = (() => {
     if(op.busy&&id)state.observedOperation=id;
     if(id&&id!==state.finishedOperation&&!op.busy&&op.status==='completed'&&state.observedOperation===id) {
       state.finishedOperation=id;
-      if(state.current==='news'&&canOpenTab('analysis'))navigate('analysis').catch(error=>state.hooks.message(error.message,true));
+      if(['pipeline','analysis'].includes(op.kind)&&action('view_results').enabled)navigate('bank').catch(error=>state.hooks.message(error.message,true));
+      else if(state.current==='news'&&canOpenTab('analysis'))navigate('analysis').catch(error=>state.hooks.message(error.message,true));
       else if(state.current==='analysis'&&action('view_results').enabled)navigate('bank').catch(error=>state.hooks.message(error.message,true));
     }
   }
@@ -512,21 +560,22 @@ window.pepsWorkflow = (() => {
   }
   function observe(response) { if(response?.operation_id)state.observedOperation=response.operation_id; }
   function init(hooks) {
-    if(state.initialized)return;state.initialized=true;state.hooks=hooks;
+    if(state.initialized)return;state.initialized=true;state.hooks=hooks;try{if(sessionStorage.getItem('peps-auto-analyze')==='false')$('workflow-auto-analyze').checked=false;const cached=sessionStorage.getItem('peps-cache-mode');if(['reuse','revalidate','local'].includes(cached))$('workflow-cache-mode').value=cached;}catch{}
     $('workflow-mobile-step').onchange=()=>navigate($('workflow-mobile-step').value).catch(error=>hooks.message(error.message,true));
     $('workflow-primary').onclick=()=>primary().catch(error=>hooks.message(error.message,true));
     for(const mode of ['online','local'])$('workflow-mode-'+mode).onclick=()=>perform(async()=>{await hooks.api('workflow-mode',{mode});});
     $('workflow-sources-next').onclick=confirmSources;
     // This button owns the contextual download/recovery action; the legacy app handler is replaced here.
-    $('news-acquire').onclick=()=>{const context=downloadContext();if(context.canContinue)return navigate('analysis').catch(error=>hooks.message(error.message,true));return startDownload(context.pending>0&&!context.coverage.needs_new_search);};
+    $('news-acquire').onclick=()=>{const context=downloadContext();if(context.canContinue&&!$('workflow-auto-analyze').checked)return navigate('analysis').catch(error=>hooks.message(error.message,true));if(context.canContinue)return perform(async()=>{await hooks.api('workflow-analyze',{});if(canOpenTab('analysis'))await navigate('analysis');});return startDownload(context.pending>0&&!context.coverage.needs_new_search);};
     $('workflow-resume-download').onclick=()=>startDownload(true);
     $('workflow-search-form').onsubmit=event=>{event.preventDefault();const config=searchPayload();if(!config||!action('configure_sources').enabled)return;perform(async()=>{renderSearch(await hooks.api('news-search',config));});};
-    for(const field of document.querySelectorAll('#workflow-search-fields input,#workflow-search-fields select'))field.addEventListener('change',()=>{state.searchDirty=true;setText('workflow-search-status','Hay cambios sin aplicar. Guárdalos o confirma las fuentes para continuar.');renderActions();});
+    for(const field of document.querySelectorAll('#workflow-search-fields input,#workflow-search-fields select'))field.addEventListener('change',()=>{state.searchDirty=true;setText('workflow-search-status','Los cambios se guardarán al iniciar. Puedes revisar el alcance antes.');renderActions();});
     $('workflow-download-next').onclick=()=>navigate('analysis').catch(error=>hooks.message(error.message,true));
     $('workflow-results-next').onclick=()=>navigate('bank').catch(error=>hooks.message(error.message,true));
     $('workflow-analyze').onclick=()=>perform(async()=>{await hooks.api('workflow-analyze',{});hooks.message('Análisis iniciado. Puedes seguir el progreso de atribución y cálculo.');});
-    $('workflow-accept-partial').onclick=()=>perform(async()=>{await hooks.api('workflow-accept-partial',{});await hooks.refresh(true);hooks.message('Descarga cerrada con cobertura parcial. Las tareas pendientes se conservan y los resultados mostrarán esta limitación.');if(canOpenTab('analysis'))await navigate('analysis');});
-    $('news-online').onchange=()=>renderActions();
+    $('workflow-accept-partial').onclick=()=>perform(async()=>{await hooks.api('workflow-analyze-available',{});await hooks.refresh(true);hooks.message('Analizando la cobertura disponible. Las tareas pendientes se conservan y los resultados mostrarán esta limitación.');if(canOpenTab('analysis'))await navigate('analysis');});
+    $('news-online').onchange=()=>renderActions();$('workflow-cache-mode').onchange=()=>{try{sessionStorage.setItem('peps-cache-mode',cacheMode());}catch{}renderActions();};$('workflow-auto-analyze').onchange=()=>{try{sessionStorage.setItem('peps-auto-analyze',String($('workflow-auto-analyze').checked));}catch{}renderActions();};
+    $('workflow-queue-details').ontoggle=()=>{if($('workflow-queue-details').open)loadTasks(true);};$('workflow-task-filter').onchange=()=>loadTasks(true);$('workflow-task-refresh').onclick=()=>loadTasks(false);$('workflow-task-previous').onclick=()=>{taskOffset=Math.max(0,taskOffset-25);loadTasks(false);};$('workflow-task-next').onclick=()=>{taskOffset+=25;loadTasks(false);};
     renderNavigation();renderPrimary();
   }
   return {init,update,onNavigate,canOpenTab,canAction,busy,observe};
