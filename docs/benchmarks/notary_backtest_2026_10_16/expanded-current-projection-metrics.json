@@ -1,0 +1,3835 @@
+{
+  "candidates": {
+    "closed_reference_classification": {
+      "abstention_policy": "known-label abstentions remain in recall, specificity and accuracy denominators",
+      "abstentions": {
+        "negative": 0,
+        "positive": 0,
+        "unknown_truth": 0
+      },
+      "accuracy": {
+        "denominator": null,
+        "numerator": null,
+        "undefined_reason": "unknown ground truth prevents cohort-wide accuracy",
+        "value": null,
+        "wilson95": null
+      },
+      "adjudicated_decision_coverage": {
+        "denominator": 115,
+        "numerator": 115,
+        "value": 1.0,
+        "wilson95": {
+          "lower": 0.9676757685506868,
+          "upper": 0.9999999999999999
+        }
+      },
+      "adjudicated_subset_accuracy": {
+        "denominator": 115,
+        "numerator": 1,
+        "value": 0.008695652173913044,
+        "wilson95": {
+          "lower": 0.0015366489058808025,
+          "upper": 0.047616726344313784
+        }
+      },
+      "adjudicated_subset_balanced_accuracy": null,
+      "answered_adjudicated_subset_accuracy": {
+        "denominator": 115,
+        "numerator": 1,
+        "value": 0.008695652173913044,
+        "wilson95": {
+          "lower": 0.0015366489058808025,
+          "upper": 0.047616726344313784
+        }
+      },
+      "balanced_accuracy": null,
+      "confidence_interval_scope": "Wilson intervals are marginal proportions, not F1 or balanced-accuracy intervals",
+      "confusion_matrix": {
+        "fn": 114,
+        "fp": 0,
+        "tn": 0,
+        "tp": 1
+      },
+      "decision_coverage": {
+        "denominator": 130,
+        "numerator": 130,
+        "value": 1.0,
+        "wilson95": {
+          "lower": 0.9712984388055687,
+          "upper": 1.0
+        }
+      },
+      "known_label_f1": 0.017241379310344827,
+      "known_label_precision": {
+        "denominator": 1,
+        "numerator": 1,
+        "value": 1.0,
+        "wilson95": {
+          "lower": 0.20654931437723745,
+          "upper": 1.0
+        }
+      },
+      "known_negative_specificity": {
+        "denominator": 0,
+        "numerator": 0,
+        "undefined_reason": "empty denominator",
+        "value": null,
+        "wilson95": null
+      },
+      "known_positive_recall": {
+        "denominator": 115,
+        "numerator": 1,
+        "value": 0.008695652173913044,
+        "wilson95": {
+          "lower": 0.0015366489058808025,
+          "upper": 0.047616726344313784
+        }
+      },
+      "negative_support": 0,
+      "positive_support": 115,
+      "unknown_truth_support": 15
+    },
+    "entities_with_any_result": {
+      "denominator": 60,
+      "numerator": 15,
+      "value": 0.25,
+      "wilson95": {
+        "lower": 0.15776522530056675,
+        "upper": 0.37232070077047824
+      }
+    },
+    "entities_with_reviewed_relevant_result": {
+      "denominator": 60,
+      "numerator": 13,
+      "value": 0.21666666666666667,
+      "wilson95": {
+        "lower": 0.13123044048190308,
+        "upper": 0.33620027573194783
+      }
+    },
+    "f1_reviewed_precision_and_frozen_reference_recall": 0.017241379310344827,
+    "judgment_coverage": {
+      "denominator": 72,
+      "numerator": 63,
+      "value": 0.875,
+      "wilson95": {
+        "lower": 0.7791894627583916,
+        "upper": 0.9328221577942649
+      }
+    },
+    "judgments": {
+      "irrelevant": 0,
+      "relevant": 63,
+      "unknown_or_not_independently_reviewed": 9
+    },
+    "pairs_per_entity": {
+      "max": 19,
+      "mean": 1.2,
+      "min": 0,
+      "p50": 0,
+      "p95": 6
+    },
+    "per_source_entity_article_pairs": {
+      "candidate_avimexnews_com": 2,
+      "candidate_elqueretano_info": 7,
+      "candidate_laevidencia_com_mx": 1,
+      "candidate_plazadearmas_com_mx": 25,
+      "candidate_www_periodicocontexto_com_mx": 3,
+      "candidate_www_rioaxaca_com": 25,
+      "candidate_www_zonadocs_mx": 7
+    },
+    "precision_all_results_bounds": {
+      "denominator": 72,
+      "lower": 0.875,
+      "unjudged": 9,
+      "upper": 1.0
+    },
+    "precision_among_reviewed": {
+      "denominator": 63,
+      "numerator": 63,
+      "value": 1.0,
+      "wilson95": {
+        "lower": 0.9425288004111484,
+        "upper": 1.0
+      }
+    },
+    "reference_eligibility": {
+      "known_eligible": 0,
+      "known_ineligible": 0,
+      "unknown": 115
+    },
+    "reference_entity_coverage": {
+      "denominator": 38,
+      "numerator": 1,
+      "value": 0.02631578947368421,
+      "wilson95": {
+        "lower": 0.004660587685768783,
+        "upper": 0.1349487611595213
+      }
+    },
+    "reference_macro_entity_recall_all": {
+      "entities_with_references": 38,
+      "entities_without_references": 22,
+      "scope": "Mean of per-entity pair recall over entities with at least one relevant frozen reference; no-reference entities remain undefined.",
+      "value": 0.02631578947368421
+    },
+    "reference_per_entity_recall_all": [
+      {
+        "denominator": 0,
+        "entity_id": "mx-notary-cdmx-002",
+        "numerator": 0,
+        "undefined_reason": "empty denominator",
+        "value": null,
+        "wilson95": null
+      },
+      {
+        "denominator": 0,
+        "entity_id": "mx-notary-cdmx-015",
+        "numerator": 0,
+        "undefined_reason": "empty denominator",
+        "value": null,
+        "wilson95": null
+      },
+      {
+        "denominator": 5,
+        "entity_id": "mx-notary-cdmx-022",
+        "numerator": 0,
+        "value": 0.0,
+        "wilson95": {
+          "lower": 0.0,
+          "upper": 0.43448246478317476
+        }
+      },
+      {
+        "denominator": 0,
+        "entity_id": "mx-notary-cdmx-025",
+        "numerator": 0,
+        "undefined_reason": "empty denominator",
+        "value": null,
+        "wilson95": null
+      },
+      {
+        "denominator": 0,
+        "entity_id": "mx-notary-cdmx-045",
+        "numerator": 0,
+        "undefined_reason": "empty denominator",
+        "value": null,
+        "wilson95": null
+      },
+      {
+        "denominator": 0,
+        "entity_id": "mx-notary-cdmx-058",
+        "numerator": 0,
+        "undefined_reason": "empty denominator",
+        "value": null,
+        "wilson95": null
+      },
+      {
+        "denominator": 0,
+        "entity_id": "mx-notary-cdmx-061",
+        "numerator": 0,
+        "undefined_reason": "empty denominator",
+        "value": null,
+        "wilson95": null
+      },
+      {
+        "denominator": 0,
+        "entity_id": "mx-notary-cdmx-071",
+        "numerator": 0,
+        "undefined_reason": "empty denominator",
+        "value": null,
+        "wilson95": null
+      },
+      {
+        "denominator": 0,
+        "entity_id": "mx-notary-cdmx-074",
+        "numerator": 0,
+        "undefined_reason": "empty denominator",
+        "value": null,
+        "wilson95": null
+      },
+      {
+        "denominator": 0,
+        "entity_id": "mx-notary-cdmx-086",
+        "numerator": 0,
+        "undefined_reason": "empty denominator",
+        "value": null,
+        "wilson95": null
+      },
+      {
+        "denominator": 5,
+        "entity_id": "mx-notary-cdmx-088",
+        "numerator": 0,
+        "value": 0.0,
+        "wilson95": {
+          "lower": 0.0,
+          "upper": 0.43448246478317476
+        }
+      },
+      {
+        "denominator": 0,
+        "entity_id": "mx-notary-cdmx-098",
+        "numerator": 0,
+        "undefined_reason": "empty denominator",
+        "value": null,
+        "wilson95": null
+      },
+      {
+        "denominator": 0,
+        "entity_id": "mx-notary-cdmx-114",
+        "numerator": 0,
+        "undefined_reason": "empty denominator",
+        "value": null,
+        "wilson95": null
+      },
+      {
+        "denominator": 0,
+        "entity_id": "mx-notary-cdmx-129",
+        "numerator": 0,
+        "undefined_reason": "empty denominator",
+        "value": null,
+        "wilson95": null
+      },
+      {
+        "denominator": 1,
+        "entity_id": "mx-notary-cdmx-140",
+        "numerator": 0,
+        "value": 0.0,
+        "wilson95": {
+          "lower": 0.0,
+          "upper": 0.7934506856227626
+        }
+      },
+      {
+        "denominator": 1,
+        "entity_id": "mx-notary-cdmx-159",
+        "numerator": 0,
+        "value": 0.0,
+        "wilson95": {
+          "lower": 0.0,
+          "upper": 0.7934506856227626
+        }
+      },
+      {
+        "denominator": 0,
+        "entity_id": "mx-notary-cdmx-166",
+        "numerator": 0,
+        "undefined_reason": "empty denominator",
+        "value": null,
+        "wilson95": null
+      },
+      {
+        "denominator": 0,
+        "entity_id": "mx-notary-cdmx-181",
+        "numerator": 0,
+        "undefined_reason": "empty denominator",
+        "value": null,
+        "wilson95": null
+      },
+      {
+        "denominator": 0,
+        "entity_id": "mx-notary-cdmx-194",
+        "numerator": 0,
+        "undefined_reason": "empty denominator",
+        "value": null,
+        "wilson95": null
+      },
+      {
+        "denominator": 0,
+        "entity_id": "mx-notary-cdmx-197",
+        "numerator": 0,
+        "undefined_reason": "empty denominator",
+        "value": null,
+        "wilson95": null
+      },
+      {
+        "denominator": 0,
+        "entity_id": "mx-notary-cdmx-205",
+        "numerator": 0,
+        "undefined_reason": "empty denominator",
+        "value": null,
+        "wilson95": null
+      },
+      {
+        "denominator": 0,
+        "entity_id": "mx-notary-cdmx-216",
+        "numerator": 0,
+        "undefined_reason": "empty denominator",
+        "value": null,
+        "wilson95": null
+      },
+      {
+        "denominator": 0,
+        "entity_id": "mx-notary-cdmx-224",
+        "numerator": 0,
+        "undefined_reason": "empty denominator",
+        "value": null,
+        "wilson95": null
+      },
+      {
+        "denominator": 1,
+        "entity_id": "mx-notary-cdmx-229",
+        "numerator": 0,
+        "value": 0.0,
+        "wilson95": {
+          "lower": 0.0,
+          "upper": 0.7934506856227626
+        }
+      },
+      {
+        "denominator": 0,
+        "entity_id": "mx-notary-cdmx-230",
+        "numerator": 0,
+        "undefined_reason": "empty denominator",
+        "value": null,
+        "wilson95": null
+      },
+      {
+        "denominator": 1,
+        "entity_id": "mx-notary-cdmx-236",
+        "numerator": 1,
+        "value": 1.0,
+        "wilson95": {
+          "lower": 0.20654931437723745,
+          "upper": 1.0
+        }
+      },
+      {
+        "denominator": 0,
+        "entity_id": "mx-notary-cdmx-238",
+        "numerator": 0,
+        "undefined_reason": "empty denominator",
+        "value": null,
+        "wilson95": null
+      },
+      {
+        "denominator": 0,
+        "entity_id": "mx-notary-cdmx-241",
+        "numerator": 0,
+        "undefined_reason": "empty denominator",
+        "value": null,
+        "wilson95": null
+      },
+      {
+        "denominator": 2,
+        "entity_id": "mx-notary-cdmx-242",
+        "numerator": 0,
+        "value": 0.0,
+        "wilson95": {
+          "lower": 0.0,
+          "upper": 0.6576197724933469
+        }
+      },
+      {
+        "denominator": 1,
+        "entity_id": "mx-notary-cdmx-244",
+        "numerator": 0,
+        "value": 0.0,
+        "wilson95": {
+          "lower": 0.0,
+          "upper": 0.7934506856227626
+        }
+      },
+      {
+        "denominator": 8,
+        "entity_id": "positive-01",
+        "numerator": 0,
+        "value": 0.0,
+        "wilson95": {
+          "lower": 0.0,
+          "upper": 0.32440756488388023
+        }
+      },
+      {
+        "denominator": 2,
+        "entity_id": "positive-02",
+        "numerator": 0,
+        "value": 0.0,
+        "wilson95": {
+          "lower": 0.0,
+          "upper": 0.6576197724933469
+        }
+      },
+      {
+        "denominator": 3,
+        "entity_id": "positive-03",
+        "numerator": 0,
+        "value": 0.0,
+        "wilson95": {
+          "lower": 5.551115123125783e-17,
+          "upper": 0.5614970317550454
+        }
+      },
+      {
+        "denominator": 3,
+        "entity_id": "positive-04",
+        "numerator": 0,
+        "value": 0.0,
+        "wilson95": {
+          "lower": 5.551115123125783e-17,
+          "upper": 0.5614970317550454
+        }
+      },
+      {
+        "denominator": 3,
+        "entity_id": "positive-05",
+        "numerator": 0,
+        "value": 0.0,
+        "wilson95": {
+          "lower": 5.551115123125783e-17,
+          "upper": 0.5614970317550454
+        }
+      },
+      {
+        "denominator": 3,
+        "entity_id": "positive-06",
+        "numerator": 0,
+        "value": 0.0,
+        "wilson95": {
+          "lower": 5.551115123125783e-17,
+          "upper": 0.5614970317550454
+        }
+      },
+      {
+        "denominator": 3,
+        "entity_id": "positive-07",
+        "numerator": 0,
+        "value": 0.0,
+        "wilson95": {
+          "lower": 5.551115123125783e-17,
+          "upper": 0.5614970317550454
+        }
+      },
+      {
+        "denominator": 3,
+        "entity_id": "positive-08",
+        "numerator": 0,
+        "value": 0.0,
+        "wilson95": {
+          "lower": 5.551115123125783e-17,
+          "upper": 0.5614970317550454
+        }
+      },
+      {
+        "denominator": 6,
+        "entity_id": "positive-09",
+        "numerator": 0,
+        "value": 0.0,
+        "wilson95": {
+          "lower": 2.7755575615628914e-17,
+          "upper": 0.3903342879021653
+        }
+      },
+      {
+        "denominator": 3,
+        "entity_id": "positive-10",
+        "numerator": 0,
+        "value": 0.0,
+        "wilson95": {
+          "lower": 5.551115123125783e-17,
+          "upper": 0.5614970317550454
+        }
+      },
+      {
+        "denominator": 3,
+        "entity_id": "positive-11",
+        "numerator": 0,
+        "value": 0.0,
+        "wilson95": {
+          "lower": 5.551115123125783e-17,
+          "upper": 0.5614970317550454
+        }
+      },
+      {
+        "denominator": 2,
+        "entity_id": "positive-12",
+        "numerator": 0,
+        "value": 0.0,
+        "wilson95": {
+          "lower": 0.0,
+          "upper": 0.6576197724933469
+        }
+      },
+      {
+        "denominator": 4,
+        "entity_id": "positive-13",
+        "numerator": 0,
+        "value": 0.0,
+        "wilson95": {
+          "lower": 0.0,
+          "upper": 0.4898908364545973
+        }
+      },
+      {
+        "denominator": 3,
+        "entity_id": "positive-14",
+        "numerator": 0,
+        "value": 0.0,
+        "wilson95": {
+          "lower": 5.551115123125783e-17,
+          "upper": 0.5614970317550454
+        }
+      },
+      {
+        "denominator": 2,
+        "entity_id": "positive-15",
+        "numerator": 0,
+        "value": 0.0,
+        "wilson95": {
+          "lower": 0.0,
+          "upper": 0.6576197724933469
+        }
+      },
+      {
+        "denominator": 3,
+        "entity_id": "positive-16",
+        "numerator": 0,
+        "value": 0.0,
+        "wilson95": {
+          "lower": 5.551115123125783e-17,
+          "upper": 0.5614970317550454
+        }
+      },
+      {
+        "denominator": 3,
+        "entity_id": "positive-17",
+        "numerator": 0,
+        "value": 0.0,
+        "wilson95": {
+          "lower": 5.551115123125783e-17,
+          "upper": 0.5614970317550454
+        }
+      },
+      {
+        "denominator": 3,
+        "entity_id": "positive-18",
+        "numerator": 0,
+        "value": 0.0,
+        "wilson95": {
+          "lower": 5.551115123125783e-17,
+          "upper": 0.5614970317550454
+        }
+      },
+      {
+        "denominator": 3,
+        "entity_id": "positive-19",
+        "numerator": 0,
+        "value": 0.0,
+        "wilson95": {
+          "lower": 5.551115123125783e-17,
+          "upper": 0.5614970317550454
+        }
+      },
+      {
+        "denominator": 4,
+        "entity_id": "positive-20",
+        "numerator": 0,
+        "value": 0.0,
+        "wilson95": {
+          "lower": 0.0,
+          "upper": 0.4898908364545973
+        }
+      },
+      {
+        "denominator": 2,
+        "entity_id": "positive-21",
+        "numerator": 0,
+        "value": 0.0,
+        "wilson95": {
+          "lower": 0.0,
+          "upper": 0.6576197724933469
+        }
+      },
+      {
+        "denominator": 2,
+        "entity_id": "positive-22",
+        "numerator": 0,
+        "value": 0.0,
+        "wilson95": {
+          "lower": 0.0,
+          "upper": 0.6576197724933469
+        }
+      },
+      {
+        "denominator": 3,
+        "entity_id": "positive-23",
+        "numerator": 0,
+        "value": 0.0,
+        "wilson95": {
+          "lower": 5.551115123125783e-17,
+          "upper": 0.5614970317550454
+        }
+      },
+      {
+        "denominator": 3,
+        "entity_id": "positive-24",
+        "numerator": 0,
+        "value": 0.0,
+        "wilson95": {
+          "lower": 5.551115123125783e-17,
+          "upper": 0.5614970317550454
+        }
+      },
+      {
+        "denominator": 2,
+        "entity_id": "positive-25",
+        "numerator": 0,
+        "value": 0.0,
+        "wilson95": {
+          "lower": 0.0,
+          "upper": 0.6576197724933469
+        }
+      },
+      {
+        "denominator": 4,
+        "entity_id": "positive-26",
+        "numerator": 0,
+        "value": 0.0,
+        "wilson95": {
+          "lower": 0.0,
+          "upper": 0.4898908364545973
+        }
+      },
+      {
+        "denominator": 3,
+        "entity_id": "positive-27",
+        "numerator": 0,
+        "value": 0.0,
+        "wilson95": {
+          "lower": 5.551115123125783e-17,
+          "upper": 0.5614970317550454
+        }
+      },
+      {
+        "denominator": 3,
+        "entity_id": "positive-28",
+        "numerator": 0,
+        "value": 0.0,
+        "wilson95": {
+          "lower": 5.551115123125783e-17,
+          "upper": 0.5614970317550454
+        }
+      },
+      {
+        "denominator": 4,
+        "entity_id": "positive-29",
+        "numerator": 0,
+        "value": 0.0,
+        "wilson95": {
+          "lower": 0.0,
+          "upper": 0.4898908364545973
+        }
+      },
+      {
+        "denominator": 5,
+        "entity_id": "positive-30",
+        "numerator": 0,
+        "value": 0.0,
+        "wilson95": {
+          "lower": 0.0,
+          "upper": 0.43448246478317476
+        }
+      }
+    ],
+    "reference_recall_all": {
+      "denominator": 115,
+      "numerator": 1,
+      "value": 0.008695652173913044,
+      "wilson95": {
+        "lower": 0.0015366489058808025,
+        "upper": 0.047616726344313784
+      }
+    },
+    "reference_recall_known_eligible": {
+      "denominator": 0,
+      "numerator": 0,
+      "undefined_reason": "empty denominator",
+      "value": null,
+      "wilson95": null
+    },
+    "reference_unique_url_recall_all": {
+      "denominator": 97,
+      "numerator": 1,
+      "value": 0.010309278350515464,
+      "wilson95": {
+        "lower": 0.0018221648082868518,
+        "upper": 0.05610499024289903
+      }
+    },
+    "reference_unique_url_recall_known_eligible": {
+      "denominator": 0,
+      "numerator": 0,
+      "undefined_reason": "empty denominator",
+      "value": null,
+      "wilson95": null
+    },
+    "reference_unique_url_recall_scope": "URL discovery for any entity; exact entity attribution is measured separately by pair recall. A URL is known eligible when any relevant gold pair marks it true.",
+    "text_pairs_without_body_hash": 0,
+    "unique_article_urls": 69,
+    "unique_entity_article_pairs": 72,
+    "unique_original_body_hashes": 61
+  },
+  "cohorts": {
+    "known_incident": {
+      "candidates": {
+        "closed_reference_classification": {
+          "abstention_policy": "known-label abstentions remain in recall, specificity and accuracy denominators",
+          "abstentions": {
+            "negative": 0,
+            "positive": 0,
+            "unknown_truth": 0
+          },
+          "accuracy": {
+            "denominator": 98,
+            "numerator": 0,
+            "value": 0.0,
+            "wilson95": {
+              "lower": 3.469446951953614e-18,
+              "upper": 0.037719990121680605
+            }
+          },
+          "adjudicated_decision_coverage": {
+            "denominator": 98,
+            "numerator": 98,
+            "value": 1.0,
+            "wilson95": {
+              "lower": 0.9622800098783192,
+              "upper": 0.9999999999999999
+            }
+          },
+          "adjudicated_subset_accuracy": {
+            "denominator": 98,
+            "numerator": 0,
+            "value": 0.0,
+            "wilson95": {
+              "lower": 3.469446951953614e-18,
+              "upper": 0.037719990121680605
+            }
+          },
+          "adjudicated_subset_balanced_accuracy": null,
+          "answered_adjudicated_subset_accuracy": {
+            "denominator": 98,
+            "numerator": 0,
+            "value": 0.0,
+            "wilson95": {
+              "lower": 3.469446951953614e-18,
+              "upper": 0.037719990121680605
+            }
+          },
+          "balanced_accuracy": null,
+          "confidence_interval_scope": "Wilson intervals are marginal proportions, not F1 or balanced-accuracy intervals",
+          "confusion_matrix": {
+            "fn": 98,
+            "fp": 0,
+            "tn": 0,
+            "tp": 0
+          },
+          "decision_coverage": {
+            "denominator": 98,
+            "numerator": 98,
+            "value": 1.0,
+            "wilson95": {
+              "lower": 0.9622800098783192,
+              "upper": 0.9999999999999999
+            }
+          },
+          "known_label_f1": 0.0,
+          "known_label_precision": {
+            "denominator": 0,
+            "numerator": 0,
+            "undefined_reason": "empty denominator",
+            "value": null,
+            "wilson95": null
+          },
+          "known_negative_specificity": {
+            "denominator": 0,
+            "numerator": 0,
+            "undefined_reason": "empty denominator",
+            "value": null,
+            "wilson95": null
+          },
+          "known_positive_recall": {
+            "denominator": 98,
+            "numerator": 0,
+            "value": 0.0,
+            "wilson95": {
+              "lower": 3.469446951953614e-18,
+              "upper": 0.037719990121680605
+            }
+          },
+          "negative_support": 0,
+          "positive_support": 98,
+          "unknown_truth_support": 0
+        },
+        "entities_with_any_result": {
+          "denominator": 30,
+          "numerator": 13,
+          "value": 0.43333333333333335,
+          "wilson95": {
+            "lower": 0.2737748557646652,
+            "upper": 0.6080269299918639
+          }
+        },
+        "entities_with_reviewed_relevant_result": {
+          "denominator": 30,
+          "numerator": 11,
+          "value": 0.36666666666666664,
+          "wilson95": {
+            "lower": 0.21873920806100708,
+            "upper": 0.5448643634520511
+          }
+        },
+        "f1_reviewed_precision_and_frozen_reference_recall": 0.0,
+        "judgment_coverage": {
+          "denominator": 70,
+          "numerator": 61,
+          "value": 0.8714285714285714,
+          "wilson95": {
+            "lower": 0.7733524405057483,
+            "upper": 0.9308589988466248
+          }
+        },
+        "judgments": {
+          "irrelevant": 0,
+          "relevant": 61,
+          "unknown_or_not_independently_reviewed": 9
+        },
+        "pairs_per_entity": {
+          "max": 19,
+          "mean": 2.3333333333333335,
+          "min": 0,
+          "p50": 0,
+          "p95": 14
+        },
+        "per_source_entity_article_pairs": {
+          "candidate_avimexnews_com": 2,
+          "candidate_elqueretano_info": 7,
+          "candidate_laevidencia_com_mx": 1,
+          "candidate_plazadearmas_com_mx": 25,
+          "candidate_www_periodicocontexto_com_mx": 3,
+          "candidate_www_rioaxaca_com": 25,
+          "candidate_www_zonadocs_mx": 5
+        },
+        "precision_all_results_bounds": {
+          "denominator": 70,
+          "lower": 0.8714285714285714,
+          "unjudged": 9,
+          "upper": 1.0
+        },
+        "precision_among_reviewed": {
+          "denominator": 61,
+          "numerator": 61,
+          "value": 1.0,
+          "wilson95": {
+            "lower": 0.9407561321018871,
+            "upper": 1.0
+          }
+        },
+        "reference_eligibility": {
+          "known_eligible": 0,
+          "known_ineligible": 0,
+          "unknown": 98
+        },
+        "reference_entity_coverage": {
+          "denominator": 30,
+          "numerator": 0,
+          "value": 0.0,
+          "wilson95": {
+            "lower": 0.0,
+            "upper": 0.11351339317396876
+          }
+        },
+        "reference_macro_entity_recall_all": {
+          "entities_with_references": 30,
+          "entities_without_references": 0,
+          "scope": "Mean of per-entity pair recall over entities with at least one relevant frozen reference; no-reference entities remain undefined.",
+          "value": 0.0
+        },
+        "reference_per_entity_recall_all": [
+          {
+            "denominator": 8,
+            "entity_id": "positive-01",
+            "numerator": 0,
+            "value": 0.0,
+            "wilson95": {
+              "lower": 0.0,
+              "upper": 0.32440756488388023
+            }
+          },
+          {
+            "denominator": 2,
+            "entity_id": "positive-02",
+            "numerator": 0,
+            "value": 0.0,
+            "wilson95": {
+              "lower": 0.0,
+              "upper": 0.6576197724933469
+            }
+          },
+          {
+            "denominator": 3,
+            "entity_id": "positive-03",
+            "numerator": 0,
+            "value": 0.0,
+            "wilson95": {
+              "lower": 5.551115123125783e-17,
+              "upper": 0.5614970317550454
+            }
+          },
+          {
+            "denominator": 3,
+            "entity_id": "positive-04",
+            "numerator": 0,
+            "value": 0.0,
+            "wilson95": {
+              "lower": 5.551115123125783e-17,
+              "upper": 0.5614970317550454
+            }
+          },
+          {
+            "denominator": 3,
+            "entity_id": "positive-05",
+            "numerator": 0,
+            "value": 0.0,
+            "wilson95": {
+              "lower": 5.551115123125783e-17,
+              "upper": 0.5614970317550454
+            }
+          },
+          {
+            "denominator": 3,
+            "entity_id": "positive-06",
+            "numerator": 0,
+            "value": 0.0,
+            "wilson95": {
+              "lower": 5.551115123125783e-17,
+              "upper": 0.5614970317550454
+            }
+          },
+          {
+            "denominator": 3,
+            "entity_id": "positive-07",
+            "numerator": 0,
+            "value": 0.0,
+            "wilson95": {
+              "lower": 5.551115123125783e-17,
+              "upper": 0.5614970317550454
+            }
+          },
+          {
+            "denominator": 3,
+            "entity_id": "positive-08",
+            "numerator": 0,
+            "value": 0.0,
+            "wilson95": {
+              "lower": 5.551115123125783e-17,
+              "upper": 0.5614970317550454
+            }
+          },
+          {
+            "denominator": 6,
+            "entity_id": "positive-09",
+            "numerator": 0,
+            "value": 0.0,
+            "wilson95": {
+              "lower": 2.7755575615628914e-17,
+              "upper": 0.3903342879021653
+            }
+          },
+          {
+            "denominator": 3,
+            "entity_id": "positive-10",
+            "numerator": 0,
+            "value": 0.0,
+            "wilson95": {
+              "lower": 5.551115123125783e-17,
+              "upper": 0.5614970317550454
+            }
+          },
+          {
+            "denominator": 3,
+            "entity_id": "positive-11",
+            "numerator": 0,
+            "value": 0.0,
+            "wilson95": {
+              "lower": 5.551115123125783e-17,
+              "upper": 0.5614970317550454
+            }
+          },
+          {
+            "denominator": 2,
+            "entity_id": "positive-12",
+            "numerator": 0,
+            "value": 0.0,
+            "wilson95": {
+              "lower": 0.0,
+              "upper": 0.6576197724933469
+            }
+          },
+          {
+            "denominator": 4,
+            "entity_id": "positive-13",
+            "numerator": 0,
+            "value": 0.0,
+            "wilson95": {
+              "lower": 0.0,
+              "upper": 0.4898908364545973
+            }
+          },
+          {
+            "denominator": 3,
+            "entity_id": "positive-14",
+            "numerator": 0,
+            "value": 0.0,
+            "wilson95": {
+              "lower": 5.551115123125783e-17,
+              "upper": 0.5614970317550454
+            }
+          },
+          {
+            "denominator": 2,
+            "entity_id": "positive-15",
+            "numerator": 0,
+            "value": 0.0,
+            "wilson95": {
+              "lower": 0.0,
+              "upper": 0.6576197724933469
+            }
+          },
+          {
+            "denominator": 3,
+            "entity_id": "positive-16",
+            "numerator": 0,
+            "value": 0.0,
+            "wilson95": {
+              "lower": 5.551115123125783e-17,
+              "upper": 0.5614970317550454
+            }
+          },
+          {
+            "denominator": 3,
+            "entity_id": "positive-17",
+            "numerator": 0,
+            "value": 0.0,
+            "wilson95": {
+              "lower": 5.551115123125783e-17,
+              "upper": 0.5614970317550454
+            }
+          },
+          {
+            "denominator": 3,
+            "entity_id": "positive-18",
+            "numerator": 0,
+            "value": 0.0,
+            "wilson95": {
+              "lower": 5.551115123125783e-17,
+              "upper": 0.5614970317550454
+            }
+          },
+          {
+            "denominator": 3,
+            "entity_id": "positive-19",
+            "numerator": 0,
+            "value": 0.0,
+            "wilson95": {
+              "lower": 5.551115123125783e-17,
+              "upper": 0.5614970317550454
+            }
+          },
+          {
+            "denominator": 4,
+            "entity_id": "positive-20",
+            "numerator": 0,
+            "value": 0.0,
+            "wilson95": {
+              "lower": 0.0,
+              "upper": 0.4898908364545973
+            }
+          },
+          {
+            "denominator": 2,
+            "entity_id": "positive-21",
+            "numerator": 0,
+            "value": 0.0,
+            "wilson95": {
+              "lower": 0.0,
+              "upper": 0.6576197724933469
+            }
+          },
+          {
+            "denominator": 2,
+            "entity_id": "positive-22",
+            "numerator": 0,
+            "value": 0.0,
+            "wilson95": {
+              "lower": 0.0,
+              "upper": 0.6576197724933469
+            }
+          },
+          {
+            "denominator": 3,
+            "entity_id": "positive-23",
+            "numerator": 0,
+            "value": 0.0,
+            "wilson95": {
+              "lower": 5.551115123125783e-17,
+              "upper": 0.5614970317550454
+            }
+          },
+          {
+            "denominator": 3,
+            "entity_id": "positive-24",
+            "numerator": 0,
+            "value": 0.0,
+            "wilson95": {
+              "lower": 5.551115123125783e-17,
+              "upper": 0.5614970317550454
+            }
+          },
+          {
+            "denominator": 2,
+            "entity_id": "positive-25",
+            "numerator": 0,
+            "value": 0.0,
+            "wilson95": {
+              "lower": 0.0,
+              "upper": 0.6576197724933469
+            }
+          },
+          {
+            "denominator": 4,
+            "entity_id": "positive-26",
+            "numerator": 0,
+            "value": 0.0,
+            "wilson95": {
+              "lower": 0.0,
+              "upper": 0.4898908364545973
+            }
+          },
+          {
+            "denominator": 3,
+            "entity_id": "positive-27",
+            "numerator": 0,
+            "value": 0.0,
+            "wilson95": {
+              "lower": 5.551115123125783e-17,
+              "upper": 0.5614970317550454
+            }
+          },
+          {
+            "denominator": 3,
+            "entity_id": "positive-28",
+            "numerator": 0,
+            "value": 0.0,
+            "wilson95": {
+              "lower": 5.551115123125783e-17,
+              "upper": 0.5614970317550454
+            }
+          },
+          {
+            "denominator": 4,
+            "entity_id": "positive-29",
+            "numerator": 0,
+            "value": 0.0,
+            "wilson95": {
+              "lower": 0.0,
+              "upper": 0.4898908364545973
+            }
+          },
+          {
+            "denominator": 5,
+            "entity_id": "positive-30",
+            "numerator": 0,
+            "value": 0.0,
+            "wilson95": {
+              "lower": 0.0,
+              "upper": 0.43448246478317476
+            }
+          }
+        ],
+        "reference_recall_all": {
+          "denominator": 98,
+          "numerator": 0,
+          "value": 0.0,
+          "wilson95": {
+            "lower": 3.469446951953614e-18,
+            "upper": 0.037719990121680605
+          }
+        },
+        "reference_recall_known_eligible": {
+          "denominator": 0,
+          "numerator": 0,
+          "undefined_reason": "empty denominator",
+          "value": null,
+          "wilson95": null
+        },
+        "reference_unique_url_recall_all": {
+          "denominator": 80,
+          "numerator": 0,
+          "value": 0.0,
+          "wilson95": {
+            "lower": 0.0,
+            "upper": 0.0458181295355271
+          }
+        },
+        "reference_unique_url_recall_known_eligible": {
+          "denominator": 0,
+          "numerator": 0,
+          "undefined_reason": "empty denominator",
+          "value": null,
+          "wilson95": null
+        },
+        "reference_unique_url_recall_scope": "URL discovery for any entity; exact entity attribution is measured separately by pair recall. A URL is known eligible when any relevant gold pair marks it true.",
+        "text_pairs_without_body_hash": 0,
+        "unique_article_urls": 67,
+        "unique_entity_article_pairs": 70,
+        "unique_original_body_hashes": 59
+      },
+      "entities": 30,
+      "texts": {
+        "closed_reference_classification": {
+          "abstention_policy": "known-label abstentions remain in recall, specificity and accuracy denominators",
+          "abstentions": {
+            "negative": 0,
+            "positive": 0,
+            "unknown_truth": 0
+          },
+          "accuracy": {
+            "denominator": 98,
+            "numerator": 0,
+            "value": 0.0,
+            "wilson95": {
+              "lower": 3.469446951953614e-18,
+              "upper": 0.037719990121680605
+            }
+          },
+          "adjudicated_decision_coverage": {
+            "denominator": 98,
+            "numerator": 98,
+            "value": 1.0,
+            "wilson95": {
+              "lower": 0.9622800098783192,
+              "upper": 0.9999999999999999
+            }
+          },
+          "adjudicated_subset_accuracy": {
+            "denominator": 98,
+            "numerator": 0,
+            "value": 0.0,
+            "wilson95": {
+              "lower": 3.469446951953614e-18,
+              "upper": 0.037719990121680605
+            }
+          },
+          "adjudicated_subset_balanced_accuracy": null,
+          "answered_adjudicated_subset_accuracy": {
+            "denominator": 98,
+            "numerator": 0,
+            "value": 0.0,
+            "wilson95": {
+              "lower": 3.469446951953614e-18,
+              "upper": 0.037719990121680605
+            }
+          },
+          "balanced_accuracy": null,
+          "confidence_interval_scope": "Wilson intervals are marginal proportions, not F1 or balanced-accuracy intervals",
+          "confusion_matrix": {
+            "fn": 98,
+            "fp": 0,
+            "tn": 0,
+            "tp": 0
+          },
+          "decision_coverage": {
+            "denominator": 98,
+            "numerator": 98,
+            "value": 1.0,
+            "wilson95": {
+              "lower": 0.9622800098783192,
+              "upper": 0.9999999999999999
+            }
+          },
+          "known_label_f1": 0.0,
+          "known_label_precision": {
+            "denominator": 0,
+            "numerator": 0,
+            "undefined_reason": "empty denominator",
+            "value": null,
+            "wilson95": null
+          },
+          "known_negative_specificity": {
+            "denominator": 0,
+            "numerator": 0,
+            "undefined_reason": "empty denominator",
+            "value": null,
+            "wilson95": null
+          },
+          "known_positive_recall": {
+            "denominator": 98,
+            "numerator": 0,
+            "value": 0.0,
+            "wilson95": {
+              "lower": 3.469446951953614e-18,
+              "upper": 0.037719990121680605
+            }
+          },
+          "negative_support": 0,
+          "positive_support": 98,
+          "unknown_truth_support": 0
+        },
+        "entities_with_any_result": {
+          "denominator": 30,
+          "numerator": 12,
+          "value": 0.4,
+          "wilson95": {
+            "lower": 0.24590628116801852,
+            "upper": 0.5767963974667752
+          }
+        },
+        "entities_with_reviewed_relevant_result": {
+          "denominator": 30,
+          "numerator": 11,
+          "value": 0.36666666666666664,
+          "wilson95": {
+            "lower": 0.21873920806100708,
+            "upper": 0.5448643634520511
+          }
+        },
+        "f1_reviewed_precision_and_frozen_reference_recall": 0.0,
+        "judgment_coverage": {
+          "denominator": 62,
+          "numerator": 61,
+          "value": 0.9838709677419355,
+          "wilson95": {
+            "lower": 0.9141327973931,
+            "upper": 0.9971471328313782
+          }
+        },
+        "judgments": {
+          "irrelevant": 0,
+          "relevant": 61,
+          "unknown_or_not_independently_reviewed": 1
+        },
+        "pairs_per_entity": {
+          "max": 14,
+          "mean": 2.066666666666667,
+          "min": 0,
+          "p50": 0,
+          "p95": 12
+        },
+        "per_source_entity_article_pairs": {
+          "candidate_avimexnews_com": 2,
+          "candidate_plazadearmas_com_mx": 25,
+          "candidate_www_periodicocontexto_com_mx": 3,
+          "candidate_www_rioaxaca_com": 25,
+          "candidate_www_zonadocs_mx": 5
+        },
+        "precision_all_results_bounds": {
+          "denominator": 62,
+          "lower": 0.9838709677419355,
+          "unjudged": 1,
+          "upper": 1.0
+        },
+        "precision_among_reviewed": {
+          "denominator": 61,
+          "numerator": 61,
+          "value": 1.0,
+          "wilson95": {
+            "lower": 0.9407561321018871,
+            "upper": 1.0
+          }
+        },
+        "reference_eligibility": {
+          "known_eligible": 0,
+          "known_ineligible": 0,
+          "unknown": 98
+        },
+        "reference_entity_coverage": {
+          "denominator": 30,
+          "numerator": 0,
+          "value": 0.0,
+          "wilson95": {
+            "lower": 0.0,
+            "upper": 0.11351339317396876
+          }
+        },
+        "reference_macro_entity_recall_all": {
+          "entities_with_references": 30,
+          "entities_without_references": 0,
+          "scope": "Mean of per-entity pair recall over entities with at least one relevant frozen reference; no-reference entities remain undefined.",
+          "value": 0.0
+        },
+        "reference_per_entity_recall_all": [
+          {
+            "denominator": 8,
+            "entity_id": "positive-01",
+            "numerator": 0,
+            "value": 0.0,
+            "wilson95": {
+              "lower": 0.0,
+              "upper": 0.32440756488388023
+            }
+          },
+          {
+            "denominator": 2,
+            "entity_id": "positive-02",
+            "numerator": 0,
+            "value": 0.0,
+            "wilson95": {
+              "lower": 0.0,
+              "upper": 0.6576197724933469
+            }
+          },
+          {
+            "denominator": 3,
+            "entity_id": "positive-03",
+            "numerator": 0,
+            "value": 0.0,
+            "wilson95": {
+              "lower": 5.551115123125783e-17,
+              "upper": 0.5614970317550454
+            }
+          },
+          {
+            "denominator": 3,
+            "entity_id": "positive-04",
+            "numerator": 0,
+            "value": 0.0,
+            "wilson95": {
+              "lower": 5.551115123125783e-17,
+              "upper": 0.5614970317550454
+            }
+          },
+          {
+            "denominator": 3,
+            "entity_id": "positive-05",
+            "numerator": 0,
+            "value": 0.0,
+            "wilson95": {
+              "lower": 5.551115123125783e-17,
+              "upper": 0.5614970317550454
+            }
+          },
+          {
+            "denominator": 3,
+            "entity_id": "positive-06",
+            "numerator": 0,
+            "value": 0.0,
+            "wilson95": {
+              "lower": 5.551115123125783e-17,
+              "upper": 0.5614970317550454
+            }
+          },
+          {
+            "denominator": 3,
+            "entity_id": "positive-07",
+            "numerator": 0,
+            "value": 0.0,
+            "wilson95": {
+              "lower": 5.551115123125783e-17,
+              "upper": 0.5614970317550454
+            }
+          },
+          {
+            "denominator": 3,
+            "entity_id": "positive-08",
+            "numerator": 0,
+            "value": 0.0,
+            "wilson95": {
+              "lower": 5.551115123125783e-17,
+              "upper": 0.5614970317550454
+            }
+          },
+          {
+            "denominator": 6,
+            "entity_id": "positive-09",
+            "numerator": 0,
+            "value": 0.0,
+            "wilson95": {
+              "lower": 2.7755575615628914e-17,
+              "upper": 0.3903342879021653
+            }
+          },
+          {
+            "denominator": 3,
+            "entity_id": "positive-10",
+            "numerator": 0,
+            "value": 0.0,
+            "wilson95": {
+              "lower": 5.551115123125783e-17,
+              "upper": 0.5614970317550454
+            }
+          },
+          {
+            "denominator": 3,
+            "entity_id": "positive-11",
+            "numerator": 0,
+            "value": 0.0,
+            "wilson95": {
+              "lower": 5.551115123125783e-17,
+              "upper": 0.5614970317550454
+            }
+          },
+          {
+            "denominator": 2,
+            "entity_id": "positive-12",
+            "numerator": 0,
+            "value": 0.0,
+            "wilson95": {
+              "lower": 0.0,
+              "upper": 0.6576197724933469
+            }
+          },
+          {
+            "denominator": 4,
+            "entity_id": "positive-13",
+            "numerator": 0,
+            "value": 0.0,
+            "wilson95": {
+              "lower": 0.0,
+              "upper": 0.4898908364545973
+            }
+          },
+          {
+            "denominator": 3,
+            "entity_id": "positive-14",
+            "numerator": 0,
+            "value": 0.0,
+            "wilson95": {
+              "lower": 5.551115123125783e-17,
+              "upper": 0.5614970317550454
+            }
+          },
+          {
+            "denominator": 2,
+            "entity_id": "positive-15",
+            "numerator": 0,
+            "value": 0.0,
+            "wilson95": {
+              "lower": 0.0,
+              "upper": 0.6576197724933469
+            }
+          },
+          {
+            "denominator": 3,
+            "entity_id": "positive-16",
+            "numerator": 0,
+            "value": 0.0,
+            "wilson95": {
+              "lower": 5.551115123125783e-17,
+              "upper": 0.5614970317550454
+            }
+          },
+          {
+            "denominator": 3,
+            "entity_id": "positive-17",
+            "numerator": 0,
+            "value": 0.0,
+            "wilson95": {
+              "lower": 5.551115123125783e-17,
+              "upper": 0.5614970317550454
+            }
+          },
+          {
+            "denominator": 3,
+            "entity_id": "positive-18",
+            "numerator": 0,
+            "value": 0.0,
+            "wilson95": {
+              "lower": 5.551115123125783e-17,
+              "upper": 0.5614970317550454
+            }
+          },
+          {
+            "denominator": 3,
+            "entity_id": "positive-19",
+            "numerator": 0,
+            "value": 0.0,
+            "wilson95": {
+              "lower": 5.551115123125783e-17,
+              "upper": 0.5614970317550454
+            }
+          },
+          {
+            "denominator": 4,
+            "entity_id": "positive-20",
+            "numerator": 0,
+            "value": 0.0,
+            "wilson95": {
+              "lower": 0.0,
+              "upper": 0.4898908364545973
+            }
+          },
+          {
+            "denominator": 2,
+            "entity_id": "positive-21",
+            "numerator": 0,
+            "value": 0.0,
+            "wilson95": {
+              "lower": 0.0,
+              "upper": 0.6576197724933469
+            }
+          },
+          {
+            "denominator": 2,
+            "entity_id": "positive-22",
+            "numerator": 0,
+            "value": 0.0,
+            "wilson95": {
+              "lower": 0.0,
+              "upper": 0.6576197724933469
+            }
+          },
+          {
+            "denominator": 3,
+            "entity_id": "positive-23",
+            "numerator": 0,
+            "value": 0.0,
+            "wilson95": {
+              "lower": 5.551115123125783e-17,
+              "upper": 0.5614970317550454
+            }
+          },
+          {
+            "denominator": 3,
+            "entity_id": "positive-24",
+            "numerator": 0,
+            "value": 0.0,
+            "wilson95": {
+              "lower": 5.551115123125783e-17,
+              "upper": 0.5614970317550454
+            }
+          },
+          {
+            "denominator": 2,
+            "entity_id": "positive-25",
+            "numerator": 0,
+            "value": 0.0,
+            "wilson95": {
+              "lower": 0.0,
+              "upper": 0.6576197724933469
+            }
+          },
+          {
+            "denominator": 4,
+            "entity_id": "positive-26",
+            "numerator": 0,
+            "value": 0.0,
+            "wilson95": {
+              "lower": 0.0,
+              "upper": 0.4898908364545973
+            }
+          },
+          {
+            "denominator": 3,
+            "entity_id": "positive-27",
+            "numerator": 0,
+            "value": 0.0,
+            "wilson95": {
+              "lower": 5.551115123125783e-17,
+              "upper": 0.5614970317550454
+            }
+          },
+          {
+            "denominator": 3,
+            "entity_id": "positive-28",
+            "numerator": 0,
+            "value": 0.0,
+            "wilson95": {
+              "lower": 5.551115123125783e-17,
+              "upper": 0.5614970317550454
+            }
+          },
+          {
+            "denominator": 4,
+            "entity_id": "positive-29",
+            "numerator": 0,
+            "value": 0.0,
+            "wilson95": {
+              "lower": 0.0,
+              "upper": 0.4898908364545973
+            }
+          },
+          {
+            "denominator": 5,
+            "entity_id": "positive-30",
+            "numerator": 0,
+            "value": 0.0,
+            "wilson95": {
+              "lower": 0.0,
+              "upper": 0.43448246478317476
+            }
+          }
+        ],
+        "reference_recall_all": {
+          "denominator": 98,
+          "numerator": 0,
+          "value": 0.0,
+          "wilson95": {
+            "lower": 3.469446951953614e-18,
+            "upper": 0.037719990121680605
+          }
+        },
+        "reference_recall_known_eligible": {
+          "denominator": 0,
+          "numerator": 0,
+          "undefined_reason": "empty denominator",
+          "value": null,
+          "wilson95": null
+        },
+        "reference_unique_url_recall_all": {
+          "denominator": 80,
+          "numerator": 0,
+          "value": 0.0,
+          "wilson95": {
+            "lower": 0.0,
+            "upper": 0.0458181295355271
+          }
+        },
+        "reference_unique_url_recall_known_eligible": {
+          "denominator": 0,
+          "numerator": 0,
+          "undefined_reason": "empty denominator",
+          "value": null,
+          "wilson95": null
+        },
+        "reference_unique_url_recall_scope": "URL discovery for any entity; exact entity attribution is measured separately by pair recall. A URL is known eligible when any relevant gold pair marks it true.",
+        "text_pairs_without_body_hash": 0,
+        "unique_article_urls": 59,
+        "unique_entity_article_pairs": 62,
+        "unique_original_body_hashes": 59
+      }
+    },
+    "no_known_incident": {
+      "candidates": {
+        "closed_reference_classification": {
+          "abstention_policy": "known-label abstentions remain in recall, specificity and accuracy denominators",
+          "abstentions": {
+            "negative": 0,
+            "positive": 0,
+            "unknown_truth": 0
+          },
+          "accuracy": {
+            "denominator": null,
+            "numerator": null,
+            "undefined_reason": "unknown ground truth prevents cohort-wide accuracy",
+            "value": null,
+            "wilson95": null
+          },
+          "adjudicated_decision_coverage": {
+            "denominator": 17,
+            "numerator": 17,
+            "value": 1.0,
+            "wilson95": {
+              "lower": 0.8156818649911483,
+              "upper": 1.0
+            }
+          },
+          "adjudicated_subset_accuracy": {
+            "denominator": 17,
+            "numerator": 1,
+            "value": 0.058823529411764705,
+            "wilson95": {
+              "lower": 0.010460400984997592,
+              "upper": 0.26982030637575405
+            }
+          },
+          "adjudicated_subset_balanced_accuracy": null,
+          "answered_adjudicated_subset_accuracy": {
+            "denominator": 17,
+            "numerator": 1,
+            "value": 0.058823529411764705,
+            "wilson95": {
+              "lower": 0.010460400984997592,
+              "upper": 0.26982030637575405
+            }
+          },
+          "balanced_accuracy": null,
+          "confidence_interval_scope": "Wilson intervals are marginal proportions, not F1 or balanced-accuracy intervals",
+          "confusion_matrix": {
+            "fn": 16,
+            "fp": 0,
+            "tn": 0,
+            "tp": 1
+          },
+          "decision_coverage": {
+            "denominator": 32,
+            "numerator": 32,
+            "value": 1.0,
+            "wilson95": {
+              "lower": 0.8928208017449293,
+              "upper": 1.0
+            }
+          },
+          "known_label_f1": 0.1111111111111111,
+          "known_label_precision": {
+            "denominator": 1,
+            "numerator": 1,
+            "value": 1.0,
+            "wilson95": {
+              "lower": 0.20654931437723745,
+              "upper": 1.0
+            }
+          },
+          "known_negative_specificity": {
+            "denominator": 0,
+            "numerator": 0,
+            "undefined_reason": "empty denominator",
+            "value": null,
+            "wilson95": null
+          },
+          "known_positive_recall": {
+            "denominator": 17,
+            "numerator": 1,
+            "value": 0.058823529411764705,
+            "wilson95": {
+              "lower": 0.010460400984997592,
+              "upper": 0.26982030637575405
+            }
+          },
+          "negative_support": 0,
+          "positive_support": 17,
+          "unknown_truth_support": 15
+        },
+        "entities_with_any_result": {
+          "denominator": 30,
+          "numerator": 2,
+          "value": 0.06666666666666667,
+          "wilson95": {
+            "lower": 0.018477023791270378,
+            "upper": 0.2132345836261692
+          }
+        },
+        "entities_with_reviewed_relevant_result": {
+          "denominator": 30,
+          "numerator": 2,
+          "value": 0.06666666666666667,
+          "wilson95": {
+            "lower": 0.018477023791270378,
+            "upper": 0.2132345836261692
+          }
+        },
+        "f1_reviewed_precision_and_frozen_reference_recall": 0.1111111111111111,
+        "judgment_coverage": {
+          "denominator": 2,
+          "numerator": 2,
+          "value": 1.0,
+          "wilson95": {
+            "lower": 0.34238022750665303,
+            "upper": 1.0
+          }
+        },
+        "judgments": {
+          "irrelevant": 0,
+          "relevant": 2,
+          "unknown_or_not_independently_reviewed": 0
+        },
+        "pairs_per_entity": {
+          "max": 1,
+          "mean": 0.06666666666666667,
+          "min": 0,
+          "p50": 0,
+          "p95": 1
+        },
+        "per_source_entity_article_pairs": {
+          "candidate_www_zonadocs_mx": 2
+        },
+        "precision_all_results_bounds": {
+          "denominator": 2,
+          "lower": 1.0,
+          "unjudged": 0,
+          "upper": 1.0
+        },
+        "precision_among_reviewed": {
+          "denominator": 2,
+          "numerator": 2,
+          "value": 1.0,
+          "wilson95": {
+            "lower": 0.34238022750665303,
+            "upper": 1.0
+          }
+        },
+        "reference_eligibility": {
+          "known_eligible": 0,
+          "known_ineligible": 0,
+          "unknown": 17
+        },
+        "reference_entity_coverage": {
+          "denominator": 8,
+          "numerator": 1,
+          "value": 0.125,
+          "wilson95": {
+            "lower": 0.02241749145005667,
+            "upper": 0.4708881822128535
+          }
+        },
+        "reference_macro_entity_recall_all": {
+          "entities_with_references": 8,
+          "entities_without_references": 22,
+          "scope": "Mean of per-entity pair recall over entities with at least one relevant frozen reference; no-reference entities remain undefined.",
+          "value": 0.125
+        },
+        "reference_per_entity_recall_all": [
+          {
+            "denominator": 0,
+            "entity_id": "mx-notary-cdmx-002",
+            "numerator": 0,
+            "undefined_reason": "empty denominator",
+            "value": null,
+            "wilson95": null
+          },
+          {
+            "denominator": 0,
+            "entity_id": "mx-notary-cdmx-015",
+            "numerator": 0,
+            "undefined_reason": "empty denominator",
+            "value": null,
+            "wilson95": null
+          },
+          {
+            "denominator": 5,
+            "entity_id": "mx-notary-cdmx-022",
+            "numerator": 0,
+            "value": 0.0,
+            "wilson95": {
+              "lower": 0.0,
+              "upper": 0.43448246478317476
+            }
+          },
+          {
+            "denominator": 0,
+            "entity_id": "mx-notary-cdmx-025",
+            "numerator": 0,
+            "undefined_reason": "empty denominator",
+            "value": null,
+            "wilson95": null
+          },
+          {
+            "denominator": 0,
+            "entity_id": "mx-notary-cdmx-045",
+            "numerator": 0,
+            "undefined_reason": "empty denominator",
+            "value": null,
+            "wilson95": null
+          },
+          {
+            "denominator": 0,
+            "entity_id": "mx-notary-cdmx-058",
+            "numerator": 0,
+            "undefined_reason": "empty denominator",
+            "value": null,
+            "wilson95": null
+          },
+          {
+            "denominator": 0,
+            "entity_id": "mx-notary-cdmx-061",
+            "numerator": 0,
+            "undefined_reason": "empty denominator",
+            "value": null,
+            "wilson95": null
+          },
+          {
+            "denominator": 0,
+            "entity_id": "mx-notary-cdmx-071",
+            "numerator": 0,
+            "undefined_reason": "empty denominator",
+            "value": null,
+            "wilson95": null
+          },
+          {
+            "denominator": 0,
+            "entity_id": "mx-notary-cdmx-074",
+            "numerator": 0,
+            "undefined_reason": "empty denominator",
+            "value": null,
+            "wilson95": null
+          },
+          {
+            "denominator": 0,
+            "entity_id": "mx-notary-cdmx-086",
+            "numerator": 0,
+            "undefined_reason": "empty denominator",
+            "value": null,
+            "wilson95": null
+          },
+          {
+            "denominator": 5,
+            "entity_id": "mx-notary-cdmx-088",
+            "numerator": 0,
+            "value": 0.0,
+            "wilson95": {
+              "lower": 0.0,
+              "upper": 0.43448246478317476
+            }
+          },
+          {
+            "denominator": 0,
+            "entity_id": "mx-notary-cdmx-098",
+            "numerator": 0,
+            "undefined_reason": "empty denominator",
+            "value": null,
+            "wilson95": null
+          },
+          {
+            "denominator": 0,
+            "entity_id": "mx-notary-cdmx-114",
+            "numerator": 0,
+            "undefined_reason": "empty denominator",
+            "value": null,
+            "wilson95": null
+          },
+          {
+            "denominator": 0,
+            "entity_id": "mx-notary-cdmx-129",
+            "numerator": 0,
+            "undefined_reason": "empty denominator",
+            "value": null,
+            "wilson95": null
+          },
+          {
+            "denominator": 1,
+            "entity_id": "mx-notary-cdmx-140",
+            "numerator": 0,
+            "value": 0.0,
+            "wilson95": {
+              "lower": 0.0,
+              "upper": 0.7934506856227626
+            }
+          },
+          {
+            "denominator": 1,
+            "entity_id": "mx-notary-cdmx-159",
+            "numerator": 0,
+            "value": 0.0,
+            "wilson95": {
+              "lower": 0.0,
+              "upper": 0.7934506856227626
+            }
+          },
+          {
+            "denominator": 0,
+            "entity_id": "mx-notary-cdmx-166",
+            "numerator": 0,
+            "undefined_reason": "empty denominator",
+            "value": null,
+            "wilson95": null
+          },
+          {
+            "denominator": 0,
+            "entity_id": "mx-notary-cdmx-181",
+            "numerator": 0,
+            "undefined_reason": "empty denominator",
+            "value": null,
+            "wilson95": null
+          },
+          {
+            "denominator": 0,
+            "entity_id": "mx-notary-cdmx-194",
+            "numerator": 0,
+            "undefined_reason": "empty denominator",
+            "value": null,
+            "wilson95": null
+          },
+          {
+            "denominator": 0,
+            "entity_id": "mx-notary-cdmx-197",
+            "numerator": 0,
+            "undefined_reason": "empty denominator",
+            "value": null,
+            "wilson95": null
+          },
+          {
+            "denominator": 0,
+            "entity_id": "mx-notary-cdmx-205",
+            "numerator": 0,
+            "undefined_reason": "empty denominator",
+            "value": null,
+            "wilson95": null
+          },
+          {
+            "denominator": 0,
+            "entity_id": "mx-notary-cdmx-216",
+            "numerator": 0,
+            "undefined_reason": "empty denominator",
+            "value": null,
+            "wilson95": null
+          },
+          {
+            "denominator": 0,
+            "entity_id": "mx-notary-cdmx-224",
+            "numerator": 0,
+            "undefined_reason": "empty denominator",
+            "value": null,
+            "wilson95": null
+          },
+          {
+            "denominator": 1,
+            "entity_id": "mx-notary-cdmx-229",
+            "numerator": 0,
+            "value": 0.0,
+            "wilson95": {
+              "lower": 0.0,
+              "upper": 0.7934506856227626
+            }
+          },
+          {
+            "denominator": 0,
+            "entity_id": "mx-notary-cdmx-230",
+            "numerator": 0,
+            "undefined_reason": "empty denominator",
+            "value": null,
+            "wilson95": null
+          },
+          {
+            "denominator": 1,
+            "entity_id": "mx-notary-cdmx-236",
+            "numerator": 1,
+            "value": 1.0,
+            "wilson95": {
+              "lower": 0.20654931437723745,
+              "upper": 1.0
+            }
+          },
+          {
+            "denominator": 0,
+            "entity_id": "mx-notary-cdmx-238",
+            "numerator": 0,
+            "undefined_reason": "empty denominator",
+            "value": null,
+            "wilson95": null
+          },
+          {
+            "denominator": 0,
+            "entity_id": "mx-notary-cdmx-241",
+            "numerator": 0,
+            "undefined_reason": "empty denominator",
+            "value": null,
+            "wilson95": null
+          },
+          {
+            "denominator": 2,
+            "entity_id": "mx-notary-cdmx-242",
+            "numerator": 0,
+            "value": 0.0,
+            "wilson95": {
+              "lower": 0.0,
+              "upper": 0.6576197724933469
+            }
+          },
+          {
+            "denominator": 1,
+            "entity_id": "mx-notary-cdmx-244",
+            "numerator": 0,
+            "value": 0.0,
+            "wilson95": {
+              "lower": 0.0,
+              "upper": 0.7934506856227626
+            }
+          }
+        ],
+        "reference_recall_all": {
+          "denominator": 17,
+          "numerator": 1,
+          "value": 0.058823529411764705,
+          "wilson95": {
+            "lower": 0.010460400984997592,
+            "upper": 0.26982030637575405
+          }
+        },
+        "reference_recall_known_eligible": {
+          "denominator": 0,
+          "numerator": 0,
+          "undefined_reason": "empty denominator",
+          "value": null,
+          "wilson95": null
+        },
+        "reference_unique_url_recall_all": {
+          "denominator": 17,
+          "numerator": 1,
+          "value": 0.058823529411764705,
+          "wilson95": {
+            "lower": 0.010460400984997592,
+            "upper": 0.26982030637575405
+          }
+        },
+        "reference_unique_url_recall_known_eligible": {
+          "denominator": 0,
+          "numerator": 0,
+          "undefined_reason": "empty denominator",
+          "value": null,
+          "wilson95": null
+        },
+        "reference_unique_url_recall_scope": "URL discovery for any entity; exact entity attribution is measured separately by pair recall. A URL is known eligible when any relevant gold pair marks it true.",
+        "text_pairs_without_body_hash": 0,
+        "unique_article_urls": 2,
+        "unique_entity_article_pairs": 2,
+        "unique_original_body_hashes": 2
+      },
+      "entities": 30,
+      "texts": {
+        "closed_reference_classification": {
+          "abstention_policy": "known-label abstentions remain in recall, specificity and accuracy denominators",
+          "abstentions": {
+            "negative": 0,
+            "positive": 0,
+            "unknown_truth": 0
+          },
+          "accuracy": {
+            "denominator": null,
+            "numerator": null,
+            "undefined_reason": "unknown ground truth prevents cohort-wide accuracy",
+            "value": null,
+            "wilson95": null
+          },
+          "adjudicated_decision_coverage": {
+            "denominator": 17,
+            "numerator": 17,
+            "value": 1.0,
+            "wilson95": {
+              "lower": 0.8156818649911483,
+              "upper": 1.0
+            }
+          },
+          "adjudicated_subset_accuracy": {
+            "denominator": 17,
+            "numerator": 1,
+            "value": 0.058823529411764705,
+            "wilson95": {
+              "lower": 0.010460400984997592,
+              "upper": 0.26982030637575405
+            }
+          },
+          "adjudicated_subset_balanced_accuracy": null,
+          "answered_adjudicated_subset_accuracy": {
+            "denominator": 17,
+            "numerator": 1,
+            "value": 0.058823529411764705,
+            "wilson95": {
+              "lower": 0.010460400984997592,
+              "upper": 0.26982030637575405
+            }
+          },
+          "balanced_accuracy": null,
+          "confidence_interval_scope": "Wilson intervals are marginal proportions, not F1 or balanced-accuracy intervals",
+          "confusion_matrix": {
+            "fn": 16,
+            "fp": 0,
+            "tn": 0,
+            "tp": 1
+          },
+          "decision_coverage": {
+            "denominator": 32,
+            "numerator": 32,
+            "value": 1.0,
+            "wilson95": {
+              "lower": 0.8928208017449293,
+              "upper": 1.0
+            }
+          },
+          "known_label_f1": 0.1111111111111111,
+          "known_label_precision": {
+            "denominator": 1,
+            "numerator": 1,
+            "value": 1.0,
+            "wilson95": {
+              "lower": 0.20654931437723745,
+              "upper": 1.0
+            }
+          },
+          "known_negative_specificity": {
+            "denominator": 0,
+            "numerator": 0,
+            "undefined_reason": "empty denominator",
+            "value": null,
+            "wilson95": null
+          },
+          "known_positive_recall": {
+            "denominator": 17,
+            "numerator": 1,
+            "value": 0.058823529411764705,
+            "wilson95": {
+              "lower": 0.010460400984997592,
+              "upper": 0.26982030637575405
+            }
+          },
+          "negative_support": 0,
+          "positive_support": 17,
+          "unknown_truth_support": 15
+        },
+        "entities_with_any_result": {
+          "denominator": 30,
+          "numerator": 2,
+          "value": 0.06666666666666667,
+          "wilson95": {
+            "lower": 0.018477023791270378,
+            "upper": 0.2132345836261692
+          }
+        },
+        "entities_with_reviewed_relevant_result": {
+          "denominator": 30,
+          "numerator": 2,
+          "value": 0.06666666666666667,
+          "wilson95": {
+            "lower": 0.018477023791270378,
+            "upper": 0.2132345836261692
+          }
+        },
+        "f1_reviewed_precision_and_frozen_reference_recall": 0.1111111111111111,
+        "judgment_coverage": {
+          "denominator": 2,
+          "numerator": 2,
+          "value": 1.0,
+          "wilson95": {
+            "lower": 0.34238022750665303,
+            "upper": 1.0
+          }
+        },
+        "judgments": {
+          "irrelevant": 0,
+          "relevant": 2,
+          "unknown_or_not_independently_reviewed": 0
+        },
+        "pairs_per_entity": {
+          "max": 1,
+          "mean": 0.06666666666666667,
+          "min": 0,
+          "p50": 0,
+          "p95": 1
+        },
+        "per_source_entity_article_pairs": {
+          "candidate_www_zonadocs_mx": 2
+        },
+        "precision_all_results_bounds": {
+          "denominator": 2,
+          "lower": 1.0,
+          "unjudged": 0,
+          "upper": 1.0
+        },
+        "precision_among_reviewed": {
+          "denominator": 2,
+          "numerator": 2,
+          "value": 1.0,
+          "wilson95": {
+            "lower": 0.34238022750665303,
+            "upper": 1.0
+          }
+        },
+        "reference_eligibility": {
+          "known_eligible": 0,
+          "known_ineligible": 0,
+          "unknown": 17
+        },
+        "reference_entity_coverage": {
+          "denominator": 8,
+          "numerator": 1,
+          "value": 0.125,
+          "wilson95": {
+            "lower": 0.02241749145005667,
+            "upper": 0.4708881822128535
+          }
+        },
+        "reference_macro_entity_recall_all": {
+          "entities_with_references": 8,
+          "entities_without_references": 22,
+          "scope": "Mean of per-entity pair recall over entities with at least one relevant frozen reference; no-reference entities remain undefined.",
+          "value": 0.125
+        },
+        "reference_per_entity_recall_all": [
+          {
+            "denominator": 0,
+            "entity_id": "mx-notary-cdmx-002",
+            "numerator": 0,
+            "undefined_reason": "empty denominator",
+            "value": null,
+            "wilson95": null
+          },
+          {
+            "denominator": 0,
+            "entity_id": "mx-notary-cdmx-015",
+            "numerator": 0,
+            "undefined_reason": "empty denominator",
+            "value": null,
+            "wilson95": null
+          },
+          {
+            "denominator": 5,
+            "entity_id": "mx-notary-cdmx-022",
+            "numerator": 0,
+            "value": 0.0,
+            "wilson95": {
+              "lower": 0.0,
+              "upper": 0.43448246478317476
+            }
+          },
+          {
+            "denominator": 0,
+            "entity_id": "mx-notary-cdmx-025",
+            "numerator": 0,
+            "undefined_reason": "empty denominator",
+            "value": null,
+            "wilson95": null
+          },
+          {
+            "denominator": 0,
+            "entity_id": "mx-notary-cdmx-045",
+            "numerator": 0,
+            "undefined_reason": "empty denominator",
+            "value": null,
+            "wilson95": null
+          },
+          {
+            "denominator": 0,
+            "entity_id": "mx-notary-cdmx-058",
+            "numerator": 0,
+            "undefined_reason": "empty denominator",
+            "value": null,
+            "wilson95": null
+          },
+          {
+            "denominator": 0,
+            "entity_id": "mx-notary-cdmx-061",
+            "numerator": 0,
+            "undefined_reason": "empty denominator",
+            "value": null,
+            "wilson95": null
+          },
+          {
+            "denominator": 0,
+            "entity_id": "mx-notary-cdmx-071",
+            "numerator": 0,
+            "undefined_reason": "empty denominator",
+            "value": null,
+            "wilson95": null
+          },
+          {
+            "denominator": 0,
+            "entity_id": "mx-notary-cdmx-074",
+            "numerator": 0,
+            "undefined_reason": "empty denominator",
+            "value": null,
+            "wilson95": null
+          },
+          {
+            "denominator": 0,
+            "entity_id": "mx-notary-cdmx-086",
+            "numerator": 0,
+            "undefined_reason": "empty denominator",
+            "value": null,
+            "wilson95": null
+          },
+          {
+            "denominator": 5,
+            "entity_id": "mx-notary-cdmx-088",
+            "numerator": 0,
+            "value": 0.0,
+            "wilson95": {
+              "lower": 0.0,
+              "upper": 0.43448246478317476
+            }
+          },
+          {
+            "denominator": 0,
+            "entity_id": "mx-notary-cdmx-098",
+            "numerator": 0,
+            "undefined_reason": "empty denominator",
+            "value": null,
+            "wilson95": null
+          },
+          {
+            "denominator": 0,
+            "entity_id": "mx-notary-cdmx-114",
+            "numerator": 0,
+            "undefined_reason": "empty denominator",
+            "value": null,
+            "wilson95": null
+          },
+          {
+            "denominator": 0,
+            "entity_id": "mx-notary-cdmx-129",
+            "numerator": 0,
+            "undefined_reason": "empty denominator",
+            "value": null,
+            "wilson95": null
+          },
+          {
+            "denominator": 1,
+            "entity_id": "mx-notary-cdmx-140",
+            "numerator": 0,
+            "value": 0.0,
+            "wilson95": {
+              "lower": 0.0,
+              "upper": 0.7934506856227626
+            }
+          },
+          {
+            "denominator": 1,
+            "entity_id": "mx-notary-cdmx-159",
+            "numerator": 0,
+            "value": 0.0,
+            "wilson95": {
+              "lower": 0.0,
+              "upper": 0.7934506856227626
+            }
+          },
+          {
+            "denominator": 0,
+            "entity_id": "mx-notary-cdmx-166",
+            "numerator": 0,
+            "undefined_reason": "empty denominator",
+            "value": null,
+            "wilson95": null
+          },
+          {
+            "denominator": 0,
+            "entity_id": "mx-notary-cdmx-181",
+            "numerator": 0,
+            "undefined_reason": "empty denominator",
+            "value": null,
+            "wilson95": null
+          },
+          {
+            "denominator": 0,
+            "entity_id": "mx-notary-cdmx-194",
+            "numerator": 0,
+            "undefined_reason": "empty denominator",
+            "value": null,
+            "wilson95": null
+          },
+          {
+            "denominator": 0,
+            "entity_id": "mx-notary-cdmx-197",
+            "numerator": 0,
+            "undefined_reason": "empty denominator",
+            "value": null,
+            "wilson95": null
+          },
+          {
+            "denominator": 0,
+            "entity_id": "mx-notary-cdmx-205",
+            "numerator": 0,
+            "undefined_reason": "empty denominator",
+            "value": null,
+            "wilson95": null
+          },
+          {
+            "denominator": 0,
+            "entity_id": "mx-notary-cdmx-216",
+            "numerator": 0,
+            "undefined_reason": "empty denominator",
+            "value": null,
+            "wilson95": null
+          },
+          {
+            "denominator": 0,
+            "entity_id": "mx-notary-cdmx-224",
+            "numerator": 0,
+            "undefined_reason": "empty denominator",
+            "value": null,
+            "wilson95": null
+          },
+          {
+            "denominator": 1,
+            "entity_id": "mx-notary-cdmx-229",
+            "numerator": 0,
+            "value": 0.0,
+            "wilson95": {
+              "lower": 0.0,
+              "upper": 0.7934506856227626
+            }
+          },
+          {
+            "denominator": 0,
+            "entity_id": "mx-notary-cdmx-230",
+            "numerator": 0,
+            "undefined_reason": "empty denominator",
+            "value": null,
+            "wilson95": null
+          },
+          {
+            "denominator": 1,
+            "entity_id": "mx-notary-cdmx-236",
+            "numerator": 1,
+            "value": 1.0,
+            "wilson95": {
+              "lower": 0.20654931437723745,
+              "upper": 1.0
+            }
+          },
+          {
+            "denominator": 0,
+            "entity_id": "mx-notary-cdmx-238",
+            "numerator": 0,
+            "undefined_reason": "empty denominator",
+            "value": null,
+            "wilson95": null
+          },
+          {
+            "denominator": 0,
+            "entity_id": "mx-notary-cdmx-241",
+            "numerator": 0,
+            "undefined_reason": "empty denominator",
+            "value": null,
+            "wilson95": null
+          },
+          {
+            "denominator": 2,
+            "entity_id": "mx-notary-cdmx-242",
+            "numerator": 0,
+            "value": 0.0,
+            "wilson95": {
+              "lower": 0.0,
+              "upper": 0.6576197724933469
+            }
+          },
+          {
+            "denominator": 1,
+            "entity_id": "mx-notary-cdmx-244",
+            "numerator": 0,
+            "value": 0.0,
+            "wilson95": {
+              "lower": 0.0,
+              "upper": 0.7934506856227626
+            }
+          }
+        ],
+        "reference_recall_all": {
+          "denominator": 17,
+          "numerator": 1,
+          "value": 0.058823529411764705,
+          "wilson95": {
+            "lower": 0.010460400984997592,
+            "upper": 0.26982030637575405
+          }
+        },
+        "reference_recall_known_eligible": {
+          "denominator": 0,
+          "numerator": 0,
+          "undefined_reason": "empty denominator",
+          "value": null,
+          "wilson95": null
+        },
+        "reference_unique_url_recall_all": {
+          "denominator": 17,
+          "numerator": 1,
+          "value": 0.058823529411764705,
+          "wilson95": {
+            "lower": 0.010460400984997592,
+            "upper": 0.26982030637575405
+          }
+        },
+        "reference_unique_url_recall_known_eligible": {
+          "denominator": 0,
+          "numerator": 0,
+          "undefined_reason": "empty denominator",
+          "value": null,
+          "wilson95": null
+        },
+        "reference_unique_url_recall_scope": "URL discovery for any entity; exact entity attribution is measured separately by pair recall. A URL is known eligible when any relevant gold pair marks it true.",
+        "text_pairs_without_body_hash": 0,
+        "unique_article_urls": 2,
+        "unique_entity_article_pairs": 2,
+        "unique_original_body_hashes": 2
+      }
+    }
+  },
+  "cutoff": "2026-10-16",
+  "document_classification": {
+    "context_role_auxiliary": {
+      "abstention_policy": "known-label abstentions remain in recall, specificity and accuracy denominators",
+      "abstentions": {
+        "negative": 9,
+        "positive": 42,
+        "unknown_truth": 3
+      },
+      "accuracy": {
+        "denominator": null,
+        "numerator": null,
+        "undefined_reason": "unknown ground truth prevents cohort-wide accuracy",
+        "value": null,
+        "wilson95": null
+      },
+      "adjudicated_decision_coverage": {
+        "denominator": 59,
+        "numerator": 8,
+        "value": 0.13559322033898305,
+        "wilson95": {
+          "lower": 0.0703417467253372,
+          "upper": 0.24539660806537295
+        }
+      },
+      "adjudicated_subset_accuracy": {
+        "denominator": 59,
+        "numerator": 2,
+        "value": 0.03389830508474576,
+        "wilson95": {
+          "lower": 0.00934590909166131,
+          "upper": 0.11543570750110752
+        }
+      },
+      "adjudicated_subset_balanced_accuracy": 0.02,
+      "answered_adjudicated_subset_accuracy": {
+        "denominator": 8,
+        "numerator": 2,
+        "value": 0.25,
+        "wilson95": {
+          "lower": 0.071479212752109,
+          "upper": 0.5907245696898311
+        }
+      },
+      "audited_relevant_text_pairs": 63,
+      "balanced_accuracy": null,
+      "confidence_interval_scope": "Wilson intervals are marginal proportions, not F1 or balanced-accuracy intervals",
+      "confusion_matrix": {
+        "fn": 6,
+        "fp": 0,
+        "tn": 0,
+        "tp": 2
+      },
+      "decision_coverage": {
+        "denominator": 63,
+        "numerator": 9,
+        "value": 0.14285714285714285,
+        "wilson95": {
+          "lower": 0.07701948334720692,
+          "upper": 0.24974565921625858
+        }
+      },
+      "known_label_f1": 0.07692307692307693,
+      "known_label_precision": {
+        "denominator": 2,
+        "numerator": 2,
+        "value": 1.0,
+        "wilson95": {
+          "lower": 0.34238022750665303,
+          "upper": 1.0
+        }
+      },
+      "known_negative_specificity": {
+        "denominator": 9,
+        "numerator": 0,
+        "value": 0.0,
+        "wilson95": {
+          "lower": 0.0,
+          "upper": 0.2991450484195441
+        }
+      },
+      "known_positive_recall": {
+        "denominator": 50,
+        "numerator": 2,
+        "value": 0.04,
+        "wilson95": {
+          "lower": 0.011038884327619805,
+          "upper": 0.1346009068750702
+        }
+      },
+      "missing_predictions_counted_as_abstentions": 0,
+      "negative_support": 9,
+      "positive_support": 50,
+      "predictions_excluded_irrelevant_or_unreviewed": 1,
+      "scope": "adverse role reported at publication on independently reviewed relevant entity-text pairs",
+      "target": "reported_adverse_role_at_publication",
+      "unknown_truth_support": 4
+    },
+    "nlp_direct_adverse": {
+      "abstention_policy": "known-label abstentions remain in recall, specificity and accuracy denominators",
+      "abstentions": {
+        "negative": 0,
+        "positive": 3,
+        "unknown_truth": 0
+      },
+      "accuracy": {
+        "denominator": null,
+        "numerator": null,
+        "undefined_reason": "unknown ground truth prevents cohort-wide accuracy",
+        "value": null,
+        "wilson95": null
+      },
+      "adjudicated_decision_coverage": {
+        "denominator": 59,
+        "numerator": 56,
+        "value": 0.9491525423728814,
+        "wilson95": {
+          "lower": 0.8608349778472311,
+          "upper": 0.9825572825270099
+        }
+      },
+      "adjudicated_subset_accuracy": {
+        "denominator": 59,
+        "numerator": 27,
+        "value": 0.4576271186440678,
+        "wilson95": {
+          "lower": 0.3370130585185591,
+          "upper": 0.5834216338989654
+        }
+      },
+      "adjudicated_subset_balanced_accuracy": 0.6799999999999999,
+      "answered_adjudicated_subset_accuracy": {
+        "denominator": 56,
+        "numerator": 27,
+        "value": 0.48214285714285715,
+        "wilson95": {
+          "lower": 0.3566821941245828,
+          "upper": 0.6098961607582303
+        }
+      },
+      "audited_relevant_text_pairs": 63,
+      "balanced_accuracy": null,
+      "confidence_interval_scope": "Wilson intervals are marginal proportions, not F1 or balanced-accuracy intervals",
+      "confusion_matrix": {
+        "fn": 29,
+        "fp": 0,
+        "tn": 9,
+        "tp": 18
+      },
+      "decision_coverage": {
+        "denominator": 63,
+        "numerator": 60,
+        "value": 0.9523809523809523,
+        "wilson95": {
+          "lower": 0.8690903216209392,
+          "upper": 0.9836738311320045
+        }
+      },
+      "known_label_f1": 0.5294117647058824,
+      "known_label_precision": {
+        "denominator": 18,
+        "numerator": 18,
+        "value": 1.0,
+        "wilson95": {
+          "lower": 0.8241207763533425,
+          "upper": 1.0
+        }
+      },
+      "known_negative_specificity": {
+        "denominator": 9,
+        "numerator": 9,
+        "value": 1.0,
+        "wilson95": {
+          "lower": 0.7008549515804559,
+          "upper": 1.0
+        }
+      },
+      "known_positive_recall": {
+        "denominator": 50,
+        "numerator": 18,
+        "value": 0.36,
+        "wilson95": {
+          "lower": 0.24138749651846741,
+          "upper": 0.49858983123887307
+        }
+      },
+      "missing_predictions_counted_as_abstentions": 0,
+      "negative_support": 9,
+      "positive_support": 50,
+      "predictions_excluded_irrelevant_or_unreviewed": 1,
+      "scope": "adverse role reported at publication on independently reviewed relevant entity-text pairs",
+      "target": "reported_adverse_role_at_publication",
+      "unknown_truth_support": 4
+    }
+  },
+  "entity_classification": {
+    "abstention_policy": "known-label abstentions remain in recall, specificity and accuracy denominators",
+    "abstentions": {
+      "negative": 0,
+      "positive": 30,
+      "unknown_truth": 30
+    },
+    "accuracy": {
+      "denominator": null,
+      "numerator": null,
+      "undefined_reason": "unknown ground truth prevents cohort-wide accuracy",
+      "value": null,
+      "wilson95": null
+    },
+    "adjudicated_decision_coverage": {
+      "denominator": 30,
+      "numerator": 0,
+      "value": 0.0,
+      "wilson95": {
+        "lower": 0.0,
+        "upper": 0.11351339317396876
+      }
+    },
+    "adjudicated_subset_accuracy": {
+      "denominator": 30,
+      "numerator": 0,
+      "value": 0.0,
+      "wilson95": {
+        "lower": 0.0,
+        "upper": 0.11351339317396876
+      }
+    },
+    "adjudicated_subset_balanced_accuracy": null,
+    "answered_adjudicated_subset_accuracy": {
+      "denominator": 0,
+      "numerator": 0,
+      "undefined_reason": "empty denominator",
+      "value": null,
+      "wilson95": null
+    },
+    "balanced_accuracy": null,
+    "confidence_interval_scope": "Wilson intervals are marginal proportions, not F1 or balanced-accuracy intervals",
+    "confusion_matrix": {
+      "fn": 0,
+      "fp": 0,
+      "tn": 0,
+      "tp": 0
+    },
+    "decision_coverage": {
+      "denominator": 60,
+      "numerator": 0,
+      "value": 0.0,
+      "wilson95": {
+        "lower": 0.0,
+        "upper": 0.06017185214208986
+      }
+    },
+    "known_label_f1": 0.0,
+    "known_label_precision": {
+      "denominator": 0,
+      "numerator": 0,
+      "undefined_reason": "empty denominator",
+      "value": null,
+      "wilson95": null
+    },
+    "known_negative_specificity": {
+      "denominator": 0,
+      "numerator": 0,
+      "undefined_reason": "empty denominator",
+      "value": null,
+      "wilson95": null
+    },
+    "known_positive_recall": {
+      "denominator": 30,
+      "numerator": 0,
+      "value": 0.0,
+      "wilson95": {
+        "lower": 0.0,
+        "upper": 0.11351339317396876
+      }
+    },
+    "negative_support": 0,
+    "positive_support": 30,
+    "unknown_truth_support": 30
+  },
+  "evaluation_kind": "finite-frozen-reference-retrieval",
+  "excluded_rows": [],
+  "gold_snapshot": {
+    "freeze_precedes_run_verified": true,
+    "frozen_at": "2026-10-16T22:10:14.077408+00:00",
+    "selection_independence": "requires external provenance; hash alone cannot prove independence",
+    "sha256": "d49edc73a57beb49f806126b741dc4e7b99eae8be4d8dfb69970bfc7222c30e8"
+  },
+  "interpretation": [
+    "Recall is relative to the frozen supplied reference set, not all public news.",
+    "Candidate pairs, original texts and unique article URLs have different denominators.",
+    "Precision uses independent relevance judgments; unjudged results remain in bounds.",
+    "Closed-reference accuracy concerns retrieval within that finite labeled corpus only.",
+    "No-known-incident controls do not become verified negative entities.",
+    "Entity labels describe documented reports or administrative incidents, not guilt or personal risk.",
+    "Missing publication dates are retained and make the temporal scope partially unverifiable.",
+    "Confidence intervals describe binomial uncertainty, not sample-selection bias."
+  ],
+  "known_positive_incident_document_detection": {
+    "denominator": 30,
+    "numerator": 12,
+    "value": 0.4,
+    "wilson95": {
+      "lower": 0.24590628116801852,
+      "upper": 0.5767963974667752
+    }
+  },
+  "missing_publication_dates": {
+    "known_entity_label_as_of": 0,
+    "reference_pairs": 47,
+    "retrieved_pairs": 0
+  },
+  "schema_version": 1,
+  "source_limitations": [
+    "Operational checks do not establish retrieval quality, incident status, identity or risk.",
+    "Relevance and incident labels remain unknown until independent original-text review.",
+    "A no-known-incident sampling group is not proof of a clean record.",
+    "Top-result limits, source availability, robots and the frozen budget can leave incomplete coverage.",
+    "Original responses and texts stay in the isolated runtime bank and must not be committed to Git.",
+    "The queue retained deferred tasks; the run is not complete historical coverage.",
+    "Reference discovery used a separate research engine; native collection did not receive the gold URLs.",
+    "This current-list projection is a local post-correction replay on the same archived articles; it does not measure a new cold acquisition, latency improvement or held-out generalization."
+  ],
+  "texts": {
+    "closed_reference_classification": {
+      "abstention_policy": "known-label abstentions remain in recall, specificity and accuracy denominators",
+      "abstentions": {
+        "negative": 0,
+        "positive": 0,
+        "unknown_truth": 0
+      },
+      "accuracy": {
+        "denominator": null,
+        "numerator": null,
+        "undefined_reason": "unknown ground truth prevents cohort-wide accuracy",
+        "value": null,
+        "wilson95": null
+      },
+      "adjudicated_decision_coverage": {
+        "denominator": 115,
+        "numerator": 115,
+        "value": 1.0,
+        "wilson95": {
+          "lower": 0.9676757685506868,
+          "upper": 0.9999999999999999
+        }
+      },
+      "adjudicated_subset_accuracy": {
+        "denominator": 115,
+        "numerator": 1,
+        "value": 0.008695652173913044,
+        "wilson95": {
+          "lower": 0.0015366489058808025,
+          "upper": 0.047616726344313784
+        }
+      },
+      "adjudicated_subset_balanced_accuracy": null,
+      "answered_adjudicated_subset_accuracy": {
+        "denominator": 115,
+        "numerator": 1,
+        "value": 0.008695652173913044,
+        "wilson95": {
+          "lower": 0.0015366489058808025,
+          "upper": 0.047616726344313784
+        }
+      },
+      "balanced_accuracy": null,
+      "confidence_interval_scope": "Wilson intervals are marginal proportions, not F1 or balanced-accuracy intervals",
+      "confusion_matrix": {
+        "fn": 114,
+        "fp": 0,
+        "tn": 0,
+        "tp": 1
+      },
+      "decision_coverage": {
+        "denominator": 130,
+        "numerator": 130,
+        "value": 1.0,
+        "wilson95": {
+          "lower": 0.9712984388055687,
+          "upper": 1.0
+        }
+      },
+      "known_label_f1": 0.017241379310344827,
+      "known_label_precision": {
+        "denominator": 1,
+        "numerator": 1,
+        "value": 1.0,
+        "wilson95": {
+          "lower": 0.20654931437723745,
+          "upper": 1.0
+        }
+      },
+      "known_negative_specificity": {
+        "denominator": 0,
+        "numerator": 0,
+        "undefined_reason": "empty denominator",
+        "value": null,
+        "wilson95": null
+      },
+      "known_positive_recall": {
+        "denominator": 115,
+        "numerator": 1,
+        "value": 0.008695652173913044,
+        "wilson95": {
+          "lower": 0.0015366489058808025,
+          "upper": 0.047616726344313784
+        }
+      },
+      "negative_support": 0,
+      "positive_support": 115,
+      "unknown_truth_support": 15
+    },
+    "entities_with_any_result": {
+      "denominator": 60,
+      "numerator": 14,
+      "value": 0.23333333333333334,
+      "wilson95": {
+        "lower": 0.1443956173664283,
+        "upper": 0.35436270377601964
+      }
+    },
+    "entities_with_reviewed_relevant_result": {
+      "denominator": 60,
+      "numerator": 13,
+      "value": 0.21666666666666667,
+      "wilson95": {
+        "lower": 0.13123044048190308,
+        "upper": 0.33620027573194783
+      }
+    },
+    "f1_reviewed_precision_and_frozen_reference_recall": 0.017241379310344827,
+    "judgment_coverage": {
+      "denominator": 64,
+      "numerator": 63,
+      "value": 0.984375,
+      "wilson95": {
+        "lower": 0.9166589839990573,
+        "upper": 0.9972364580766624
+      }
+    },
+    "judgments": {
+      "irrelevant": 0,
+      "relevant": 63,
+      "unknown_or_not_independently_reviewed": 1
+    },
+    "pairs_per_entity": {
+      "max": 14,
+      "mean": 1.0666666666666667,
+      "min": 0,
+      "p50": 0,
+      "p95": 6
+    },
+    "per_source_entity_article_pairs": {
+      "candidate_avimexnews_com": 2,
+      "candidate_plazadearmas_com_mx": 25,
+      "candidate_www_periodicocontexto_com_mx": 3,
+      "candidate_www_rioaxaca_com": 25,
+      "candidate_www_zonadocs_mx": 7
+    },
+    "precision_all_results_bounds": {
+      "denominator": 64,
+      "lower": 0.984375,
+      "unjudged": 1,
+      "upper": 1.0
+    },
+    "precision_among_reviewed": {
+      "denominator": 63,
+      "numerator": 63,
+      "value": 1.0,
+      "wilson95": {
+        "lower": 0.9425288004111484,
+        "upper": 1.0
+      }
+    },
+    "reference_eligibility": {
+      "known_eligible": 0,
+      "known_ineligible": 0,
+      "unknown": 115
+    },
+    "reference_entity_coverage": {
+      "denominator": 38,
+      "numerator": 1,
+      "value": 0.02631578947368421,
+      "wilson95": {
+        "lower": 0.004660587685768783,
+        "upper": 0.1349487611595213
+      }
+    },
+    "reference_macro_entity_recall_all": {
+      "entities_with_references": 38,
+      "entities_without_references": 22,
+      "scope": "Mean of per-entity pair recall over entities with at least one relevant frozen reference; no-reference entities remain undefined.",
+      "value": 0.02631578947368421
+    },
+    "reference_per_entity_recall_all": [
+      {
+        "denominator": 0,
+        "entity_id": "mx-notary-cdmx-002",
+        "numerator": 0,
+        "undefined_reason": "empty denominator",
+        "value": null,
+        "wilson95": null
+      },
+      {
+        "denominator": 0,
+        "entity_id": "mx-notary-cdmx-015",
+        "numerator": 0,
+        "undefined_reason": "empty denominator",
+        "value": null,
+        "wilson95": null
+      },
+      {
+        "denominator": 5,
+        "entity_id": "mx-notary-cdmx-022",
+        "numerator": 0,
+        "value": 0.0,
+        "wilson95": {
+          "lower": 0.0,
+          "upper": 0.43448246478317476
+        }
+      },
+      {
+        "denominator": 0,
+        "entity_id": "mx-notary-cdmx-025",
+        "numerator": 0,
+        "undefined_reason": "empty denominator",
+        "value": null,
+        "wilson95": null
+      },
+      {
+        "denominator": 0,
+        "entity_id": "mx-notary-cdmx-045",
+        "numerator": 0,
+        "undefined_reason": "empty denominator",
+        "value": null,
+        "wilson95": null
+      },
+      {
+        "denominator": 0,
+        "entity_id": "mx-notary-cdmx-058",
+        "numerator": 0,
+        "undefined_reason": "empty denominator",
+        "value": null,
+        "wilson95": null
+      },
+      {
+        "denominator": 0,
+        "entity_id": "mx-notary-cdmx-061",
+        "numerator": 0,
+        "undefined_reason": "empty denominator",
+        "value": null,
+        "wilson95": null
+      },
+      {
+        "denominator": 0,
+        "entity_id": "mx-notary-cdmx-071",
+        "numerator": 0,
+        "undefined_reason": "empty denominator",
+        "value": null,
+        "wilson95": null
+      },
+      {
+        "denominator": 0,
+        "entity_id": "mx-notary-cdmx-074",
+        "numerator": 0,
+        "undefined_reason": "empty denominator",
+        "value": null,
+        "wilson95": null
+      },
+      {
+        "denominator": 0,
+        "entity_id": "mx-notary-cdmx-086",
+        "numerator": 0,
+        "undefined_reason": "empty denominator",
+        "value": null,
+        "wilson95": null
+      },
+      {
+        "denominator": 5,
+        "entity_id": "mx-notary-cdmx-088",
+        "numerator": 0,
+        "value": 0.0,
+        "wilson95": {
+          "lower": 0.0,
+          "upper": 0.43448246478317476
+        }
+      },
+      {
+        "denominator": 0,
+        "entity_id": "mx-notary-cdmx-098",
+        "numerator": 0,
+        "undefined_reason": "empty denominator",
+        "value": null,
+        "wilson95": null
+      },
+      {
+        "denominator": 0,
+        "entity_id": "mx-notary-cdmx-114",
+        "numerator": 0,
+        "undefined_reason": "empty denominator",
+        "value": null,
+        "wilson95": null
+      },
+      {
+        "denominator": 0,
+        "entity_id": "mx-notary-cdmx-129",
+        "numerator": 0,
+        "undefined_reason": "empty denominator",
+        "value": null,
+        "wilson95": null
+      },
+      {
+        "denominator": 1,
+        "entity_id": "mx-notary-cdmx-140",
+        "numerator": 0,
+        "value": 0.0,
+        "wilson95": {
+          "lower": 0.0,
+          "upper": 0.7934506856227626
+        }
+      },
+      {
+        "denominator": 1,
+        "entity_id": "mx-notary-cdmx-159",
+        "numerator": 0,
+        "value": 0.0,
+        "wilson95": {
+          "lower": 0.0,
+          "upper": 0.7934506856227626
+        }
+      },
+      {
+        "denominator": 0,
+        "entity_id": "mx-notary-cdmx-166",
+        "numerator": 0,
+        "undefined_reason": "empty denominator",
+        "value": null,
+        "wilson95": null
+      },
+      {
+        "denominator": 0,
+        "entity_id": "mx-notary-cdmx-181",
+        "numerator": 0,
+        "undefined_reason": "empty denominator",
+        "value": null,
+        "wilson95": null
+      },
+      {
+        "denominator": 0,
+        "entity_id": "mx-notary-cdmx-194",
+        "numerator": 0,
+        "undefined_reason": "empty denominator",
+        "value": null,
+        "wilson95": null
+      },
+      {
+        "denominator": 0,
+        "entity_id": "mx-notary-cdmx-197",
+        "numerator": 0,
+        "undefined_reason": "empty denominator",
+        "value": null,
+        "wilson95": null
+      },
+      {
+        "denominator": 0,
+        "entity_id": "mx-notary-cdmx-205",
+        "numerator": 0,
+        "undefined_reason": "empty denominator",
+        "value": null,
+        "wilson95": null
+      },
+      {
+        "denominator": 0,
+        "entity_id": "mx-notary-cdmx-216",
+        "numerator": 0,
+        "undefined_reason": "empty denominator",
+        "value": null,
+        "wilson95": null
+      },
+      {
+        "denominator": 0,
+        "entity_id": "mx-notary-cdmx-224",
+        "numerator": 0,
+        "undefined_reason": "empty denominator",
+        "value": null,
+        "wilson95": null
+      },
+      {
+        "denominator": 1,
+        "entity_id": "mx-notary-cdmx-229",
+        "numerator": 0,
+        "value": 0.0,
+        "wilson95": {
+          "lower": 0.0,
+          "upper": 0.7934506856227626
+        }
+      },
+      {
+        "denominator": 0,
+        "entity_id": "mx-notary-cdmx-230",
+        "numerator": 0,
+        "undefined_reason": "empty denominator",
+        "value": null,
+        "wilson95": null
+      },
+      {
+        "denominator": 1,
+        "entity_id": "mx-notary-cdmx-236",
+        "numerator": 1,
+        "value": 1.0,
+        "wilson95": {
+          "lower": 0.20654931437723745,
+          "upper": 1.0
+        }
+      },
+      {
+        "denominator": 0,
+        "entity_id": "mx-notary-cdmx-238",
+        "numerator": 0,
+        "undefined_reason": "empty denominator",
+        "value": null,
+        "wilson95": null
+      },
+      {
+        "denominator": 0,
+        "entity_id": "mx-notary-cdmx-241",
+        "numerator": 0,
+        "undefined_reason": "empty denominator",
+        "value": null,
+        "wilson95": null
+      },
+      {
+        "denominator": 2,
+        "entity_id": "mx-notary-cdmx-242",
+        "numerator": 0,
+        "value": 0.0,
+        "wilson95": {
+          "lower": 0.0,
+          "upper": 0.6576197724933469
+        }
+      },
+      {
+        "denominator": 1,
+        "entity_id": "mx-notary-cdmx-244",
+        "numerator": 0,
+        "value": 0.0,
+        "wilson95": {
+          "lower": 0.0,
+          "upper": 0.7934506856227626
+        }
+      },
+      {
+        "denominator": 8,
+        "entity_id": "positive-01",
+        "numerator": 0,
+        "value": 0.0,
+        "wilson95": {
+          "lower": 0.0,
+          "upper": 0.32440756488388023
+        }
+      },
+      {
+        "denominator": 2,
+        "entity_id": "positive-02",
+        "numerator": 0,
+        "value": 0.0,
+        "wilson95": {
+          "lower": 0.0,
+          "upper": 0.6576197724933469
+        }
+      },
+      {
+        "denominator": 3,
+        "entity_id": "positive-03",
+        "numerator": 0,
+        "value": 0.0,
+        "wilson95": {
+          "lower": 5.551115123125783e-17,
+          "upper": 0.5614970317550454
+        }
+      },
+      {
+        "denominator": 3,
+        "entity_id": "positive-04",
+        "numerator": 0,
+        "value": 0.0,
+        "wilson95": {
+          "lower": 5.551115123125783e-17,
+          "upper": 0.5614970317550454
+        }
+      },
+      {
+        "denominator": 3,
+        "entity_id": "positive-05",
+        "numerator": 0,
+        "value": 0.0,
+        "wilson95": {
+          "lower": 5.551115123125783e-17,
+          "upper": 0.5614970317550454
+        }
+      },
+      {
+        "denominator": 3,
+        "entity_id": "positive-06",
+        "numerator": 0,
+        "value": 0.0,
+        "wilson95": {
+          "lower": 5.551115123125783e-17,
+          "upper": 0.5614970317550454
+        }
+      },
+      {
+        "denominator": 3,
+        "entity_id": "positive-07",
+        "numerator": 0,
+        "value": 0.0,
+        "wilson95": {
+          "lower": 5.551115123125783e-17,
+          "upper": 0.5614970317550454
+        }
+      },
+      {
+        "denominator": 3,
+        "entity_id": "positive-08",
+        "numerator": 0,
+        "value": 0.0,
+        "wilson95": {
+          "lower": 5.551115123125783e-17,
+          "upper": 0.5614970317550454
+        }
+      },
+      {
+        "denominator": 6,
+        "entity_id": "positive-09",
+        "numerator": 0,
+        "value": 0.0,
+        "wilson95": {
+          "lower": 2.7755575615628914e-17,
+          "upper": 0.3903342879021653
+        }
+      },
+      {
+        "denominator": 3,
+        "entity_id": "positive-10",
+        "numerator": 0,
+        "value": 0.0,
+        "wilson95": {
+          "lower": 5.551115123125783e-17,
+          "upper": 0.5614970317550454
+        }
+      },
+      {
+        "denominator": 3,
+        "entity_id": "positive-11",
+        "numerator": 0,
+        "value": 0.0,
+        "wilson95": {
+          "lower": 5.551115123125783e-17,
+          "upper": 0.5614970317550454
+        }
+      },
+      {
+        "denominator": 2,
+        "entity_id": "positive-12",
+        "numerator": 0,
+        "value": 0.0,
+        "wilson95": {
+          "lower": 0.0,
+          "upper": 0.6576197724933469
+        }
+      },
+      {
+        "denominator": 4,
+        "entity_id": "positive-13",
+        "numerator": 0,
+        "value": 0.0,
+        "wilson95": {
+          "lower": 0.0,
+          "upper": 0.4898908364545973
+        }
+      },
+      {
+        "denominator": 3,
+        "entity_id": "positive-14",
+        "numerator": 0,
+        "value": 0.0,
+        "wilson95": {
+          "lower": 5.551115123125783e-17,
+          "upper": 0.5614970317550454
+        }
+      },
+      {
+        "denominator": 2,
+        "entity_id": "positive-15",
+        "numerator": 0,
+        "value": 0.0,
+        "wilson95": {
+          "lower": 0.0,
+          "upper": 0.6576197724933469
+        }
+      },
+      {
+        "denominator": 3,
+        "entity_id": "positive-16",
+        "numerator": 0,
+        "value": 0.0,
+        "wilson95": {
+          "lower": 5.551115123125783e-17,
+          "upper": 0.5614970317550454
+        }
+      },
+      {
+        "denominator": 3,
+        "entity_id": "positive-17",
+        "numerator": 0,
+        "value": 0.0,
+        "wilson95": {
+          "lower": 5.551115123125783e-17,
+          "upper": 0.5614970317550454
+        }
+      },
+      {
+        "denominator": 3,
+        "entity_id": "positive-18",
+        "numerator": 0,
+        "value": 0.0,
+        "wilson95": {
+          "lower": 5.551115123125783e-17,
+          "upper": 0.5614970317550454
+        }
+      },
+      {
+        "denominator": 3,
+        "entity_id": "positive-19",
+        "numerator": 0,
+        "value": 0.0,
+        "wilson95": {
+          "lower": 5.551115123125783e-17,
+          "upper": 0.5614970317550454
+        }
+      },
+      {
+        "denominator": 4,
+        "entity_id": "positive-20",
+        "numerator": 0,
+        "value": 0.0,
+        "wilson95": {
+          "lower": 0.0,
+          "upper": 0.4898908364545973
+        }
+      },
+      {
+        "denominator": 2,
+        "entity_id": "positive-21",
+        "numerator": 0,
+        "value": 0.0,
+        "wilson95": {
+          "lower": 0.0,
+          "upper": 0.6576197724933469
+        }
+      },
+      {
+        "denominator": 2,
+        "entity_id": "positive-22",
+        "numerator": 0,
+        "value": 0.0,
+        "wilson95": {
+          "lower": 0.0,
+          "upper": 0.6576197724933469
+        }
+      },
+      {
+        "denominator": 3,
+        "entity_id": "positive-23",
+        "numerator": 0,
+        "value": 0.0,
+        "wilson95": {
+          "lower": 5.551115123125783e-17,
+          "upper": 0.5614970317550454
+        }
+      },
+      {
+        "denominator": 3,
+        "entity_id": "positive-24",
+        "numerator": 0,
+        "value": 0.0,
+        "wilson95": {
+          "lower": 5.551115123125783e-17,
+          "upper": 0.5614970317550454
+        }
+      },
+      {
+        "denominator": 2,
+        "entity_id": "positive-25",
+        "numerator": 0,
+        "value": 0.0,
+        "wilson95": {
+          "lower": 0.0,
+          "upper": 0.6576197724933469
+        }
+      },
+      {
+        "denominator": 4,
+        "entity_id": "positive-26",
+        "numerator": 0,
+        "value": 0.0,
+        "wilson95": {
+          "lower": 0.0,
+          "upper": 0.4898908364545973
+        }
+      },
+      {
+        "denominator": 3,
+        "entity_id": "positive-27",
+        "numerator": 0,
+        "value": 0.0,
+        "wilson95": {
+          "lower": 5.551115123125783e-17,
+          "upper": 0.5614970317550454
+        }
+      },
+      {
+        "denominator": 3,
+        "entity_id": "positive-28",
+        "numerator": 0,
+        "value": 0.0,
+        "wilson95": {
+          "lower": 5.551115123125783e-17,
+          "upper": 0.5614970317550454
+        }
+      },
+      {
+        "denominator": 4,
+        "entity_id": "positive-29",
+        "numerator": 0,
+        "value": 0.0,
+        "wilson95": {
+          "lower": 0.0,
+          "upper": 0.4898908364545973
+        }
+      },
+      {
+        "denominator": 5,
+        "entity_id": "positive-30",
+        "numerator": 0,
+        "value": 0.0,
+        "wilson95": {
+          "lower": 0.0,
+          "upper": 0.43448246478317476
+        }
+      }
+    ],
+    "reference_recall_all": {
+      "denominator": 115,
+      "numerator": 1,
+      "value": 0.008695652173913044,
+      "wilson95": {
+        "lower": 0.0015366489058808025,
+        "upper": 0.047616726344313784
+      }
+    },
+    "reference_recall_known_eligible": {
+      "denominator": 0,
+      "numerator": 0,
+      "undefined_reason": "empty denominator",
+      "value": null,
+      "wilson95": null
+    },
+    "reference_unique_url_recall_all": {
+      "denominator": 97,
+      "numerator": 1,
+      "value": 0.010309278350515464,
+      "wilson95": {
+        "lower": 0.0018221648082868518,
+        "upper": 0.05610499024289903
+      }
+    },
+    "reference_unique_url_recall_known_eligible": {
+      "denominator": 0,
+      "numerator": 0,
+      "undefined_reason": "empty denominator",
+      "value": null,
+      "wilson95": null
+    },
+    "reference_unique_url_recall_scope": "URL discovery for any entity; exact entity attribution is measured separately by pair recall. A URL is known eligible when any relevant gold pair marks it true.",
+    "text_pairs_without_body_hash": 0,
+    "unique_article_urls": 61,
+    "unique_entity_article_pairs": 64,
+    "unique_original_body_hashes": 61
+  },
+  "volume": {
+    "duplicate_pair_rows_removed": 0,
+    "entities": 60,
+    "excluded_post_cutoff_rows": 0,
+    "nonindependent_labels_ignored": 0,
+    "raw_reference_rows": 130,
+    "raw_retrieved_rows": 72,
+    "unique_reference_pairs": 130,
+    "unique_reference_urls": 111
+  }
+}

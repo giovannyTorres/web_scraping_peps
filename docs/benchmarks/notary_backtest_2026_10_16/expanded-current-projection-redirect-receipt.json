@@ -1,0 +1,8 @@
+{
+  "completed_at": "2026-10-16T22:56:11.262533+00:00",
+  "current_projection_input_sha256": "f8920a9702d8b4f0add2ccc06feb731652b555a094980640ca16b86799084673",
+  "network_requests": 0,
+  "output_file_sha256": "405fd06f1a915b1f3771d3ab48fe48fe7e37203b01ffeb8e00526f50ebb2f7bb",
+  "schema_version": 4,
+  "verified_redirect_mapping_file_sha256": "3e6491701e97faf456bd89eff50d6f8a1ba6c699e86f070ac1bc22a023810428"
+}

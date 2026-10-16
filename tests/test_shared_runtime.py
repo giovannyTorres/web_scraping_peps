@@ -69,7 +69,10 @@ class NativeSharedRuntimeTests(unittest.TestCase):
 
     def run_native(self, responses, **options):
         with patch('peps.collector.SafeFetcher', self.fetcher(responses)):
-            return self.news.acquire(queue=False, workers=1, seconds=1, **options)
+            # Functional work is bounded by max_articles (one/four requests).
+            # Preparation and durable writes must also fit on Windows runners;
+            # a one-second ceiling is not a publisher or performance assertion.
+            return self.news.acquire(queue=False, workers=1, seconds=30, **options)
 
     def execute_feed(self, fetcher, *, budget=None):
         with self.store.connection() as con:

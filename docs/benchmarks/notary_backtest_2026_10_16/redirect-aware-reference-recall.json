@@ -1,0 +1,643 @@
+{
+  "access_based_exclusions": false,
+  "canonical_url_function_modified": false,
+  "datasets": {
+    "corpus": {
+      "candidates": {
+        "added_reference_pair_hits_from_verified_redirects": 0,
+        "added_reference_url_hits_from_verified_redirects": 0,
+        "exact_reference_pair_recall": {
+          "denominator": 115,
+          "numerator": 115,
+          "value": 1.0,
+          "wilson95": {
+            "lower": 0.9676757685506868,
+            "upper": 0.9999999999999999
+          }
+        },
+        "exact_reference_unique_url_recall": {
+          "denominator": 97,
+          "numerator": 97,
+          "value": 1.0,
+          "wilson95": {
+            "lower": 0.9619059574740523,
+            "upper": 1.0
+          }
+        },
+        "raw_total_pair_match_descriptive": {
+          "denominator": 130,
+          "numerator": 130,
+          "value": 1.0,
+          "wilson95": {
+            "lower": 0.9712984388055687,
+            "upper": 1.0
+          }
+        },
+        "raw_total_url_match_descriptive": {
+          "denominator": 111,
+          "numerator": 111,
+          "value": 1.0,
+          "wilson95": {
+            "lower": 0.9665498953066078,
+            "upper": 1.0
+          }
+        },
+        "reference_urls_supplied_to_collection": true,
+        "search_discovery_evaluated": false,
+        "verified_redirect_reference_pair_recall": {
+          "denominator": 115,
+          "numerator": 115,
+          "value": 1.0,
+          "wilson95": {
+            "lower": 0.9676757685506868,
+            "upper": 0.9999999999999999
+          }
+        },
+        "verified_redirect_reference_unique_url_recall": {
+          "denominator": 97,
+          "numerator": 97,
+          "value": 1.0,
+          "wilson95": {
+            "lower": 0.9619059574740523,
+            "upper": 1.0
+          }
+        }
+      },
+      "original_texts": {
+        "added_reference_pair_hits_from_verified_redirects": 0,
+        "added_reference_url_hits_from_verified_redirects": 0,
+        "exact_reference_pair_recall": {
+          "denominator": 115,
+          "numerator": 67,
+          "value": 0.5826086956521739,
+          "wilson95": {
+            "lower": 0.49123893331263274,
+            "upper": 0.6686379327957415
+          }
+        },
+        "exact_reference_unique_url_recall": {
+          "denominator": 97,
+          "numerator": 62,
+          "value": 0.6391752577319587,
+          "wilson95": {
+            "lower": 0.5399919512124193,
+            "upper": 0.7277550678782961
+          }
+        },
+        "raw_total_pair_match_descriptive": {
+          "denominator": 130,
+          "numerator": 76,
+          "value": 0.5846153846153846,
+          "wilson95": {
+            "lower": 0.4986655842030211,
+            "upper": 0.6657079977486905
+          }
+        },
+        "raw_total_url_match_descriptive": {
+          "denominator": 111,
+          "numerator": 71,
+          "value": 0.6396396396396397,
+          "wilson95": {
+            "lower": 0.5470363596699198,
+            "upper": 0.7229009984787725
+          }
+        },
+        "reference_urls_supplied_to_collection": true,
+        "search_discovery_evaluated": false,
+        "verified_redirect_reference_pair_recall": {
+          "denominator": 115,
+          "numerator": 67,
+          "value": 0.5826086956521739,
+          "wilson95": {
+            "lower": 0.49123893331263274,
+            "upper": 0.6686379327957415
+          }
+        },
+        "verified_redirect_reference_unique_url_recall": {
+          "denominator": 97,
+          "numerator": 62,
+          "value": 0.6391752577319587,
+          "wilson95": {
+            "lower": 0.5399919512124193,
+            "upper": 0.7277550678782961
+          }
+        }
+      }
+    },
+    "expanded": {
+      "candidates": {
+        "added_reference_pair_hits_from_verified_redirects": 3,
+        "added_reference_url_hits_from_verified_redirects": 3,
+        "exact_reference_pair_recall": {
+          "denominator": 115,
+          "numerator": 1,
+          "value": 0.008695652173913044,
+          "wilson95": {
+            "lower": 0.0015366489058808025,
+            "upper": 0.047616726344313784
+          }
+        },
+        "exact_reference_unique_url_recall": {
+          "denominator": 97,
+          "numerator": 1,
+          "value": 0.010309278350515464,
+          "wilson95": {
+            "lower": 0.0018221648082868518,
+            "upper": 0.05610499024289903
+          }
+        },
+        "raw_total_pair_match_descriptive": {
+          "denominator": 130,
+          "numerator": 4,
+          "value": 0.03076923076923077,
+          "wilson95": {
+            "lower": 0.012029284314737917,
+            "upper": 0.07644448849849772
+          }
+        },
+        "raw_total_url_match_descriptive": {
+          "denominator": 111,
+          "numerator": 4,
+          "value": 0.036036036036036036,
+          "wilson95": {
+            "lower": 0.014101302509231785,
+            "upper": 0.08901005589995212
+          }
+        },
+        "reference_urls_supplied_to_collection": false,
+        "search_discovery_evaluated": true,
+        "verified_redirect_reference_pair_recall": {
+          "denominator": 115,
+          "numerator": 4,
+          "value": 0.034782608695652174,
+          "wilson95": {
+            "lower": 0.013607842790201288,
+            "upper": 0.08603296386263783
+          }
+        },
+        "verified_redirect_reference_unique_url_recall": {
+          "denominator": 97,
+          "numerator": 4,
+          "value": 0.041237113402061855,
+          "wilson95": {
+            "lower": 0.016151236586163194,
+            "upper": 0.10127525604073725
+          }
+        }
+      },
+      "original_texts": {
+        "added_reference_pair_hits_from_verified_redirects": 3,
+        "added_reference_url_hits_from_verified_redirects": 3,
+        "exact_reference_pair_recall": {
+          "denominator": 115,
+          "numerator": 1,
+          "value": 0.008695652173913044,
+          "wilson95": {
+            "lower": 0.0015366489058808025,
+            "upper": 0.047616726344313784
+          }
+        },
+        "exact_reference_unique_url_recall": {
+          "denominator": 97,
+          "numerator": 1,
+          "value": 0.010309278350515464,
+          "wilson95": {
+            "lower": 0.0018221648082868518,
+            "upper": 0.05610499024289903
+          }
+        },
+        "raw_total_pair_match_descriptive": {
+          "denominator": 130,
+          "numerator": 4,
+          "value": 0.03076923076923077,
+          "wilson95": {
+            "lower": 0.012029284314737917,
+            "upper": 0.07644448849849772
+          }
+        },
+        "raw_total_url_match_descriptive": {
+          "denominator": 111,
+          "numerator": 4,
+          "value": 0.036036036036036036,
+          "wilson95": {
+            "lower": 0.014101302509231785,
+            "upper": 0.08901005589995212
+          }
+        },
+        "reference_urls_supplied_to_collection": false,
+        "search_discovery_evaluated": true,
+        "verified_redirect_reference_pair_recall": {
+          "denominator": 115,
+          "numerator": 4,
+          "value": 0.034782608695652174,
+          "wilson95": {
+            "lower": 0.013607842790201288,
+            "upper": 0.08603296386263783
+          }
+        },
+        "verified_redirect_reference_unique_url_recall": {
+          "denominator": 97,
+          "numerator": 4,
+          "value": 0.041237113402061855,
+          "wilson95": {
+            "lower": 0.016151236586163194,
+            "upper": 0.10127525604073725
+          }
+        }
+      }
+    },
+    "native": {
+      "candidates": {
+        "added_reference_pair_hits_from_verified_redirects": 0,
+        "added_reference_url_hits_from_verified_redirects": 0,
+        "exact_reference_pair_recall": {
+          "denominator": 115,
+          "numerator": 0,
+          "value": 0.0,
+          "wilson95": {
+            "lower": 0.0,
+            "upper": 0.03232423144931307
+          }
+        },
+        "exact_reference_unique_url_recall": {
+          "denominator": 97,
+          "numerator": 0,
+          "value": 0.0,
+          "wilson95": {
+            "lower": 0.0,
+            "upper": 0.03809404252594769
+          }
+        },
+        "raw_total_pair_match_descriptive": {
+          "denominator": 130,
+          "numerator": 0,
+          "value": 0.0,
+          "wilson95": {
+            "lower": 0.0,
+            "upper": 0.028701561194431423
+          }
+        },
+        "raw_total_url_match_descriptive": {
+          "denominator": 111,
+          "numerator": 0,
+          "value": 0.0,
+          "wilson95": {
+            "lower": 3.469446951953614e-18,
+            "upper": 0.03345010469339235
+          }
+        },
+        "reference_urls_supplied_to_collection": false,
+        "search_discovery_evaluated": true,
+        "verified_redirect_reference_pair_recall": {
+          "denominator": 115,
+          "numerator": 0,
+          "value": 0.0,
+          "wilson95": {
+            "lower": 0.0,
+            "upper": 0.03232423144931307
+          }
+        },
+        "verified_redirect_reference_unique_url_recall": {
+          "denominator": 97,
+          "numerator": 0,
+          "value": 0.0,
+          "wilson95": {
+            "lower": 0.0,
+            "upper": 0.03809404252594769
+          }
+        }
+      },
+      "original_texts": {
+        "added_reference_pair_hits_from_verified_redirects": 0,
+        "added_reference_url_hits_from_verified_redirects": 0,
+        "exact_reference_pair_recall": {
+          "denominator": 115,
+          "numerator": 0,
+          "value": 0.0,
+          "wilson95": {
+            "lower": 0.0,
+            "upper": 0.03232423144931307
+          }
+        },
+        "exact_reference_unique_url_recall": {
+          "denominator": 97,
+          "numerator": 0,
+          "value": 0.0,
+          "wilson95": {
+            "lower": 0.0,
+            "upper": 0.03809404252594769
+          }
+        },
+        "raw_total_pair_match_descriptive": {
+          "denominator": 130,
+          "numerator": 0,
+          "value": 0.0,
+          "wilson95": {
+            "lower": 0.0,
+            "upper": 0.028701561194431423
+          }
+        },
+        "raw_total_url_match_descriptive": {
+          "denominator": 111,
+          "numerator": 0,
+          "value": 0.0,
+          "wilson95": {
+            "lower": 3.469446951953614e-18,
+            "upper": 0.03345010469339235
+          }
+        },
+        "reference_urls_supplied_to_collection": false,
+        "search_discovery_evaluated": true,
+        "verified_redirect_reference_pair_recall": {
+          "denominator": 115,
+          "numerator": 0,
+          "value": 0.0,
+          "wilson95": {
+            "lower": 0.0,
+            "upper": 0.03232423144931307
+          }
+        },
+        "verified_redirect_reference_unique_url_recall": {
+          "denominator": 97,
+          "numerator": 0,
+          "value": 0.0,
+          "wilson95": {
+            "lower": 0.0,
+            "upper": 0.03809404252594769
+          }
+        }
+      }
+    },
+    "notisistema": {
+      "candidates": {
+        "added_reference_pair_hits_from_verified_redirects": 2,
+        "added_reference_url_hits_from_verified_redirects": 2,
+        "exact_reference_pair_recall": {
+          "denominator": 115,
+          "numerator": 0,
+          "value": 0.0,
+          "wilson95": {
+            "lower": 0.0,
+            "upper": 0.03232423144931307
+          }
+        },
+        "exact_reference_unique_url_recall": {
+          "denominator": 97,
+          "numerator": 0,
+          "value": 0.0,
+          "wilson95": {
+            "lower": 0.0,
+            "upper": 0.03809404252594769
+          }
+        },
+        "raw_total_pair_match_descriptive": {
+          "denominator": 130,
+          "numerator": 2,
+          "value": 0.015384615384615385,
+          "wilson95": {
+            "lower": 0.00422920584405527,
+            "upper": 0.054358461159778264
+          }
+        },
+        "raw_total_url_match_descriptive": {
+          "denominator": 111,
+          "numerator": 2,
+          "value": 0.018018018018018018,
+          "wilson95": {
+            "lower": 0.004955178708528081,
+            "upper": 0.06332555284276006
+          }
+        },
+        "reference_urls_supplied_to_collection": false,
+        "search_discovery_evaluated": true,
+        "verified_redirect_reference_pair_recall": {
+          "denominator": 115,
+          "numerator": 2,
+          "value": 0.017391304347826087,
+          "wilson95": {
+            "lower": 0.004782352362605557,
+            "upper": 0.06120016668847053
+          }
+        },
+        "verified_redirect_reference_unique_url_recall": {
+          "denominator": 97,
+          "numerator": 2,
+          "value": 0.020618556701030927,
+          "wilson95": {
+            "lower": 0.005672685102266338,
+            "upper": 0.07208758247415772
+          }
+        }
+      },
+      "original_texts": {
+        "added_reference_pair_hits_from_verified_redirects": 2,
+        "added_reference_url_hits_from_verified_redirects": 2,
+        "exact_reference_pair_recall": {
+          "denominator": 115,
+          "numerator": 0,
+          "value": 0.0,
+          "wilson95": {
+            "lower": 0.0,
+            "upper": 0.03232423144931307
+          }
+        },
+        "exact_reference_unique_url_recall": {
+          "denominator": 97,
+          "numerator": 0,
+          "value": 0.0,
+          "wilson95": {
+            "lower": 0.0,
+            "upper": 0.03809404252594769
+          }
+        },
+        "raw_total_pair_match_descriptive": {
+          "denominator": 130,
+          "numerator": 2,
+          "value": 0.015384615384615385,
+          "wilson95": {
+            "lower": 0.00422920584405527,
+            "upper": 0.054358461159778264
+          }
+        },
+        "raw_total_url_match_descriptive": {
+          "denominator": 111,
+          "numerator": 2,
+          "value": 0.018018018018018018,
+          "wilson95": {
+            "lower": 0.004955178708528081,
+            "upper": 0.06332555284276006
+          }
+        },
+        "reference_urls_supplied_to_collection": false,
+        "search_discovery_evaluated": true,
+        "verified_redirect_reference_pair_recall": {
+          "denominator": 115,
+          "numerator": 2,
+          "value": 0.017391304347826087,
+          "wilson95": {
+            "lower": 0.004782352362605557,
+            "upper": 0.06120016668847053
+          }
+        },
+        "verified_redirect_reference_unique_url_recall": {
+          "denominator": 97,
+          "numerator": 2,
+          "value": 0.020618556701030927,
+          "wilson95": {
+            "lower": 0.005672685102266338,
+            "upper": 0.07208758247415772
+          }
+        }
+      }
+    }
+  },
+  "denominators_unchanged": true,
+  "frozen_reference_pairs": 130,
+  "frozen_reference_urls": 111,
+  "generated_at": "2026-10-16T22:54:53.200430+00:00",
+  "gold_snapshot_sha256": "d49edc73a57beb49f806126b741dc4e7b99eae8be4d8dfb69970bfc7222c30e8",
+  "known_relevant_pairs": 115,
+  "known_relevant_urls": 97,
+  "mapping_construction_used_model_predictions": false,
+  "mapping_policy": "Systematically use every archived successful usable original whose captured final_url differs solely by a same-origin trailing-slash redirect. Never infer an alias from string resemblance alone. Original matching reports remain unchanged.",
+  "network_requests": 0,
+  "schema_version": 4,
+  "verified_redirect_aliases": [
+    {
+      "observed_at": "2026-10-16T22:12:58.412995+00:00",
+      "observed_final_url": "https://plazadearmas.com.mx/interviene-el-gobierno-la-notaria-numero-24/",
+      "original_body_sha256": "c95b1adc54da46a2799b2609c8684e02131b8d5dfa9dc565deba18d9411643ac",
+      "raw_snapshot_sha256": "a4aef68375568c56d5fcf3452759c89895f88819d894e9d328afc2c1ba434134",
+      "reference_url": "https://plazadearmas.com.mx/interviene-el-gobierno-la-notaria-numero-24",
+      "verification": "Archived successful original HTTP fetch reported final_url; snapshot SHA256 revalidated; same-origin identical permalink except trailing slash."
+    },
+    {
+      "observed_at": "2026-10-16T22:13:12.614159+00:00",
+      "observed_final_url": "https://libertaddepalabra.mx/reportan-que-gobierno-de-queretaro-apoyo-a-40-personas-defraudadas-por-notario/",
+      "original_body_sha256": "bd53d2a54bdcc9e9f14bdcd89c5ef23acb4bf8bdbd970d3399e95b3c5ec74b20",
+      "raw_snapshot_sha256": "188217da9654f0256b3ea08e6cb9e5b0b57905268709dd39ab0def40e7120fa1",
+      "reference_url": "https://libertaddepalabra.mx/reportan-que-gobierno-de-queretaro-apoyo-a-40-personas-defraudadas-por-notario",
+      "verification": "Archived successful original HTTP fetch reported final_url; snapshot SHA256 revalidated; same-origin identical permalink except trailing slash."
+    },
+    {
+      "observed_at": "2026-10-16T22:13:20.063338+00:00",
+      "observed_final_url": "https://www.razon.com.mx/estados/2020/07/03/revocan-a-notario-en-edomex-por-agresion-a-su-esposa/",
+      "original_body_sha256": "dcbe60f43dc7c48f9c1836d31695ea874affc526a578a515acc0857f6792a388",
+      "raw_snapshot_sha256": "3cf55204b2c97fa85523aacca14c3172e04bfdd690bf14ee6a214e40af1d70c8",
+      "reference_url": "https://www.razon.com.mx/estados/2020/07/03/revocan-a-notario-en-edomex-por-agresion-a-su-esposa",
+      "verification": "Archived successful original HTTP fetch reported final_url; snapshot SHA256 revalidated; same-origin identical permalink except trailing slash."
+    },
+    {
+      "observed_at": "2026-10-16T22:13:14.053178+00:00",
+      "observed_final_url": "https://www.infobae.com/america/mexico/2020/07/05/revocan-licencia-al-notario-del-estado-de-mexico-que-agredio-a-su-esposa-afuera-de-su-casa/?outputType=amp-type",
+      "original_body_sha256": "46d00fb9c87c418e5b6cd0679e55381bc5c4f2e99b0422aec8d902edcef7bd98",
+      "raw_snapshot_sha256": "b7ea76bc6e99fbb61620414b376f9faed41c0ce67167e4dc64b47939ec408027",
+      "reference_url": "https://www.infobae.com/america/mexico/2020/07/05/revocan-licencia-al-notario-del-estado-de-mexico-que-agredio-a-su-esposa-afuera-de-su-casa?outputType=amp-type",
+      "verification": "Archived successful original HTTP fetch reported final_url; snapshot SHA256 revalidated; same-origin identical permalink except trailing slash."
+    },
+    {
+      "observed_at": "2026-10-16T22:13:14.537857+00:00",
+      "observed_final_url": "https://vocesnl.com.mx/2025/11/25/revocan-patente-al-notario-publico-titular-de-la-notaria-numero-133-por-faltas-administrativas/",
+      "original_body_sha256": "b26ae176b512c5f388e1dee4218d84f24ee27928289300cf1575cffb24091f5c",
+      "raw_snapshot_sha256": "9994423a1bfb67ebad78f4da9551ec56888dd417ae166fea752084d3b0591573",
+      "reference_url": "https://vocesnl.com.mx/2025/11/25/revocan-patente-al-notario-publico-titular-de-la-notaria-numero-133-por-faltas-administrativas",
+      "verification": "Archived successful original HTTP fetch reported final_url; snapshot SHA256 revalidated; same-origin identical permalink except trailing slash."
+    },
+    {
+      "observed_at": "2026-10-16T22:13:13.957442+00:00",
+      "observed_final_url": "https://avimexnews.com/revocan-patente-al-notario-publico-titular-de-la-notaria-numero-133-por-faltas-administrativas/",
+      "original_body_sha256": "afdd93bdfd22f427c520eba37f1bb98b9b6a3b7f45ff60d80849d5c8e80dd90c",
+      "raw_snapshot_sha256": "1ca4d64ef4277effe04c128e8bb1ecd723b5d0afb57c43a9cfc297261887270a",
+      "reference_url": "https://avimexnews.com/revocan-patente-al-notario-publico-titular-de-la-notaria-numero-133-por-faltas-administrativas",
+      "verification": "Archived successful original HTTP fetch reported final_url; snapshot SHA256 revalidated; same-origin identical permalink except trailing slash."
+    },
+    {
+      "observed_at": "2026-10-16T22:13:14.717005+00:00",
+      "observed_final_url": "https://visionpeninsular.com/mid/revocan-patente-al-notario-publico-carlos-tomas-goff-rodriguez/",
+      "original_body_sha256": "b53287ffe2cf6178bcede84b7988b46f809f051c0eef53b19f8f1faff4623913",
+      "raw_snapshot_sha256": "835cd15ca531e7cffd02f01f630461341a9dd31810fbc2e33dbc6a0512147c2a",
+      "reference_url": "https://visionpeninsular.com/mid/revocan-patente-al-notario-publico-carlos-tomas-goff-rodriguez",
+      "verification": "Archived successful original HTTP fetch reported final_url; snapshot SHA256 revalidated; same-origin identical permalink except trailing slash."
+    },
+    {
+      "observed_at": "2026-10-16T22:13:14.624353+00:00",
+      "observed_final_url": "https://lajornadahidalgo.com/cae-exnotario-octavio-soto-hernandez-por-fraude-procesal-enfrentara-cargos-penales/",
+      "original_body_sha256": "e5534624b054f7104fc7d2cb418be41037ac744c7d2c1a7fc68de0d8c1b5a750",
+      "raw_snapshot_sha256": "d841d263a4da14eb10ab90eca9b189589be3dad7ac31ee53172565527f0ed85c",
+      "reference_url": "https://lajornadahidalgo.com/cae-exnotario-octavio-soto-hernandez-por-fraude-procesal-enfrentara-cargos-penales",
+      "verification": "Archived successful original HTTP fetch reported final_url; snapshot SHA256 revalidated; same-origin identical permalink except trailing slash."
+    },
+    {
+      "observed_at": "2026-10-16T22:13:14.891137+00:00",
+      "observed_final_url": "https://acropolisnoticias.com/vinculan-a-proceso-a-exnotario-de-tizayuca-por-fraude-procesal/",
+      "original_body_sha256": "dfef309455ff7a54cce5b6ee26725dac904aef805e007a6cd4efb2320361f0b2",
+      "raw_snapshot_sha256": "edc2f74ca023f923b0ea5cd5c86ea70583d9324f22120194e7d3f1944b4305d7",
+      "reference_url": "https://acropolisnoticias.com/vinculan-a-proceso-a-exnotario-de-tizayuca-por-fraude-procesal",
+      "verification": "Archived successful original HTTP fetch reported final_url; snapshot SHA256 revalidated; same-origin identical permalink except trailing slash."
+    },
+    {
+      "observed_at": "2026-10-16T22:13:25.490001+00:00",
+      "observed_final_url": "https://acropolisnoticias.com/vinculan-a-proceso-por-segunda-vez-a-exnotario-publico-de-tizayuca/",
+      "original_body_sha256": "d80f779575a785812934723def90ca0d1eb644b9b27b057665492ed396715499",
+      "raw_snapshot_sha256": "ae0d9201367594ea2315e34d9886e5e2063ea3d8a4ae5a0c88339713e4813d3c",
+      "reference_url": "https://acropolisnoticias.com/vinculan-a-proceso-por-segunda-vez-a-exnotario-publico-de-tizayuca",
+      "verification": "Archived successful original HTTP fetch reported final_url; snapshot SHA256 revalidated; same-origin identical permalink except trailing slash."
+    },
+    {
+      "observed_at": "2026-10-16T22:13:15.615696+00:00",
+      "observed_final_url": "https://www.periodicocontexto.com.mx/jalisco/revocan-nombramiento-a-notario-numero-126-del-municipio-de-guadalajara/",
+      "original_body_sha256": "fa785cd52754db098ffec86294f9eebe4c065f905b80381ab29a461128c6de75",
+      "raw_snapshot_sha256": "c49ffce0292c53f1caf9e1177f491243d9723553f869d9b5cbca7db507f03b74",
+      "reference_url": "https://www.periodicocontexto.com.mx/jalisco/revocan-nombramiento-a-notario-numero-126-del-municipio-de-guadalajara",
+      "verification": "Archived successful original HTTP fetch reported final_url; snapshot SHA256 revalidated; same-origin identical permalink except trailing slash."
+    },
+    {
+      "observed_at": "2026-10-16T22:13:16.399250+00:00",
+      "observed_final_url": "https://www.notisistema.com/noticias/suspenden-en-definitiva-a-notario-50-de-guadalajara/",
+      "original_body_sha256": "8b07898d921bc42bd32330425b92ea31e7b74b9658c1eb7e14a44c37389eef3e",
+      "raw_snapshot_sha256": "da4e14b064e296efcc483d9af08f3dea45f6da4b67b58510eec5b7f6e2021192",
+      "reference_url": "https://www.notisistema.com/noticias/suspenden-en-definitiva-a-notario-50-de-guadalajara",
+      "verification": "Archived successful original HTTP fetch reported final_url; snapshot SHA256 revalidated; same-origin identical permalink except trailing slash."
+    },
+    {
+      "observed_at": "2026-10-16T22:13:26.401330+00:00",
+      "observed_final_url": "https://www.notisistema.com/noticias/alfaro-revoco-nombramiento-de-notario-15-de-tlaquepaque-antes-de-terminar-su-mandato/",
+      "original_body_sha256": "86824bafac1e91ce199f99c7a786e9bb65d2c6ca51468ba4b0c3f4e5be572701",
+      "raw_snapshot_sha256": "139c49a1fad683414f4fb2f5cb622ce8bf4c3f5fa82d0258e8d73d2e6a93451c",
+      "reference_url": "https://www.notisistema.com/noticias/alfaro-revoco-nombramiento-de-notario-15-de-tlaquepaque-antes-de-terminar-su-mandato",
+      "verification": "Archived successful original HTTP fetch reported final_url; snapshot SHA256 revalidated; same-origin identical permalink except trailing slash."
+    },
+    {
+      "observed_at": "2026-10-16T22:14:51.801439+00:00",
+      "observed_final_url": "https://interactivos.eluniversal.com.mx/2024/notarios-empresas-fantasma/",
+      "original_body_sha256": "4101480ca404dbdd1c5c6d1f46f3c5b7d357c5cb8f950aa27db1ea1e6d70479a",
+      "raw_snapshot_sha256": "1d2b053634c96c410d8e5c2e7b807873ca85c371465f750a8c430167fa0027dd",
+      "reference_url": "https://interactivos.eluniversal.com.mx/2024/notarios-empresas-fantasma",
+      "verification": "Archived successful original HTTP fetch reported final_url; snapshot SHA256 revalidated; same-origin identical permalink except trailing slash."
+    },
+    {
+      "observed_at": "2026-10-16T22:13:17.123611+00:00",
+      "observed_final_url": "https://imparcialoaxaca.mx/la-capital/por-presuntos-actos-de-corrupcion-suspenden-libros-a-notario/",
+      "original_body_sha256": "a437fe6842ea06d360c26d3e544200658daa3a11a0bc23cec235e9512bfdea5a",
+      "raw_snapshot_sha256": "deb737c124a80e21376a1567a5a3cd9c121bf035756bbc02709b2ac9ab06e242",
+      "reference_url": "https://imparcialoaxaca.mx/la-capital/por-presuntos-actos-de-corrupcion-suspenden-libros-a-notario",
+      "verification": "Archived successful original HTTP fetch reported final_url; snapshot SHA256 revalidated; same-origin identical permalink except trailing slash."
+    },
+    {
+      "observed_at": "2026-10-16T22:13:18.074530+00:00",
+      "observed_final_url": "https://reporteros.mx/index.php/2024/04/04/ex-fiscal-de-nayarit-edgar-veytia-seguira-sin-fiat-notarial/",
+      "original_body_sha256": "1b7e126c0065f3704db05f35db768e3fda18c0b4b6d41a0d8a27aca5d65463fb",
+      "raw_snapshot_sha256": "f3793c94420475b5003130bc4c0d8094333656e03f1bfe9fa8bc4d4c290aa614",
+      "reference_url": "https://reporteros.mx/index.php/2024/04/04/ex-fiscal-de-nayarit-edgar-veytia-seguira-sin-fiat-notarial",
+      "verification": "Archived successful original HTTP fetch reported final_url; snapshot SHA256 revalidated; same-origin identical permalink except trailing slash."
+    },
+    {
+      "observed_at": "2026-10-16T22:13:18.640690+00:00",
+      "observed_final_url": "https://ntv.com.mx/2022/04/18/rechazan-demanda-de-edgar-veytia-por-notaria/",
+      "original_body_sha256": "43eacde0daf14f8a76f96e42064f18659ffd8daed68090ba32ca2f4a0ef32138",
+      "raw_snapshot_sha256": "aa642faec473cc1bc01516c32b9e069904a95d38a43fa3f86fd238a68d74f821",
+      "reference_url": "https://ntv.com.mx/2022/04/18/rechazan-demanda-de-edgar-veytia-por-notaria",
+      "verification": "Archived successful original HTTP fetch reported final_url; snapshot SHA256 revalidated; same-origin identical permalink except trailing slash."
+    }
+  ]
+}

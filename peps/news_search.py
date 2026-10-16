@@ -16,6 +16,7 @@ from urllib.parse import urlencode, urlsplit
 from .identity import COMPANY_KINDS, GENERIC_CONTEXT, LEGAL_SUFFIXES, STOP, _fold, _tokens
 from .store import canonical, digest
 from .public_search import PUBLIC_SEARCH_KINDS, public_search_url, public_queries
+from .retrieval_aliases import retrieval_alias_allowed
 
 PRESETS = {
     'identity': {'label': 'Todas las noticias de la entidad', 'terms': ''},
@@ -154,6 +155,8 @@ def _variants(entity, aliases):
                 values.extend(extra if isinstance(extra, list) else [extra])
     seen, result = set(), []
     for value in values:
+        if not retrieval_alias_allowed(entity, value):
+            continue
         if isinstance(value, dict):
             if value.get('validated') is False or value.get('verified') is False or value.get('status') in ('rejected', 'revoked'):
                 continue

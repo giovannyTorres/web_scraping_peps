@@ -1,0 +1,24 @@
+{
+  "completed_at": "2026-10-16T22:55:43.974469+00:00",
+  "input_sha256": {
+    "evaluation-receipt-v3.json": "6273fc5b2c697d8dc1b4d73b17f408f9146682e5758be9f1ff4f89a834d5b266",
+    "expanded-evaluation-input-v3.json": "e6da21ecef27a3a579a38cb10df1e5e024928bb0203eeb95a7dc44e7111d9457",
+    "expanded-model-predictions-v3.json": "8681dd1121ead8104dfdef579d04560be2eb4f21250f77f353c803a2842b5683"
+  },
+  "membership": {
+    "archived_articles": 89,
+    "archived_original_urls": 71,
+    "database": "[ruta local omitida]",
+    "database_sha256": "fec3461b8592a5fc186eb6df39891ed7563a69186cd95fedb16d65a8099474e8"
+  },
+  "network_requests": 0,
+  "originals_preserved_sha256_matches_v3_receipt": true,
+  "output_sha256": {
+    "expanded-current-projection-evaluation-input-v3.json": "f8920a9702d8b4f0add2ccc06feb731652b555a094980640ca16b86799084673",
+    "expanded-current-projection-metrics-v3.json": "49ae8d9a5f364b2a4b5586600695d5d360c3737119019f32f3f88e9778482fa9",
+    "expanded-current-projection-summary-v3.json": "9b2c0b6cc139f92c08a99e042c8566d84d568164c2d0a4ec73bd9ad0a0a97f54"
+  },
+  "schema_version": 3,
+  "source_projection_receipt": "expanded-corrected-offline-v2-result.json",
+  "source_projection_receipt_sha256": "4ed21debfd421a9b8bd4a296dfbc7ae7726e403ff63e2c03fc5c7807f973a7ad"
+}

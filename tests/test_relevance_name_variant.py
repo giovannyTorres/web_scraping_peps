@@ -161,7 +161,7 @@ class ContextualPersonalNameVariantTests(unittest.TestCase):
 
     def test_projection_cache_version_changes_with_rule(self):
         from unittest.mock import patch
-        self.assertEqual(MODEL_VERSION, 'metadata-relevance-1.2.0')
+        self.assertEqual(MODEL_VERSION, 'metadata-relevance-1.2.1')
         with sqlite3.connect(':memory:') as con:
             con.execute('CREATE TABLE meta(key TEXT PRIMARY KEY,value TEXT)')
             con.execute("INSERT INTO meta VALUES('news_identity_revision','bank-1')")

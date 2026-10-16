@@ -37,7 +37,13 @@ def supports_wordpress_search(source):
     if _public_https(base) is None:
         return False
     parts = urlsplit(base)
-    if parts.path.rstrip('/') != '/wp-json/wp/v2/posts' or parts.query or parts.fragment:
+    # Public WordPress installs can live under a declared subdirectory. Keep
+    # a canonical, bounded ASCII path: no encoded separators, dot traversal,
+    # duplicate slashes, suffix routes or query-based API indirection. The
+    # fetcher still checks public DNS/robots and the parser requires this exact
+    # declared origin and path after redirects. Capability grants no permission.
+    if (parts.query or parts.fragment
+            or not re.fullmatch(r'(?:/[A-Za-z0-9_-]{1,128}){0,8}/wp-json/wp/v2/posts/?', parts.path)):
         return False
     return (marker == 'wordpress_api_search'
             or base == _LEGACY_WORDPRESS_SEARCH_ENDPOINTS.get(source.get('id')))

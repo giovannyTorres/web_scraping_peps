@@ -84,6 +84,25 @@ Abra **Ver tareas y reintentos** para consultar las tareas de la lista actual,
 filtrar sus estados y revisar el error y el próximo intento. Las pausas de las
 fuentes se conservan al reintentar; el botón no reinicia las cuotas.
 
+## Páginas sin cuerpo y alias compartidos
+
+Desde 2.9.4, `article_text_insufficient` significa que la respuesta recibida no
+contenía un cuerpo editorial suficiente. La referencia y la caché permanecen,
+pero ese intento deja de reprogramarse automáticamente. Al reanudar, las tareas
+antiguas con el error exacto `_InsufficientArticleText:` se cierran localmente,
+sin esperar su fecha de reintento. No se tocan trabajadores activos ni reservas
+vigentes. Si ya existía un original válido, se conserva íntegro.
+
+Revise la fuente antes de solicitar una revalidación manual: repetir los mismos
+bytes de la caché no obtiene un texto nuevo. Un fallo de transporte temporal
+conserva su tratamiento de reintento; no se confunde con una página sin cuerpo.
+
+Los alias personales que contienen sólo uno o dos apellidos finales y carecen
+de verificación explícita con procedencia ya no amplían la búsqueda. Pueden
+coincidir con otra persona de la misma profesión y estado. El nombre completo
+continúa consultándose. Al actualizar, se reconstruye la selección de noticias
+para la lista actual, conservando el archivo y las observaciones históricas.
+
 ## Analizar sólo cuando hay material pertinente
 
 Con texto de la lista actual, **Analizar lo disponible** registra la cobertura

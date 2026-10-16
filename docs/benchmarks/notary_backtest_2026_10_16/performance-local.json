@@ -1,0 +1,78 @@
+{
+  "equal_outcomes": {
+    "bodies": true,
+    "body_hashes": true,
+    "candidate_articles": true,
+    "discovery_runs": true,
+    "done_jobs": true,
+    "first_body_done_claim": true,
+    "first_claim_kind": true,
+    "pending_jobs": true,
+    "synthetic_http": true,
+    "transport_schedule_sha256": true,
+    "transport_sequence_sha256": true,
+    "virtual_elapsed_seconds": true
+  },
+  "invalid_attempt_note": "Earlier attempt retained separately at host-admission-comparison-invalid-clock-v0; a frozen epoch with submicrosecond precision could round retry_at below host.next_at and never advance. The corrected fixture uses an exact integer epoch. No production patch was altered for the fixture correction.",
+  "kind": "synthetic-host-admission-ab",
+  "results": {
+    "baseline": {
+      "audit_events": 906,
+      "audit_valid": true,
+      "batch_events": 0,
+      "bodies": 1,
+      "body_hashes": [
+        "3f01056c1e47361f5b04ce121a4b55abc6563244e8fba852b91ee1f588497dc2"
+      ],
+      "candidate_articles": 1,
+      "claims": 602,
+      "discovery_runs": 301,
+      "done_jobs": 302,
+      "finish_receipts": 602,
+      "first_body_done_claim": 1,
+      "first_claim_kind": "news_article",
+      "idle_polls": 1,
+      "interval_deferrals": 300,
+      "pending_jobs": 0,
+      "real_cpu_seconds": 4.36527139,
+      "real_http": 0,
+      "real_wall_seconds": 10.78558802799671,
+      "synthetic_http": 302,
+      "transport_schedule_sha256": "fcf1188f1dee36ef23761a8fcc04eafb8101e29146a78da98a81afbe0b1ebebf",
+      "transport_sequence_sha256": "3351f4d767a02c6bebbff743f744126b08da97214b1eec07cff10e4a60ed1735",
+      "virtual_elapsed_seconds": 2100.0
+    },
+    "proposed": {
+      "audit_events": 608,
+      "audit_valid": true,
+      "batch_events": 1,
+      "bodies": 1,
+      "body_hashes": [
+        "3f01056c1e47361f5b04ce121a4b55abc6563244e8fba852b91ee1f588497dc2"
+      ],
+      "candidate_articles": 1,
+      "claims": 303,
+      "discovery_runs": 301,
+      "done_jobs": 302,
+      "finish_receipts": 303,
+      "first_body_done_claim": 1,
+      "first_claim_kind": "news_article",
+      "idle_polls": 1,
+      "interval_deferrals": 1,
+      "pending_jobs": 0,
+      "real_cpu_seconds": 3.098966729,
+      "real_http": 0,
+      "real_wall_seconds": 9.083370500986348,
+      "synthetic_http": 302,
+      "transport_schedule_sha256": "fcf1188f1dee36ef23761a8fcc04eafb8101e29146a78da98a81afbe0b1ebebf",
+      "transport_sequence_sha256": "3351f4d767a02c6bebbff743f744126b08da97214b1eec07cff10e4a60ed1735",
+      "virtual_elapsed_seconds": 2100.0
+    }
+  },
+  "runner_sha256": "dc9c3d2dc7b08b6f3c9f1da5c19bc74c8e25a0a1346dbc73ebad34daadc4621e",
+  "scope": "300 jobs on a host paused 600 virtual seconds; one free feed and one prioritized real pipeline body. All DNS/HTTP synthetic; original scheduler vs proposed admission hint. CPU and wall measurements exclude setup and report local fixture execution only.",
+  "source_sha256": {
+    "peps/collector.py": "fbfaace9a0d638349fe01304b5f09563b8352b19c7b412aed4f459f26f338003",
+    "peps/news.py": "9d3d5b832f9ebf62a3ca702accb9d5489dac225039393c1fd3cd6c5fc444c1f4"
+  }
+}

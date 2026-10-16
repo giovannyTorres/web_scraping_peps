@@ -393,15 +393,42 @@ def main():
                             page.locator('[data-panel="news"]').wait_for()
                             partial = page.locator('#workflow-accept-partial')
                             checked('partial_close_remains_available_after_user_pause', reachable(page, partial))
+                            # Hold only the browser's completed-state render. The
+                            # real server operation, API calls and guards still run;
+                            # this reproduces a final poll arriving after a user
+                            # has chosen Sources instead of waiting for Results.
+                            page.evaluate("""()=>{
+                                const update=window.pepsWorkflow.update;
+                                window.recoveryCompletion={update,stats:null};
+                                window.pepsWorkflow.update=stats=>{
+                                    if(stats.operation?.kind==='analysis'&&
+                                       stats.operation.status==='completed'&&!stats.operation.busy){
+                                        window.recoveryCompletion.stats=stats;return;
+                                    }
+                                    update(stats);
+                                };
+                            }""")
                             partial.click()
                             final = idle(page, 'analysis')
                             checked('analysis_can_be_repeated_after_another_explicit_inactive_close',
                                     final['workflow']['analysis_current'] and news.stats()['articles'] == 235 and
                                     final['workflow']['counts']['pending_downloads'] == 64)
+                            wait_until(page, lambda: page.evaluate('!!window.recoveryCompletion.stats'),
+                                       'The browser did not receive the delayed analysis completion')
                             report['final_workflow'] = final['workflow']
                             unchanged_jobs = jobs_snapshot(engine.store)
                             page.locator('#workflow-mobile-step').select_option('sources')
                             page.locator('[data-panel="sources"]').wait_for()
+                            page.evaluate("""()=>{
+                                const completion=window.recoveryCompletion;
+                                window.pepsWorkflow.update=completion.update;
+                                delete window.recoveryCompletion;
+                                completion.update(completion.stats);
+                            }""")
+                            checked('late_analysis_completion_preserves_explicit_source_navigation',
+                                    page.locator('[data-panel="sources"]').is_visible() and
+                                    page.locator('#workflow-mobile-step').input_value() == 'sources')
+                            expect(page.locator('#workflow-history-end')).to_be_enabled()
                             page.locator('#workflow-history-end').fill('2025-12-31')
                             page.locator('#workflow-save-search').click()
                             wait_until(page, lambda: api(page, 'news-search')['body']['config']['end'] == '2025-12-31',

@@ -1,0 +1,368 @@
+{
+  "all_frozen_references": {
+    "entity_article_pairs": 130,
+    "unique_canonical_urls": 111
+  },
+  "by_document_kind": {
+    "institutional_article": {
+      "all_frozen": {
+        "entity_article_pairs": 4,
+        "unique_canonical_urls": 4
+      },
+      "known_relevant": {
+        "entity_article_pairs": 4,
+        "unique_canonical_urls": 4
+      },
+      "relevance_unknown": {
+        "entity_article_pairs": 0,
+        "unique_canonical_urls": 0
+      }
+    },
+    "news": {
+      "all_frozen": {
+        "entity_article_pairs": 126,
+        "unique_canonical_urls": 107
+      },
+      "known_relevant": {
+        "entity_article_pairs": 111,
+        "unique_canonical_urls": 93
+      },
+      "relevance_unknown": {
+        "entity_article_pairs": 15,
+        "unique_canonical_urls": 14
+      }
+    }
+  },
+  "by_frozen_relevance": {
+    "no": {
+      "entity_article_pairs": 0,
+      "unique_canonical_urls": 0
+    },
+    "unknown": {
+      "entity_article_pairs": 15,
+      "unique_canonical_urls": 14
+    },
+    "yes": {
+      "entity_article_pairs": 115,
+      "unique_canonical_urls": 97
+    }
+  },
+  "created_at": "2026-10-16T22:47:49.308098+00:00",
+  "datasets": {
+    "corpus": {
+      "candidates": {
+        "candidate_urls_were_explicitly_seeded": true,
+        "is_search_recall": false,
+        "known_relevant_pair_recall": {
+          "denominator": 115,
+          "numerator": 115,
+          "value": 1.0
+        },
+        "known_relevant_unique_url_recall": {
+          "denominator": 97,
+          "numerator": 97,
+          "value": 1.0
+        },
+        "raw_frozen_total_pair_match_descriptive": {
+          "denominator": 130,
+          "numerator": 130,
+          "value": 1.0
+        },
+        "raw_frozen_total_url_match_descriptive": {
+          "denominator": 111,
+          "numerator": 111,
+          "value": 1.0
+        }
+      },
+      "original_texts": {
+        "candidate_urls_were_explicitly_seeded": true,
+        "is_search_recall": false,
+        "known_relevant_pair_recall": {
+          "denominator": 115,
+          "numerator": 67,
+          "value": 0.5826086956521739
+        },
+        "known_relevant_unique_url_recall": {
+          "denominator": 97,
+          "numerator": 62,
+          "value": 0.6391752577319587
+        },
+        "raw_frozen_total_pair_match_descriptive": {
+          "denominator": 130,
+          "numerator": 76,
+          "value": 0.5846153846153846
+        },
+        "raw_frozen_total_url_match_descriptive": {
+          "denominator": 111,
+          "numerator": 71,
+          "value": 0.6396396396396397
+        }
+      }
+    },
+    "expanded": {
+      "candidates": {
+        "candidate_urls_were_explicitly_seeded": false,
+        "is_search_recall": true,
+        "known_relevant_pair_recall": {
+          "denominator": 115,
+          "numerator": 1,
+          "value": 0.008695652173913044
+        },
+        "known_relevant_unique_url_recall": {
+          "denominator": 97,
+          "numerator": 1,
+          "value": 0.010309278350515464
+        },
+        "raw_frozen_total_pair_match_descriptive": {
+          "denominator": 130,
+          "numerator": 1,
+          "value": 0.007692307692307693
+        },
+        "raw_frozen_total_url_match_descriptive": {
+          "denominator": 111,
+          "numerator": 1,
+          "value": 0.009009009009009009
+        }
+      },
+      "original_texts": {
+        "candidate_urls_were_explicitly_seeded": false,
+        "is_search_recall": true,
+        "known_relevant_pair_recall": {
+          "denominator": 115,
+          "numerator": 1,
+          "value": 0.008695652173913044
+        },
+        "known_relevant_unique_url_recall": {
+          "denominator": 97,
+          "numerator": 1,
+          "value": 0.010309278350515464
+        },
+        "raw_frozen_total_pair_match_descriptive": {
+          "denominator": 130,
+          "numerator": 1,
+          "value": 0.007692307692307693
+        },
+        "raw_frozen_total_url_match_descriptive": {
+          "denominator": 111,
+          "numerator": 1,
+          "value": 0.009009009009009009
+        }
+      }
+    },
+    "native": {
+      "candidates": {
+        "candidate_urls_were_explicitly_seeded": false,
+        "is_search_recall": true,
+        "known_relevant_pair_recall": {
+          "denominator": 115,
+          "numerator": 0,
+          "value": 0.0
+        },
+        "known_relevant_unique_url_recall": {
+          "denominator": 97,
+          "numerator": 0,
+          "value": 0.0
+        },
+        "raw_frozen_total_pair_match_descriptive": {
+          "denominator": 130,
+          "numerator": 0,
+          "value": 0.0
+        },
+        "raw_frozen_total_url_match_descriptive": {
+          "denominator": 111,
+          "numerator": 0,
+          "value": 0.0
+        }
+      },
+      "original_texts": {
+        "candidate_urls_were_explicitly_seeded": false,
+        "is_search_recall": true,
+        "known_relevant_pair_recall": {
+          "denominator": 115,
+          "numerator": 0,
+          "value": 0.0
+        },
+        "known_relevant_unique_url_recall": {
+          "denominator": 97,
+          "numerator": 0,
+          "value": 0.0
+        },
+        "raw_frozen_total_pair_match_descriptive": {
+          "denominator": 130,
+          "numerator": 0,
+          "value": 0.0
+        },
+        "raw_frozen_total_url_match_descriptive": {
+          "denominator": 111,
+          "numerator": 0,
+          "value": 0.0
+        }
+      }
+    }
+  },
+  "eligibility": {
+    "all_reference_pair_explicit_false": 0,
+    "all_reference_pair_explicit_true": 0,
+    "all_reference_pair_unknown": 130,
+    "known_eligible_recall_denominator": 0,
+    "known_eligible_recall_value": null,
+    "known_relevant_pair_explicit_true": 0,
+    "policy": "Host-list overlap is not a robots/accessibility adjudication; no missing eligibility labels are guessed."
+  },
+  "excluded_from_known_relevant_recall": [
+    {
+      "document_kind": "news",
+      "entity_id": "mx-notary-cdmx-242",
+      "incident": "unknown",
+      "reason": "Frozen relevance unknown; no retrieval result, source access or model prediction was used to choose this exclusion.",
+      "reference_id": "control-ref-428d5be250e56501",
+      "relevance": "unknown",
+      "url": "https://www.eluniversal.com.mx/metropoli/presentan-137-denuncias-por-documentos-apocrifos-en-la-comprobacion-de-propiedad-de-un-inmueble/"
+    },
+    {
+      "document_kind": "news",
+      "entity_id": "mx-notary-cdmx-129",
+      "incident": "unknown",
+      "reason": "Frozen relevance unknown; no retrieval result, source access or model prediction was used to choose this exclusion.",
+      "reference_id": "control-ref-4bfbd90b3c169a12",
+      "relevance": "unknown",
+      "url": "https://www.revistaabogacia.com/ignacio-soto-borja-55-anos-de-notariado/"
+    },
+    {
+      "document_kind": "news",
+      "entity_id": "mx-notary-cdmx-229",
+      "incident": "unknown",
+      "reason": "Frozen relevance unknown; no retrieval result, source access or model prediction was used to choose this exclusion.",
+      "reference_id": "control-ref-aca47f16e3ab7593",
+      "relevance": "unknown",
+      "url": "https://www.eluniversal.com.mx/metropoli/piden-mantener-agenda-legislativa-pese-elecciones-del-2021/"
+    },
+    {
+      "document_kind": "news",
+      "entity_id": "mx-notary-cdmx-230",
+      "incident": "unknown",
+      "reason": "Frozen relevance unknown; no retrieval result, source access or model prediction was used to choose this exclusion.",
+      "reference_id": "control-ref-14033fd951cdbd87",
+      "relevance": "unknown",
+      "url": "https://www.eluniversal.com.mx/articulo/metropoli/df/2015/07/19/consejur-notario-si-violo-uso-de-suelo/"
+    },
+    {
+      "document_kind": "news",
+      "entity_id": "mx-notary-cdmx-230",
+      "incident": "unknown",
+      "reason": "Frozen relevance unknown; no retrieval result, source access or model prediction was used to choose this exclusion.",
+      "reference_id": "control-ref-d8eaf4625739c976",
+      "relevance": "unknown",
+      "url": "https://www.eluniversal.com.mx/articulo/metropoli/df/2015/07/12/notario-operaba-en-predio-de-forma-ilegal/"
+    },
+    {
+      "document_kind": "news",
+      "entity_id": "mx-notary-cdmx-114",
+      "incident": "unknown",
+      "reason": "Frozen relevance unknown; no retrieval result, source access or model prediction was used to choose this exclusion.",
+      "reference_id": "control-ref-d5e01141060df5ef",
+      "relevance": "unknown",
+      "url": "https://www.eluniversal.com.mx/metropoli/piden-mantener-agenda-legislativa-pese-elecciones-del-2021/"
+    },
+    {
+      "document_kind": "news",
+      "entity_id": "mx-notary-cdmx-022",
+      "incident": "unknown",
+      "reason": "Frozen relevance unknown; no retrieval result, source access or model prediction was used to choose this exclusion.",
+      "reference_id": "control-ref-b6407bef20613782",
+      "relevance": "unknown",
+      "url": "https://www.revistaabogacia.com/que-puede-hacer-un-notario-en-la-prevencion-de-un-despojo/"
+    },
+    {
+      "document_kind": "news",
+      "entity_id": "mx-notary-cdmx-022",
+      "incident": "unknown",
+      "reason": "Frozen relevance unknown; no retrieval result, source access or model prediction was used to choose this exclusion.",
+      "reference_id": "control-ref-73719c10a6d76fdb",
+      "relevance": "unknown",
+      "url": "https://www.revistaabogacia.com/contrato-de-arrendamiento-ante-notario-utilidad-practica-y-beneficios/"
+    },
+    {
+      "document_kind": "news",
+      "entity_id": "mx-notary-cdmx-022",
+      "incident": "unknown",
+      "reason": "Frozen relevance unknown; no retrieval result, source access or model prediction was used to choose this exclusion.",
+      "reference_id": "control-ref-69a1154694441972",
+      "relevance": "unknown",
+      "url": "https://www.jornada.com.mx/search/Despojo%20inmobiliario%20y%20notar%C3%ADas?orden=fecha"
+    },
+    {
+      "document_kind": "news",
+      "entity_id": "mx-notary-cdmx-088",
+      "incident": "unknown",
+      "reason": "Frozen relevance unknown; no retrieval result, source access or model prediction was used to choose this exclusion.",
+      "reference_id": "control-ref-fee555741ceb08f4",
+      "relevance": "unknown",
+      "url": "https://www.elfinanciero.com.mx/opinion/entre-lineas-finanzas-y-leyes/2026/02/03/el-notariado-mexicano-y-los-tiempos-actuales-ser-notarios-de-territorio-no-de-escritorio/"
+    },
+    {
+      "document_kind": "news",
+      "entity_id": "mx-notary-cdmx-088",
+      "incident": "unknown",
+      "reason": "Frozen relevance unknown; no retrieval result, source access or model prediction was used to choose this exclusion.",
+      "reference_id": "control-ref-7a3a0bec95324f05",
+      "relevance": "unknown",
+      "url": "https://colimapm.com/Inicio/Noticia/221315"
+    },
+    {
+      "document_kind": "news",
+      "entity_id": "mx-notary-cdmx-088",
+      "incident": "unknown",
+      "reason": "Frozen relevance unknown; no retrieval result, source access or model prediction was used to choose this exclusion.",
+      "reference_id": "control-ref-cbea449e487e992b",
+      "relevance": "unknown",
+      "url": "https://www.meganoticias.mx/zacatecas/noticia/notarios-piden-reforzar-alertas-inmobiliarias-ante-despojos/772931"
+    },
+    {
+      "document_kind": "news",
+      "entity_id": "mx-notary-cdmx-088",
+      "incident": "unknown",
+      "reason": "Frozen relevance unknown; no retrieval result, source access or model prediction was used to choose this exclusion.",
+      "reference_id": "control-ref-11f6fcf2b1f7d605",
+      "relevance": "unknown",
+      "url": "https://elfinanciero-elfinanciero-prod.cdn.arcpublishing.com/opinion/entre-lineas-finanzas-y-leyes/2026/08/31/el-testamento-una-decision-que-hereda-paz/"
+    },
+    {
+      "document_kind": "news",
+      "entity_id": "mx-notary-cdmx-088",
+      "incident": "unknown",
+      "reason": "Frozen relevance unknown; no retrieval result, source access or model prediction was used to choose this exclusion.",
+      "reference_id": "control-ref-5c395fdc3d36d88a",
+      "relevance": "unknown",
+      "url": "https://www.infobaja.info/toma-protesta-gabriel-tobias-duarte-como-presidente-del-colegio-de-notarios-de-baja-california/"
+    },
+    {
+      "document_kind": "news",
+      "entity_id": "mx-notary-cdmx-197",
+      "incident": "unknown",
+      "reason": "Frozen relevance unknown; no retrieval result, source access or model prediction was used to choose this exclusion.",
+      "reference_id": "control-ref-afed292b41a4fe2a",
+      "relevance": "unknown",
+      "url": "https://web.jornada.com.mx/2016/12/21/opinion/002a2cor"
+    }
+  ],
+  "gold_snapshot_sha256": "d49edc73a57beb49f806126b741dc4e7b99eae8be4d8dfb69970bfc7222c30e8",
+  "known_relevant_denominator_policy": {
+    "access_based_denominator_reduction": false,
+    "exclude": "Only frozen relevance=unknown or relevance=no pairs. Current data has 15 unknown pairs/14 URLs and zero no pairs.",
+    "incident_unknown_removed_from_denominator": false,
+    "include": "Every frozen relevance=yes entity/article pair and URL, regardless of source access, robots, missing publication date, incident-role label or acquisition result.",
+    "missing_reference_dates_removed_from_denominator": false,
+    "reference_url_identity_not_story_equivalence": true
+  },
+  "known_relevant_role_labels": {
+    "no": 21,
+    "unknown": 19,
+    "yes": 75
+  },
+  "reference_missing_publication_dates": {
+    "all_frozen_pairs": 47,
+    "known_relevant_pairs": 37
+  },
+  "schema_version": 3
+}

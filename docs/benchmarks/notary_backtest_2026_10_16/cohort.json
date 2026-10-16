@@ -1,0 +1,1060 @@
+{
+  "cutoff": "2026-10-16",
+  "entities": [
+    {
+      "aliases": [],
+      "context": {
+        "notary_number": "24",
+        "role": "Notario",
+        "source_url": "https://codigoqro.mx/nota/local/2020/09/22/vinculan-a-proceso-a-extitular-de-la-notaria-24",
+        "state": "Querétaro"
+      },
+      "entity_group": "notary",
+      "group": "known_incident",
+      "id": "positive-01",
+      "kind": "person",
+      "name": "Fernando Lugo García Pelayo"
+    },
+    {
+      "aliases": [],
+      "context": {
+        "notary_number": "8",
+        "role": "Notario",
+        "source_url": "https://www.jornada.com.mx/noticia/2022/05/31/estados/fayad-revoca-otra-patente-a-titular-de-notaria-publica-de-pachuca-504",
+        "state": "Hidalgo"
+      },
+      "entity_group": "notary",
+      "group": "known_incident",
+      "id": "positive-02",
+      "kind": "person",
+      "name": "Carlos Fernando Licona Rivemar"
+    },
+    {
+      "aliases": [],
+      "context": {
+        "notary_number": "13",
+        "role": "Notario",
+        "source_url": "https://www.jornada.com.mx/noticia/2021/03/03/estados/quitan-notaria-a-funcionario-que-las-asignaba-en-hidalgo-2176",
+        "state": "Hidalgo"
+      },
+      "entity_group": "notary",
+      "group": "known_incident",
+      "id": "positive-03",
+      "kind": "person",
+      "name": "Daniel Fernando Rangel Moctezuma"
+    },
+    {
+      "aliases": [],
+      "context": {
+        "notary_number": "102",
+        "role": "Notario",
+        "source_url": "https://www.razon.com.mx/estados/2020/07/03/revocan-a-notario-en-edomex-por-agresion-a-su-esposa/",
+        "state": "Estado de México"
+      },
+      "entity_group": "notary",
+      "group": "known_incident",
+      "id": "positive-04",
+      "kind": "person",
+      "name": "Horacio Aguilar Álvarez de Alba"
+    },
+    {
+      "aliases": [
+        "Horacio Lucas Wong Villarreal",
+        "Horacio Lucas Wong"
+      ],
+      "context": {
+        "notary_number": "2 Chalchicomula de Sesma",
+        "role": "Notario",
+        "source_url": "https://www.milenio.com/politica/comunidad/cesan-horacio-wong-funciones-frente-notaria-puebla",
+        "state": "Puebla"
+      },
+      "entity_group": "notary",
+      "group": "known_incident",
+      "id": "positive-05",
+      "kind": "person",
+      "name": "Horacio Lucas Wong Villareal"
+    },
+    {
+      "aliases": [],
+      "context": {
+        "notary_number": "133",
+        "role": "Notario",
+        "source_url": "https://www.nl.gob.mx/es/boletines/revocan-patente-al-notario-publico-titular-de-la-notaria-numero-133-por-faltas",
+        "state": "Nuevo León"
+      },
+      "entity_group": "notary",
+      "group": "known_incident",
+      "id": "positive-06",
+      "kind": "person",
+      "name": "Ernesto Pérez Charles"
+    },
+    {
+      "aliases": [],
+      "context": {
+        "notary_number": "97",
+        "role": "Notario",
+        "source_url": "https://www.jhonnyoliverquintal.com/2023/08/quitan-la-notaria-97-carlos-goff.html",
+        "state": "Yucatán"
+      },
+      "entity_group": "notary",
+      "group": "known_incident",
+      "id": "positive-07",
+      "kind": "person",
+      "name": "Carlos Tomás Goff Rodríguez"
+    },
+    {
+      "aliases": [],
+      "context": {
+        "notary_number": "6 Tizayuca",
+        "role": "Notario",
+        "source_url": "https://lajornadahidalgo.com/cae-exnotario-octavio-soto-hernandez-por-fraude-procesal-enfrentara-cargos-penales/",
+        "state": "Hidalgo"
+      },
+      "entity_group": "notary",
+      "group": "known_incident",
+      "id": "positive-08",
+      "kind": "person",
+      "name": "Octavio Eduardo Soto Hernández"
+    },
+    {
+      "aliases": [],
+      "context": {
+        "notary_number": "20",
+        "role": "Notario",
+        "source_url": "https://www.jornada.com.mx/2011/10/23/capital/036n1cap",
+        "state": "Ciudad de México"
+      },
+      "entity_group": "notary",
+      "group": "known_incident",
+      "id": "positive-09",
+      "kind": "person",
+      "name": "Luis Felipe del Valle Prieto Ortega"
+    },
+    {
+      "aliases": [],
+      "context": {
+        "notary_number": "2 Zacatelco",
+        "role": "Notario",
+        "source_url": "https://comunicacion.tlaxcala.gob.mx/index.php?catid=2&id=18875%3Aejecuta-segob-aseguramiento-del-protocolo-notarial-y-cancelacion-de-patente-del-notario-publico-no-2-de-zacatelco&view=article",
+        "state": "Tlaxcala"
+      },
+      "entity_group": "notary",
+      "group": "known_incident",
+      "id": "positive-10",
+      "kind": "person",
+      "name": "Alejandro Moreno Morales"
+    },
+    {
+      "aliases": [],
+      "context": {
+        "notary_number": "9 Minatitlán",
+        "role": "Notario",
+        "source_url": "https://da21w.e-veracruz.mx/nota/2020-04-29/estado/al-igual-que-yunes-cuitlahuac-va-tras-notarios-acusados-de-corrupcion",
+        "state": "Veracruz"
+      },
+      "entity_group": "notary",
+      "group": "known_incident",
+      "id": "positive-11",
+      "kind": "person",
+      "name": "Flavino Ríos Alvarado"
+    },
+    {
+      "aliases": [
+        "Héctor Manuel Navarro Manjarréz"
+      ],
+      "context": {
+        "notary_number": "8",
+        "role": "Notario",
+        "source_url": "https://www.eldiariodechihuahua.mx/local/2024/dec/29/pide-notario-amparo-por-orden-de-aprehension-664825.html",
+        "state": "Chihuahua"
+      },
+      "entity_group": "notary",
+      "group": "known_incident",
+      "id": "positive-12",
+      "kind": "person",
+      "name": "Héctor Manuel Navarro Manjarrez"
+    },
+    {
+      "aliases": [],
+      "context": {
+        "notary_number": "126 Guadalajara",
+        "role": "Notario",
+        "source_url": "https://www.ntrguadalajara.com/post.php?id_nota=209830",
+        "state": "Jalisco"
+      },
+      "entity_group": "notary",
+      "group": "known_incident",
+      "id": "positive-13",
+      "kind": "person",
+      "name": "Álvaro Guzmán Merino"
+    },
+    {
+      "aliases": [],
+      "context": {
+        "notary_number": "34 Guadalajara",
+        "role": "Notario",
+        "source_url": "https://laevidencia.com.mx/derecho/notarios-sancionados-ejercen-con-amparos/",
+        "state": "Jalisco"
+      },
+      "entity_group": "notary",
+      "group": "known_incident",
+      "id": "positive-14",
+      "kind": "person",
+      "name": "Celso Rodríguez González"
+    },
+    {
+      "aliases": [
+        "Jorge Gerardo Gutiérrez Ortiz",
+        "Jorge Gerardo Ortiz Gutiérrez"
+      ],
+      "context": {
+        "notary_number": "1 Tequila",
+        "role": "Notario",
+        "source_url": "https://laevidencia.com.mx/derecho/notarios-sancionados-ejercen-con-amparos/",
+        "state": "Jalisco"
+      },
+      "entity_group": "notary",
+      "group": "known_incident",
+      "id": "positive-15",
+      "kind": "person",
+      "name": "Jorge Gerardo Gutiérrez Ortiz Monasterio"
+    },
+    {
+      "aliases": [
+        "Alejandro López Rivera",
+        "López Rivera"
+      ],
+      "context": {
+        "notary_number": "64 Guadalajara",
+        "role": "Notario",
+        "source_url": "https://www.jornada.com.mx/noticia/2022/12/11/estados/catean-notaria-suspendida-en-2014-en-guadalajara-2477",
+        "state": "Jalisco"
+      },
+      "entity_group": "notary",
+      "group": "known_incident",
+      "id": "positive-16",
+      "kind": "person",
+      "name": "Sergio Alejandro López Rivera"
+    },
+    {
+      "aliases": [],
+      "context": {
+        "notary_number": "72 Guadalajara",
+        "role": "Notario",
+        "source_url": "https://laevidencia.com.mx/derecho/notarios-sancionados-ejercen-con-amparos/",
+        "state": "Jalisco"
+      },
+      "entity_group": "notary",
+      "group": "known_incident",
+      "id": "positive-17",
+      "kind": "person",
+      "name": "Luis Antonio Guerrero Campos"
+    },
+    {
+      "aliases": [],
+      "context": {
+        "notary_number": "43 Zapopan",
+        "role": "Notario",
+        "source_url": "https://www.nvinoticias.com/nacional/comunidad/quitan-fiat-notario-que-resucito-muerto-en-jalisco/149630",
+        "state": "Jalisco"
+      },
+      "entity_group": "notary",
+      "group": "known_incident",
+      "id": "positive-18",
+      "kind": "person",
+      "name": "José Antonio Jaime Reynoso"
+    },
+    {
+      "aliases": [],
+      "context": {
+        "notary_number": "50 Guadalajara",
+        "role": "Notario",
+        "source_url": "https://www.notisistema.com/noticias/suspenden-en-definitiva-a-notario-50-de-guadalajara/",
+        "state": "Jalisco"
+      },
+      "entity_group": "notary",
+      "group": "known_incident",
+      "id": "positive-19",
+      "kind": "person",
+      "name": "Guillermo Coronado Figueroa"
+    },
+    {
+      "aliases": [],
+      "context": {
+        "notary_number": "2 Tlajomulco de Zúñiga",
+        "role": "Notario",
+        "source_url": "https://www.reporteindigo.com/guadalajara/gobierno-de-alfaro-inhabilito-a-11-notarios-publicos-20250701-0107.html",
+        "state": "Jalisco"
+      },
+      "entity_group": "notary",
+      "group": "known_incident",
+      "id": "positive-20",
+      "kind": "person",
+      "name": "José Luis Organista Macías"
+    },
+    {
+      "aliases": [],
+      "context": {
+        "notary_number": "2 Tapalpa",
+        "role": "Notario",
+        "source_url": "https://www.reporteindigo.com/guadalajara/gobierno-de-alfaro-inhabilito-a-11-notarios-publicos-20250701-0107.html",
+        "state": "Jalisco"
+      },
+      "entity_group": "notary",
+      "group": "known_incident",
+      "id": "positive-21",
+      "kind": "person",
+      "name": "Juan Hernández Rivas"
+    },
+    {
+      "aliases": [],
+      "context": {
+        "notary_number": "15 San Pedro Tlaquepaque",
+        "role": "Notario",
+        "source_url": "https://www.notisistema.com/noticias/alfaro-revoco-nombramiento-de-notario-15-de-tlaquepaque-antes-de-terminar-su-mandato/",
+        "state": "Jalisco"
+      },
+      "entity_group": "notary",
+      "group": "known_incident",
+      "id": "positive-22",
+      "kind": "person",
+      "name": "Samuel Fernández Ávila"
+    },
+    {
+      "aliases": [],
+      "context": {
+        "notary_number": "140 Guadalajara",
+        "role": "Notario",
+        "source_url": "https://laevidencia.com.mx/derecho/revocan-nombramiento-a-notario-140-de-guadalajara/",
+        "state": "Jalisco"
+      },
+      "entity_group": "notary",
+      "group": "known_incident",
+      "id": "positive-23",
+      "kind": "person",
+      "name": "Javier Manuel Gutiérrez Dávila"
+    },
+    {
+      "aliases": [],
+      "context": {
+        "notary_number": "106 Cosolapa",
+        "role": "Notario",
+        "source_url": "https://interactivos.eluniversal.com.mx/2024/notarios-empresas-fantasma/",
+        "state": "Oaxaca"
+      },
+      "entity_group": "notary",
+      "group": "known_incident",
+      "id": "positive-24",
+      "kind": "person",
+      "name": "Alejandro José Vidaña Luna"
+    },
+    {
+      "aliases": [
+        "Omar Abacuc Sánchez"
+      ],
+      "context": {
+        "notary_number": "38",
+        "role": "Notario",
+        "source_url": "https://interactivos.eluniversal.com.mx/2024/notarios-empresas-fantasma/",
+        "state": "Oaxaca"
+      },
+      "entity_group": "notary",
+      "group": "known_incident",
+      "id": "positive-25",
+      "kind": "person",
+      "name": "Omar Abacuc Sánchez Heras"
+    },
+    {
+      "aliases": [
+        "Eduardo Garcia Corpus",
+        "García Corpus"
+      ],
+      "context": {
+        "notary_number": "105 Zimatlán de Álvarez",
+        "role": "Notario",
+        "source_url": "https://e-oaxaca.com/nota/2018-07-17/oaxaca/por-presuntos-actos-de-corrupcion-suspenden-libros-notario",
+        "state": "Oaxaca"
+      },
+      "entity_group": "notary",
+      "group": "known_incident",
+      "id": "positive-26",
+      "kind": "person",
+      "name": "Eduardo García Corpus"
+    },
+    {
+      "aliases": [],
+      "context": {
+        "notary_number": "149 Culiacán",
+        "role": "Notario",
+        "source_url": "https://riodoce.mx/2023/11/20/quitan-fiat-a-notario-por-asentar-testimonios-de-finados-en-escrituras-publicas/",
+        "state": "Sinaloa"
+      },
+      "entity_group": "notary",
+      "group": "known_incident",
+      "id": "positive-27",
+      "kind": "person",
+      "name": "Manuel Lazcano Meza"
+    },
+    {
+      "aliases": [
+        "Édgar Veytia",
+        "Edgar Veytia"
+      ],
+      "context": {
+        "notary_number": "39 Mezcales",
+        "role": "Notario",
+        "source_url": "https://interactivos.eluniversal.com.mx/2024/notarios-empresas-fantasma/",
+        "state": "Nayarit"
+      },
+      "entity_group": "notary",
+      "group": "known_incident",
+      "id": "positive-28",
+      "kind": "person",
+      "name": "Édgar Veytia Cambero"
+    },
+    {
+      "aliases": [
+        "Alejandro Durán",
+        "Alejando Durán Llamas"
+      ],
+      "context": {
+        "notary_number": "44 León",
+        "role": "Notario",
+        "source_url": "https://www.am.com.mx/leon/2022/06/14/quedan-en-el-limbo-usuarios-de-notaria-cancelada-en-leon-que-pueden-hacer-610199.html",
+        "state": "Guanajuato"
+      },
+      "entity_group": "notary",
+      "group": "known_incident",
+      "id": "positive-29",
+      "kind": "person",
+      "name": "Alejandro Durán Llamas"
+    },
+    {
+      "aliases": [],
+      "context": {
+        "notary_number": "53 Puebla",
+        "role": "Notario",
+        "source_url": "https://www.e-consulta.com/nota/2020-01-01/politica/2019-el-peor-ano-para-mario-marin-perseguido-y-sin-notaria",
+        "state": "Puebla"
+      },
+      "entity_group": "notary",
+      "group": "known_incident",
+      "id": "positive-30",
+      "kind": "person",
+      "name": "Mario Marín Torres"
+    },
+    {
+      "context": {
+        "accessed_at": "2026-10-16T06:50:28.264674+00:00",
+        "municipality": "Álvaro Obregón",
+        "notary_number": 58,
+        "office": "Notaría de la Ciudad de México",
+        "role": "Notario",
+        "source_sha256": "cfb0b305d05bf2cad6ae8838369c850521d2edb13f8c1d2d38dce27387902248",
+        "source_url": "https://colegiodenotarios.org.mx/directorio",
+        "state": "Ciudad de México",
+        "status": "Notario",
+        "status_note": "Etiqueta del directorio profesional; no se certifica vigencia ni habilitación actual."
+      },
+      "entity_group": "notary",
+      "group": "no_known_incident",
+      "id": "mx-notary-cdmx-058",
+      "kind": "person",
+      "name": "Iñigo Xavier Reynoso De Teresa"
+    },
+    {
+      "context": {
+        "accessed_at": "2026-10-16T06:50:28.264674+00:00",
+        "municipality": "Cuajimalpa de Morelos",
+        "notary_number": 242,
+        "office": "Notaría de la Ciudad de México",
+        "role": "Notario",
+        "source_sha256": "cfb0b305d05bf2cad6ae8838369c850521d2edb13f8c1d2d38dce27387902248",
+        "source_url": "https://colegiodenotarios.org.mx/directorio",
+        "state": "Ciudad de México",
+        "status": "Notario",
+        "status_note": "Etiqueta del directorio profesional; no se certifica vigencia ni habilitación actual."
+      },
+      "entity_group": "notary",
+      "group": "no_known_incident",
+      "id": "mx-notary-cdmx-242",
+      "kind": "person",
+      "name": "Roberto Garzón Jiménez"
+    },
+    {
+      "context": {
+        "accessed_at": "2026-10-16T06:50:28.264674+00:00",
+        "municipality": "Tlalpan",
+        "notary_number": 224,
+        "office": "Notaría de la Ciudad de México",
+        "role": "Notario",
+        "source_sha256": "cfb0b305d05bf2cad6ae8838369c850521d2edb13f8c1d2d38dce27387902248",
+        "source_url": "https://colegiodenotarios.org.mx/directorio",
+        "state": "Ciudad de México",
+        "status": "Notario",
+        "status_note": "Etiqueta del directorio profesional; no se certifica vigencia ni habilitación actual."
+      },
+      "entity_group": "notary",
+      "group": "no_known_incident",
+      "id": "mx-notary-cdmx-224",
+      "kind": "person",
+      "name": "Jesús Torres Gómez"
+    },
+    {
+      "context": {
+        "accessed_at": "2026-10-16T06:50:28.264674+00:00",
+        "municipality": "Álvaro Obregón",
+        "notary_number": 181,
+        "office": "Notaría de la Ciudad de México",
+        "role": "Notario",
+        "source_sha256": "cfb0b305d05bf2cad6ae8838369c850521d2edb13f8c1d2d38dce27387902248",
+        "source_url": "https://colegiodenotarios.org.mx/directorio",
+        "state": "Ciudad de México",
+        "status": "Notario",
+        "status_note": "Etiqueta del directorio profesional; no se certifica vigencia ni habilitación actual."
+      },
+      "entity_group": "notary",
+      "group": "no_known_incident",
+      "id": "mx-notary-cdmx-181",
+      "kind": "person",
+      "name": "Miguel Soberón Mainero"
+    },
+    {
+      "context": {
+        "accessed_at": "2026-10-16T06:50:28.264674+00:00",
+        "municipality": "Benito Juárez",
+        "notary_number": 238,
+        "office": "Notaría de la Ciudad de México",
+        "role": "Notario",
+        "source_sha256": "cfb0b305d05bf2cad6ae8838369c850521d2edb13f8c1d2d38dce27387902248",
+        "source_url": "https://colegiodenotarios.org.mx/directorio",
+        "state": "Ciudad de México",
+        "status": "Notario",
+        "status_note": "Etiqueta del directorio profesional; no se certifica vigencia ni habilitación actual."
+      },
+      "entity_group": "notary",
+      "group": "no_known_incident",
+      "id": "mx-notary-cdmx-238",
+      "kind": "person",
+      "name": "Alfonso Martín León-Orantes"
+    },
+    {
+      "context": {
+        "accessed_at": "2026-10-16T06:50:28.264674+00:00",
+        "municipality": "Coyoacán",
+        "notary_number": 129,
+        "office": "Notaría de la Ciudad de México",
+        "role": "Notario",
+        "source_sha256": "cfb0b305d05bf2cad6ae8838369c850521d2edb13f8c1d2d38dce27387902248",
+        "source_url": "https://colegiodenotarios.org.mx/directorio",
+        "state": "Ciudad de México",
+        "status": "Notario",
+        "status_note": "Etiqueta del directorio profesional; no se certifica vigencia ni habilitación actual."
+      },
+      "entity_group": "notary",
+      "group": "no_known_incident",
+      "id": "mx-notary-cdmx-129",
+      "kind": "person",
+      "name": "Ignacio Soto Borja y Anda"
+    },
+    {
+      "context": {
+        "accessed_at": "2026-10-16T06:50:28.264674+00:00",
+        "municipality": "Benito Juárez",
+        "notary_number": 194,
+        "office": "Notaría de la Ciudad de México",
+        "role": "Notario",
+        "source_sha256": "cfb0b305d05bf2cad6ae8838369c850521d2edb13f8c1d2d38dce27387902248",
+        "source_url": "https://colegiodenotarios.org.mx/directorio",
+        "state": "Ciudad de México",
+        "status": "Notario",
+        "status_note": "Etiqueta del directorio profesional; no se certifica vigencia ni habilitación actual."
+      },
+      "entity_group": "notary",
+      "group": "no_known_incident",
+      "id": "mx-notary-cdmx-194",
+      "kind": "person",
+      "name": "Enrique Zapata González Pacheco"
+    },
+    {
+      "context": {
+        "accessed_at": "2026-10-16T06:50:28.264674+00:00",
+        "municipality": "Benito Juárez",
+        "notary_number": 74,
+        "office": "Notaría de la Ciudad de México",
+        "role": "Notario",
+        "source_sha256": "cfb0b305d05bf2cad6ae8838369c850521d2edb13f8c1d2d38dce27387902248",
+        "source_url": "https://colegiodenotarios.org.mx/directorio",
+        "state": "Ciudad de México",
+        "status": "Notario",
+        "status_note": "Etiqueta del directorio profesional; no se certifica vigencia ni habilitación actual."
+      },
+      "entity_group": "notary",
+      "group": "no_known_incident",
+      "id": "mx-notary-cdmx-074",
+      "kind": "person",
+      "name": "Francisco Javier Arce Gargollo"
+    },
+    {
+      "context": {
+        "accessed_at": "2026-10-16T06:50:28.264674+00:00",
+        "municipality": "Miguel Hidalgo",
+        "notary_number": 45,
+        "office": "Notaría de la Ciudad de México",
+        "role": "Notario",
+        "source_sha256": "cfb0b305d05bf2cad6ae8838369c850521d2edb13f8c1d2d38dce27387902248",
+        "source_url": "https://colegiodenotarios.org.mx/directorio",
+        "state": "Ciudad de México",
+        "status": "Notario",
+        "status_note": "Etiqueta del directorio profesional; no se certifica vigencia ni habilitación actual."
+      },
+      "entity_group": "notary",
+      "group": "no_known_incident",
+      "id": "mx-notary-cdmx-045",
+      "kind": "person",
+      "name": "Rafael Manuel Oliveros Lara"
+    },
+    {
+      "context": {
+        "accessed_at": "2026-10-16T06:50:28.264674+00:00",
+        "municipality": "Cuajimalpa de Morelos",
+        "notary_number": 229,
+        "office": "Notaría de la Ciudad de México",
+        "role": "Notario",
+        "source_sha256": "cfb0b305d05bf2cad6ae8838369c850521d2edb13f8c1d2d38dce27387902248",
+        "source_url": "https://colegiodenotarios.org.mx/directorio",
+        "state": "Ciudad de México",
+        "status": "Notario",
+        "status_note": "Etiqueta del directorio profesional; no se certifica vigencia ni habilitación actual."
+      },
+      "entity_group": "notary",
+      "group": "no_known_incident",
+      "id": "mx-notary-cdmx-229",
+      "kind": "person",
+      "name": "Marco Antonio Ruiz Aguirre"
+    },
+    {
+      "context": {
+        "accessed_at": "2026-10-16T06:50:28.264674+00:00",
+        "municipality": "Álvaro Obregón",
+        "notary_number": 98,
+        "office": "Notaría de la Ciudad de México",
+        "role": "Notario",
+        "source_sha256": "cfb0b305d05bf2cad6ae8838369c850521d2edb13f8c1d2d38dce27387902248",
+        "source_url": "https://colegiodenotarios.org.mx/directorio",
+        "state": "Ciudad de México",
+        "status": "Notario",
+        "status_note": "Etiqueta del directorio profesional; no se certifica vigencia ni habilitación actual."
+      },
+      "entity_group": "notary",
+      "group": "no_known_incident",
+      "id": "mx-notary-cdmx-098",
+      "kind": "person",
+      "name": "Gonzalo Manuel Ortiz Blanco"
+    },
+    {
+      "context": {
+        "accessed_at": "2026-10-16T06:50:28.264674+00:00",
+        "municipality": "Miguel Hidalgo",
+        "notary_number": 230,
+        "office": "Notaría de la Ciudad de México",
+        "role": "Notario",
+        "source_sha256": "cfb0b305d05bf2cad6ae8838369c850521d2edb13f8c1d2d38dce27387902248",
+        "source_url": "https://colegiodenotarios.org.mx/directorio",
+        "state": "Ciudad de México",
+        "status": "Notario",
+        "status_note": "Etiqueta del directorio profesional; no se certifica vigencia ni habilitación actual."
+      },
+      "entity_group": "notary",
+      "group": "no_known_incident",
+      "id": "mx-notary-cdmx-230",
+      "kind": "person",
+      "name": "Alfredo Bazúa Witte"
+    },
+    {
+      "context": {
+        "accessed_at": "2026-10-16T06:50:28.264674+00:00",
+        "municipality": "Coyoacán",
+        "notary_number": 114,
+        "office": "Notaría de la Ciudad de México",
+        "role": "Notaria",
+        "source_sha256": "cfb0b305d05bf2cad6ae8838369c850521d2edb13f8c1d2d38dce27387902248",
+        "source_url": "https://colegiodenotarios.org.mx/directorio",
+        "state": "Ciudad de México",
+        "status": "Notaria",
+        "status_note": "Etiqueta del directorio profesional; no se certifica vigencia ni habilitación actual."
+      },
+      "entity_group": "notary",
+      "group": "no_known_incident",
+      "id": "mx-notary-cdmx-114",
+      "kind": "person",
+      "name": "María Teresa Rodríguez y Rodríguez"
+    },
+    {
+      "context": {
+        "accessed_at": "2026-10-16T06:50:28.264674+00:00",
+        "municipality": "Miguel Hidalgo",
+        "notary_number": 22,
+        "office": "Notaría de la Ciudad de México",
+        "role": "Notario",
+        "source_sha256": "cfb0b305d05bf2cad6ae8838369c850521d2edb13f8c1d2d38dce27387902248",
+        "source_url": "https://colegiodenotarios.org.mx/directorio",
+        "state": "Ciudad de México",
+        "status": "Notario",
+        "status_note": "Etiqueta del directorio profesional; no se certifica vigencia ni habilitación actual."
+      },
+      "entity_group": "notary",
+      "group": "no_known_incident",
+      "id": "mx-notary-cdmx-022",
+      "kind": "person",
+      "name": "Daniel García Córdova"
+    },
+    {
+      "context": {
+        "accessed_at": "2026-10-16T06:50:28.264674+00:00",
+        "municipality": "Miguel Hidalgo",
+        "notary_number": 71,
+        "office": "Notaría de la Ciudad de México",
+        "role": "Notario",
+        "source_sha256": "cfb0b305d05bf2cad6ae8838369c850521d2edb13f8c1d2d38dce27387902248",
+        "source_url": "https://colegiodenotarios.org.mx/directorio",
+        "state": "Ciudad de México",
+        "status": "Notario",
+        "status_note": "Etiqueta del directorio profesional; no se certifica vigencia ni habilitación actual."
+      },
+      "entity_group": "notary",
+      "group": "no_known_incident",
+      "id": "mx-notary-cdmx-071",
+      "kind": "person",
+      "name": "Eduardo Javier Muñoz Pinchetti"
+    },
+    {
+      "context": {
+        "accessed_at": "2026-10-16T06:50:28.264674+00:00",
+        "municipality": "Benito Juárez",
+        "notary_number": 25,
+        "office": "Notaría de la Ciudad de México",
+        "role": "Notario",
+        "source_sha256": "cfb0b305d05bf2cad6ae8838369c850521d2edb13f8c1d2d38dce27387902248",
+        "source_url": "https://colegiodenotarios.org.mx/directorio",
+        "state": "Ciudad de México",
+        "status": "Notario",
+        "status_note": "Etiqueta del directorio profesional; no se certifica vigencia ni habilitación actual."
+      },
+      "entity_group": "notary",
+      "group": "no_known_incident",
+      "id": "mx-notary-cdmx-025",
+      "kind": "person",
+      "name": "Emiliano Zubiría Maqueo"
+    },
+    {
+      "context": {
+        "accessed_at": "2026-10-16T06:50:28.264674+00:00",
+        "municipality": "Cuauhtémoc",
+        "notary_number": 2,
+        "office": "Notaría de la Ciudad de México",
+        "role": "Notario",
+        "source_sha256": "cfb0b305d05bf2cad6ae8838369c850521d2edb13f8c1d2d38dce27387902248",
+        "source_url": "https://colegiodenotarios.org.mx/directorio",
+        "state": "Ciudad de México",
+        "status": "Notario",
+        "status_note": "Etiqueta del directorio profesional; no se certifica vigencia ni habilitación actual."
+      },
+      "entity_group": "notary",
+      "group": "no_known_incident",
+      "id": "mx-notary-cdmx-002",
+      "kind": "person",
+      "name": "Alfredo González Serrano"
+    },
+    {
+      "context": {
+        "accessed_at": "2026-10-16T06:50:28.264674+00:00",
+        "municipality": "Cuajimalpa de Morelos",
+        "notary_number": 205,
+        "office": "Notaría de la Ciudad de México",
+        "role": "Notario",
+        "source_sha256": "cfb0b305d05bf2cad6ae8838369c850521d2edb13f8c1d2d38dce27387902248",
+        "source_url": "https://colegiodenotarios.org.mx/directorio",
+        "state": "Ciudad de México",
+        "status": "Notario",
+        "status_note": "Etiqueta del directorio profesional; no se certifica vigencia ni habilitación actual."
+      },
+      "entity_group": "notary",
+      "group": "no_known_incident",
+      "id": "mx-notary-cdmx-205",
+      "kind": "person",
+      "name": "Arturo Adolfo Llorente Martínez"
+    },
+    {
+      "context": {
+        "accessed_at": "2026-10-16T06:50:28.264674+00:00",
+        "municipality": "Miguel Hidalgo",
+        "notary_number": 159,
+        "office": "Notaría de la Ciudad de México",
+        "role": "Notario",
+        "source_sha256": "cfb0b305d05bf2cad6ae8838369c850521d2edb13f8c1d2d38dce27387902248",
+        "source_url": "https://colegiodenotarios.org.mx/directorio",
+        "state": "Ciudad de México",
+        "status": "Notario",
+        "status_note": "Etiqueta del directorio profesional; no se certifica vigencia ni habilitación actual."
+      },
+      "entity_group": "notary",
+      "group": "no_known_incident",
+      "id": "mx-notary-cdmx-159",
+      "kind": "person",
+      "name": "Tarcisio Domingo Sánchez Ulloa"
+    },
+    {
+      "context": {
+        "accessed_at": "2026-10-16T06:50:28.264674+00:00",
+        "municipality": "Miguel Hidalgo",
+        "notary_number": 244,
+        "office": "Notaría de la Ciudad de México",
+        "role": "Notario",
+        "source_sha256": "cfb0b305d05bf2cad6ae8838369c850521d2edb13f8c1d2d38dce27387902248",
+        "source_url": "https://colegiodenotarios.org.mx/directorio",
+        "state": "Ciudad de México",
+        "status": "Notario",
+        "status_note": "Etiqueta del directorio profesional; no se certifica vigencia ni habilitación actual."
+      },
+      "entity_group": "notary",
+      "group": "no_known_incident",
+      "id": "mx-notary-cdmx-244",
+      "kind": "person",
+      "name": "Celso de Jesús Pola Castillo"
+    },
+    {
+      "context": {
+        "accessed_at": "2026-10-16T06:50:28.264674+00:00",
+        "municipality": "Benito Juárez",
+        "notary_number": 140,
+        "office": "Notaría de la Ciudad de México",
+        "role": "Notario",
+        "source_sha256": "cfb0b305d05bf2cad6ae8838369c850521d2edb13f8c1d2d38dce27387902248",
+        "source_url": "https://colegiodenotarios.org.mx/directorio",
+        "state": "Ciudad de México",
+        "status": "Notario",
+        "status_note": "Etiqueta del directorio profesional; no se certifica vigencia ni habilitación actual."
+      },
+      "entity_group": "notary",
+      "group": "no_known_incident",
+      "id": "mx-notary-cdmx-140",
+      "kind": "person",
+      "name": "Jorge Alfredo Domínguez Martínez"
+    },
+    {
+      "context": {
+        "accessed_at": "2026-10-16T06:50:28.264674+00:00",
+        "municipality": "Miguel Hidalgo",
+        "notary_number": 15,
+        "office": "Notaría de la Ciudad de México",
+        "role": "Notario",
+        "source_sha256": "cfb0b305d05bf2cad6ae8838369c850521d2edb13f8c1d2d38dce27387902248",
+        "source_url": "https://colegiodenotarios.org.mx/directorio",
+        "state": "Ciudad de México",
+        "status": "Notario",
+        "status_note": "Etiqueta del directorio profesional; no se certifica vigencia ni habilitación actual."
+      },
+      "entity_group": "notary",
+      "group": "no_known_incident",
+      "id": "mx-notary-cdmx-015",
+      "kind": "person",
+      "name": "Eduardo Alejandro Francisco García Villegas"
+    },
+    {
+      "context": {
+        "accessed_at": "2026-10-16T06:50:28.264674+00:00",
+        "municipality": "Álvaro Obregón",
+        "notary_number": 216,
+        "office": "Notaría de la Ciudad de México",
+        "role": "Notaria",
+        "source_sha256": "cfb0b305d05bf2cad6ae8838369c850521d2edb13f8c1d2d38dce27387902248",
+        "source_url": "https://colegiodenotarios.org.mx/directorio",
+        "state": "Ciudad de México",
+        "status": "Notaria",
+        "status_note": "Etiqueta del directorio profesional; no se certifica vigencia ni habilitación actual."
+      },
+      "entity_group": "notary",
+      "group": "no_known_incident",
+      "id": "mx-notary-cdmx-216",
+      "kind": "person",
+      "name": "Ernestina Bejarano Alfonso"
+    },
+    {
+      "context": {
+        "accessed_at": "2026-10-16T06:50:28.264674+00:00",
+        "municipality": "Cuauhtémoc",
+        "notary_number": 88,
+        "office": "Notaría de la Ciudad de México",
+        "role": "Notario",
+        "source_sha256": "cfb0b305d05bf2cad6ae8838369c850521d2edb13f8c1d2d38dce27387902248",
+        "source_url": "https://colegiodenotarios.org.mx/directorio",
+        "state": "Ciudad de México",
+        "status": "Notario",
+        "status_note": "Etiqueta del directorio profesional; no se certifica vigencia ni habilitación actual."
+      },
+      "entity_group": "notary",
+      "group": "no_known_incident",
+      "id": "mx-notary-cdmx-088",
+      "kind": "person",
+      "name": "Ricardo Vargas Navarro"
+    },
+    {
+      "context": {
+        "accessed_at": "2026-10-16T06:50:28.264674+00:00",
+        "municipality": "MIguel Hidalgo",
+        "notary_number": 61,
+        "office": "Notaría de la Ciudad de México",
+        "role": "Notario",
+        "source_sha256": "cfb0b305d05bf2cad6ae8838369c850521d2edb13f8c1d2d38dce27387902248",
+        "source_url": "https://colegiodenotarios.org.mx/directorio",
+        "state": "Ciudad de México",
+        "status": "Notario",
+        "status_note": "Etiqueta del directorio profesional; no se certifica vigencia ni habilitación actual."
+      },
+      "entity_group": "notary",
+      "group": "no_known_incident",
+      "id": "mx-notary-cdmx-061",
+      "kind": "person",
+      "name": "Javier Eduardo Del Valle y Palazuelos"
+    },
+    {
+      "context": {
+        "accessed_at": "2026-10-16T06:50:28.264674+00:00",
+        "municipality": "Cuauhtémoc",
+        "notary_number": 241,
+        "office": "Notaría de la Ciudad de México",
+        "role": "Notario",
+        "source_sha256": "cfb0b305d05bf2cad6ae8838369c850521d2edb13f8c1d2d38dce27387902248",
+        "source_url": "https://colegiodenotarios.org.mx/directorio",
+        "state": "Ciudad de México",
+        "status": "Notario",
+        "status_note": "Etiqueta del directorio profesional; no se certifica vigencia ni habilitación actual."
+      },
+      "entity_group": "notary",
+      "group": "no_known_incident",
+      "id": "mx-notary-cdmx-241",
+      "kind": "person",
+      "name": "Sergio Rea Field"
+    },
+    {
+      "context": {
+        "accessed_at": "2026-10-16T06:50:28.264674+00:00",
+        "municipality": "Benito Juárez",
+        "notary_number": 166,
+        "office": "Notaría de la Ciudad de México",
+        "role": "Notario",
+        "source_sha256": "cfb0b305d05bf2cad6ae8838369c850521d2edb13f8c1d2d38dce27387902248",
+        "source_url": "https://colegiodenotarios.org.mx/directorio",
+        "state": "Ciudad de México",
+        "status": "Notario",
+        "status_note": "Etiqueta del directorio profesional; no se certifica vigencia ni habilitación actual."
+      },
+      "entity_group": "notary",
+      "group": "no_known_incident",
+      "id": "mx-notary-cdmx-166",
+      "kind": "person",
+      "name": "Gustavo Jiménez Ortiz"
+    },
+    {
+      "context": {
+        "accessed_at": "2026-10-16T06:50:28.264674+00:00",
+        "municipality": "MIguel Hidalgo",
+        "notary_number": 86,
+        "office": "Notaría de la Ciudad de México",
+        "role": "Notario",
+        "source_sha256": "cfb0b305d05bf2cad6ae8838369c850521d2edb13f8c1d2d38dce27387902248",
+        "source_url": "https://colegiodenotarios.org.mx/directorio",
+        "state": "Ciudad de México",
+        "status": "Notario",
+        "status_note": "Etiqueta del directorio profesional; no se certifica vigencia ni habilitación actual."
+      },
+      "entity_group": "notary",
+      "group": "no_known_incident",
+      "id": "mx-notary-cdmx-086",
+      "kind": "person",
+      "name": "José Daniel Labardini Schettino"
+    },
+    {
+      "context": {
+        "accessed_at": "2026-10-16T06:50:28.264674+00:00",
+        "municipality": "Benito Juárez",
+        "notary_number": 236,
+        "office": "Notaría de la Ciudad de México",
+        "role": "Notario",
+        "source_sha256": "cfb0b305d05bf2cad6ae8838369c850521d2edb13f8c1d2d38dce27387902248",
+        "source_url": "https://colegiodenotarios.org.mx/directorio",
+        "state": "Ciudad de México",
+        "status": "Notario",
+        "status_note": "Etiqueta del directorio profesional; no se certifica vigencia ni habilitación actual."
+      },
+      "entity_group": "notary",
+      "group": "no_known_incident",
+      "id": "mx-notary-cdmx-236",
+      "kind": "person",
+      "name": "Alejandro Domínguez García Villalobos"
+    },
+    {
+      "context": {
+        "accessed_at": "2026-10-16T06:50:28.264674+00:00",
+        "municipality": "Coyoacán",
+        "notary_number": 197,
+        "office": "Notaría de la Ciudad de México",
+        "role": "Notaria",
+        "source_sha256": "cfb0b305d05bf2cad6ae8838369c850521d2edb13f8c1d2d38dce27387902248",
+        "source_url": "https://colegiodenotarios.org.mx/directorio",
+        "state": "Ciudad de México",
+        "status": "Notaria",
+        "status_note": "Etiqueta del directorio profesional; no se certifica vigencia ni habilitación actual."
+      },
+      "entity_group": "notary",
+      "group": "no_known_incident",
+      "id": "mx-notary-cdmx-197",
+      "kind": "person",
+      "name": "Sara Cuevas Villalobos"
+    }
+  ],
+  "frozen_at": "2026-10-16T22:10:13.986327+00:00",
+  "interpretation": "La selección histórica no es una declaración de culpabilidad; los 30 comparadores no son negativos certificados.",
+  "schema_version": 1,
+  "selection": {
+    "comparator": {
+      "amendment": {
+        "at": "2026-10-16T22:03:25.432749+00:00",
+        "before_any_queries": true,
+        "method": "Python random.Random(20261017).sample(remaining,10)",
+        "reason": "Root increased target to30 comparators; preserve original20 and draw10 additional with fixed secondseed20261017 fromremaining129 eligible.",
+        "seed": 20261017
+      },
+      "eligible_count": 149,
+      "exclusions_before_search": [
+        {
+          "name": "Roberto Núñez y Bandera",
+          "reason": "Previously seen retrieval-positive case from prior pipeline test, not independent of tuning; no incident judgment."
+        }
+      ],
+      "frame_count": 150,
+      "frame_sha256": "1e5fc660a1aa73772c76e0abf943a3d9e34e18d5b9940ec06dcc72b77843eb86",
+      "group_meaning": "Selection group only. no_known_incident is not a verified negative label and is unchanged when adverse news is found.",
+      "limitations": [
+        "CDMX roster only; not representative nationally.",
+        "Not matched to incident group on public salience.",
+        "Random draw will not be replaced if an incident appears; reclassify and retain.",
+        "One exact-name normal and one exact-name adverse query per person; aliases and all search pages were not exhaustively reviewed.",
+        "Reference discovery was performed in a research search engine and is not native application discovery/acquisition.",
+        "Open failures and search metadata are retained separately; only reviewed named body passages receive article-level role labels.",
+        "Some random comparators have adverse or ambiguous publications; retain rather than replace. Case-level incident absence remains unknown.",
+        "One exact-name normal and one exact-name adverse query per person; aliases and all search pages were not exhaustively reviewed.",
+        "Reference discovery was performed in a research search engine and is not native application discovery/acquisition.",
+        "Open failures and search metadata are retained separately; only reviewed named body passages receive article-level role labels.",
+        "Some random comparators have adverse or ambiguous publications; retain rather than replace. Case-level incident absence remains unknown."
+      ],
+      "method": "Python random.Random(20261016).sample(frame,20)",
+      "seed": 20261016,
+      "states": [
+        "Ciudad de México"
+      ]
+    },
+    "positive": "Purposive historical cases documented before native pipeline queries. Not a representative prevalence sample."
+  }
+}

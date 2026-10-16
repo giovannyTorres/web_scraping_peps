@@ -1,0 +1,9 @@
+{
+  "original_evaluation_receipt_sha256": "6273fc5b2c697d8dc1b4d73b17f408f9146682e5758be9f1ff4f89a834d5b266",
+  "previous_evaluation_files_unchanged": true,
+  "schema_version": 3,
+  "supplement_files_sha256": {
+    "reference-denominators-v3.json": "d2e105dfeaf06d2458b17137eea70c8a77c6461383d6181fa32403ea5b1f2a68",
+    "tables/reference-denominators-v3.csv": "89bd99fbc005941e9750372b73daa4d35ded51666d027eafe51ab381492ebe5e"
+  }
+}

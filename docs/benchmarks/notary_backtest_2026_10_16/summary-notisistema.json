@@ -1,0 +1,444 @@
+{
+  "classification": {
+    "context_role_auxiliary": {
+      "final_same_dates": {
+        "abstention_policy": "known-label abstentions remain in recall, specificity and accuracy denominators",
+        "abstentions": {
+          "negative": 0,
+          "positive": 5,
+          "unknown_truth": 0
+        },
+        "accuracy": {
+          "denominator": 5,
+          "numerator": 0,
+          "value": 0.0,
+          "wilson95": {
+            "lower": 0.0,
+            "upper": 0.43448246478317476
+          }
+        },
+        "adjudicated_decision_coverage": {
+          "denominator": 5,
+          "numerator": 0,
+          "value": 0.0,
+          "wilson95": {
+            "lower": 0.0,
+            "upper": 0.43448246478317476
+          }
+        },
+        "adjudicated_subset_accuracy": {
+          "denominator": 5,
+          "numerator": 0,
+          "value": 0.0,
+          "wilson95": {
+            "lower": 0.0,
+            "upper": 0.43448246478317476
+          }
+        },
+        "adjudicated_subset_balanced_accuracy": null,
+        "answered_adjudicated_subset_accuracy": {
+          "denominator": 0,
+          "numerator": 0,
+          "undefined_reason": "empty denominator",
+          "value": null,
+          "wilson95": null
+        },
+        "audited_relevant_text_pairs": 5,
+        "balanced_accuracy": null,
+        "confidence_interval_scope": "Wilson intervals are marginal proportions, not F1 or balanced-accuracy intervals",
+        "confusion_matrix": {
+          "fn": 0,
+          "fp": 0,
+          "tn": 0,
+          "tp": 0
+        },
+        "decision_coverage": {
+          "denominator": 5,
+          "numerator": 0,
+          "value": 0.0,
+          "wilson95": {
+            "lower": 0.0,
+            "upper": 0.43448246478317476
+          }
+        },
+        "known_label_f1": 0.0,
+        "known_label_precision": {
+          "denominator": 0,
+          "numerator": 0,
+          "undefined_reason": "empty denominator",
+          "value": null,
+          "wilson95": null
+        },
+        "known_negative_specificity": {
+          "denominator": 0,
+          "numerator": 0,
+          "undefined_reason": "empty denominator",
+          "value": null,
+          "wilson95": null
+        },
+        "known_positive_recall": {
+          "denominator": 5,
+          "numerator": 0,
+          "value": 0.0,
+          "wilson95": {
+            "lower": 0.0,
+            "upper": 0.43448246478317476
+          }
+        },
+        "missing_predictions_counted_as_abstentions": 0,
+        "negative_support": 0,
+        "positive_support": 5,
+        "predictions_excluded_irrelevant_or_unreviewed": 0,
+        "scope": "adverse role reported at publication on independently reviewed relevant entity-text pairs",
+        "target": "reported_adverse_role_at_publication",
+        "unknown_truth_support": 0
+      }
+    },
+    "nlp_direct_adverse": {
+      "final_same_dates": {
+        "abstention_policy": "known-label abstentions remain in recall, specificity and accuracy denominators",
+        "abstentions": {
+          "negative": 0,
+          "positive": 0,
+          "unknown_truth": 0
+        },
+        "accuracy": {
+          "denominator": 5,
+          "numerator": 0,
+          "value": 0.0,
+          "wilson95": {
+            "lower": 0.0,
+            "upper": 0.43448246478317476
+          }
+        },
+        "adjudicated_decision_coverage": {
+          "denominator": 5,
+          "numerator": 5,
+          "value": 1.0,
+          "wilson95": {
+            "lower": 0.5655175352168251,
+            "upper": 1.0
+          }
+        },
+        "adjudicated_subset_accuracy": {
+          "denominator": 5,
+          "numerator": 0,
+          "value": 0.0,
+          "wilson95": {
+            "lower": 0.0,
+            "upper": 0.43448246478317476
+          }
+        },
+        "adjudicated_subset_balanced_accuracy": null,
+        "answered_adjudicated_subset_accuracy": {
+          "denominator": 5,
+          "numerator": 0,
+          "value": 0.0,
+          "wilson95": {
+            "lower": 0.0,
+            "upper": 0.43448246478317476
+          }
+        },
+        "audited_relevant_text_pairs": 5,
+        "balanced_accuracy": null,
+        "confidence_interval_scope": "Wilson intervals are marginal proportions, not F1 or balanced-accuracy intervals",
+        "confusion_matrix": {
+          "fn": 5,
+          "fp": 0,
+          "tn": 0,
+          "tp": 0
+        },
+        "decision_coverage": {
+          "denominator": 5,
+          "numerator": 5,
+          "value": 1.0,
+          "wilson95": {
+            "lower": 0.5655175352168251,
+            "upper": 1.0
+          }
+        },
+        "known_label_f1": 0.0,
+        "known_label_precision": {
+          "denominator": 0,
+          "numerator": 0,
+          "undefined_reason": "empty denominator",
+          "value": null,
+          "wilson95": null
+        },
+        "known_negative_specificity": {
+          "denominator": 0,
+          "numerator": 0,
+          "undefined_reason": "empty denominator",
+          "value": null,
+          "wilson95": null
+        },
+        "known_positive_recall": {
+          "denominator": 5,
+          "numerator": 0,
+          "value": 0.0,
+          "wilson95": {
+            "lower": 0.0,
+            "upper": 0.43448246478317476
+          }
+        },
+        "missing_predictions_counted_as_abstentions": 0,
+        "negative_support": 0,
+        "positive_support": 5,
+        "predictions_excluded_irrelevant_or_unreviewed": 0,
+        "scope": "adverse role reported at publication on independently reviewed relevant entity-text pairs",
+        "target": "reported_adverse_role_at_publication",
+        "unknown_truth_support": 0
+      }
+    }
+  },
+  "classification_support": {
+    "yes": 5
+  },
+  "count_scope": "Canonical URLs and exact original-body hashes, not a semantic distinct-story count.",
+  "dataset": "notisistema",
+  "entity_accuracy": {
+    "denominator": null,
+    "numerator": null,
+    "undefined_reason": "unknown ground truth prevents cohort-wide accuracy",
+    "value": null,
+    "wilson95": null
+  },
+  "entity_unknown_ground_truth": 30,
+  "gold_snapshot_sha256": "d49edc73a57beb49f806126b741dc4e7b99eae8be4d8dfb69970bfc7222c30e8",
+  "held_out_validation": false,
+  "missing_publication_date_text_pairs": 0,
+  "network_requests_in_offline_evaluation": 0,
+  "observed": {
+    "controlled_cold_before_after": false,
+    "operational_summary": {
+      "actual_http_requests": 78,
+      "entities_with_text": 4,
+      "entity_candidate_pairs": 5,
+      "entity_text_pairs": 5,
+      "historical_coverage_complete": false,
+      "job_status_counts": {
+        "done": 77
+      },
+      "known_queue_drained_without_errors": true,
+      "robots_requests": 1,
+      "transport_budget_stop_reason": null,
+      "unique_candidate_urls": 5,
+      "unique_original_documents": 5
+    },
+    "query_count": 72,
+    "source_count": 1,
+    "timings_seconds": {
+      "cold_acquisition": 395.49748734199966,
+      "first_original_body_durable_job_complete": 246.11627341200074,
+      "offline_reuse_and_repeat": 2.3267730490042595,
+      "total": 398.2034827879979
+    }
+  },
+  "personal_scoring_performed": false,
+  "retrieval": {
+    "candidate_reference_pair_recall": {
+      "denominator": 115,
+      "numerator": 0,
+      "value": 0.0,
+      "wilson95": {
+        "lower": 0.0,
+        "upper": 0.03232423144931307
+      }
+    },
+    "candidate_reference_unique_url_recall": {
+      "denominator": 97,
+      "numerator": 0,
+      "value": 0.0,
+      "wilson95": {
+        "lower": 0.0,
+        "upper": 0.03809404252594769
+      }
+    },
+    "entities_with_reviewed_relevant_text": {
+      "denominator": 60,
+      "numerator": 4,
+      "value": 0.06666666666666667,
+      "wilson95": {
+        "lower": 0.026228698724506214,
+        "upper": 0.1592535731319717
+      }
+    },
+    "entities_with_text": {
+      "denominator": 60,
+      "numerator": 4,
+      "value": 0.06666666666666667,
+      "wilson95": {
+        "lower": 0.026228698724506214,
+        "upper": 0.1592535731319717
+      }
+    },
+    "known_positive_incident_document_detection": {
+      "denominator": 30,
+      "numerator": 4,
+      "value": 0.13333333333333333,
+      "wilson95": {
+        "lower": 0.053096554840547455,
+        "upper": 0.296813266820363
+      }
+    },
+    "raw_frozen_total_pair_match_descriptive": {
+      "denominator": 130,
+      "numerator": 0,
+      "value": 0.0
+    },
+    "raw_frozen_total_url_match_descriptive": {
+      "denominator": 111,
+      "numerator": 0,
+      "value": 0.0
+    },
+    "reference_macro_entity_recall": {
+      "entities_with_references": 38,
+      "entities_without_references": 22,
+      "scope": "Mean of per-entity pair recall over entities with at least one relevant frozen reference; no-reference entities remain undefined.",
+      "value": 0.0
+    },
+    "text_precision_all_results_bounds": {
+      "denominator": 5,
+      "lower": 1.0,
+      "unjudged": 0,
+      "upper": 1.0
+    },
+    "text_precision_among_reviewed": {
+      "denominator": 5,
+      "numerator": 5,
+      "value": 1.0,
+      "wilson95": {
+        "lower": 0.5655175352168251,
+        "upper": 1.0
+      }
+    },
+    "text_reference_pair_recall": {
+      "denominator": 115,
+      "numerator": 0,
+      "value": 0.0,
+      "wilson95": {
+        "lower": 0.0,
+        "upper": 0.03232423144931307
+      }
+    },
+    "text_reference_unique_url_recall": {
+      "denominator": 97,
+      "numerator": 0,
+      "value": 0.0,
+      "wilson95": {
+        "lower": 0.0,
+        "upper": 0.03809404252594769
+      }
+    }
+  },
+  "schema_version": 4,
+  "scope": "supplementary one-provider search run; separate time and adapted profile, no controlled cold A/B",
+  "strata": {
+    "known_incident": {
+      "entities": 30,
+      "entities_with_relevant_text": {
+        "denominator": 30,
+        "numerator": 4,
+        "value": 0.13333333333333333,
+        "wilson95": {
+          "lower": 0.053096554840547455,
+          "upper": 0.296813266820363
+        }
+      },
+      "entities_with_text": {
+        "denominator": 30,
+        "numerator": 4,
+        "value": 0.13333333333333333,
+        "wilson95": {
+          "lower": 0.053096554840547455,
+          "upper": 0.296813266820363
+        }
+      },
+      "text_pairs": 5,
+      "text_precision_among_reviewed": {
+        "denominator": 5,
+        "numerator": 5,
+        "value": 1.0,
+        "wilson95": {
+          "lower": 0.5655175352168251,
+          "upper": 1.0
+        }
+      },
+      "text_reference_pair_recall": {
+        "denominator": 98,
+        "numerator": 0,
+        "value": 0.0,
+        "wilson95": {
+          "lower": 3.469446951953614e-18,
+          "upper": 0.037719990121680605
+        }
+      },
+      "text_reference_unique_url_recall": {
+        "denominator": 80,
+        "numerator": 0,
+        "value": 0.0,
+        "wilson95": {
+          "lower": 0.0,
+          "upper": 0.0458181295355271
+        }
+      }
+    },
+    "no_known_incident": {
+      "entities": 30,
+      "entities_with_relevant_text": {
+        "denominator": 30,
+        "numerator": 0,
+        "value": 0.0,
+        "wilson95": {
+          "lower": 0.0,
+          "upper": 0.11351339317396876
+        }
+      },
+      "entities_with_text": {
+        "denominator": 30,
+        "numerator": 0,
+        "value": 0.0,
+        "wilson95": {
+          "lower": 0.0,
+          "upper": 0.11351339317396876
+        }
+      },
+      "text_pairs": 0,
+      "text_precision_among_reviewed": {
+        "denominator": 0,
+        "numerator": 0,
+        "undefined_reason": "empty denominator",
+        "value": null,
+        "wilson95": null
+      },
+      "text_reference_pair_recall": {
+        "denominator": 17,
+        "numerator": 0,
+        "value": 0.0,
+        "wilson95": {
+          "lower": 0.0,
+          "upper": 0.1843181350088518
+        }
+      },
+      "text_reference_unique_url_recall": {
+        "denominator": 17,
+        "numerator": 0,
+        "value": 0.0,
+        "wilson95": {
+          "lower": 0.0,
+          "upper": 0.1843181350088518
+        }
+      }
+    }
+  },
+  "volume": {
+    "candidate_pairs": 5,
+    "candidate_unique_urls": 5,
+    "original_text_pairs": 5,
+    "original_text_unique_body_hashes": 5,
+    "original_text_unique_urls": 5,
+    "reviewed_irrelevant_text_pairs": 0,
+    "reviewed_relevant_text_pairs": 5,
+    "unknown_relevance_text_pairs": 0
+  }
+}

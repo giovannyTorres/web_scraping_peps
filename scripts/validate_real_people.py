@@ -31,7 +31,7 @@ from peps.collector import SafeFetcher, _iso
 from peps.engine import Engine
 from peps.news import NewsAcquirer, canonical_url, source_policy, _body_selection
 from peps.public_search import parse_public_results
-from peps.relevance import assessment_summary
+from peps.relevance import MODEL_VERSION, assessment_summary
 from peps.sources import parse_results
 from peps.store import canonical, digest, now
 
@@ -39,7 +39,12 @@ PUBLIC_SOURCES = {'mwmbl_web', 'duckduckgo_web'}
 BODY_SOURCES = {'contralinea_index', 'aristegui_index', 'desinformemonos_index'}
 GROUPS = {'municipal_president': 'municipal_president', 'municipal': 'municipal_president',
           'mayor': 'municipal_president', 'notary': 'notary', 'notario': 'notary'}
-KNOWN_METADATA_MIGRATIONS = {('metadata-relevance-1.1.0', 'metadata-relevance-1.2.0')}
+# Keep historical origins explicit while tracking the actual current model.
+KNOWN_METADATA_MIGRATIONS = {
+    (historical, MODEL_VERSION)
+    for historical in ('metadata-relevance-1.1.0', 'metadata-relevance-1.2.0')
+    if historical != MODEL_VERSION
+}
 
 
 class _ValidationBudgetStopped(RuntimeError):

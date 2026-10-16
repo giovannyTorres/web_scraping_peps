@@ -317,7 +317,7 @@ async function loadNews(includeSources=true){
     const badge=el('span',undefined,'badge source-permission-badge');info.append(badge);
     const details=el('details',undefined,'source-conditions');details.append(el('summary','Alcance y condiciones'));
     details.append(sourceLink(source.url||source.base_url||'',source.url||source.base_url||'Fuente'),el('p',source.review_note||'Revisa las condiciones públicas de esta fuente antes de autorizar su consulta o conservar su texto.'));
-    if(sharedIndex)details.append(el('p','Índice compartido · una página para toda la lista','source-shared-kind'));
+    if(sharedIndex)details.append(el('p',source.search_kind==='wordpress_api_search'?'Búsqueda por nombre · también admite índice compartido':'Índice compartido · una página para toda la lista','source-shared-kind'));
     if(aggregator)details.append(el('p','Sólo enlaces y extractos. El texto se obtiene de editores autorizados por separado.'));
     if(!sharedIndex){const note=el('p','En índice compartido no genera consultas. Puede aportar texto autorizado de los enlaces encontrados.','source-shared-omitted');note.hidden=true;details.append(note);}
     info.append(details);

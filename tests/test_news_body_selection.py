@@ -10,7 +10,10 @@ from peps.relevance import RelevanceIndex
 
 class ReadingPriorityTests(unittest.TestCase):
     ENTITY = {'id': 'person', 'name': 'Enrique Peña Nieto', 'kind': 'person',
-              'aliases': ['Peña Nieto'], 'context': {'role': 'presidente'}}
+              # This explicit review is a unit fixture, not a bank assertion.
+              'aliases': [{'name': 'Peña Nieto', 'verified': True,
+                           'source': {'review_id': 'unit-reading-priority'}}],
+              'context': {'role': 'presidente'}}
 
     def priority(self, title, summary=''):
         candidate = RelevanceIndex([self.ENTITY]).rank(title, summary)
@@ -23,6 +26,11 @@ class ReadingPriorityTests(unittest.TestCase):
     def test_explicit_report_with_partial_name_precedes_neutral_full_name(self):
         self.assertGreater(self.priority('Presidente Peña Nieto recibe una denuncia.', ''),
                            self.priority('Enrique Peña Nieto presentó su agenda.', ''))
+
+    def test_unverified_surname_alias_is_not_a_reading_candidate(self):
+        entity = dict(self.ENTITY, aliases=['Peña Nieto'])
+        self.assertFalse(RelevanceIndex([entity]).rank(
+            'Presidente Peña Nieto recibe una denuncia.', '')['relevant'])
 
     def test_denial_victim_and_acquittal_remain_high_priority_reading(self):
         neutral = self.priority('Enrique Peña Nieto presentó su agenda.')
