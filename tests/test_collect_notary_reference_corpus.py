@@ -180,6 +180,7 @@ class ClosedNotaryCorpusTests(unittest.TestCase):
         reference, cohort, reference_hash, cohort_hash = self.inputs(references)
         source_path = self.directory / 'sources.json'
         source_path.write_text(json.dumps({'sources': [approved_source()]}))
+        (corpus.ROOT / 'runtime').mkdir(parents=True, exist_ok=True)
         with tempfile.TemporaryDirectory(prefix='closed-corpus-test-', dir=corpus.ROOT / 'runtime') as temp:
             output = Path(temp) / 'isolated'
             args = Namespace(references=reference, cohort=cohort, references_sha256=reference_hash,
