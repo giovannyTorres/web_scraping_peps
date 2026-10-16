@@ -47,6 +47,8 @@ La validación local final descubrió **897 pruebas unitarias**, con resultado c
 
 `scripts/benchmark_search_state.py` crea 652 entidades y 100.001 tareas en SQLite, sin red. Verificó 1.001 tareas de la lista actual frente al total histórico, el uso del índice de ámbito y ausencia de documentos o scores. La primera lectura tardó **88 ms** y la mediana posterior **21 ms**. Es una medición local de consulta de estado, no de adquisición web. Los benchmarks se repitieron con el código estable durante cada medición; sus informes están en `runtime/search-clarity/`.
 
+La validación de Windows detectó además un límite de prueba inadecuado: exigía vaciar 270 tareas listas con ocho trabajadores y más de 540 confirmaciones durables en 30 segundos. La prueba funcional conserva sus 300 tareas, los reintentos concurrentes y las verificaciones de entrega única y auditoría; ahora vigila el avance después de cada confirmación, falla tras 60 segundos sin progreso y mantiene un máximo global de 180 segundos. No cambia el código productivo ni reduce la durabilidad de SQLite. Este límite de prueba no es un SLA de adquisición web.
+
 ## Límite de tiempo y cobertura
 
 La sesión rápida limita el tiempo de trabajo; no garantiza terminar toda la lista. A cinco segundos de separación por host, 652 consultas individuales requieren al menos **54 minutos y 15 segundos de programación por editor**, antes de añadir latencia, robots, cuerpos o reintentos. Varias fuentes permiten distribuir trabajo, pero no eliminan sus restricciones ni garantizan cobertura.
