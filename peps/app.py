@@ -328,25 +328,62 @@ def create_server(engine, port=0):
             try:
                 self.end_headers()
                 self.wfile.write(data)
-            except (BrokenPipeError, ConnectionResetError):
+            except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError):
                 # Navigation and cancelled polling can close the browser socket
                 # after a response was computed. The operation itself remains
                 # tracked by the server; do not log a misleading worker crash.
                 self.close_connection = True
 
+        def discard_rejected_body(self):
+            """Avoid resetting a small rejected POST before its 403 arrives.
+
+            Authorization has already failed. Consume only plainly framed,
+            small input, without JSON decoding or invoking an endpoint. Windows
+            can reset a socket closed with unread incoming request bytes. The
+            short total deadline prevents a missing/slow body holding a worker.
+            """
+            self.close_connection = True
+            lengths = self.headers.get_all('Content-Length', [])
+            if self.command != 'POST' or 'Transfer-Encoding' in self.headers or len(lengths) != 1:
+                return
+            raw = lengths[0].strip()
+            if not raw.isascii() or not raw.isdecimal() or len(raw) > 6:
+                return
+            remaining = int(raw)
+            if not 0 < remaining <= 65_536:
+                return
+            previous_timeout = self.connection.gettimeout()
+            deadline = time.monotonic() + .2
+            try:
+                while remaining:
+                    budget = deadline - time.monotonic()
+                    if budget <= 0:
+                        break
+                    self.connection.settimeout(budget)
+                    chunk = self.rfile.read1(min(remaining, 8192))
+                    if not chunk:
+                        break
+                    remaining -= len(chunk)
+            except (OSError, TimeoutError):
+                pass
+            finally:
+                self.connection.settimeout(previous_timeout)
+
+        def reject_authorization(self, message):
+            self.discard_rejected_body()
+            self.reply({'error': message}, 403)
+            return False
+
         def authorized(self, api=True):
             expected = f'127.0.0.1:{self.server.server_port}'
             if self.headers.get('Host') != expected:
-                self.reply({'error': 'Host no permitido'}, 403)
-                return False
+                return self.reject_authorization('Host no permitido')
             origin = self.headers.get('Origin')
             if origin and origin != 'http://' + expected:
-                self.reply({'error': 'Origen no permitido'}, 403)
-                return False
+                return self.reject_authorization('Origen no permitido')
             supplied_token = self.headers.get('X-PEPS-Token', '')
             if api and not (supplied_token.isascii() and secrets.compare_digest(supplied_token, token)):
-                self.reply({'error': 'Sesión inválida'}, 403)
-                return False
+                return self.reject_authorization('Sesión inválida')
             return True
 
         def do_GET(self):
