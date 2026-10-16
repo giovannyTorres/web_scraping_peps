@@ -208,9 +208,19 @@ def main():
                             page.locator('#workflow-search-max-queries').fill('1000')
                             page.locator('#workflow-search-aliases').check()
                             page.locator('#workflow-search-context').check()
-                            page.locator('#workflow-save-search').click()
-                            wait_until(page, lambda: api(page, 'news-search')['body']['config']['start'] == '2016-01-01',
-                                       'Historical scope was not persisted')
+                            # The default start is already 2016-01-01 in 2026:
+                            # polling that one field can accept the old config
+                            # before this save POST has finished on slower CI.
+                            with page.expect_response(lambda response: response.url == address + '/api/news-search' and
+                                                      response.request.method == 'POST') as saved_scope:
+                                page.locator('#workflow-save-search').click()
+                            saved_response = saved_scope.value
+                            saved_body = saved_response.json()
+                            report['historical_search_save'] = {'status': saved_response.status,
+                                'submitted': saved_response.request.post_data_json,
+                                'returned_config': saved_body.get('config')}
+                            assert saved_response.status == 200, report['historical_search_save']
+                            expect(page.locator('#workflow-save-search')).to_be_enabled()
                             search = api(page, 'news-search')['body']
                             config, plan = search['config'], search['plan']
                             checked('targeted_historical_scope_is_saved_through_real_ui',
