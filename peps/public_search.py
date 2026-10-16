@@ -82,7 +82,7 @@ def public_search_url(query, source):
 
 
 def public_queries(entity, config, variants):
-    """A nominal first sweep, then plain-text focus and configured aliases.
+    """A nominal first sweep, then plain-text focus, context and aliases.
 
     Extra words guide discovery without asserting an event or relying on an
     engine's Boolean/date syntax. Identity adds no thematic requests.
@@ -93,6 +93,25 @@ def public_queries(entity, config, variants):
     queries = [{'query': primary, 'query_type': 'identity'}]
     queries.extend({'query': _query(primary + ' ' + term), 'query_type': 'focus',
                     'focus_term': term} for term in FOCUS_TERMS.get(config.get('preset'), ()))
+    context = entity.get('context') or {}
+    if config.get('use_context') and isinstance(context, dict):
+        # One secondary contextual request narrows common names without
+        # multiplying a bank by every hint. Keep the broad nominal query and
+        # never present the supplied clue as independent identity evidence.
+        hints = []
+        for key in ('municipality', 'city', 'state', 'role', 'position', 'cargo'):
+            values = context.get(key) or []
+            for value in values if isinstance(values, list) else [values]:
+                if isinstance(value, dict):
+                    value = value.get('value') or value.get('name')
+                if isinstance(value, str):
+                    hint = ' '.join(re.sub(r'[\x00-\x1f\x7f]', ' ', value).split())
+                    if hint and len(primary + ' ' + hint) <= 500:
+                        hints.append(hint)
+        if hints:
+            text = primary + ' ' + hints[0]
+            if text.casefold() not in {query['query'].casefold() for query in queries}:
+                queries.append({'query': _query(text), 'query_type': 'context', 'context_hint': hints[0]})
     company = _fold(entity.get('kind', 'person')) in COMPANY_KINDS
     for name in variants[1:4]:
         # Short personal aliases remain contextual. The canonical full name is
