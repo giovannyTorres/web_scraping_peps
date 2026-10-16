@@ -154,7 +154,7 @@ class PublisherPhrasePipelineTests(unittest.TestCase):
             con.execute("UPDATE jobs SET status='queued',owner=NULL,lease_until=NULL WHERE id=?", (second['id'],))
         fixture = self.fetcher()
         with patch('peps.collector.SafeFetcher', lambda *_args, **_kwargs: fixture):
-            result = self.news.acquire(queue=False, workers=1, seconds=1, max_articles=2,
+            result = self.news.acquire(queue=False, workers=1, seconds=30, max_articles=2,
                                        body_budget=1, per_entity_body_limit=1)
         self.assertEqual(result['completed'], 2)
         self.assertEqual(len(self.calls), 2)

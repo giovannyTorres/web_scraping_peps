@@ -5,6 +5,7 @@ cache, parser, SQLite queue, leases and audit remain in use. Zero host interval
 is solely a no-network fixture convenience, never a publisher setting.
 """
 from collections import Counter
+from contextlib import closing
 import json
 from pathlib import Path
 import socket
@@ -111,7 +112,7 @@ class InsufficientArticleTerminalTests(unittest.TestCase):
             self.assertIsNone(row['document_id'])
             self.assertTrue(row['error'].startswith('article_text_insufficient:'))
             self.assertEqual(con.execute('SELECT count(*) FROM news_observations').fetchone()[0], 1)
-        with sqlite3.connect(self.directory / 'network.sqlite3') as con:
+        with closing(sqlite3.connect(self.directory / 'network.sqlite3')) as con:
             self.assertEqual(con.execute('SELECT sum(network_requests) FROM request_history').fetchone()[0], 2)
             self.assertEqual(con.execute('SELECT body FROM http_cache WHERE url=?', (url,)).fetchone()[0], self.short_html)
         self.assertTrue(self.engine.store.verify_audit()['ok'])
@@ -137,7 +138,7 @@ class InsufficientArticleTerminalTests(unittest.TestCase):
             valid_before = dict(con.execute('SELECT * FROM news_articles WHERE canonical_url=?', (good_url,)).fetchone())
             documents_before = [tuple(row) for row in con.execute('SELECT * FROM documents')]
             observations_before = [tuple(row) for row in con.execute('SELECT * FROM news_observations ORDER BY id')]
-        with sqlite3.connect(self.directory / 'network.sqlite3') as con:
+        with closing(sqlite3.connect(self.directory / 'network.sqlite3')) as con:
             cache_before = con.execute('SELECT * FROM http_cache ORDER BY url').fetchall()
             http_before = con.execute('SELECT sum(network_requests) FROM request_history').fetchone()[0]
         with patch.object(FixtureHTTP, '_transport', side_effect=AssertionError('No HTTP for legacy settlement')) as transport, \
@@ -161,7 +162,7 @@ class InsufficientArticleTerminalTests(unittest.TestCase):
             audits = [json.loads(row[0]) for row in con.execute("SELECT payload FROM audit WHERE action='news_legacy_insufficient_articles_settled'")]
             self.assertEqual(len(audits), 1)
             self.assertEqual(set(audits[0]['job_ids']), {good_id, short_id})
-        with sqlite3.connect(self.directory / 'network.sqlite3') as con:
+        with closing(sqlite3.connect(self.directory / 'network.sqlite3')) as con:
             self.assertEqual(con.execute('SELECT * FROM http_cache ORDER BY url').fetchall(), cache_before)
             self.assertEqual(con.execute('SELECT sum(network_requests) FROM request_history').fetchone()[0], http_before)
         self.assertTrue(self.engine.store.verify_audit()['ok'])

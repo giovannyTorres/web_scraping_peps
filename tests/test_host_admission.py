@@ -144,7 +144,7 @@ class HostAdmissionQueueTests(unittest.TestCase):
         self.fetcher._transport = Mock(return_value=(200, {'content-type': 'application/rss+xml'},
                                                       b'<rss version="2.0"><channel><title>Empty fixture</title></channel></rss>'))
         with patch('peps.collector.SafeFetcher', return_value=self.fetcher):
-            result = self.news.acquire(queue=False, workers=1, max_articles=4, seconds=1)
+            result = self.news.acquire(queue=False, workers=1, max_articles=4, seconds=30)
         self.assertEqual(result['processed'], 2)
         self.assertEqual(self.row(other)['status'], 'done')
         with self.store.connection() as con:

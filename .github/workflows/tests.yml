@@ -49,6 +49,8 @@ jobs:
   unit:
     timeout-minutes: 20
     strategy:
+      # Preserve complete platform diagnostics when one matrix member fails.
+      fail-fast: false
       matrix:
         os: [windows-latest, ubuntu-latest]
         python: ['3.10', '3.12']
