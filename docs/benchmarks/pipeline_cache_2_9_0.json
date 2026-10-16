@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-10-16T04:53:21.321650+00:00",
+  "generated_at": "2026-10-16T05:07:00.197632+00:00",
   "synthetic": true,
   "method": "Fresh temporary SQLite; real production read/cache paths; injected HTTP only; no public network.",
   "limits": [
@@ -13,12 +13,12 @@
   "sqlite": "3.53.1",
   "platform": "Linux-6.18.44-x86_64-with-glibc2.41",
   "git": {
-    "head": "e352f53647a16ccf76a6c61b0cfc3fd32ac37a70",
+    "head": "2295f5dbe8556cec7d62e03c31112b364fcf69cd",
     "dirty": true
   },
   "script_sha256": "ba3c567640c6062979c3564c01fb28460d53eb02576413dec66b624710756575",
   "source_sha256": {
-    "peps/news.py": "d34212564d8fda95529c854c786ae943f47af2985f3ffa6caacbabcb13df6946",
+    "peps/news.py": "12103164950948bfc00f0d05a74938bbabdfc19228477242203475e2b3617780",
     "peps/collector.py": "2776d429b9ec4e1d9630d244749fb1f03e0954551f83edf97d7be0b61b6359b9",
     "peps/store.py": "6030daceba09890841044904d9bebf47cc1784fc3bd2b2dabed6a50e2e7506c7",
     "peps/acquisition_coverage.py": "bda454eb0de2f640378b9ca5802dbbdcbad066e7a7a3b742cbf1d2b65fedbf26",
@@ -28,7 +28,7 @@
   },
   "measurements": {
     "rescue_no_bodies": {
-      "seconds": 3.694759032005095,
+      "seconds": 4.8894885089976015,
       "connections_opened": 3,
       "sql_statements": 9075,
       "result": {
@@ -36,7 +36,7 @@
       }
     },
     "rescue_no_bodies_repeat": {
-      "seconds": 3.332615794002777,
+      "seconds": 3.8992463249960565,
       "connections_opened": 3,
       "sql_statements": 9075,
       "result": {
@@ -44,13 +44,13 @@
       }
     },
     "current_bank_projection_build": {
-      "seconds": 3.14641291800217,
+      "seconds": 4.2814570929986075,
       "connections_opened": 1,
       "sql_statements": 10849,
       "result": true
     },
     "coverage_read": {
-      "seconds": 0.014582338997570332,
+      "seconds": 0.0178745470038848,
       "connections_opened": 1,
       "sql_statements": 16,
       "result": {
@@ -81,7 +81,7 @@
       }
     },
     "coverage_read_warm": {
-      "seconds": 0.0006117730008554645,
+      "seconds": 0.0007402529954561032,
       "connections_opened": 1,
       "sql_statements": 6,
       "result": {
@@ -116,7 +116,7 @@
         "SEARCH news_observations USING INDEX news_observation_latest (article_id=?)"
       ],
       "repeats": 200,
-      "seconds": 0.0017205580006702803
+      "seconds": 0.0018024410019279458
     },
     "collector_cold_warm": {
       "http_transport_calls": 1,
@@ -188,8 +188,8 @@
     "baseline_unchanged": true
   },
   "baseline": {
-    "file": "baseline-read-only-audit.json",
-    "sha256": "dc6696ca1e660c2615f0b8e000c3774789d556f529c45d49aadad32cbbc14faf",
+    "file": "pipeline_cache_2_9_0.json",
+    "sha256": "6cff3e9cc2dede86abba22cd742c02aeb01f3ba34d1d94baf62150e0c87ab0f8",
     "report": {
       "generated_at": "2026-10-16T04:26:36.378905+00:00",
       "method": "Production read paths and SQLite, synthetic300entity/9000article/95000observation fixture; no public network, no production files edited. Optional index is created only in fixture.",
@@ -302,7 +302,7 @@
     "entities": 300,
     "news_articles": 9000,
     "news_observations": 95000,
-    "setup_seconds": 2.044262287003221,
+    "setup_seconds": 2.608085869003844,
     "relevant_articles": 1800,
     "entities_with_candidates": 60,
     "observations_per_article": 10,
@@ -330,7 +330,7 @@
     "real_network_allowed": false
   },
   "source_sha256_after": {
-    "peps/news.py": "d34212564d8fda95529c854c786ae943f47af2985f3ffa6caacbabcb13df6946",
+    "peps/news.py": "12103164950948bfc00f0d05a74938bbabdfc19228477242203475e2b3617780",
     "peps/collector.py": "2776d429b9ec4e1d9630d244749fb1f03e0954551f83edf97d7be0b61b6359b9",
     "peps/store.py": "6030daceba09890841044904d9bebf47cc1784fc3bd2b2dabed6a50e2e7506c7",
     "peps/acquisition_coverage.py": "bda454eb0de2f640378b9ca5802dbbdcbad066e7a7a3b742cbf1d2b65fedbf26",
@@ -342,8 +342,8 @@
     "scope": "Precursor instrumentation and current versioned projection differences are explicit above.",
     "same_corpus_cardinalities": true,
     "rescue_seconds_before": 55.39439084500191,
-    "rescue_seconds_after": 3.694759032005095,
-    "rescue_speedup": 14.992693803617318,
+    "rescue_seconds_after": 4.8894885089976015,
+    "rescue_speedup": 11.329281323202938,
     "rescue_connections_before": 7275,
     "rescue_connections_after": 3
   },

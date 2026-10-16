@@ -19,7 +19,7 @@ import os
 import tempfile
 import unicodedata
 from collections import Counter
-from contextlib import nullcontext
+from contextlib import closing, nullcontext
 from copy import deepcopy
 from itertools import islice
 from concurrent.futures import ThreadPoolExecutor
@@ -513,7 +513,7 @@ class NewsAcquirer:
         network_db = self.engine.data_dir / 'network.sqlite3'
         if cache_mode == 'reuse' and network_db.exists():
             try:
-                with sqlite3.connect(network_db.as_uri() + '?mode=ro', uri=True) as cached_con:
+                with closing(sqlite3.connect(network_db.as_uri() + '?mode=ro', uri=True)) as cached_con:
                     http_cached = {row[0] for row in cached_con.execute(
                         "SELECT url FROM http_cache WHERE expires_at>? AND final_url!=''", (anchor_due,))}
             except sqlite3.OperationalError:

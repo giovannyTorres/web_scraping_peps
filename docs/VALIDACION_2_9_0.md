@@ -13,6 +13,9 @@ precisión predictiva del scoring ni cobertura exhaustiva de internet.
   conservan separadas. Un fallo de caché local queda reanudable y no consume un
   intento de red. Los permisos actuales y robots conocidos se comprueban también
   para destinos redirigidos, en caché HTTP y en metadatos ya analizados.
+- La conexión SQLite de lectura de caché se cierra explícitamente al terminar,
+  incluso ante un error de caché. Una regresión conserva referencias fuertes a
+  las conexiones para detectar el archivo bloqueado observado en Windows.
 - Cuerpos idénticos conservan atribución, revisiones y evidencia. La caché
   mantiene las cabeceras de paginación WordPress; activar el permiso de cuerpos
   no invalida por sí mismo una representación de metadatos equivalente.
@@ -42,10 +45,10 @@ Una subclase sólo observó y limitó el transporte; no sustituyó respuestas.
 | Consultas nominales terminadas | 6 |
 | Peticiones de transporte, incluidos robots | 8 |
 | Respuestas | 7 HTTP 200; 1 HTTP 404 de robots Mwmbl |
-| Tiempo de descubrimiento real | 21,44 s |
+| Tiempo de descubrimiento real | 21,01 s |
 | Referencias con URL canónica única | 132 |
 | Observaciones de procedencia | 135 |
-| Repetición sólo desde caché local | 0,73 s |
+| Repetición sólo desde caché local | 0,23 s |
 | DNS / conexiones / HTTP en la repetición | 0 / 0 / 0 |
 | Lecturas de caché HTTP | 6 |
 | Nuevas referencias u observaciones en la repetición | 0 |
@@ -75,13 +78,13 @@ habilitan en ese banco de prueba con nombres públicos.
 ## Rendimiento local masivo
 
 Corpus **sintético**, con SQLite y reloj reales: 300 entidades, 9.000 referencias
-y 95.000 observaciones. El rescate de candidatos pasó de **55,39 a 3,69 s**;
+y 95.000 observaciones. El rescate de candidatos pasó de **55,39 a 4,89 s**;
 las conexiones SQLite bajaron de **7.275 a 3**. Se evita abrir conexiones por cada
 artículo y volver a tokenizar repetidamente el mismo extracto; la consulta de
 observaciones recientes usa un índice específico.
 
 La reconstrucción completa de la proyección del banco se midió por separado:
-**3,15 s**. La lectura de cobertura tardó **14,58 ms** en frío y **0,61 ms** con
+**4,28 s**. La lectura de cobertura tardó **17,87 ms** en frío y **0,74 ms** con
 resumen reutilizado. No se sustituye una reconstrucción por un cero ficticio.
 El [reporte](benchmarks/pipeline_cache_2_9_0.json) conserva baseline, hashes y
 método; permite repetir la medición sin el directorio runtime original:
@@ -105,7 +108,7 @@ editoriales reales ya capturados. Se construyeron recibos de lectura local;
 **no fueron nuevas respuestas HTTP 304 reales**. Los 19 cuerpos quedaron sin
 cambios, no hubo reatribución redundante, se conservaron documentos, evidencia y
 evaluaciones, y las ocho evaluaciones actuales existentes continuaron siendo
-reproducibles. DNS y conexiones estuvieron prohibidos. Tardó 1,09 s y la auditoría
+reproducibles. DNS y conexiones estuvieron prohibidos. Tardó 0,54 s y la auditoría
 permaneció válida; el banco original no se modificó.
 
 ## Interfaz y distribución
@@ -122,7 +125,7 @@ sesiones anteriores, importación, explicaciones y enlaces manuales. El botón
 principal permaneció dentro de 1280 × 900 y 390 × 720, sin desborde ni controles
 enfocados tapados. No hubo peticiones externas ni errores de navegador.
 
-La suite final local ejecutó **731 pruebas: 724 aprobadas y 7 omitidas por el
+La suite final local ejecutó **732 pruebas: 725 aprobadas y 7 omitidas por el
 componente NLP opcional**. El wheel se valida en entorno aislado y la CI comprueba
 Linux/Windows, Python 3.10/3.12, navegador, NLP opcional y el portable final de Windows.
 La guía y capturas actuales están en [FLUJO_GUIADO.md](FLUJO_GUIADO.md).

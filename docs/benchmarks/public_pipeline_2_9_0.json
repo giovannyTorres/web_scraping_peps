@@ -1,5 +1,5 @@
 {
-  "recorded_at": "2026-10-16T04:53:57.452209+00:00",
+  "recorded_at": "2026-10-16T05:07:45.914168+00:00",
   "method": {
     "live_transport": true,
     "response_substitution": false,
@@ -41,8 +41,8 @@
     "production_unchanged_during_run": true
   },
   "timings_seconds": {
-    "live": 21.443233660997066,
-    "local": 0.7302544330013916
+    "live": 21.01220745700266,
+    "local": 0.2304017569986172
   },
   "http_status_counts": {
     "200": 7,
@@ -53,49 +53,49 @@
       "url": "https://html.duckduckgo.com/robots.txt",
       "status": 200,
       "decoded_bytes": 148,
-      "seconds": 0.219686
+      "seconds": 0.199181
     },
     {
       "url": "https://mwmbl.org/robots.txt",
       "status": 404,
       "decoded_bytes": 3750,
-      "seconds": 0.681699
+      "seconds": 0.590906
     },
     {
-      "url": "https://html.duckduckgo.com/html/?q=Pemex",
+      "url": "https://html.duckduckgo.com/html/?q=Enrique+Pe%C3%B1a+Nieto",
       "status": 200,
-      "decoded_bytes": 32894,
-      "seconds": 0.751813
+      "decoded_bytes": 36774,
+      "seconds": 0.689084
     },
     {
       "url": "https://mwmbl.org/api/v2/search/?q=Pemex",
       "status": 200,
       "decoded_bytes": 21033,
-      "seconds": 0.25912
+      "seconds": 0.436023
     },
     {
-      "url": "https://html.duckduckgo.com/html/?q=Enrique+Pe%C3%B1a+Nieto",
+      "url": "https://html.duckduckgo.com/html/?q=Pemex",
       "status": 200,
-      "decoded_bytes": 36498,
-      "seconds": 0.691663
-    },
-    {
-      "url": "https://mwmbl.org/api/v2/search/?q=Grupo+Bimbo",
-      "status": 200,
-      "decoded_bytes": 11358,
-      "seconds": 0.558791
-    },
-    {
-      "url": "https://html.duckduckgo.com/html/?q=Grupo+Bimbo",
-      "status": 200,
-      "decoded_bytes": 33455,
-      "seconds": 0.799267
+      "decoded_bytes": 32919,
+      "seconds": 0.613659
     },
     {
       "url": "https://mwmbl.org/api/v2/search/?q=Enrique+Pe%C3%B1a+Nieto",
       "status": 200,
       "decoded_bytes": 18231,
-      "seconds": 0.273201
+      "seconds": 0.578234
+    },
+    {
+      "url": "https://html.duckduckgo.com/html/?q=Grupo+Bimbo",
+      "status": 200,
+      "decoded_bytes": 33606,
+      "seconds": 0.538426
+    },
+    {
+      "url": "https://mwmbl.org/api/v2/search/?q=Grupo+Bimbo",
+      "status": 200,
+      "decoded_bytes": 11358,
+      "seconds": 0.176027
     }
   ],
   "counts_before_local": {
@@ -143,20 +143,20 @@
       "cache_mode": "local",
       "duplicate_candidates": 135,
       "excluded_records": 17,
-      "finished_at": "2026-10-16T04:53:57.439767+00:00",
+      "finished_at": "2026-10-16T05:07:45.903923+00:00",
       "http_cache_hits": 6,
-      "id": "facce6b5c5b643cf90d3971a037d8956",
+      "id": "6088d1b1cb36456ebd09df8e8704a7ea",
       "metadata_cache_hits": 0,
       "network_requests": 0,
       "scope_hash": "6239cf5ed99995f49600cdb3de5d7cc2445eb02cbada5e5d0211cc41987ebce4",
-      "started_at": "2026-10-16T04:53:56.716442+00:00"
+      "started_at": "2026-10-16T05:07:45.677877+00:00"
     }
   },
   "source_code_sha256": {
     "relevance.py": "2c2fc48a62b5b88c0c7633486ef4f10010da17d9a6cd5fdac3a867078d2b9ebc",
     "news_projection.py": "a895637979de365e9e7ff8435445207c9fd4a803fab35c86c42335f1863f23ca",
     "social_discovery.py": "db994a48be023e555d07a40f51b862e1eab6a410be3a460d386eb1bb3442ab29",
-    "news.py": "d34212564d8fda95529c854c786ae943f47af2985f3ffa6caacbabcb13df6946",
+    "news.py": "12103164950948bfc00f0d05a74938bbabdfc19228477242203475e2b3617780",
     "collector.py": "2776d429b9ec4e1d9630d244749fb1f03e0954551f83edf97d7be0b61b6359b9",
     "news_session.py": "0460f0e9e32f112ed5349ef74cd2271d165811020b5679138531597198595a77",
     "news_search.py": "a99c74f5aac14cd0ae0a36488c848e5ce7d56cf4537211d8a35746d8fb6ff6fa",
@@ -189,9 +189,9 @@
     "Local cache reflects previous acquisitions, not current internet coverage."
   ],
   "live_session": {
-    "id": "b2f3d41f2b1e4c3f99b6d4d717a6dadc",
-    "started_at": "2026-10-16T04:53:35.272551+00:00",
-    "finished_at": "2026-10-16T04:53:56.712987+00:00",
+    "id": "d3cd255fda65431c89beb9e546d091c9",
+    "started_at": "2026-10-16T05:07:24.664858+00:00",
+    "finished_at": "2026-10-16T05:07:45.673225+00:00",
     "cache_mode": "reuse",
     "network_requests": 8,
     "http_cache_hits": 0,
@@ -204,9 +204,9 @@
     "scope_hash": "6239cf5ed99995f49600cdb3de5d7cc2445eb02cbada5e5d0211cc41987ebce4"
   },
   "local_session": {
-    "id": "facce6b5c5b643cf90d3971a037d8956",
-    "started_at": "2026-10-16T04:53:56.716442+00:00",
-    "finished_at": "2026-10-16T04:53:57.439767+00:00",
+    "id": "6088d1b1cb36456ebd09df8e8704a7ea",
+    "started_at": "2026-10-16T05:07:45.677877+00:00",
+    "finished_at": "2026-10-16T05:07:45.903923+00:00",
     "cache_mode": "local",
     "network_requests": 0,
     "http_cache_hits": 6,
@@ -220,7 +220,7 @@
   },
   "observed_query_counts": {
     "live_acquisition": {
-      "processed": 18,
+      "processed": 16,
       "completed": 6,
       "pending": 0,
       "failed": 0,
@@ -235,9 +235,9 @@
     }
   },
   "captured_editorial_body_regression": {
-    "recorded_at": "2026-10-16T04:53:57.347555+00:00",
+    "recorded_at": "2026-10-16T05:07:25.356618+00:00",
     "method": "Offline replay of actual previously captured 19 editorial HTML bodies; constructed fetch receipts, not actual HTTP 304. Original bank unchanged.",
-    "seconds": 1.0941120089992182,
+    "seconds": 0.5362907369999448,
     "before": {
       "documents": 49,
       "evidence": 52,
@@ -290,7 +290,7 @@
       "relevance.py": "2c2fc48a62b5b88c0c7633486ef4f10010da17d9a6cd5fdac3a867078d2b9ebc",
       "news_projection.py": "a895637979de365e9e7ff8435445207c9fd4a803fab35c86c42335f1863f23ca",
       "social_discovery.py": "db994a48be023e555d07a40f51b862e1eab6a410be3a460d386eb1bb3442ab29",
-      "news.py": "d34212564d8fda95529c854c786ae943f47af2985f3ffa6caacbabcb13df6946",
+      "news.py": "12103164950948bfc00f0d05a74938bbabdfc19228477242203475e2b3617780",
       "collector.py": "2776d429b9ec4e1d9630d244749fb1f03e0954551f83edf97d7be0b61b6359b9",
       "news_session.py": "0460f0e9e32f112ed5349ef74cd2271d165811020b5679138531597198595a77",
       "news_search.py": "a99c74f5aac14cd0ae0a36488c848e5ce7d56cf4537211d8a35746d8fb6ff6fa",

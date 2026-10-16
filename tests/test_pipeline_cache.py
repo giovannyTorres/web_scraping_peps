@@ -1,11 +1,12 @@
 """Cache controls use real SQLite and injected HTTP; no public network."""
 import json
 import socket
+import sqlite3
 import tempfile
 import threading
 import time
 import unittest
-from contextlib import contextmanager
+from contextlib import closing, contextmanager
 from itertools import count
 from pathlib import Path
 from types import SimpleNamespace
@@ -252,6 +253,42 @@ class PipelineCacheControls(unittest.TestCase):
         session.note(network_requests=2)
         session.save(force=True)
         self.assertIsNone(last_session(self.store)['network_requests'])
+
+    def test_queue_closes_readonly_cache_connections_without_relying_on_garbage_collection(self):
+        fetcher = SafeFetcher(self.engine.config(), self.engine.data_dir)
+        fetcher.close()
+        original_connect = sqlite3.connect
+        retained = []
+        class TrackedConnection(sqlite3.Connection):
+            close_calls = 0
+            def close(self):
+                self.close_calls += 1
+                super().close()
+        def connect(database, *args, **kwargs):
+            if kwargs.get('uri') and str(database).endswith('?mode=ro'):
+                con = original_connect(database, *args, **dict(kwargs, factory=TrackedConnection))
+                retained.append(con)
+                return con
+            return original_connect(database, *args, **kwargs)
+        # Keep every connection strongly referenced. Linux permits unlinking an
+        # open SQLite file; Windows does not, so file cleanup alone misses this
+        # leak on Linux. Assert actual release before queue() returns each time.
+        with patch('peps.news.sqlite3.connect', side_effect=connect):
+            for iteration in range(3):
+                self.news.queue(window=f'explicit-close-{iteration}')
+                self.assertEqual(len(retained), iteration + 1)
+                self.assertTrue(all(con.close_calls == 1 for con in retained))
+                with self.assertRaises(sqlite3.ProgrammingError):
+                    retained[-1].execute('SELECT 1')
+            # An old/unusable HTTP cache is an accepted miss, but still owns a
+            # live connection until explicitly closed in the exception path.
+            with closing(original_connect(self.engine.data_dir / 'network.sqlite3')) as writer:
+                writer.execute('DROP TABLE http_cache')
+            self.news.queue(window='explicit-close-unusable-cache')
+        self.assertEqual(len(retained), 4)
+        self.assertTrue(all(con.close_calls == 1 for con in retained))
+        with self.assertRaises(sqlite3.ProgrammingError):
+            retained[-1].execute('SELECT 1')
 
 
 if __name__ == '__main__':
