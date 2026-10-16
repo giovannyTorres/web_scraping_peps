@@ -5,7 +5,7 @@ import tempfile
 import unittest
 from datetime import datetime, timezone
 from pathlib import Path
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 from peps.collector import SafeFetcher
 from peps.public_search import _DuckResults, parse_public_results
@@ -40,15 +40,29 @@ class TransportStressTests(unittest.TestCase):
 
     def test_enormous_valid_retry_after_persists_a_representable_restriction(self):
         self.fetcher._transport = Mock(return_value=(503, {'retry-after': '9' * 5000}, b''))
-        result = self.fetcher.fetch(self.url, self.source)
+        real_fromtimestamp = datetime.fromtimestamp
+
+        def windows_fromtimestamp(timestamp, tz=None):
+            if timestamp > 32_535_215_999:
+                raise OSError('Timestamp exceeds the Windows CRT range')
+            return real_fromtimestamp(timestamp, tz)
+
+        with patch('peps.collector.datetime', wraps=datetime) as platform_datetime:
+            platform_datetime.fromtimestamp.side_effect = windows_fromtimestamp
+            result = self.fetcher.fetch(self.url, self.source)
+            repeated = self.fetcher.fetch(self.url, self.source)
+            platform_datetime.fromtimestamp.assert_not_called()
         self.assertEqual(result['status'], 'deferred')
         self.assertEqual(result['retry_at'], '9999-12-31T00:00:00+00:00')
         self.assertEqual(result['network_requests'], 1)
-        repeated = self.fetcher.fetch(self.url, self.source)
         self.assertEqual(repeated['status'], 'deferred')
         self.assertEqual(repeated['retry_at'], result['retry_at'])
         self.assertEqual(repeated['network_requests'], 0)
         self.fetcher._transport.assert_called_once()
+        with self.fetcher._db() as db:
+            host = db.execute("SELECT failures,next_at FROM hosts WHERE host='news.example'").fetchone()
+        self.assertEqual(host['failures'], 1)
+        self.assertEqual(host['next_at'], 253402214400.0)
 
     def test_unusable_declared_text_codecs_fall_back_to_utf8(self):
         for index, charset in enumerate(('idna', 'punycode', 'base64_codec', 'unknown-codec')):

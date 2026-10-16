@@ -22,7 +22,7 @@ import ssl
 import threading
 import time
 import zlib
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
 from pathlib import Path
 from contextlib import contextmanager
@@ -34,14 +34,18 @@ from urllib.robotparser import RobotFileParser
 from .robots_policy import robots_allowed
 
 
-# The start of the last representable UTC day works on Windows as well as
-# POSIX. A publisher may request an arbitrarily large delay; retain that
-# restriction without passing infinity or year 10000 into datetime/SQLite.
+# A publisher may request an arbitrarily large delay; retain that restriction
+# within Python datetime's range, without passing infinity or year 10000 into
+# datetime/SQLite. _iso uses UTC arithmetic to avoid Windows CRT date limits.
 _MAX_RETRY_TIMESTAMP = 253402214400.0
 
 
 def _iso(timestamp: float | None = None) -> str:
-    return datetime.fromtimestamp(time.time() if timestamp is None else timestamp, timezone.utc).isoformat()
+    # datetime.fromtimestamp delegates to platform gmtime(), which rejects
+    # otherwise valid distant dates on Windows. Formatting a stored backoff
+    # must not turn that restriction into a spurious transient network error.
+    stamp = time.time() if timestamp is None else timestamp
+    return (datetime(1970, 1, 1, tzinfo=timezone.utc) + timedelta(seconds=stamp)).isoformat()
 
 
 class CollectionError(Exception):

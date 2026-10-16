@@ -5,6 +5,13 @@ SQLite y reloj reales, con respuestas HTTP simuladas y DNS/TCP prohibidos.
 Los tiempos de procesamiento local no representan velocidad, relevancia ni
 cobertura de buscadores públicos. Las consultas públicas reales se miden aparte.
 
+Los hashes de las mediciones masivas corresponden al código de `e3236e1`.
+Después se cambió únicamente `collector._iso`: usa época UTC más `timedelta`
+para evitar los límites de fechas de `gmtime` en Windows, y se reforzó una
+prueba existente. **No se repitieron los ensayos masivos tras ese ajuste.**
+La evidencia conserva sus hashes originales y registra por separado los del
+código final y su revalidación local.
+
 ## Fallos corregidos
 
 - **Colas grandes:** los índices de reclamación y tareas agotadas evitan ordenar
@@ -41,13 +48,15 @@ cobertura de buscadores públicos. Las consultas públicas reales se miden apart
 
 ## Ensayos independientes
 
-La [evidencia final del código distribuido](benchmarks/stress_release_2_9_1.json)
-conserva los hashes de todos los módulos y los resultados individuales:
+La [evidencia de mediciones y revalidación](benchmarks/stress_release_2_9_1.json)
+separa los hashes de todos los módulos medidos, el ajuste posterior para
+Windows y los resultados individuales:
 
 | Carga local | Resultado |
 | --- | --- |
 | 10.000 URLs, 32 trabajadores, banco de 40.000 entidades | 107,48 s en frío; 12,42 s desde caché |
 | Integridad de adquisición | 10.000 referencias y cuerpos; 2.000 documentos tras deduplicar dentro de cada editor; cero pendientes |
+| Backend completo de 300 entidades y 75.000 registros simulados | 74,147 s; 300 cuerpos y 300 scores; 150 positivos y 150 controles en cero |
 | Cola de 100.000 tareas, ejecutar 1.000 | 110,52 → 3,78 s; lecturas completas de progreso 1.008 → 14 |
 | Proyección de 90.001 referencias repetitivas, banco de 10.000 | 2,37 s, completa y auditada |
 | 90.001 metadatos distintos, presupuesto de 120 s | Incompleto; pausa en 120,03 s, rollback, historia intacta y unos 43 MiB de pico |
@@ -57,6 +66,17 @@ comprobaciones y caché, tardó 121,40 s y usó unos 316 MiB de pico. El caso de
 metadatos distintos sigue siendo un **límite de capacidad**, sin una proyección
 completa en dos minutos; se conserva como tal en la evidencia. No se calcula
 throughput de una fase que no terminó.
+
+El caso completo de 300 entidades tardó **74,1465539 s** desde la importación
+hasta el scoring. Cada respuesta simulada contenía un candidato pertinente y
+249 registros ajenos: conservó 300 cuerpos, atribuyó 300 identidades sintéticas
+corroboradas y guardó 300 scores. Los 150 cuerpos con señal adversa directa
+obtuvieron score positivo; los otros 150 —50 neutrales, 50 con negación y 50
+con la entidad como víctima— quedaron en cero. No se creó evidencia desde los
+extractos. Este ensayo directo del backend usa HTTP simulado y un reloj virtual
+para las cuotas; no demuestra ese tiempo en Internet ni prueba el gate de
+análisis automático de la interfaz. Las 300 ventanas saturadas siguen marcadas
+como `truncated`: terminar las etapas no equivale a cobertura exhaustiva.
 
 Una comprobación pública pequeña, con Peña Nieto, Pemex y Grupo Bimbo en Mwmbl y
 DuckDuckGo, terminó seis consultas en 21,34 s con 132 referencias únicas. Su
@@ -117,7 +137,12 @@ presupuesto insuficiente y sólo aprueba el control si se verifica una pausa
 íntegra y auditable. Su resultado individual conserva `completed:false`,
 `passed:false` y salida `1`; no se afirma que haya completado la proyección.
 
-La suite completa ejecutó **783 pruebas: 776 aprobadas y 7 omitidas por NLP
-opcional**. El wheel se instaló en un entorno aislado y pasó 15 comandos y la
-comprobación de sus 16 recursos. La CI valida Linux/Windows, Python 3.10/3.12,
-interfaz, NLP opcional y el portable de Windows.
+Tras el ajuste de fechas se revalidó por separado la suite completa:
+**783 pruebas: 776 aprobadas y 7 omitidas por NLP opcional**, en 40,439 s.
+El transporte pasó 21 comprobaciones, sin DNS/TCP reales. El nuevo wheel de
+distribución, SHA-256 `0b03985bb7ada68216df5697f6054f7644b86e5f0f3e4c44883cabada827ffb1`,
+se instaló en un entorno aislado: pasó 15 comandos, sus 16 recursos y la
+comparación de los 29 módulos instalados con el código final. El wheel anterior
+se conserva únicamente como evidencia histórica. Estos resultados son locales;
+la CI de Linux/Windows, Python 3.10/3.12, interfaz, NLP opcional y portable se
+verifica aparte.
