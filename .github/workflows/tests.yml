@@ -7,6 +7,7 @@ on:
 jobs:
   guided-ui:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -42,6 +43,7 @@ jobs:
             runtime/ui-validation/
             runtime/stress-ci/
   unit:
+    timeout-minutes: 20
     strategy:
       matrix:
         os: [windows-latest, ubuntu-latest]
@@ -52,7 +54,15 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
-      - run: python -m unittest discover -s tests -v
+      - name: Run unit tests with diagnostic watchdog
+        run: >-
+          python -u -c "import faulthandler, unittest;
+          faulthandler.dump_traceback_later(180, repeat=True);
+          tests = unittest.defaultTestLoader.discover('tests');
+          assert tests.countTestCases() > 0, 'No tests discovered';
+          result = unittest.TextTestRunner(verbosity=2).run(tests);
+          faulthandler.cancel_dump_traceback_later();
+          raise SystemExit(not result.wasSuccessful())"
       - run: python scripts/benchmark.py --data-dir runtime/ci --size 1000 --output runtime/ci-benchmark.json
       - run: python scripts/benchmark_import.py --repetitions 1 --output runtime/ci-import-benchmark.json
       - name: Build wheel
@@ -79,6 +89,7 @@ jobs:
   windows-portable:
     needs: unit
     runs-on: windows-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -95,6 +106,7 @@ jobs:
             runtime/windows-dist/windows-distribution-validation.json
   nlp-optional:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5

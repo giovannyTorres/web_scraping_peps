@@ -110,9 +110,10 @@ class NewsStressControls(unittest.TestCase):
         self.assertEqual(after, before)
 
     def test_progress_receipts_remain_exact_without_a_full_queue_scan_per_finish(self):
-        for item in range(1000):
-            self.store.enqueue('news_article', {'source_id': 'fixture', 'url': self.source['url'],
-                                                'article_id': str(item)}, key=f'task-{item}')
+        with self.store.connection() as con:
+            for item in range(1000):
+                self.store.enqueue('news_article', {'source_id': 'fixture', 'url': self.source['url'],
+                                                    'article_id': str(item)}, key=f'task-{item}', connection=con)
         events = []
         def complete(job, *args, **kwargs):
             self.store.finish(job)
@@ -161,7 +162,11 @@ class NewsStressControls(unittest.TestCase):
 
     def test_unhashable_source_id_is_reported_and_cannot_abandon_a_running_lease(self):
         identifier = self.store.enqueue('news_feed', {'source_id': [], 'url': self.source['url']})
-        result = self.news.acquire(queue=False, seconds=1, progress=lambda _event: None)
+        # This checks invalid-payload handling, independently of preparation
+        # latency on slow filesystems. Persisted leases still use real UTC time.
+        frozen = SimpleNamespace(monotonic=lambda: 100., time=time.time)
+        with patch('peps.news.time', frozen):
+            result = self.news.acquire(queue=False, seconds=1, max_articles=1, progress=lambda _event: None)
         self.assertEqual(result['processed'], 1)
         with self.store.connection() as con:
             job = dict(con.execute('SELECT * FROM jobs WHERE id=?', (identifier,)).fetchone())

@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "release": "2.9.2",
-  "documented_at_utc": "2026-10-16T07:53:57.958495+00:00",
+  "documented_at_utc": "2026-10-16T08:17:21.966619+00:00",
   "status": "Observed validation complete: 300 imported; 278 network-queried; 273 completed searches; zero original bodies; final integrity 23/23 passed; full live coverage failed correctly with exit 2.",
   "scope": "300 real public people, 150 municipal presidents and 150 notaries; counts and provenance only, no personal scores or full article text.",
   "roster": {
@@ -928,7 +928,10 @@
     "runtime/real-300/model-migration-audit.json": "d449f1beee54342e410c1873b7c739e37db7a28d5c29ef217ee138165bb2f586",
     "runtime/real-300/final-verifier.json": "6a75d66a8264eee8323982421db57e0b21cc5d37de5abf695aa27bb6246bce50",
     "runtime/real-300/final-verifier-network-guard.json": "4a4b3241be9e0f1c7f5a5a94c8b533faf4e688c042ed4389176211e5e301f09c",
-    "runtime/real-300/unit-final.log": "f1cc7c66ffadbc39a271a966e536acbd113126efe8be2c6efe315d98db2d2de1"
+    "runtime/real-300/unit-final.log": "f1cc7c66ffadbc39a271a966e536acbd113126efe8be2c6efe315d98db2d2de1",
+    "runtime/ci-3-failure.json": "313df9d9d94552d254de3ab9efaeeaa99d5a7d4513a287199f3cfdc619a599bc",
+    "runtime/real-300/windows-budget-fixture-repro.json": "145e795d4fc039ee97d5b634023faea37fa1efdb8f5b719809848d5c2d186707",
+    "runtime/real-300/unit-final-ci.log": "41b3f7629b8c4b25358350042868f95cda88ed16237bffa0676e20e80d91ac4b"
   },
   "limitations": [
     "The initial 300-person live coverage gate failed and the script returned exit 2. Integrity passed separately.",
@@ -1088,6 +1091,87 @@
       "successful_jobs": 7,
       "windows_portable_job_id": 116869987465,
       "scope": "Successful CI after Windows temporary SQLite cleanup; precedes final migration-harness closure. Not represented as CI approval of later code."
+    },
+    {
+      "recorded_at_utc": "2026-10-16T08:13:12.646Z",
+      "repo_full_name": "giovannyTorres/web_scraping_peps",
+      "run_id": 38870256394,
+      "url": "https://github.com/giovannyTorres/web_scraping_peps/actions/runs/38870256394",
+      "head_sha": "74720b67b9541bd072b0ba9582be2d91a16b13f5",
+      "status": "completed",
+      "conclusion": "failure",
+      "checkout_merge": {
+        "sha": "d974fe33370fec565ae13889b0e09c2dd14e33fd",
+        "tree_sha": "b0884d2883e72299fe6aee5ad3f44ac998c7b3bd",
+        "parents": [
+          "9cd0648bdf0f9dbf74f0fb34cdee5788f2a35efb",
+          "74720b67b9541bd072b0ba9582be2d91a16b13f5"
+        ],
+        "matches_tested_head_tree": true
+      },
+      "jobs": [
+        {
+          "id": 116872412579,
+          "name": "unit (ubuntu-latest, 3.12)",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 116872412617,
+          "name": "unit (ubuntu-latest, 3.10)",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 116872412636,
+          "name": "unit (windows-latest, 3.10)",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 116872412674,
+          "name": "nlp-optional",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 116872412679,
+          "name": "unit (windows-latest, 3.12)",
+          "status": "completed",
+          "conclusion": "failure"
+        },
+        {
+          "id": 116872413392,
+          "name": "guided-ui",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 116878499612,
+          "name": "windows-portable",
+          "status": "completed",
+          "conclusion": "skipped"
+        }
+      ],
+      "failure": {
+        "job_id": 116872412679,
+        "name": "unit (windows-latest, 3.12)",
+        "test": "test_news_stress.NewsStressControls.test_unhashable_source_id_is_reported_and_cannot_abandon_a_running_lease",
+        "file": "tests/test_news_stress.py",
+        "line": 165,
+        "assertion": "result['processed'] == 1",
+        "observed": 0,
+        "expected": 1,
+        "executed_tests": 838,
+        "skipped": 7,
+        "failures": 1,
+        "seconds": 988.326,
+        "trace_excerpt": "2026-10-16T08:12:19.2065385Z FAIL: test_unhashable_source_id_is_reported_and_cannot_abandon_a_running_lease (test_news_stress.NewsStressControls.test_unhashable_source_id_is_reported_and_cannot_abandon_a_running_lease)\n2026-10-16T08:12:19.2066141Z ----------------------------------------------------------------------\n2026-10-16T08:12:19.2066826Z Traceback (most recent call last):\n2026-10-16T08:12:19.2075593Z   File \"D:\\a\\web_scraping_peps\\web_scraping_peps\\tests\\test_news_stress.py\", line 165, in test_unhashable_source_id_is_reported_and_cannot_abandon_a_running_lease\n2026-10-16T08:12:19.2076400Z     self.assertEqual(result['processed'], 1)\n2026-10-16T08:12:19.2076704Z AssertionError: 0 != 1\n2026-10-16T08:12:19.2076833Z \n2026-10-16T08:12:19.2076998Z ----------------------------------------------------------------------\n2026-10-16T08:12:19.2077337Z Ran 838 tests in 988.326s\n2026-10-16T08:12:19.2077499Z \n2026-10-16T08:12:19.2077598Z FAILED (failures=1, skipped=7)\n2026-10-16T08:12:19.2077993Z Modelo oficial es_core_news_sm 3.8.0: GNU GPL 3.0; fuentes AnCora GPL3, WikiNER CC BY4.0.\n2026-10-16T08:12:19.2078782Z Uso comercial permitido bajo sus condiciones. Consulte docs/NLP_LOCAL.md antes de redistribuir.\n2026-10-16T08:12:19.2079553Z Verificado: C:\\Users\\RUNNER~1\\AppData\\Local\\Temp\\tmpgpc7yk_8\\es_core_news_sm-3.8.0-py3-none-any.whl sha256=8a798890fe93817163b10b5f7bd2ca4d25d84c52739a645a889c173eee7d9d3d"
+      },
+      "interpretation": "CI failed and portable was skipped. No merge or rerun performed. The fixture uses seconds=1; root is investigating whether that budget expired during preparation. This artifact does not assert that cause or classify the runner as defective.",
+      "artifact_path": "runtime/ci-3-failure.json",
+      "artifact_sha256": "313df9d9d94552d254de3ab9efaeeaa99d5a7d4513a287199f3cfdc619a599bc",
+      "scope": "Immutable third CI failure retained; the later clock-control diagnosis is recorded separately and does not rewrite this receipt."
     }
   ],
   "second_resumed_real_300_measurement": {
@@ -1812,6 +1896,128 @@
     "interpretation": "Final corrected-harness verification of previously captured real HTTP, not a fourth internet run. No new DNS, TCP or HTTP. Integrity and migration lineage passed, exact second replay passed, full live-300 coverage correctly failed. Immutable earlier failed resumed receipts remain unchanged."
   },
   "final_unit_verification": {
+    "log": "runtime/real-300/unit-final-ci.log",
+    "executed": 838,
+    "passed": 831,
+    "skipped": 7,
+    "failures": 0,
+    "errors": 0,
+    "seconds": 51.451,
+    "log_sha256": "41b3f7629b8c4b25358350042868f95cda88ed16237bffa0676e20e80d91ac4b",
+    "command": "python -u -c \"import faulthandler, unittest; faulthandler.dump_traceback_later(180, repeat=True); result = unittest.TextTestRunner(verbosity=2).run(unittest.defaultTestLoader.discover('tests')); faulthandler.cancel_dump_traceback_later(); raise SystemExit(not result.wasSuccessful())\"",
+    "harness_sha256": "efb4c8cf70712a4600f9c2608cfcc1cb892d2dab1bee2bf48acc655748d0e3a6",
+    "fixture_sha256": "75b750d73261262e63625c1143e7016f627d3a77062ae2519dc404bc5278089d",
+    "workflow_sha256": "dedcf96ad3d9fbcf981677cf9e22270bf0c1bb0399c0e54b4e103d96b2644f9a",
+    "scope": "Exact updated CI unit command, executed locally after controlled-clock and single-transaction fixture setup correction. All 838 existing tests retained. Separate from CI publication gate."
+  },
+  "report_scope": "Closed report of observed live, cache, migration, packaging and local-test evidence. Publication CI is an independent gate linked below. No unobserved live or final-head CI result is asserted.",
+  "ci3_fixture_correction": {
+    "production_changed": false,
+    "harness_changed": false,
+    "failed_fixture": "tests/test_news_stress.py::NewsStressControls.test_unhashable_source_id_is_reported_and_cannot_abandon_a_running_lease",
+    "original_budget_seconds": 1,
+    "controlled_reproduction": {
+      "monotonic_before_snapshot": 100,
+      "monotonic_after_snapshot": 102,
+      "processed": 0,
+      "stop_reason": "time_limit",
+      "preparation_incomplete": true,
+      "job_status": "queued",
+      "lease_until": null,
+      "interpretation": "Correct production preparation deadline; original test confused processing-invalid-payload behavior with a one-second runtime guarantee."
+    },
+    "corrected_control": {
+      "monotonic": 100,
+      "utc_real": true,
+      "max_articles": 1,
+      "processed": 1,
+      "job_status": "blocked",
+      "lease_until": null,
+      "original_assertions_retained": true
+    },
+    "progress_fixture_setup": {
+      "tasks": 1000,
+      "before": "1000 independent setup commits",
+      "after": "one setup transaction",
+      "scope": "Fixture setup only, not a measured production speedup."
+    },
+    "ci_diagnostics": {
+      "tests_retained": 838,
+      "python_unbuffered": true,
+      "faulthandler_traceback_every_seconds": 180,
+      "unit_job_timeout_minutes": 20,
+      "other_job_timeout_minutes": 15,
+      "stack_dump_is_diagnostic_not_180_second_termination": true
+    },
+    "previous_final_verification_production_and_harness_hashes_still_match": true,
+    "independent_control_receipt": {
+      "schema_version": 1,
+      "recorded_at": "2026-10-16T08:16:05.030154+00:00",
+      "started_at": "2026-10-16T08:16:03.310936+00:00",
+      "synthetic": true,
+      "method": "Temporary empty bank and one deliberately invalid synthetic job. Production code unchanged; no real HTTP responses or bodies.",
+      "hooks": {
+        "failure_reproduction": "Only peps.news.time.monotonic is 100 initially; _entity_snapshot returns normally then moves it to 102. seconds=1 therefore expires during preparation.",
+        "semantic_test_fix": "Only peps.news.time is replaced by SimpleNamespace(monotonic=lambda:100.,time=time.time). seconds=1,max_articles=1. Store, sessions, leases and threading retain real clocks. Invalid source is rejected before HTTP.",
+        "fixture_batch": "1000 existing news_article fixture jobs use one store.connection with enqueue(connection=con). All existing assertions retained:50 unique done receipts,950 pending,total1000,at most6 queue snapshots.",
+        "boundedness": "Frozen clock belongs only to semantic no-HTTP case; max_articles1 gives deterministic scheduling exit. Deadline tests still use their own advancing clocks."
+      },
+      "checks": {
+        "exhaustion_produces_zero_processed": true,
+        "exhaustion_is_explicit_preparation_time_limit": true,
+        "exhaustion_never_claimed_job": true,
+        "frozen_semantic_clock_processes_exactly_one": true,
+        "invalid_source_is_blocked": true,
+        "finished_job_has_no_lease": true,
+        "no_active_running_jobs": true,
+        "payload_source_list_unchanged": true,
+        "audit_valid": true,
+        "no_dns": true,
+        "no_tcp": true
+      },
+      "outcomes": {
+        "expired_preparation": {
+          "processed": 0,
+          "stop_reason": "time_limit",
+          "preparation_incomplete": true,
+          "job_status": "queued",
+          "lease_until": null
+        },
+        "same_job_frozen_semantic_clock": {
+          "processed": 1,
+          "job_status": "blocked",
+          "lease_until": null,
+          "running_jobs": 0
+        },
+        "dns_calls": 0,
+        "tcp_calls": 0
+      },
+      "focal": {
+        "started_at": "2026-10-16T08:16:03.366921+00:00",
+        "finished_at": "2026-10-16T08:16:05.029464+00:00",
+        "command_equivalent": "python -m unittest tests.test_news_stress -v",
+        "method": "Entire existing focal module run under additional DNS/TCP assertion guards; no tests added.",
+        "case_count": 11,
+        "passed": true,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "elapsed_seconds": 1.6625308960065013,
+        "dns_calls": 0,
+        "tcp_calls": 0
+      },
+      "source_sha256": {
+        "tests/test_news_stress.py": "75b750d73261262e63625c1143e7016f627d3a77062ae2519dc404bc5278089d",
+        "peps/news.py": "a866ac90e2b296a3e2a85c58622f14bc9782d8fb62b0b3c4b71755995ecb1c9e",
+        "peps/store.py": "ca55cea501a3f4f32a6b57838497c6348f1ab6bd2095f88833514c80e9fd0e47",
+        "peps/news_session.py": "bb82278e198245df66e127902fad03655caad5447e080cc1db155ab681b8ac90"
+      },
+      "limits": "This diagnoses fixture deadline sensitivity; it is not a Windows throughput benchmark and does not relax production timeouts or any semantic assertion."
+    },
+    "independent_control_receipt_sha256": "145e795d4fc039ee97d5b634023faea37fa1efdb8f5b719809848d5c2d186707",
+    "all_838_tests_retained_and_local_ci_command_passed": true
+  },
+  "pre_ci3_local_unit_verification": {
     "log": "runtime/real-300/unit-final.log",
     "executed": 838,
     "passed": 831,
@@ -1822,6 +2028,5 @@
     "log_sha256": "f1cc7c66ffadbc39a271a966e536acbd113126efe8be2c6efe315d98db2d2de1",
     "harness_sha256": "efb4c8cf70712a4600f9c2608cfcc1cb892d2dab1bee2bf48acc655748d0e3a6",
     "scope": "Final local suite after exact migration-provenance and temporary SQLite cleanup regressions. Separate from CI publication gate."
-  },
-  "report_scope": "Closed report of observed live, cache, migration, packaging and local-test evidence. Publication CI is an independent gate linked below. No unobserved live or final-head CI result is asserted."
+  }
 }
