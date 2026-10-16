@@ -38,9 +38,11 @@ class NotaryBacktestRunnerTests(unittest.TestCase):
                   'include_aliases': False, 'max_queries': people, 'start': '2010-01-01', 'end': '2026-01-01'}}
         (self.root / 'cohort.json').write_text(json.dumps(cohort))
         (self.root / 'sources.json').write_text(json.dumps(config))
+        # Allow durable Windows I/O to finish the finite fixture; exact HTTP,
+        # body and deduplication assertions below bound its work.
         return parser().parse_args(['--online', '--cohort', str(self.root / 'cohort.json'),
             '--sources-config', str(self.root / 'sources.json'), '--data-dir', str(self.root / 'cold'),
-            '--output', str(self.root / 'report.json'), '--seconds', '20', '--local-seconds', '10',
+            '--output', str(self.root / 'report.json'), '--seconds', '120', '--local-seconds', '60',
             '--max-http', '60', '--body-budget', '30', '--per-entity-body-limit', '5', '--workers', '4'])
 
     def test_atomic_budget_includes_robots_under_parallel_reservations(self):
