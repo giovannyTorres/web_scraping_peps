@@ -7,7 +7,7 @@ import unittest
 from unittest.mock import patch
 
 from peps.engine import Engine
-from peps.news import NewsAcquirer
+from peps.news import NewsAcquirer, ARTICLE_EXTRACTION_VERSION
 from peps.store import digest, now
 
 
@@ -182,7 +182,7 @@ class LocalReextractionTests(_NewsFixture):
             metadata = json.loads(con.execute('SELECT metadata FROM documents WHERE id=?', (doc_id,)).fetchone()[0])
             receipt = dict(con.execute('SELECT * FROM news_extraction_receipts').fetchone())
         self.assertEqual(metadata['extraction_version'], 'article-main-2')
-        self.assertEqual(receipt['version'], 'article-main-3')
+        self.assertEqual(receipt['version'], ARTICLE_EXTRACTION_VERSION)
         Path(self.engine.data_dir / metadata['raw_snapshot_path']).unlink()
         self.assertEqual(self.news.reextract_snapshots(), {'examined': 0})
 

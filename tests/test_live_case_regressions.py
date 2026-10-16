@@ -156,6 +156,13 @@ class RealThemeExtractionRegressions(unittest.TestCase):
                 self.assertIn('no fue acusado', text)
                 self.assertIn('fue víctima', text)
 
+    def test_lee_mas_navigation_does_not_replace_or_extend_genuine_editorial_claims(self):
+        html = ('<article><p>La Empresa Bruma fue investigada por fraude.</p>'
+                '<p>Lee más: <a href="https://example.org/otra">Otra persona fue condenada.</a></p>'
+                '<p>La Empresa Bruma negó las acusaciones de fraude.</p></article>')
+        self.assertEqual(article_text(html), 'La Empresa Bruma fue investigada por fraude.\n\n'
+                         'La Empresa Bruma negó las acusaciones de fraude.')
+
 
 if __name__ == '__main__':
     unittest.main()

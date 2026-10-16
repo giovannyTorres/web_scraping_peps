@@ -32,7 +32,7 @@ from .store import canonical, digest, now
 TRACKING = {'fbclid', 'gclid', 'dclid', 'msclkid', 'mc_cid', 'mc_eid', '_ga', 'igshid'}
 UNRESERVED = frozenset('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~')
 SUPERSEDED_PLAN = 'Plan sustituido (superseded_news_plan): '
-ARTICLE_EXTRACTION_VERSION = 'article-main-3'
+ARTICLE_EXTRACTION_VERSION = 'article-main-4'
 
 
 class _InsufficientArticleText(ValueError):
@@ -200,7 +200,7 @@ def _editorial_text(parts):
         # without a related-content class. The lead-in and its linked headline
         # form navigation, not another claim in this article. Preserve ordinary
         # editorial links and all genuine paragraphs, including denials/victims.
-        if re.match(r'^(?:te puede interesar|lee tambi[eé]n|lea tambi[eé]n|'
+        if re.match(r'^(?:te puede interesar|lee tambi[eé]n|lea tambi[eé]n|lee m[aá]s|lea m[aá]s|'
                     r'tambi[eé]n puedes leer|read also|related content)\s*[:»]', paragraph, re.I):
             continue
         if re.match(r'^(?:tags|etiquetas)\s*:', paragraph, re.I) and '\ufff0tag-link\ufff1' in paragraph:
@@ -1086,7 +1086,7 @@ class NewsAcquirer:
                 "JOIN documents d ON d.id=n.document_id LEFT JOIN news_extraction_receipts r "
                 "ON r.article_id=n.id AND r.document_id=n.document_id WHERE n.scope='full_article' "
                 "AND COALESCE(r.version,json_extract(d.metadata,'$.extraction_version'),'') "
-                "IN ('article-main-1','article-main-2') ORDER BY n.id LIMIT ?",
+                "IN ('article-main-1','article-main-2','article-main-3') ORDER BY n.id LIMIT ?",
                 (-1 if maximum is None else maximum,)).fetchall()
         total = len(rows)
         if total:

@@ -12,7 +12,9 @@ import unicodedata
 from datetime import date
 from typing import Any
 
-MODEL_VERSION = "es-gazetteer-rules-1.0.1"
+from .identity import COMPANY_KINDS
+
+MODEL_VERSION = "es-gazetteer-rules-1.0.2"
 RULES_VERSION = "mx-reputational-2026-10-15"
 SENTENCE_PATTERN = r"[^\r\n.!?;]+(?:[.!?;]+|(?=\r?\n|$))"
 
@@ -52,7 +54,7 @@ CATEGORY_PATTERNS = {
     "violence": r"\b(?:homicidio|feminicidio|secuestro|tortura|desaparicion forzada|violencia sexual|abuso sexual|trata de personas)\b",
     "tax": r"\b(?:evasion fiscal|delito fiscal|creditos fiscales|69[- ]?b|facturas falsas|efos)\b",
     "public_procurement": r"\b(?:licitacion irregular|contratacion irregular|conflicto de interes|inhabilitacion|colusion)\b",
-    "sanctions": r"\b(?:sancion(?:es|ado|ada)?|lista de sanciones|ofac|lista de personas bloqueadas)\b",
+    "sanctions": r"\b(?:sancion(?:es|ado|ada)?|lista de sanciones|ofac|lista de personas bloqueadas|multas?|multad[oa]s?|multo|multaron|multan)\b",
 }
 CATEGORY_SEVERITY = {"money_laundering": .85, "organized_crime": .95,
                      "corruption": .8, "fraud": .65, "violence": .95,
@@ -67,13 +69,28 @@ STAGE_PATTERNS = {
     "wanted": r"\b(?:orden de aprehension|ficha (?:roja|de busqueda)|profug[oa]|buscad[oa] por (?:la )?(?:justicia|fiscalia))\b",
     "investigation": r"\b(?:investigad[oa]s?|investiga(?:n|do|da)?|investigacion (?:contra|por|de)|vinculad[oa] a proceso|vinculacion a proceso|procesad[oa]s?)\b",
     "allegation": r"\b(?:acusad[oa]s?|acus(?:o|a|an|aron)|acusaciones?|denunciad[oa]s?|denunci(?:an|aron|o)|denuncia (?:contra|por)|señalad[oa]s? (?:de|por)|imputad[oa]s?|imput(?:an|aron|o) a|presunt[oa]s? responsables?)\b",
-    "sanction": r"\b(?:sancionad[oa]s?|inhabilitad[oa]s?|incluid[oa] en (?:la )?lista de sanciones)\b",
+    "sanction": r"\b(?:sancionad[oa]s?|inhabilitad[oa]s?|incluid[oa] en (?:la )?lista de sanciones|multad[oa]s?|mult(?:o|aron|an)|multa(?=\s+(?:a|con)\b))\b",
 }
 FAMILY_PATTERN = re.compile(r"\b(?:ti[oa]s?|prim[oa]s?|herman[oa]s?|padre|madre|hij[oa]s?|sobrin[oa]s?|espos[oa]|conyuge|familiar(?:es)?)\b")
 ASSOCIATE_PATTERN = re.compile(r"\b(?:soci[oa]s?|colaborador(?:a|es)?|excolaborador|amig[oa]s?|empresa de|empleado de)\b")
 NEGATION_PATTERN = re.compile(r"\b(?:no|nunca|jamas|sin)\b(?:\s+\w+){0,5}\s*$")
+CORPORATE_ROLE = (r"(?:ex[- ]?)?(?:director(?:a|es|as)?|directiv[oa]s?|gerentes?|presidentes?|"
+                  r"consejer[oa]s?|administrador(?:a|es|as)?|representantes?|emplead[oa]s?|"
+                  r"trabajador(?:a|es|as)?|funcionari[oa]s?)")
+CORPORATE_OFFICER_OF = re.compile(
+    r"\b" + CORPORATE_ROLE + r"(?:\s+(?:general(?:es)?|adjunt[oa]s?|ejecutiv[oa]s?|"
+    r"financier[oa]s?|comercial(?:es)?|juridic[oa]s?|legal(?:es)?|regional(?:es)?|"
+    r"interin[oa]s?)){0,2}\s+(?:de|del)\s+(?:(?:la|el)\s+)?"
+    r"(?:(?:empresa|compañia|estatal)\s+)?$")
+OTHER_ACTOR_PASSIVE = re.compile(
+    r"\b(?:politicos|panistas|legisladores|senadores|diputados|funcionarios|"
+    r"servidores publicos|exsenadores|exdirectores|directivos|personas)"
+    r"(?:\s+\w+){0,4}\s*$")
 RULES_HASH = hashlib.sha256(json.dumps({"categories": CATEGORY_PATTERNS,
-    "stages": STAGE_PATTERNS, "severity": CATEGORY_SEVERITY, "sentences": SENTENCE_PATTERN},
+    "stages": STAGE_PATTERNS, "severity": CATEGORY_SEVERITY, "sentences": SENTENCE_PATTERN,
+    "corporate_officer": CORPORATE_OFFICER_OF.pattern,
+    "other_actor_passive": OTHER_ACTOR_PASSIVE.pattern,
+    "corporate_relation_policy": "officer_and_explicit_other_subject_are_context_1"},
     sort_keys=True, ensure_ascii=False).encode()).hexdigest()
 
 MONTHS = {"enero": 1, "febrero": 2, "marzo": 3, "abril": 4, "mayo": 5,
@@ -212,6 +229,26 @@ def _reporter(normalized: str, mention_end: int) -> bool:
     return bool(re.search(r"^\s*(?:,[^,]{1,100},\s*)?,?\s*(?:presento|interpuso|ratifico|denunci(?:o|a|aron)|acus(?:o|a|aron)|investigo|investiga\s+a|detuvo|informo|reporto|explico|advirtio|presencio|sufrio|fue victima|propuso|dijo|afirmo|aseguro|critico|señalo|visito|conocio|defendio|anuncio|ordeno|exigio|recibio)\b", after))
 
 
+def _corporate_context(normalized: str, mention_start: int, mention_end: int,
+                       trigger_start: int, trigger_end: int) -> bool:
+    # An officer's conduct is not automatically the company's conduct. Require
+    # a local grammatical ownership link, rather than a role anywhere nearby.
+    if CORPORATE_OFFICER_OF.search(normalized[max(0, mention_start - 180):mention_start]):
+        return True
+    after = normalized[mention_end:]
+    relative = re.match(r"\s*,?\s*(?:cuy[oa]s?|su)\s+" + CORPORATE_ROLE + r"\b", after)
+    if trigger_start > mention_end and relative:
+        if ',' not in normalized[mention_end + relative.end():trigger_start]:
+            return True
+    # "políticos actualmente investigados ... caso de Empresa" names the
+    # investigated people explicitly. A later corporate mention is context;
+    # active "políticos investigan a Empresa" remains a direct target.
+    trigger = normalized[trigger_start:trigger_end]
+    passive = re.fullmatch(r"(?:investigad|acusad|detenid|procesad|sancionad|condenad|sentenciad)[oa]s?", trigger)
+    return bool(trigger_end <= mention_start and passive and OTHER_ACTOR_PASSIVE.search(
+        normalized[max(0, trigger_start - 140):trigger_start]))
+
+
 def _negated(prefix: str) -> bool:
     scope = re.split(r"\b(?:pero|sin embargo|no obstante)\b", prefix)[-1]
     scope = re.sub(r",[^,]*,", " ", scope)
@@ -254,6 +291,9 @@ def analyze(text: str, entity: dict[str, Any], source_kind: str = "news") -> dic
             folded_a = len(_normalized(sentence[:local_a])[0])
             folded_b = len(_normalized(sentence[:local_b])[0])
             relationship = _relation(normalized, folded_a, folded_b, match.start(), match.end())
+            if (relationship == 'direct' and _fold(entity.get('kind', 'person')) in COMPANY_KINDS
+                    and _corporate_context(normalized, folded_a, folded_b, match.start(), match.end())):
+                relationship = 'context'
             if relationship == "direct" and _reporter(normalized, folded_b):
                 relationship = "context"
             prefix = normalized[max(0, match.start() - 180):match.start()]
@@ -274,7 +314,7 @@ def analyze(text: str, entity: dict[str, Any], source_kind: str = "news") -> dic
                     "severity": CATEGORY_SEVERITY[category],
                     "uncertain": double_denial or bool(re.search(r"\b(?:presunt[oa]|supuest[oa]|habria|podria|sin confirmar|no comprobado)\b", normalized))}
                 finding["hypothetical"] = bool(re.search(
-                    r"\b(?:podria|podrian|sera|seria|serian|seran|sea|sean|fuera|fueran|fuese|fuesen|solicita|solicito|pide|pidio|exigio|exige|preve)(?:\s+\w+){0,8}\s*$", prefix))
+                    r"\b(?:podria|podrian|sera|seria|serian|seran|sea|sean|fuera|fueran|fuese|fuesen|solicita|solicito|pide|pidio|exigio|exige|preve|posibles?|eventuales?|riesgo de)(?:\s+\w+){0,8}\s*$", prefix))
                 sentence_dates = [d for d in dates if sentence_start <= d["start"] < sentence_end]
                 if len(sentence_dates) == 1:
                     finding["event_date"] = sentence_dates[0]["iso_date"]
