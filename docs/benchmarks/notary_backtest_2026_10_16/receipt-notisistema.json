@@ -1,0 +1,26 @@
+{
+  "base_v3_files_unchanged": true,
+  "completed_at": "2026-10-16T22:52:58.416891+00:00",
+  "gold_snapshot_unchanged": "d49edc73a57beb49f806126b741dc4e7b99eae8be4d8dfb69970bfc7222c30e8",
+  "input_sha256": {
+    "gold-adjudicated-v1.json": "cd8eb6cfb40881fe0292e93f9209addec4e84a3c0982e6e0ddbeadb39dfac7a8",
+    "notisistema-discovery-pairs.json": "531eba5e8aaae38fdd4a562386cba4fe1c4b1175fbd4d633fcabe4a0cf1c34b0",
+    "notisistema-model-input.json": "253f22dcc7d2b05cc0fac4b7fc9165c17dcc0746ae61780add3a0031ac73d286",
+    "notisistema-result.json": "af0fcc113a75d725cba010b8a9db44c7a778864ede07863823e3fc5e60ddc197",
+    "notisistema-reviews.json": "6dd788981f8b9d1edbe6cf93b98e448f621be1c24767894e36bd69866e900bed"
+  },
+  "network_requests": 0,
+  "output_sha256": {
+    "notisistema-adjudicated-input-v4.json": "5dc59521ac0ab29ad9eccb96451c3d7a2586522bebe1fb7d13881610505df01a",
+    "notisistema-adjudication-receipt-v4.json": "f6c78a55f4f5fdb810d1445529cb43a26db404d772167763a61150ce803bda7c",
+    "notisistema-evaluation-input-v4.json": "ec0ef5bdeb8325e33b82b8656ef11910e4f7086650c73c36f1f1984f49838e58",
+    "notisistema-metrics-v4.json": "1d50b337223f7295b34d7322ac07cdf52d4d9ac1550856647bc5ab38c624973b",
+    "notisistema-model-input-v4.json": "00a3a09e7515a0a57f58e42b5dcc998d84221b46884c2d1953ee8a89355d10ac",
+    "notisistema-model-predictions-v4.json": "d77ec5c6cfd45b4c660a14e2d475bdda91ca8027fd4ed0ae060061c453f0f95e",
+    "notisistema-summary-v4.json": "83ef1143b98a4dd5a985fe92333a8e1bb58ddd9e8bcdc48b4f7551748f311d1e",
+    "tables/notisistema-document-errors-v4.csv": "b34a73dc85dc6ba2627a3c7b46811bfbbe9d4631fa07ebd15f77c4c1e64a3512",
+    "tables/notisistema-entities-v4.csv": "53d9f947020c3fde0ae92fbc91665f368527d7a866addf5ed947fd9eaa1ef716",
+    "tables/notisistema-sources-v4.csv": "de87b2b936442e292f918e213ed54e01b10bb9ef4aec440666aa13843d5e9491"
+  },
+  "schema_version": 4
+}

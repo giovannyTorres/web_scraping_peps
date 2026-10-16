@@ -14,6 +14,7 @@ from unittest.mock import patch
 
 from peps.engine import Engine
 from peps.news import NewsAcquirer
+from peps.relevance import MODEL_VERSION
 
 SCRIPT = Path(__file__).resolve().parents[1] / 'scripts' / 'validate_real_people.py'
 SPEC = importlib.util.spec_from_file_location('validate_real_people', SCRIPT)
@@ -236,7 +237,7 @@ class RealPeopleValidationTests(unittest.TestCase):
         self.assertGreaterEqual(len(connections), 7)
         self.assertTrue(all(connection.explicitly_closed for connection in connections))
 
-    def migration_fixture(self):
+    def migration_fixture(self, historical_model='metadata-relevance-1.1.0'):
         from peps.relevance import RelevanceIndex
         from peps.sources import parse_results
         engine = Engine(self.root / 'migration')
@@ -268,7 +269,7 @@ class RealPeopleValidationTests(unittest.TestCase):
             entity_ids=payload['entity_ids'], names=payload['names'])
         candidate['bank_revision'] = '1'
         historical = deepcopy(candidate)
-        historical['model_version'] = 'metadata-relevance-1.1.0'
+        historical['model_version'] = historical_model
         news._observe(record, source, payload['url'], result, None, candidate=historical)
         before = VALIDATION.corpus_snapshot(engine)
         cache = VALIDATION.cached_snapshot(engine.data_dir)
@@ -282,6 +283,9 @@ class RealPeopleValidationTests(unittest.TestCase):
         self.assertTrue(proof['passed'], proof)
         self.assertEqual(proof['new_observations'], 1)
         self.assertEqual(proof['new_articles'], 0)
+        self.assertEqual(proof['current_model'], MODEL_VERSION)
+        self.assertEqual(proof['historical_model_counts'], {'metadata-relevance-1.1.0': 1})
+        self.assertEqual(proof['verified_prior_model_lineages_with_identical_non_relevance_details'], 1)
         news._observe(record, source, payload['url'], result, None, candidate=candidate)
         self.assertEqual(VALIDATION.corpus_snapshot(engine), after)
         corrupted = deepcopy(after)
@@ -303,6 +307,24 @@ class RealPeopleValidationTests(unittest.TestCase):
         self.assertTrue(proof['checks']['observation_ids_match_production_content_hash'])
         self.assertFalse(proof['passed'])
         self.assertFalse(proof['checks']['every_new_observation_reproduced_from_original_cache_current_model_and_policy'])
+
+    def test_previous_patch_model_uses_current_constant_with_exact_lineage(self):
+        engine, news, _record, _source, _payload, _result, _candidate, before, cache = self.migration_fixture(
+            historical_model='metadata-relevance-1.2.0')
+        proof = VALIDATION.verify_cache_enrichment(news, before, VALIDATION.corpus_snapshot(engine), cache)
+        self.assertEqual(proof['current_model'], MODEL_VERSION)
+        self.assertEqual(proof['historical_model_counts'], {'metadata-relevance-1.2.0': 1})
+        self.assertTrue(proof['passed'], proof)
+        self.assertEqual(proof['verified_prior_model_lineages_with_identical_non_relevance_details'], 1)
+
+    def test_unknown_historical_model_cannot_authorize_new_observations(self):
+        engine, news, _record, _source, _payload, _result, _candidate, before, cache = self.migration_fixture(
+            historical_model='metadata-relevance-0.0.0-unknown')
+        proof = VALIDATION.verify_cache_enrichment(news, before, VALIDATION.corpus_snapshot(engine), cache)
+        self.assertFalse(proof['passed'])
+        self.assertFalse(proof['checks']['older_model_present_if_metadata_grows'])
+        self.assertFalse(proof['checks']['every_new_observation_reproduced_from_original_cache_current_model_and_policy'])
+        self.assertEqual(proof['verified_prior_model_lineages_with_identical_non_relevance_details'], 0)
 
     def test_model_migration_does_not_excuse_same_model_duplicates_or_invented_cache(self):
         engine, news, _record, _source, _payload, _result, _candidate, before, cache = self.migration_fixture()

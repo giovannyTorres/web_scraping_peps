@@ -14,8 +14,9 @@ from bisect import bisect_left, bisect_right
 from dataclasses import dataclass
 
 from .identity import COMPANY_KINDS, GENERIC_CONTEXT, LEGAL_SUFFIXES, STOP, _fold, _sequence, _tokens
+from .retrieval_aliases import retrieval_alias_allowed
 
-MODEL_VERSION = 'metadata-relevance-1.2.0'
+MODEL_VERSION = 'metadata-relevance-1.2.1'
 
 _GENERIC_COMPANY_WORDS = STOP | GENERIC_CONTEXT | frozenset({
     'grupo', 'sociedad', 'corporacion', 'compania', 'holding', 'holdings',
@@ -99,6 +100,8 @@ class RelevanceIndex:
                     variants.extend((value, 'alias') for value in values)
             seen, rejected_aliases, retrieval_variant = set(), set(), None
             for value, kind in variants:
+                if kind == 'alias' and not retrieval_alias_allowed(entity, value):
+                    continue
                 if isinstance(value, dict):
                     if value.get('verified') is False or value.get('validated') is False or value.get('status') in ('rejected', 'revoked'):
                         rejected = value.get('name') or value.get('value') or value.get('alias')

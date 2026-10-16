@@ -14,8 +14,8 @@ from typing import Any
 
 from .identity import COMPANY_KINDS
 
-MODEL_VERSION = "es-gazetteer-rules-1.0.2"
-RULES_VERSION = "mx-reputational-2026-10-15"
+MODEL_VERSION = "es-gazetteer-rules-1.0.3"
+RULES_VERSION = "mx-reputational-2026-10-16"
 SENTENCE_PATTERN = r"[^\r\n.!?;]+(?:[.!?;]+|(?=\r?\n|$))"
 
 
@@ -86,9 +86,48 @@ OTHER_ACTOR_PASSIVE = re.compile(
     r"\b(?:politicos|panistas|legisladores|senadores|diputados|funcionarios|"
     r"servidores publicos|exsenadores|exdirectores|directivos|personas)"
     r"(?:\s+\w+){0,4}\s*$")
+
+# Candidate: an enacted notarial administrative measure, with an explicit
+# recipient and adverse grounds in the same target-containing clause.
+NOTARIAL_MEASURE = re.compile(
+    r"\b(?:(?:revoco|revocaron|cancelo|cancelaron|retiro|retiraron|"
+    r"revocad[oa]|cancelad[oa]|retirad[oa])\s+(?:de manera definitiva\s+)?"
+    r"(?:la|el|su)\s+(?:patente|nombramiento)\b|"
+    r"(?:decidio|decidieron|determino|determinaron)\s+"
+    r"(?:suspender\s+(?:las\s+)?funciones\s+del ejercicio\s+notarial|"
+    r"revocar\s+de\s+la\s+notaria(?:\s+(?:numero\s+)?\d+)?))\b")
+NOTARIAL_GROUNDS = re.compile(
+    r"\b(?:irregularidad(?:es)?|incumplimiento|falta(?:s)?(?:\s+grave)?\s+de\s+probidad|"
+    r"faltas?\s+administrativas?|responsabilidad\s+notarial|"
+    r"proceso\s+sancionador|procedimiento\s+sancionador|fraude|corrupcion)\b")
+NOTARIAL_VOLUNTARY = re.compile(
+    r"\b(?:renuncia|renuncio|jubilacion|fallecimiento|solicitud\s+propia|"
+    r"propia\s+voluntad|voluntari[oa])\b")
+NOTARIAL_RECEIVER_TITLE = re.compile(
+    r"(?:notari[oa](?:\s+public[oa])?(?:\s+titular)?|"
+    r"titular(?:\s+de\s+la\s+notaria(?:\s+publica)?)?)"
+    r"(?:\s+numero\s+[\w-]+)?(?:\s+(?:de|del)\s+[\w -]{1,130})?\s*,?\s*$")
+NOTARIAL_RECEIVER_EXCLUSIONS = re.compile(
+    r"\b(?:quien|que|segun|explico|informo|denuncio|aseguro|declaro|"
+    r"familiar|sobrino|hijo|padre|madre|hermano|esposo|reporto)\b")
+NOTARIAL_BOUND_OBJECT = re.compile(
+    r"\b(?:patente|nombramiento)(?:\s+profesional)?\s+(?:de|como)\s+(?:la\s+)?notari[oa]\b|"
+    r"\bejercicio\s+notarial\b|\brevocar\s+de\s+la\s+notaria\b")
+NOTARIAL_ADMINISTRATIVE_PROCEEDING = re.compile(
+    r"\b(?:responsabilidad\s+notarial|proceso\s+sancionador|procedimiento\s+sancionador)\b")
+NOTARIAL_POLICY = "enacted_measure_explicit_recipient_same_clause_adverse_grounds_no_voluntary_1"
+
 RULES_HASH = hashlib.sha256(json.dumps({"categories": CATEGORY_PATTERNS,
     "stages": STAGE_PATTERNS, "severity": CATEGORY_SEVERITY, "sentences": SENTENCE_PATTERN,
     "corporate_officer": CORPORATE_OFFICER_OF.pattern,
+    "notarial_measure": NOTARIAL_MEASURE.pattern,
+    "notarial_grounds": NOTARIAL_GROUNDS.pattern,
+    "notarial_voluntary": NOTARIAL_VOLUNTARY.pattern,
+    "notarial_receiver_title": NOTARIAL_RECEIVER_TITLE.pattern,
+    "notarial_receiver_exclusions": NOTARIAL_RECEIVER_EXCLUSIONS.pattern,
+    "notarial_bound_object": NOTARIAL_BOUND_OBJECT.pattern,
+    "notarial_administrative_proceeding": NOTARIAL_ADMINISTRATIVE_PROCEEDING.pattern,
+    "notarial_policy": NOTARIAL_POLICY,
     "other_actor_passive": OTHER_ACTOR_PASSIVE.pattern,
     "corporate_relation_policy": "officer_and_explicit_other_subject_are_context_1"},
     sort_keys=True, ensure_ascii=False).encode()).hexdigest()
@@ -257,6 +296,39 @@ def _negated(prefix: str) -> bool:
     return bool(re.search(r"\b(?:no|nunca|jamas|sin)\b(?!\s+(?:solo|solamente|unicamente)\b)(?:[\s,]+\w+){0,12}\s*$", scope))
 
 
+
+def _notarial_measure_applies(normalized: str, match, sentence: str,
+                             sentence_start: int, mentions: list[dict[str, Any]]) -> bool:
+    """Fail closed on missing recipient, distant references or voluntary acts.
+
+    This lexical candidate is not identity or legal-outcome verification. It
+    deliberately does not resolve pronouns, missing aliases, or other clauses.
+    """
+    if not NOTARIAL_GROUNDS.search(normalized) or NOTARIAL_VOLUNTARY.search(normalized):
+        return False
+    for mention in mentions:
+        start = len(_normalized(sentence[:mention['start'] - sentence_start])[0])
+        if not 0 <= start - match.end() <= 260:
+            continue
+        between = normalized[match.end():start]
+        recipient_markers = list(re.finditer(r"\b(?:a|al)\s+", between))
+        if len(recipient_markers) != 1:
+            continue
+        object_context = normalized[match.start():match.end()] + between[:recipient_markers[0].start()]
+        bound_professional_object = NOTARIAL_BOUND_OBJECT.search(object_context)
+        administrative_proceeding = NOTARIAL_ADMINISTRATIVE_PROCEEDING.search(normalized)
+        if not bound_professional_object and not administrative_proceeding:
+            continue
+        receiver_title = between[recipient_markers[0].end():]
+        if receiver_title.strip() and (not NOTARIAL_RECEIVER_TITLE.fullmatch(receiver_title)
+                                      or NOTARIAL_RECEIVER_EXCLUSIONS.search(receiver_title)):
+            continue
+        scope = normalized[max(0, match.start() - 90):start]
+        if re.search(r"\b(?:notari[oa]s?|notarial(?:es)?)\b", scope):
+            return True
+    return False
+
+
 def analyze(text: str, entity: dict[str, Any], source_kind: str = "news") -> dict[str, Any]:
     """Return conservative candidates, source quotes, and stable character offsets.
 
@@ -275,6 +347,8 @@ def analyze(text: str, entity: dict[str, Any], source_kind: str = "news") -> dic
         normalized, offsets = _normalized(sentence)
         stages = [(stage, match) for stage, pattern in STAGE_PATTERNS.items()
                   for match in re.finditer(pattern, normalized)]
+        stages.extend(("sanction", match) for match in NOTARIAL_MEASURE.finditer(normalized)
+                      if _notarial_measure_applies(normalized, match, sentence, sentence_start, local_mentions))
         if not stages:
             continue
         contrasts = list(re.finditer(r"\b(?:pero|aunque|sin embargo)\b|\b[ye]\s+(?=(?:fue|sigue|continua|esta|es|ha|permanece|resulto|quedo|acusad|investigad|detenid|absuelt))", normalized))

@@ -672,6 +672,7 @@ class SafeFetcher:
                 if denied:
                     return self._result(url, denied, error=reason, retry_at=_iso(retry),
                                         error_code="host_interval" if denied == "deferred" else "host_circuit",
+                                        admission_host=host,
                                         request_attempted=False), normalized, None, {}, b""
                 # The atomic host reservation is still mandatory. Pin the
                 # following transport to the freshly validated public answer.
@@ -776,7 +777,7 @@ class SafeFetcher:
         failure, _, status, headers, raw = self._request(origin + "/robots.txt", robot_source, request_kind="robots")
         if failure:
             if failure["status"] in ("blocked", "deferred"):
-                return self._result(url, failure["status"], http_status=failure["http_status"], error="robots.txt: " + str(failure["error"]), retry_at=failure["retry_at"], error_code=failure.get("error_code")), ""
+                return self._result(url, failure["status"], http_status=failure["http_status"], error="robots.txt: " + str(failure["error"]), retry_at=failure["retry_at"], error_code=failure.get("error_code"), admission_host=failure.get("admission_host")), ""
             return self._result(url, "robots_denied", error="robots.txt unavailable; fail closed"), ""
         if status in (404, 410):
             body = "User-agent: *\nAllow: /\n"
@@ -844,6 +845,26 @@ class SafeFetcher:
         with self._db() as db:
             row = db.execute('SELECT final_url FROM http_cache WHERE url=?', (url,)).fetchone()
         return (row['final_url'] or None) if row else None
+
+    def admission_uncached_urls(self, urls) -> set[str]:
+        """Scheduling hint only: never postpone a URL with any saved response.
+
+        Stale representations and cached redirects are excluded too. Reuse,
+        revalidation and policy decisions remain the normal fetcher's job.
+        No host is reserved, no permission is inferred, and no HTTP occurs.
+        Call outside the jobs write transaction to keep lock ordering simple.
+        """
+        values = list(dict.fromkeys(urls))
+        uncached = set(values)
+        with self._db() as db:
+            for offset in range(0, len(values), 250):
+                chunk = values[offset:offset + 250]
+                placeholders = ','.join('?' for _ in chunk)
+                rows = db.execute('SELECT url FROM http_cache WHERE url IN (' + placeholders + ') '
+                                  'UNION SELECT url FROM redirects WHERE url IN (' + placeholders + ')',
+                                  chunk + chunk)
+                uncached.difference_update(row[0] for row in rows)
+        return uncached
 
     def cached_policy_error(self, url: str, source: dict, final_url: str | None = None) -> dict | None:
         """Apply current scope and known robots restrictions without networking.

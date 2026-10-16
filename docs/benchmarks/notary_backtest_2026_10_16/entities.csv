@@ -1,0 +1,241 @@
+﻿dataset,entity_id,name,cohort,entity_incident_label,known_reference_pairs,known_reference_urls,discovery_pairs,discovery_urls,text_pairs,text_urls,reviewed_relevant_text_pairs,reviewed_irrelevant_text_pairs,unknown_relevance_text_pairs,reviewed_incident_yes,reviewed_incident_no,reviewed_incident_unknown,reference_pair_hits,reference_pair_recall,reference_unique_url_hits,reference_unique_url_recall
+native,positive-01,Fernando Lugo García Pelayo,known_incident,yes,8,8,0,0,0,0,0,0,0,0,0,0,0,0.0,0,0.0
+native,positive-02,Carlos Fernando Licona Rivemar,known_incident,yes,2,2,0,0,0,0,0,0,0,0,0,0,0,0.0,0,0.0
+native,positive-03,Daniel Fernando Rangel Moctezuma,known_incident,yes,3,3,0,0,0,0,0,0,0,0,0,0,0,0.0,0,0.0
+native,positive-04,Horacio Aguilar Álvarez de Alba,known_incident,yes,3,3,0,0,0,0,0,0,0,0,0,0,0,0.0,0,0.0
+native,positive-05,Horacio Lucas Wong Villareal,known_incident,yes,3,3,0,0,0,0,0,0,0,0,0,0,0,0.0,0,0.0
+native,positive-06,Ernesto Pérez Charles,known_incident,yes,3,3,0,0,0,0,0,0,0,0,0,0,0,0.0,0,0.0
+native,positive-07,Carlos Tomás Goff Rodríguez,known_incident,yes,3,3,0,0,0,0,0,0,0,0,0,0,0,0.0,0,0.0
+native,positive-08,Octavio Eduardo Soto Hernández,known_incident,yes,3,3,1,1,1,1,1,0,0,1,0,0,0,0.0,0,0.0
+native,positive-09,Luis Felipe del Valle Prieto Ortega,known_incident,yes,6,6,0,0,0,0,0,0,0,0,0,0,0,0.0,0,0.0
+native,positive-10,Alejandro Moreno Morales,known_incident,unknown,3,3,0,0,0,0,0,0,0,0,0,0,0,0.0,0,0.0
+native,positive-11,Flavino Ríos Alvarado,known_incident,yes,3,3,11,11,3,3,3,0,0,1,1,1,0,0.0,0,0.0
+native,positive-12,Héctor Manuel Navarro Manjarrez,known_incident,unknown,2,2,0,0,0,0,0,0,0,0,0,0,0,0.0,0,0.0
+native,positive-13,Álvaro Guzmán Merino,known_incident,yes,4,4,0,0,0,0,0,0,0,0,0,0,0,0.0,0,0.0
+native,positive-14,Celso Rodríguez González,known_incident,yes,3,3,8,8,8,8,8,0,0,1,7,0,0,0.0,0,0.0
+native,positive-15,Jorge Gerardo Gutiérrez Ortiz Monasterio,known_incident,yes,2,2,0,0,0,0,0,0,0,0,0,0,0,0.0,0,0.0
+native,positive-16,Sergio Alejandro López Rivera,known_incident,yes,3,3,0,0,0,0,0,0,0,0,0,0,0,0.0,0,0.0
+native,positive-17,Luis Antonio Guerrero Campos,known_incident,yes,3,3,0,0,0,0,0,0,0,0,0,0,0,0.0,0,0.0
+native,positive-18,José Antonio Jaime Reynoso,known_incident,yes,3,3,1,1,0,0,0,0,0,0,0,0,0,0.0,0,0.0
+native,positive-19,Guillermo Coronado Figueroa,known_incident,yes,3,3,0,0,0,0,0,0,0,0,0,0,0,0.0,0,0.0
+native,positive-20,José Luis Organista Macías,known_incident,yes,4,4,0,0,0,0,0,0,0,0,0,0,0,0.0,0,0.0
+native,positive-21,Juan Hernández Rivas,known_incident,yes,2,2,0,0,0,0,0,0,0,0,0,0,0,0.0,0,0.0
+native,positive-22,Samuel Fernández Ávila,known_incident,yes,2,2,0,0,0,0,0,0,0,0,0,0,0,0.0,0,0.0
+native,positive-23,Javier Manuel Gutiérrez Dávila,known_incident,yes,3,3,0,0,0,0,0,0,0,0,0,0,0,0.0,0,0.0
+native,positive-24,Alejandro José Vidaña Luna,known_incident,yes,3,3,0,0,0,0,0,0,0,0,0,0,0,0.0,0,0.0
+native,positive-25,Omar Abacuc Sánchez Heras,known_incident,yes,2,2,0,0,0,0,0,0,0,0,0,0,0,0.0,0,0.0
+native,positive-26,Eduardo García Corpus,known_incident,yes,4,4,0,0,0,0,0,0,0,0,0,0,0,0.0,0,0.0
+native,positive-27,Manuel Lazcano Meza,known_incident,yes,3,3,0,0,0,0,0,0,0,0,0,0,0,0.0,0,0.0
+native,positive-28,Édgar Veytia Cambero,known_incident,yes,3,3,3,3,3,3,3,0,0,3,0,0,0,0.0,0,0.0
+native,positive-29,Alejandro Durán Llamas,known_incident,yes,4,4,0,0,0,0,0,0,0,0,0,0,0,0.0,0,0.0
+native,positive-30,Mario Marín Torres,known_incident,yes,5,5,32,32,9,9,9,0,0,4,4,1,0,0.0,0,0.0
+native,mx-notary-cdmx-058,Iñigo Xavier Reynoso De Teresa,no_known_incident,unknown,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,
+native,mx-notary-cdmx-242,Roberto Garzón Jiménez,no_known_incident,unknown,2,2,1,1,0,0,0,0,0,0,0,0,0,0.0,0,0.0
+native,mx-notary-cdmx-224,Jesús Torres Gómez,no_known_incident,unknown,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,
+native,mx-notary-cdmx-181,Miguel Soberón Mainero,no_known_incident,unknown,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,
+native,mx-notary-cdmx-238,Alfonso Martín León-Orantes,no_known_incident,unknown,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,
+native,mx-notary-cdmx-129,Ignacio Soto Borja y Anda,no_known_incident,unknown,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,
+native,mx-notary-cdmx-194,Enrique Zapata González Pacheco,no_known_incident,unknown,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,
+native,mx-notary-cdmx-074,Francisco Javier Arce Gargollo,no_known_incident,unknown,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,
+native,mx-notary-cdmx-045,Rafael Manuel Oliveros Lara,no_known_incident,unknown,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,
+native,mx-notary-cdmx-229,Marco Antonio Ruiz Aguirre,no_known_incident,unknown,1,1,0,0,0,0,0,0,0,0,0,0,0,0.0,0,0.0
+native,mx-notary-cdmx-098,Gonzalo Manuel Ortiz Blanco,no_known_incident,unknown,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,
+native,mx-notary-cdmx-230,Alfredo Bazúa Witte,no_known_incident,unknown,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,
+native,mx-notary-cdmx-114,María Teresa Rodríguez y Rodríguez,no_known_incident,unknown,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,
+native,mx-notary-cdmx-022,Daniel García Córdova,no_known_incident,unknown,5,5,0,0,0,0,0,0,0,0,0,0,0,0.0,0,0.0
+native,mx-notary-cdmx-071,Eduardo Javier Muñoz Pinchetti,no_known_incident,unknown,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,
+native,mx-notary-cdmx-025,Emiliano Zubiría Maqueo,no_known_incident,unknown,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,
+native,mx-notary-cdmx-002,Alfredo González Serrano,no_known_incident,unknown,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,
+native,mx-notary-cdmx-205,Arturo Adolfo Llorente Martínez,no_known_incident,unknown,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,
+native,mx-notary-cdmx-159,Tarcisio Domingo Sánchez Ulloa,no_known_incident,unknown,1,1,0,0,0,0,0,0,0,0,0,0,0,0.0,0,0.0
+native,mx-notary-cdmx-244,Celso de Jesús Pola Castillo,no_known_incident,yes,1,1,2,2,2,2,2,0,0,0,2,0,0,0.0,0,0.0
+native,mx-notary-cdmx-140,Jorge Alfredo Domínguez Martínez,no_known_incident,unknown,1,1,0,0,0,0,0,0,0,0,0,0,0,0.0,0,0.0
+native,mx-notary-cdmx-015,Eduardo Alejandro Francisco García Villegas,no_known_incident,unknown,0,0,1,1,1,1,1,0,0,0,1,0,0,,0,
+native,mx-notary-cdmx-216,Ernestina Bejarano Alfonso,no_known_incident,unknown,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,
+native,mx-notary-cdmx-088,Ricardo Vargas Navarro,no_known_incident,unknown,5,5,1,1,1,1,1,0,0,0,1,0,0,0.0,0,0.0
+native,mx-notary-cdmx-061,Javier Eduardo Del Valle y Palazuelos,no_known_incident,unknown,0,0,2,2,2,2,2,0,0,0,2,0,0,,0,
+native,mx-notary-cdmx-241,Sergio Rea Field,no_known_incident,unknown,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,
+native,mx-notary-cdmx-166,Gustavo Jiménez Ortiz,no_known_incident,unknown,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,
+native,mx-notary-cdmx-086,José Daniel Labardini Schettino,no_known_incident,unknown,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,
+native,mx-notary-cdmx-236,Alejandro Domínguez García Villalobos,no_known_incident,yes,1,1,0,0,0,0,0,0,0,0,0,0,0,0.0,0,0.0
+native,mx-notary-cdmx-197,Sara Cuevas Villalobos,no_known_incident,unknown,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,
+expanded,positive-01,Fernando Lugo García Pelayo,known_incident,yes,8,8,21,21,12,12,12,0,0,10,1,1,0,0.0,0,0.0
+expanded,positive-02,Carlos Fernando Licona Rivemar,known_incident,yes,2,2,0,0,0,0,0,0,0,0,0,0,0,0.0,0,0.0
+expanded,positive-03,Daniel Fernando Rangel Moctezuma,known_incident,yes,3,3,0,0,0,0,0,0,0,0,0,0,0,0.0,0,0.0
+expanded,positive-04,Horacio Aguilar Álvarez de Alba,known_incident,yes,3,3,0,0,0,0,0,0,0,0,0,0,0,0.0,0,0.0
+expanded,positive-05,Horacio Lucas Wong Villareal,known_incident,yes,3,3,0,0,0,0,0,0,0,0,0,0,0,0.0,0,0.0
+expanded,positive-06,Ernesto Pérez Charles,known_incident,yes,3,3,1,1,1,1,1,0,0,1,0,0,0,0.0,0,0.0
+expanded,positive-07,Carlos Tomás Goff Rodríguez,known_incident,yes,3,3,0,0,0,0,0,0,0,0,0,0,0,0.0,0,0.0
+expanded,positive-08,Octavio Eduardo Soto Hernández,known_incident,yes,3,3,1,1,1,1,1,0,0,1,0,0,0,0.0,0,0.0
+expanded,positive-09,Luis Felipe del Valle Prieto Ortega,known_incident,yes,6,6,0,0,0,0,0,0,0,0,0,0,0,0.0,0,0.0
+expanded,positive-10,Alejandro Moreno Morales,known_incident,unknown,3,3,0,0,0,0,0,0,0,0,0,0,0,0.0,0,0.0
+expanded,positive-11,Flavino Ríos Alvarado,known_incident,yes,3,3,6,6,6,6,6,0,0,3,3,0,0,0.0,0,0.0
+expanded,positive-12,Héctor Manuel Navarro Manjarrez,known_incident,unknown,2,2,0,0,0,0,0,0,0,0,0,0,0,0.0,0,0.0
+expanded,positive-13,Álvaro Guzmán Merino,known_incident,yes,4,4,2,2,1,1,1,0,0,1,0,0,0,0.0,0,0.0
+expanded,positive-14,Celso Rodríguez González,known_incident,yes,3,3,2,2,0,0,0,0,0,0,0,0,0,0.0,0,0.0
+expanded,positive-15,Jorge Gerardo Gutiérrez Ortiz Monasterio,known_incident,yes,2,2,1,1,0,0,0,0,0,0,0,0,0,0.0,0,0.0
+expanded,positive-16,Sergio Alejandro López Rivera,known_incident,yes,3,3,4,4,2,2,2,0,0,2,0,0,0,0.0,0,0.0
+expanded,positive-17,Luis Antonio Guerrero Campos,known_incident,yes,3,3,1,1,0,0,0,0,0,0,0,0,0,0.0,0,0.0
+expanded,positive-18,José Antonio Jaime Reynoso,known_incident,yes,3,3,3,3,1,1,0,0,1,0,0,0,0,0.0,0,0.0
+expanded,positive-19,Guillermo Coronado Figueroa,known_incident,yes,3,3,2,2,0,0,0,0,0,0,0,0,0,0.0,0,0.0
+expanded,positive-20,José Luis Organista Macías,known_incident,yes,4,4,2,2,0,0,0,0,0,0,0,0,0,0.0,0,0.0
+expanded,positive-21,Juan Hernández Rivas,known_incident,yes,2,2,2,2,0,0,0,0,0,0,0,0,0,0.0,0,0.0
+expanded,positive-22,Samuel Fernández Ávila,known_incident,yes,2,2,1,1,0,0,0,0,0,0,0,0,0,0.0,0,0.0
+expanded,positive-23,Javier Manuel Gutiérrez Dávila,known_incident,yes,3,3,2,2,0,0,0,0,0,0,0,0,0,0.0,0,0.0
+expanded,positive-24,Alejandro José Vidaña Luna,known_incident,yes,3,3,6,6,6,6,6,0,0,6,0,0,0,0.0,0,0.0
+expanded,positive-25,Omar Abacuc Sánchez Heras,known_incident,yes,2,2,5,5,5,5,5,0,0,4,0,1,0,0.0,0,0.0
+expanded,positive-26,Eduardo García Corpus,known_incident,yes,4,4,13,13,13,13,3,10,0,3,0,0,0,0.0,0,0.0
+expanded,positive-27,Manuel Lazcano Meza,known_incident,yes,3,3,0,0,0,0,0,0,0,0,0,0,0,0.0,0,0.0
+expanded,positive-28,Édgar Veytia Cambero,known_incident,yes,3,3,14,14,14,14,14,0,0,13,1,0,0,0.0,0,0.0
+expanded,positive-29,Alejandro Durán Llamas,known_incident,yes,4,4,0,0,0,0,0,0,0,0,0,0,0,0.0,0,0.0
+expanded,positive-30,Mario Marín Torres,known_incident,yes,5,5,12,12,10,10,10,0,0,5,3,2,0,0.0,0,0.0
+expanded,mx-notary-cdmx-058,Iñigo Xavier Reynoso De Teresa,no_known_incident,unknown,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,
+expanded,mx-notary-cdmx-242,Roberto Garzón Jiménez,no_known_incident,unknown,2,2,4,4,0,0,0,0,0,0,0,0,0,0.0,0,0.0
+expanded,mx-notary-cdmx-224,Jesús Torres Gómez,no_known_incident,unknown,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,
+expanded,mx-notary-cdmx-181,Miguel Soberón Mainero,no_known_incident,unknown,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,
+expanded,mx-notary-cdmx-238,Alfonso Martín León-Orantes,no_known_incident,unknown,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,
+expanded,mx-notary-cdmx-129,Ignacio Soto Borja y Anda,no_known_incident,unknown,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,
+expanded,mx-notary-cdmx-194,Enrique Zapata González Pacheco,no_known_incident,unknown,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,
+expanded,mx-notary-cdmx-074,Francisco Javier Arce Gargollo,no_known_incident,unknown,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,
+expanded,mx-notary-cdmx-045,Rafael Manuel Oliveros Lara,no_known_incident,unknown,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,
+expanded,mx-notary-cdmx-229,Marco Antonio Ruiz Aguirre,no_known_incident,unknown,1,1,0,0,0,0,0,0,0,0,0,0,0,0.0,0,0.0
+expanded,mx-notary-cdmx-098,Gonzalo Manuel Ortiz Blanco,no_known_incident,unknown,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,
+expanded,mx-notary-cdmx-230,Alfredo Bazúa Witte,no_known_incident,unknown,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,
+expanded,mx-notary-cdmx-114,María Teresa Rodríguez y Rodríguez,no_known_incident,unknown,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,
+expanded,mx-notary-cdmx-022,Daniel García Córdova,no_known_incident,unknown,5,5,0,0,0,0,0,0,0,0,0,0,0,0.0,0,0.0
+expanded,mx-notary-cdmx-071,Eduardo Javier Muñoz Pinchetti,no_known_incident,unknown,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,
+expanded,mx-notary-cdmx-025,Emiliano Zubiría Maqueo,no_known_incident,unknown,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,
+expanded,mx-notary-cdmx-002,Alfredo González Serrano,no_known_incident,unknown,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,
+expanded,mx-notary-cdmx-205,Arturo Adolfo Llorente Martínez,no_known_incident,unknown,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,
+expanded,mx-notary-cdmx-159,Tarcisio Domingo Sánchez Ulloa,no_known_incident,unknown,1,1,0,0,0,0,0,0,0,0,0,0,0,0.0,0,0.0
+expanded,mx-notary-cdmx-244,Celso de Jesús Pola Castillo,no_known_incident,yes,1,1,1,1,1,1,1,0,0,0,1,0,0,0.0,0,0.0
+expanded,mx-notary-cdmx-140,Jorge Alfredo Domínguez Martínez,no_known_incident,unknown,1,1,0,0,0,0,0,0,0,0,0,0,0,0.0,0,0.0
+expanded,mx-notary-cdmx-015,Eduardo Alejandro Francisco García Villegas,no_known_incident,unknown,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,
+expanded,mx-notary-cdmx-216,Ernestina Bejarano Alfonso,no_known_incident,unknown,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,
+expanded,mx-notary-cdmx-088,Ricardo Vargas Navarro,no_known_incident,unknown,5,5,0,0,0,0,0,0,0,0,0,0,0,0.0,0,0.0
+expanded,mx-notary-cdmx-061,Javier Eduardo Del Valle y Palazuelos,no_known_incident,unknown,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,
+expanded,mx-notary-cdmx-241,Sergio Rea Field,no_known_incident,unknown,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,
+expanded,mx-notary-cdmx-166,Gustavo Jiménez Ortiz,no_known_incident,unknown,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,
+expanded,mx-notary-cdmx-086,José Daniel Labardini Schettino,no_known_incident,unknown,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,
+expanded,mx-notary-cdmx-236,Alejandro Domínguez García Villalobos,no_known_incident,yes,1,1,1,1,1,1,1,0,0,1,0,0,1,1.0,1,1.0
+expanded,mx-notary-cdmx-197,Sara Cuevas Villalobos,no_known_incident,unknown,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,
+corpus,positive-01,Fernando Lugo García Pelayo,known_incident,yes,8,8,8,8,4,4,4,0,0,4,0,0,8,1.0,8,1.0
+corpus,positive-02,Carlos Fernando Licona Rivemar,known_incident,yes,2,2,2,2,1,1,1,0,0,1,0,0,2,1.0,2,1.0
+corpus,positive-03,Daniel Fernando Rangel Moctezuma,known_incident,yes,3,3,3,3,1,1,1,0,0,1,0,0,3,1.0,3,1.0
+corpus,positive-04,Horacio Aguilar Álvarez de Alba,known_incident,yes,3,3,3,3,2,2,2,0,0,2,0,0,3,1.0,3,1.0
+corpus,positive-05,Horacio Lucas Wong Villareal,known_incident,yes,3,3,3,3,3,3,3,0,0,3,0,0,3,1.0,3,1.0
+corpus,positive-06,Ernesto Pérez Charles,known_incident,yes,3,3,3,3,2,2,2,0,0,2,0,0,3,1.0,3,1.0
+corpus,positive-07,Carlos Tomás Goff Rodríguez,known_incident,yes,3,3,3,3,3,3,3,0,0,3,0,0,3,1.0,3,1.0
+corpus,positive-08,Octavio Eduardo Soto Hernández,known_incident,yes,3,3,3,3,3,3,3,0,0,3,0,0,3,1.0,3,1.0
+corpus,positive-09,Luis Felipe del Valle Prieto Ortega,known_incident,yes,6,6,6,6,6,6,6,0,0,6,0,0,6,1.0,6,1.0
+corpus,positive-10,Alejandro Moreno Morales,known_incident,unknown,3,3,3,3,1,1,1,0,0,0,0,1,3,1.0,3,1.0
+corpus,positive-11,Flavino Ríos Alvarado,known_incident,yes,3,3,3,3,1,1,1,0,0,0,0,1,3,1.0,3,1.0
+corpus,positive-12,Héctor Manuel Navarro Manjarrez,known_incident,unknown,2,2,2,2,0,0,0,0,0,0,0,0,2,1.0,2,1.0
+corpus,positive-13,Álvaro Guzmán Merino,known_incident,yes,4,4,4,4,3,3,3,0,0,3,0,0,4,1.0,4,1.0
+corpus,positive-14,Celso Rodríguez González,known_incident,yes,3,3,3,3,1,1,1,0,0,0,0,1,3,1.0,3,1.0
+corpus,positive-15,Jorge Gerardo Gutiérrez Ortiz Monasterio,known_incident,yes,2,2,2,2,0,0,0,0,0,0,0,0,2,1.0,2,1.0
+corpus,positive-16,Sergio Alejandro López Rivera,known_incident,yes,3,3,3,3,2,2,2,0,0,2,0,0,3,1.0,3,1.0
+corpus,positive-17,Luis Antonio Guerrero Campos,known_incident,yes,3,3,3,3,1,1,1,0,0,1,0,0,3,1.0,3,1.0
+corpus,positive-18,José Antonio Jaime Reynoso,known_incident,yes,3,3,3,3,1,1,1,0,0,1,0,0,3,1.0,3,1.0
+corpus,positive-19,Guillermo Coronado Figueroa,known_incident,yes,3,3,3,3,1,1,1,0,0,1,0,0,3,1.0,3,1.0
+corpus,positive-20,José Luis Organista Macías,known_incident,yes,4,4,4,4,2,2,2,0,0,1,0,1,4,1.0,4,1.0
+corpus,positive-21,Juan Hernández Rivas,known_incident,yes,2,2,2,2,0,0,0,0,0,0,0,0,2,1.0,2,1.0
+corpus,positive-22,Samuel Fernández Ávila,known_incident,yes,2,2,2,2,1,1,1,0,0,1,0,0,2,1.0,2,1.0
+corpus,positive-23,Javier Manuel Gutiérrez Dávila,known_incident,yes,3,3,3,3,0,0,0,0,0,0,0,0,3,1.0,3,1.0
+corpus,positive-24,Alejandro José Vidaña Luna,known_incident,yes,3,3,3,3,3,3,3,0,0,2,1,0,3,1.0,3,1.0
+corpus,positive-25,Omar Abacuc Sánchez Heras,known_incident,yes,2,2,2,2,1,1,1,0,0,1,0,0,2,1.0,2,1.0
+corpus,positive-26,Eduardo García Corpus,known_incident,yes,4,4,4,4,3,3,2,0,1,2,0,0,4,1.0,4,1.0
+corpus,positive-27,Manuel Lazcano Meza,known_incident,yes,3,3,3,3,2,2,2,0,0,2,0,0,3,1.0,3,1.0
+corpus,positive-28,Édgar Veytia Cambero,known_incident,yes,3,3,3,3,3,3,3,0,0,3,0,0,3,1.0,3,1.0
+corpus,positive-29,Alejandro Durán Llamas,known_incident,yes,4,4,4,4,0,0,0,0,0,0,0,0,4,1.0,4,1.0
+corpus,positive-30,Mario Marín Torres,known_incident,yes,5,5,5,5,2,2,2,0,0,1,0,1,5,1.0,5,1.0
+corpus,mx-notary-cdmx-058,Iñigo Xavier Reynoso De Teresa,no_known_incident,unknown,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,
+corpus,mx-notary-cdmx-242,Roberto Garzón Jiménez,no_known_incident,unknown,2,2,3,3,1,1,1,0,0,0,1,0,2,1.0,2,1.0
+corpus,mx-notary-cdmx-224,Jesús Torres Gómez,no_known_incident,unknown,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,
+corpus,mx-notary-cdmx-181,Miguel Soberón Mainero,no_known_incident,unknown,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,
+corpus,mx-notary-cdmx-238,Alfonso Martín León-Orantes,no_known_incident,unknown,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,
+corpus,mx-notary-cdmx-129,Ignacio Soto Borja y Anda,no_known_incident,unknown,0,0,1,1,1,1,1,0,0,0,1,0,0,,0,
+corpus,mx-notary-cdmx-194,Enrique Zapata González Pacheco,no_known_incident,unknown,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,
+corpus,mx-notary-cdmx-074,Francisco Javier Arce Gargollo,no_known_incident,unknown,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,
+corpus,mx-notary-cdmx-045,Rafael Manuel Oliveros Lara,no_known_incident,unknown,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,
+corpus,mx-notary-cdmx-229,Marco Antonio Ruiz Aguirre,no_known_incident,unknown,1,1,2,2,1,1,1,0,0,0,1,0,1,1.0,1,1.0
+corpus,mx-notary-cdmx-098,Gonzalo Manuel Ortiz Blanco,no_known_incident,unknown,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,
+corpus,mx-notary-cdmx-230,Alfredo Bazúa Witte,no_known_incident,unknown,0,0,2,2,0,0,0,0,0,0,0,0,0,,0,
+corpus,mx-notary-cdmx-114,María Teresa Rodríguez y Rodríguez,no_known_incident,unknown,0,0,1,1,0,0,0,0,0,0,0,0,0,,0,
+corpus,mx-notary-cdmx-022,Daniel García Córdova,no_known_incident,unknown,5,5,8,8,7,7,6,0,1,0,6,0,5,1.0,5,1.0
+corpus,mx-notary-cdmx-071,Eduardo Javier Muñoz Pinchetti,no_known_incident,unknown,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,
+corpus,mx-notary-cdmx-025,Emiliano Zubiría Maqueo,no_known_incident,unknown,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,
+corpus,mx-notary-cdmx-002,Alfredo González Serrano,no_known_incident,unknown,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,
+corpus,mx-notary-cdmx-205,Arturo Adolfo Llorente Martínez,no_known_incident,unknown,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,
+corpus,mx-notary-cdmx-159,Tarcisio Domingo Sánchez Ulloa,no_known_incident,unknown,1,1,1,1,0,0,0,0,0,0,0,0,1,1.0,1,1.0
+corpus,mx-notary-cdmx-244,Celso de Jesús Pola Castillo,no_known_incident,yes,1,1,1,1,0,0,0,0,0,0,0,0,1,1.0,1,1.0
+corpus,mx-notary-cdmx-140,Jorge Alfredo Domínguez Martínez,no_known_incident,unknown,1,1,1,1,1,1,1,0,0,0,1,0,1,1.0,1,1.0
+corpus,mx-notary-cdmx-015,Eduardo Alejandro Francisco García Villegas,no_known_incident,unknown,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,
+corpus,mx-notary-cdmx-216,Ernestina Bejarano Alfonso,no_known_incident,unknown,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,
+corpus,mx-notary-cdmx-088,Ricardo Vargas Navarro,no_known_incident,unknown,5,5,10,10,10,10,8,0,2,0,8,0,5,1.0,5,1.0
+corpus,mx-notary-cdmx-061,Javier Eduardo Del Valle y Palazuelos,no_known_incident,unknown,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,
+corpus,mx-notary-cdmx-241,Sergio Rea Field,no_known_incident,unknown,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,
+corpus,mx-notary-cdmx-166,Gustavo Jiménez Ortiz,no_known_incident,unknown,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,
+corpus,mx-notary-cdmx-086,José Daniel Labardini Schettino,no_known_incident,unknown,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,
+corpus,mx-notary-cdmx-236,Alejandro Domínguez García Villalobos,no_known_incident,yes,1,1,1,1,1,1,1,0,0,1,0,0,1,1.0,1,1.0
+corpus,mx-notary-cdmx-197,Sara Cuevas Villalobos,no_known_incident,unknown,0,0,1,1,1,1,1,0,0,0,1,0,0,,0,
+notisistema,positive-01,Fernando Lugo García Pelayo,known_incident,yes,8,8,0,0,0,0,0,0,0,0,0,0,0,0.0,0,0.0
+notisistema,positive-02,Carlos Fernando Licona Rivemar,known_incident,yes,2,2,0,0,0,0,0,0,0,0,0,0,0,0.0,0,0.0
+notisistema,positive-03,Daniel Fernando Rangel Moctezuma,known_incident,yes,3,3,0,0,0,0,0,0,0,0,0,0,0,0.0,0,0.0
+notisistema,positive-04,Horacio Aguilar Álvarez de Alba,known_incident,yes,3,3,0,0,0,0,0,0,0,0,0,0,0,0.0,0,0.0
+notisistema,positive-05,Horacio Lucas Wong Villareal,known_incident,yes,3,3,0,0,0,0,0,0,0,0,0,0,0,0.0,0,0.0
+notisistema,positive-06,Ernesto Pérez Charles,known_incident,yes,3,3,0,0,0,0,0,0,0,0,0,0,0,0.0,0,0.0
+notisistema,positive-07,Carlos Tomás Goff Rodríguez,known_incident,yes,3,3,0,0,0,0,0,0,0,0,0,0,0,0.0,0,0.0
+notisistema,positive-08,Octavio Eduardo Soto Hernández,known_incident,yes,3,3,0,0,0,0,0,0,0,0,0,0,0,0.0,0,0.0
+notisistema,positive-09,Luis Felipe del Valle Prieto Ortega,known_incident,yes,6,6,0,0,0,0,0,0,0,0,0,0,0,0.0,0,0.0
+notisistema,positive-10,Alejandro Moreno Morales,known_incident,unknown,3,3,0,0,0,0,0,0,0,0,0,0,0,0.0,0,0.0
+notisistema,positive-11,Flavino Ríos Alvarado,known_incident,yes,3,3,0,0,0,0,0,0,0,0,0,0,0,0.0,0,0.0
+notisistema,positive-12,Héctor Manuel Navarro Manjarrez,known_incident,unknown,2,2,0,0,0,0,0,0,0,0,0,0,0,0.0,0,0.0
+notisistema,positive-13,Álvaro Guzmán Merino,known_incident,yes,4,4,0,0,0,0,0,0,0,0,0,0,0,0.0,0,0.0
+notisistema,positive-14,Celso Rodríguez González,known_incident,yes,3,3,0,0,0,0,0,0,0,0,0,0,0,0.0,0,0.0
+notisistema,positive-15,Jorge Gerardo Gutiérrez Ortiz Monasterio,known_incident,yes,2,2,0,0,0,0,0,0,0,0,0,0,0,0.0,0,0.0
+notisistema,positive-16,Sergio Alejandro López Rivera,known_incident,yes,3,3,0,0,0,0,0,0,0,0,0,0,0,0.0,0,0.0
+notisistema,positive-17,Luis Antonio Guerrero Campos,known_incident,yes,3,3,0,0,0,0,0,0,0,0,0,0,0,0.0,0,0.0
+notisistema,positive-18,José Antonio Jaime Reynoso,known_incident,yes,3,3,0,0,0,0,0,0,0,0,0,0,0,0.0,0,0.0
+notisistema,positive-19,Guillermo Coronado Figueroa,known_incident,yes,3,3,2,2,2,2,2,0,0,2,0,0,0,0.0,0,0.0
+notisistema,positive-20,José Luis Organista Macías,known_incident,yes,4,4,1,1,1,1,1,0,0,1,0,0,0,0.0,0,0.0
+notisistema,positive-21,Juan Hernández Rivas,known_incident,yes,2,2,0,0,0,0,0,0,0,0,0,0,0,0.0,0,0.0
+notisistema,positive-22,Samuel Fernández Ávila,known_incident,yes,2,2,1,1,1,1,1,0,0,1,0,0,0,0.0,0,0.0
+notisistema,positive-23,Javier Manuel Gutiérrez Dávila,known_incident,yes,3,3,1,1,1,1,1,0,0,1,0,0,0,0.0,0,0.0
+notisistema,positive-24,Alejandro José Vidaña Luna,known_incident,yes,3,3,0,0,0,0,0,0,0,0,0,0,0,0.0,0,0.0
+notisistema,positive-25,Omar Abacuc Sánchez Heras,known_incident,yes,2,2,0,0,0,0,0,0,0,0,0,0,0,0.0,0,0.0
+notisistema,positive-26,Eduardo García Corpus,known_incident,yes,4,4,0,0,0,0,0,0,0,0,0,0,0,0.0,0,0.0
+notisistema,positive-27,Manuel Lazcano Meza,known_incident,yes,3,3,0,0,0,0,0,0,0,0,0,0,0,0.0,0,0.0
+notisistema,positive-28,Édgar Veytia Cambero,known_incident,yes,3,3,0,0,0,0,0,0,0,0,0,0,0,0.0,0,0.0
+notisistema,positive-29,Alejandro Durán Llamas,known_incident,yes,4,4,0,0,0,0,0,0,0,0,0,0,0,0.0,0,0.0
+notisistema,positive-30,Mario Marín Torres,known_incident,yes,5,5,0,0,0,0,0,0,0,0,0,0,0,0.0,0,0.0
+notisistema,mx-notary-cdmx-058,Iñigo Xavier Reynoso De Teresa,no_known_incident,unknown,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,
+notisistema,mx-notary-cdmx-242,Roberto Garzón Jiménez,no_known_incident,unknown,2,2,0,0,0,0,0,0,0,0,0,0,0,0.0,0,0.0
+notisistema,mx-notary-cdmx-224,Jesús Torres Gómez,no_known_incident,unknown,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,
+notisistema,mx-notary-cdmx-181,Miguel Soberón Mainero,no_known_incident,unknown,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,
+notisistema,mx-notary-cdmx-238,Alfonso Martín León-Orantes,no_known_incident,unknown,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,
+notisistema,mx-notary-cdmx-129,Ignacio Soto Borja y Anda,no_known_incident,unknown,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,
+notisistema,mx-notary-cdmx-194,Enrique Zapata González Pacheco,no_known_incident,unknown,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,
+notisistema,mx-notary-cdmx-074,Francisco Javier Arce Gargollo,no_known_incident,unknown,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,
+notisistema,mx-notary-cdmx-045,Rafael Manuel Oliveros Lara,no_known_incident,unknown,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,
+notisistema,mx-notary-cdmx-229,Marco Antonio Ruiz Aguirre,no_known_incident,unknown,1,1,0,0,0,0,0,0,0,0,0,0,0,0.0,0,0.0
+notisistema,mx-notary-cdmx-098,Gonzalo Manuel Ortiz Blanco,no_known_incident,unknown,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,
+notisistema,mx-notary-cdmx-230,Alfredo Bazúa Witte,no_known_incident,unknown,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,
+notisistema,mx-notary-cdmx-114,María Teresa Rodríguez y Rodríguez,no_known_incident,unknown,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,
+notisistema,mx-notary-cdmx-022,Daniel García Córdova,no_known_incident,unknown,5,5,0,0,0,0,0,0,0,0,0,0,0,0.0,0,0.0
+notisistema,mx-notary-cdmx-071,Eduardo Javier Muñoz Pinchetti,no_known_incident,unknown,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,
+notisistema,mx-notary-cdmx-025,Emiliano Zubiría Maqueo,no_known_incident,unknown,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,
+notisistema,mx-notary-cdmx-002,Alfredo González Serrano,no_known_incident,unknown,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,
+notisistema,mx-notary-cdmx-205,Arturo Adolfo Llorente Martínez,no_known_incident,unknown,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,
+notisistema,mx-notary-cdmx-159,Tarcisio Domingo Sánchez Ulloa,no_known_incident,unknown,1,1,0,0,0,0,0,0,0,0,0,0,0,0.0,0,0.0
+notisistema,mx-notary-cdmx-244,Celso de Jesús Pola Castillo,no_known_incident,yes,1,1,0,0,0,0,0,0,0,0,0,0,0,0.0,0,0.0
+notisistema,mx-notary-cdmx-140,Jorge Alfredo Domínguez Martínez,no_known_incident,unknown,1,1,0,0,0,0,0,0,0,0,0,0,0,0.0,0,0.0
+notisistema,mx-notary-cdmx-015,Eduardo Alejandro Francisco García Villegas,no_known_incident,unknown,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,
+notisistema,mx-notary-cdmx-216,Ernestina Bejarano Alfonso,no_known_incident,unknown,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,
+notisistema,mx-notary-cdmx-088,Ricardo Vargas Navarro,no_known_incident,unknown,5,5,0,0,0,0,0,0,0,0,0,0,0,0.0,0,0.0
+notisistema,mx-notary-cdmx-061,Javier Eduardo Del Valle y Palazuelos,no_known_incident,unknown,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,
+notisistema,mx-notary-cdmx-241,Sergio Rea Field,no_known_incident,unknown,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,
+notisistema,mx-notary-cdmx-166,Gustavo Jiménez Ortiz,no_known_incident,unknown,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,
+notisistema,mx-notary-cdmx-086,José Daniel Labardini Schettino,no_known_incident,unknown,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,
+notisistema,mx-notary-cdmx-236,Alejandro Domínguez García Villalobos,no_known_incident,yes,1,1,0,0,0,0,0,0,0,0,0,0,0,0.0,0,0.0
+notisistema,mx-notary-cdmx-197,Sara Cuevas Villalobos,no_known_incident,unknown,0,0,0,0,0,0,0,0,0,0,0,0,0,,0,

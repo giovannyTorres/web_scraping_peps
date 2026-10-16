@@ -1,0 +1,4525 @@
+{
+  "cohort": {
+    "comparación aleatoria CDMX": 30,
+    "comparadores CDMX": "2 etiquetas históricas positivas y 28 desconocidas; ninguno se reemplazó",
+    "etiquetas históricas por persona": "30 positivas, 30 desconocidas, cero negativos certificados",
+    "personas": 60,
+    "referencia pertinente del recall": "115 pares · 97 URLs; 15 pares / 14 URLs con etiqueta desconocida se conservan aparte",
+    "referencia total": "130 pares persona-URL · 111 URLs",
+    "selección histórica dirigida": "28 etiquetas positivas y 2 desconocidas",
+    "tipos pertinentes": "111 pares de noticias / 93 URLs; 4 pares institucionales / 4 URLs",
+    "unidad de volumen": "URLs y pares persona-URL; no historias independientes"
+  },
+  "confusion_matrices": [
+    {
+      "abstain": 21,
+      "arm": "Descubrimiento por nombre · fuentes iniciales",
+      "fn": 3,
+      "fp": 0,
+      "tn": 5,
+      "tp": 0,
+      "variant": "Clasificador auxiliar"
+    },
+    {
+      "abstain": 0,
+      "arm": "Descubrimiento por nombre · fuentes iniciales",
+      "fn": 7,
+      "fp": 0,
+      "tn": 18,
+      "tp": 3,
+      "variant": "Reglas NLP"
+    },
+    {
+      "abstain": 54,
+      "arm": "Descubrimiento por nombre · fuentes ampliadas",
+      "fn": 6,
+      "fp": 0,
+      "tn": 0,
+      "tp": 2,
+      "variant": "Clasificador auxiliar"
+    },
+    {
+      "abstain": 3,
+      "arm": "Descubrimiento por nombre · fuentes ampliadas",
+      "fn": 29,
+      "fp": 0,
+      "tn": 9,
+      "tp": 18,
+      "variant": "Reglas NLP"
+    },
+    {
+      "abstain": 59,
+      "arm": "Descarga de referencias ya conocidas",
+      "fn": 9,
+      "fp": 0,
+      "tn": 4,
+      "tp": 0,
+      "variant": "Clasificador auxiliar"
+    },
+    {
+      "abstain": 31,
+      "arm": "Descarga de referencias ya conocidas",
+      "fn": 11,
+      "fp": 0,
+      "tn": 17,
+      "tp": 12,
+      "variant": "Reglas NLP"
+    },
+    {
+      "abstain": 5,
+      "arm": "Retest adaptado · un editor (Notisistema)",
+      "fn": 0,
+      "fp": 0,
+      "tn": 0,
+      "tp": 0,
+      "variant": "Clasificador auxiliar"
+    },
+    {
+      "abstain": 0,
+      "arm": "Retest adaptado · un editor (Notisistema)",
+      "fn": 5,
+      "fp": 0,
+      "tn": 0,
+      "tp": 0,
+      "variant": "Reglas NLP"
+    }
+  ],
+  "findings": [
+    {
+      "evidence": "La búsqueda inicial alcanzó 28 URLs con texto, pero recuperó 0 de 115 pares pertinentes del conjunto de referencia.",
+      "implication": "Las notas obtenidas no sustituyen la cobertura del conjunto conocido. Las URLs de referencia provienen de una búsqueda externa previa; no se atribuyen al descubrimiento de WebScope.",
+      "severity": "high",
+      "title": "La cobertura documental sigue siendo insuficiente."
+    },
+    {
+      "evidence": "Las cinco notas de Notisistema fueron revisadas como pertinentes y con papel adverso reportado. NLP emitió cinco decisiones no; el auxiliar se abstuvo en las cinco: ambos tienen recall 0/5 en este retest.",
+      "implication": "Es un fallo de detección documental que sigue abierto. Obtener texto no acredita que el análisis haya funcionado; el cero del detector no demuestra ausencia de incidentes y requiere revisión del documento.",
+      "severity": "high",
+      "title": "El retest recuperó textos, pero los detectores no identificaron sus cinco señales."
+    },
+    {
+      "evidence": "La corrida ampliada contiene coincidencias incorrectas y reintentos agotados. Una misma nota puede aparecer en URLs regionales o sindicadas, incluso con hashes de texto diferentes.",
+      "implication": "Use los pares revisados, los errores y los límites de precisión. Los contadores URL/hash no certifican deduplicación semántica.",
+      "severity": "high",
+      "title": "El volumen bruto no equivale a pertinencia ni a historias distintas."
+    },
+    {
+      "evidence": "En el corpus, su recall conocido es 0 de 47; se conservan sus errores y abstenciones.",
+      "implication": "No sirve como garantía de ausencia de señal adversa y no se entrenó ni ajustó con estas etiquetas.",
+      "severity": "high",
+      "title": "El clasificador auxiliar no supera el backtest documental."
+    },
+    {
+      "evidence": "Se corrigió una omisión del evaluador y después se añadieron reglas conservadoras de medidas notariales, metadatos de publicación y variantes nominales. Son correcciones retrospectivas.",
+      "implication": "Los replays de estos mismos documentos son regresiones, no una estimación independiente de mejora fuera de muestra. Las latencias de red corresponden a las ejecuciones congeladas previas.",
+      "severity": "warning",
+      "title": "Los cambios se revisaron sobre casos ya observados."
+    },
+    {
+      "evidence": "Con 300 tareas simuladas, las reclamaciones de trabajo bajaron de 602 a 303 y los aplazamientos por anfitrión de 300 a 1. CPU: 4,365 a 3,099 s; pared: 10,786 a 9,083 s.",
+      "implication": "Se conservaron 302 solicitudes simuladas, el mismo cuerpo y una auditoría válida. El tiempo virtual siguió en 2.100 s. Es una prueba local del planificador, no un SLA de internet ni otra corrida de 300 personas reales.",
+      "severity": "info",
+      "title": "La mejora del planificador se midió además en simulación local."
+    },
+    {
+      "evidence": "La lista ampliada pasó de 74 a 64 pares con texto conservando el archivo original. Quedan 63 pertinentes revisados, 0 ajenos conocidos y 1 desconocido: precisión revisada 63/63, cota global 63/64 a 1.",
+      "implication": "Es un filtrado retrospectivo local, sin nueva adquisición ni mejora de latencia demostrada. La cobertura de referencia permanece en 1/97 exacto y 4/97 con redirects verificados; la amplitud sigue siendo limitada.",
+      "severity": "info",
+      "title": "La proyección corregida retira las diez asociaciones ajenas."
+    },
+    {
+      "evidence": "La primera corrección mantuvo cero red y retiró asociaciones ajenas, pero repitió artículos/observaciones y trabajos de cuerpo. Ese fallo no se borró del historial.",
+      "implication": "Tras corregirlo, el segundo replay pasó 19/19 comprobaciones con cero DNS/TCP/HTTP. No transforma las corridas originales de red en ejecuciones nuevas ni demuestra cobertura suficiente.",
+      "severity": "warning",
+      "title": "Se conserva también el replay local que falló."
+    },
+    {
+      "evidence": "Notisistema devolvió 5 URLs con texto para 4 personas tras 72 consultas. La adquisición fría tardó 395,497 s, con 78 peticiones HTTP y cola final sin pendientes.",
+      "implication": "Coincidencia exacta: 0/97 URLs de referencia; con redirects de permalink verificados: 2/97. Es una prueba adaptada sobre un solo editor y no se suma a las corridas previas ni demuestra cobertura del histórico.",
+      "severity": "info",
+      "title": "El retest de un editor se mantiene separado."
+    }
+  ],
+  "limitations": [
+    "Los 30 casos históricos fueron seleccionados intencionalmente por reportes conocidos. Los 30 comparadores se sortearon de un directorio de CDMX, sin igualar notoriedad, estado o exposición pública.",
+    "Los comparadores mantienen 2 etiquetas históricas positivas y 28 desconocidas; no se reemplazó a quienes tuvieron reportes adversos. El grupo dirigido tiene 28 positivas y 2 desconocidas. En total hay 30 positivas, 30 desconocidas y cero negativos personales certificados.",
+    "Una etiqueta describe el papel que una fuente reporta, no acredita identidad, culpabilidad, sanción vigente ni ausencia de otros incidentes. No se calculó scoring.",
+    "Las referencias e índices se consultaron en la fecha del estudio. No hay reconstrucción demostrada de lo que un buscador conocía en una fecha pasada, ni equivalencia de cobertura con Google.",
+    "El recall se limita a referencias conocidas y elegibilidad documentada; no mide todas las notas existentes en internet. El acceso por fuente, robots, permisos, plazos y cuerpos faltantes limita el resultado.",
+    "Las abstenciones permanecen en los denominadores de recall y de accuracy del subconjunto adjudicado; los desconocidos quedan visibles y la accuracy global permanece N/D.",
+    "Los intervalos Wilson expresan incertidumbre binomial marginal. No corrigen sesgo de selección ni dependencia por sindicación, personas repetidas o varias URLs de una misma historia.",
+    "URLs y hashes únicos no equivalen a historias periodísticas independientes; no se afirma deduplicación semántica completa.",
+    "Las búsquedas nativa y ampliada y la adquisición de referencias no se suman para presentar un total de descubrimiento. Las descargas de URLs conocidas son un brazo cerrado de adquisición.",
+    "Las correcciones surgieron después de observar fallos en estos casos. No hay conjunto independiente reservado ni afirmación de rendimiento fuera de muestra.",
+    "Las anotaciones fueron realizadas por agentes asistentes con las predicciones ocultas; nombres y grupos de selección eran visibles. No equivalen a un panel jurídico humano ni a doble ciego completo.",
+    "El sello temporal del gold se refiere a los últimos insumos constituyentes: 22:10:14 UTC; la compilación derivada ocurrió a las 22:11:15 UTC, tras iniciar la corrida nativa a las 22:10:26 UTC. Sus recibos no prueban por sí solos independencia de selección.",
+    "Los artefactos públicos contienen metadatos, etiquetas, hashes y métricas; no incluyen cuerpos ni citas extensas. Sus hashes son distintos de los archivos originales saneados.",
+    "El retest Notisistema ocurrió después de adaptar el soporte de búsqueda en subdirectorio y revisar fallos. No es un A/B sobre idénticos anfitriones ni validación fuera de muestra.",
+    "La gráfica de calidad limita la presentación a las primeras 60 proporciones disponibles. La tabla de métricas y los JSON conservan las 80 métricas completas de los cuatro brazos; los valores omitidos del dibujo no se omiten de la evaluación."
+  ],
+  "links": [
+    {
+      "label": "Metodología y diccionario",
+      "url": "README.md"
+    },
+    {
+      "label": "Resumen estructurado",
+      "url": "summary.json"
+    },
+    {
+      "label": "Volumen por entidad · CSV",
+      "url": "entities.csv"
+    },
+    {
+      "label": "Fuentes · CSV",
+      "url": "sources.csv"
+    },
+    {
+      "label": "FN / FP / abstenciones · CSV",
+      "url": "document-errors.csv"
+    },
+    {
+      "label": "Pares recuperados y pertinencia · CSV",
+      "url": "retrieved-pairs.csv"
+    },
+    {
+      "label": "Cohorte pública",
+      "url": "cohort.json"
+    },
+    {
+      "label": "Referencias públicas",
+      "url": "reference_articles.json"
+    },
+    {
+      "label": "Denominadores de referencia",
+      "url": "reference-denominators.json"
+    },
+    {
+      "label": "Equivalencias de URL verificadas",
+      "url": "redirect-aware-reference-recall.json"
+    },
+    {
+      "label": "Entrada pública para recalcular · inicial",
+      "url": "evaluation-input-native.json"
+    },
+    {
+      "label": "Planificador · A/B local simulado",
+      "url": "performance-local.json"
+    },
+    {
+      "label": "Proyección actual corregida · resumen",
+      "url": "expanded-current-projection-summary.json"
+    },
+    {
+      "label": "Historial del replay local · fallo y corrección",
+      "url": "offline-replay-history.json"
+    },
+    {
+      "label": "Validación de software",
+      "url": "software-validation.json"
+    },
+    {
+      "label": "Procedencia y hashes",
+      "url": "manifest.json"
+    },
+    {
+      "label": "Retest de un editor · resumen",
+      "url": "summary-notisistema.json"
+    },
+    {
+      "label": "Explorar errores y abstenciones",
+      "url": "document-errors.html"
+    }
+  ],
+  "metric_rows": [
+    {
+      "arm": "Descubrimiento por nombre · fuentes iniciales",
+      "denominator": 30,
+      "interval": {
+        "lower": 0.8864866068260312,
+        "upper": 0.9999999999999999
+      },
+      "metric": "Pertinencia · precisión revisada",
+      "note": "Pertinencia respecto de la persona, no señal adversa; excluye desconocidos del cociente y conserva su cantidad en JSON.",
+      "numerator": 30,
+      "value": 1.0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes iniciales",
+      "denominator": 115,
+      "interval": {
+        "lower": 0.0,
+        "upper": 0.03232423144931307
+      },
+      "metric": "Recuperación exacta · recall de pares",
+      "note": "Coincidencia de URL según canonical_url; pares persona-URL relevantes conocidos. No recall de internet. En corpus es adquisición desde URLs conocidas.",
+      "numerator": 0,
+      "value": 0.0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes iniciales",
+      "denominator": 97,
+      "interval": {
+        "lower": 0.0,
+        "upper": 0.03809404252594769
+      },
+      "metric": "Recuperación exacta · recall de URLs",
+      "note": "Coincidencia de URL según canonical_url, sin equiparar barras finales por heurística. Denominador 97 URLs, distinto de los 115 pares.",
+      "numerator": 0,
+      "value": 0.0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes iniciales",
+      "denominator": 60,
+      "interval": {
+        "lower": 0.08097440580167739,
+        "upper": 0.2611458906977855
+      },
+      "metric": "Cobertura · entidades con texto pertinente",
+      "note": "Numerador: entidades con al menos un texto pertinente revisado; denominador: 60 personas.",
+      "numerator": 9,
+      "value": 0.15
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes iniciales",
+      "denominator": 115,
+      "interval": {
+        "lower": 0.0,
+        "upper": 0.03232423144931307
+      },
+      "metric": "Recuperación con redirects verificados · recall de pares",
+      "note": "Suplemento sin alterar gold ni métricas exactas: sólo equivalencias de redirección de páginas originales usables, verificadas por captura y hash. Denominador 115 pares.",
+      "numerator": 0,
+      "value": 0.0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes iniciales",
+      "denominator": 97,
+      "interval": {
+        "lower": 0.0,
+        "upper": 0.03809404252594769
+      },
+      "metric": "Recuperación con redirects verificados · recall de URLs",
+      "note": "Equivalencias de permalink verificadas por respuestas conservadas; no se quitan barras finales de forma general. Denominador 97 URLs. En corpus sigue siendo adquisición, no búsqueda.",
+      "numerator": 0,
+      "value": 0.0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes iniciales",
+      "denominator": 0,
+      "interval": null,
+      "metric": "Clasificador auxiliar · precisión",
+      "note": "Etiquetas conocidas: 10 positivas y 18 negativas; 2 desconocidas. Abstenciones: 7 positivas, 13 negativas y 1 desconocidas. Papel adverso reportado al publicar, sobre pares pertinentes revisados. Abstenciones penalizan recall y accuracy adjudicada; el subconjunto contestado excluye abstenciones. Desconocidos impiden accuracy global.",
+      "numerator": 0,
+      "value": null
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes iniciales",
+      "denominator": 10,
+      "interval": {
+        "lower": 0.0,
+        "upper": 0.2775327998628892
+      },
+      "metric": "Clasificador auxiliar · recall",
+      "note": "Etiquetas conocidas: 10 positivas y 18 negativas; 2 desconocidas. Abstenciones: 7 positivas, 13 negativas y 1 desconocidas. Papel adverso reportado al publicar, sobre pares pertinentes revisados. Abstenciones penalizan recall y accuracy adjudicada; el subconjunto contestado excluye abstenciones. Desconocidos impiden accuracy global.",
+      "numerator": 0,
+      "value": 0.0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes iniciales",
+      "denominator": null,
+      "metric": "Clasificador auxiliar · F1",
+      "note": "Etiquetas conocidas: 10 positivas y 18 negativas; 2 desconocidas. Abstenciones: 7 positivas, 13 negativas y 1 desconocidas. Papel adverso reportado al publicar, sobre pares pertinentes revisados. Abstenciones penalizan recall y accuracy adjudicada; el subconjunto contestado excluye abstenciones. Desconocidos impiden accuracy global.",
+      "numerator": null,
+      "value": 0.0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes iniciales",
+      "denominator": 28,
+      "interval": {
+        "lower": 0.07878501945604277,
+        "upper": 0.35591424789342946
+      },
+      "metric": "Clasificador auxiliar · accuracy en subconjunto adjudicado",
+      "note": "Etiquetas conocidas: 10 positivas y 18 negativas; 2 desconocidas. Abstenciones: 7 positivas, 13 negativas y 1 desconocidas. Papel adverso reportado al publicar, sobre pares pertinentes revisados. Abstenciones penalizan recall y accuracy adjudicada; el subconjunto contestado excluye abstenciones. Desconocidos impiden accuracy global.",
+      "numerator": 5,
+      "value": 0.17857142857142858
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes iniciales",
+      "denominator": 8,
+      "interval": {
+        "lower": 0.30574239460262737,
+        "upper": 0.8631557141764026
+      },
+      "metric": "Clasificador auxiliar · accuracy sólo decisiones contestadas",
+      "note": "Etiquetas conocidas: 10 positivas y 18 negativas; 2 desconocidas. Abstenciones: 7 positivas, 13 negativas y 1 desconocidas. Papel adverso reportado al publicar, sobre pares pertinentes revisados. Abstenciones penalizan recall y accuracy adjudicada; el subconjunto contestado excluye abstenciones. Desconocidos impiden accuracy global.",
+      "numerator": 5,
+      "value": 0.625
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes iniciales",
+      "denominator": null,
+      "interval": null,
+      "metric": "Clasificador auxiliar · accuracy global",
+      "note": "Etiquetas conocidas: 10 positivas y 18 negativas; 2 desconocidas. Abstenciones: 7 positivas, 13 negativas y 1 desconocidas. Papel adverso reportado al publicar, sobre pares pertinentes revisados. Abstenciones penalizan recall y accuracy adjudicada; el subconjunto contestado excluye abstenciones. Desconocidos impiden accuracy global.",
+      "numerator": null,
+      "value": null
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes iniciales",
+      "denominator": 30,
+      "interval": {
+        "lower": 0.16664748268243793,
+        "upper": 0.47875787458714947
+      },
+      "metric": "Clasificador auxiliar · cobertura de decisión",
+      "note": "Etiquetas conocidas: 10 positivas y 18 negativas; 2 desconocidas. Abstenciones: 7 positivas, 13 negativas y 1 desconocidas. Papel adverso reportado al publicar, sobre pares pertinentes revisados. Abstenciones penalizan recall y accuracy adjudicada; el subconjunto contestado excluye abstenciones. Desconocidos impiden accuracy global.",
+      "numerator": 9,
+      "value": 0.3
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes iniciales",
+      "denominator": 3,
+      "interval": {
+        "lower": 0.4385029682449546,
+        "upper": 1.0
+      },
+      "metric": "Reglas NLP · precisión",
+      "note": "Etiquetas conocidas: 10 positivas y 18 negativas; 2 desconocidas. Abstenciones: 0 positivas, 0 negativas y 0 desconocidas. Papel adverso reportado al publicar, sobre pares pertinentes revisados. Abstenciones penalizan recall y accuracy adjudicada; el subconjunto contestado excluye abstenciones. Desconocidos impiden accuracy global.",
+      "numerator": 3,
+      "value": 1.0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes iniciales",
+      "denominator": 10,
+      "interval": {
+        "lower": 0.10779126740630099,
+        "upper": 0.6032218525388546
+      },
+      "metric": "Reglas NLP · recall",
+      "note": "Etiquetas conocidas: 10 positivas y 18 negativas; 2 desconocidas. Abstenciones: 0 positivas, 0 negativas y 0 desconocidas. Papel adverso reportado al publicar, sobre pares pertinentes revisados. Abstenciones penalizan recall y accuracy adjudicada; el subconjunto contestado excluye abstenciones. Desconocidos impiden accuracy global.",
+      "numerator": 3,
+      "value": 0.3
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes iniciales",
+      "denominator": null,
+      "metric": "Reglas NLP · F1",
+      "note": "Etiquetas conocidas: 10 positivas y 18 negativas; 2 desconocidas. Abstenciones: 0 positivas, 0 negativas y 0 desconocidas. Papel adverso reportado al publicar, sobre pares pertinentes revisados. Abstenciones penalizan recall y accuracy adjudicada; el subconjunto contestado excluye abstenciones. Desconocidos impiden accuracy global.",
+      "numerator": null,
+      "value": 0.46153846153846156
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes iniciales",
+      "denominator": 28,
+      "interval": {
+        "lower": 0.5664432968100104,
+        "upper": 0.8732350508070668
+      },
+      "metric": "Reglas NLP · accuracy en subconjunto adjudicado",
+      "note": "Etiquetas conocidas: 10 positivas y 18 negativas; 2 desconocidas. Abstenciones: 0 positivas, 0 negativas y 0 desconocidas. Papel adverso reportado al publicar, sobre pares pertinentes revisados. Abstenciones penalizan recall y accuracy adjudicada; el subconjunto contestado excluye abstenciones. Desconocidos impiden accuracy global.",
+      "numerator": 21,
+      "value": 0.75
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes iniciales",
+      "denominator": 28,
+      "interval": {
+        "lower": 0.5664432968100104,
+        "upper": 0.8732350508070668
+      },
+      "metric": "Reglas NLP · accuracy sólo decisiones contestadas",
+      "note": "Etiquetas conocidas: 10 positivas y 18 negativas; 2 desconocidas. Abstenciones: 0 positivas, 0 negativas y 0 desconocidas. Papel adverso reportado al publicar, sobre pares pertinentes revisados. Abstenciones penalizan recall y accuracy adjudicada; el subconjunto contestado excluye abstenciones. Desconocidos impiden accuracy global.",
+      "numerator": 21,
+      "value": 0.75
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes iniciales",
+      "denominator": null,
+      "interval": null,
+      "metric": "Reglas NLP · accuracy global",
+      "note": "Etiquetas conocidas: 10 positivas y 18 negativas; 2 desconocidas. Abstenciones: 0 positivas, 0 negativas y 0 desconocidas. Papel adverso reportado al publicar, sobre pares pertinentes revisados. Abstenciones penalizan recall y accuracy adjudicada; el subconjunto contestado excluye abstenciones. Desconocidos impiden accuracy global.",
+      "numerator": null,
+      "value": null
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes iniciales",
+      "denominator": 30,
+      "interval": {
+        "lower": 0.8864866068260312,
+        "upper": 0.9999999999999999
+      },
+      "metric": "Reglas NLP · cobertura de decisión",
+      "note": "Etiquetas conocidas: 10 positivas y 18 negativas; 2 desconocidas. Abstenciones: 0 positivas, 0 negativas y 0 desconocidas. Papel adverso reportado al publicar, sobre pares pertinentes revisados. Abstenciones penalizan recall y accuracy adjudicada; el subconjunto contestado excluye abstenciones. Desconocidos impiden accuracy global.",
+      "numerator": 30,
+      "value": 1.0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes ampliadas",
+      "denominator": 73,
+      "interval": {
+        "lower": 0.765875725934301,
+        "upper": 0.9238561039060587
+      },
+      "metric": "Pertinencia · precisión revisada",
+      "note": "Pertinencia respecto de la persona, no señal adversa; excluye desconocidos del cociente y conserva su cantidad en JSON.",
+      "numerator": 63,
+      "value": 0.863013698630137
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes ampliadas",
+      "denominator": 115,
+      "interval": {
+        "lower": 0.0015366489058808025,
+        "upper": 0.047616726344313784
+      },
+      "metric": "Recuperación exacta · recall de pares",
+      "note": "Coincidencia de URL según canonical_url; pares persona-URL relevantes conocidos. No recall de internet. En corpus es adquisición desde URLs conocidas.",
+      "numerator": 1,
+      "value": 0.008695652173913044
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes ampliadas",
+      "denominator": 97,
+      "interval": {
+        "lower": 0.0018221648082868518,
+        "upper": 0.05610499024289903
+      },
+      "metric": "Recuperación exacta · recall de URLs",
+      "note": "Coincidencia de URL según canonical_url, sin equiparar barras finales por heurística. Denominador 97 URLs, distinto de los 115 pares.",
+      "numerator": 1,
+      "value": 0.010309278350515464
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes ampliadas",
+      "denominator": 60,
+      "interval": {
+        "lower": 0.13123044048190308,
+        "upper": 0.33620027573194783
+      },
+      "metric": "Cobertura · entidades con texto pertinente",
+      "note": "Numerador: entidades con al menos un texto pertinente revisado; denominador: 60 personas.",
+      "numerator": 13,
+      "value": 0.21666666666666667
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes ampliadas",
+      "denominator": 115,
+      "interval": {
+        "lower": 0.013607842790201288,
+        "upper": 0.08603296386263783
+      },
+      "metric": "Recuperación con redirects verificados · recall de pares",
+      "note": "Suplemento sin alterar gold ni métricas exactas: sólo equivalencias de redirección de páginas originales usables, verificadas por captura y hash. Denominador 115 pares.",
+      "numerator": 4,
+      "value": 0.034782608695652174
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes ampliadas",
+      "denominator": 97,
+      "interval": {
+        "lower": 0.016151236586163194,
+        "upper": 0.10127525604073725
+      },
+      "metric": "Recuperación con redirects verificados · recall de URLs",
+      "note": "Equivalencias de permalink verificadas por respuestas conservadas; no se quitan barras finales de forma general. Denominador 97 URLs. En corpus sigue siendo adquisición, no búsqueda.",
+      "numerator": 4,
+      "value": 0.041237113402061855
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes ampliadas",
+      "denominator": 2,
+      "interval": {
+        "lower": 0.34238022750665303,
+        "upper": 1.0
+      },
+      "metric": "Clasificador auxiliar · precisión",
+      "note": "Etiquetas conocidas: 50 positivas y 9 negativas; 4 desconocidas. Abstenciones: 42 positivas, 9 negativas y 3 desconocidas. Papel adverso reportado al publicar, sobre pares pertinentes revisados. Abstenciones penalizan recall y accuracy adjudicada; el subconjunto contestado excluye abstenciones. Desconocidos impiden accuracy global.",
+      "numerator": 2,
+      "value": 1.0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes ampliadas",
+      "denominator": 50,
+      "interval": {
+        "lower": 0.011038884327619805,
+        "upper": 0.1346009068750702
+      },
+      "metric": "Clasificador auxiliar · recall",
+      "note": "Etiquetas conocidas: 50 positivas y 9 negativas; 4 desconocidas. Abstenciones: 42 positivas, 9 negativas y 3 desconocidas. Papel adverso reportado al publicar, sobre pares pertinentes revisados. Abstenciones penalizan recall y accuracy adjudicada; el subconjunto contestado excluye abstenciones. Desconocidos impiden accuracy global.",
+      "numerator": 2,
+      "value": 0.04
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes ampliadas",
+      "denominator": null,
+      "metric": "Clasificador auxiliar · F1",
+      "note": "Etiquetas conocidas: 50 positivas y 9 negativas; 4 desconocidas. Abstenciones: 42 positivas, 9 negativas y 3 desconocidas. Papel adverso reportado al publicar, sobre pares pertinentes revisados. Abstenciones penalizan recall y accuracy adjudicada; el subconjunto contestado excluye abstenciones. Desconocidos impiden accuracy global.",
+      "numerator": null,
+      "value": 0.07692307692307693
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes ampliadas",
+      "denominator": 59,
+      "interval": {
+        "lower": 0.00934590909166131,
+        "upper": 0.11543570750110752
+      },
+      "metric": "Clasificador auxiliar · accuracy en subconjunto adjudicado",
+      "note": "Etiquetas conocidas: 50 positivas y 9 negativas; 4 desconocidas. Abstenciones: 42 positivas, 9 negativas y 3 desconocidas. Papel adverso reportado al publicar, sobre pares pertinentes revisados. Abstenciones penalizan recall y accuracy adjudicada; el subconjunto contestado excluye abstenciones. Desconocidos impiden accuracy global.",
+      "numerator": 2,
+      "value": 0.03389830508474576
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes ampliadas",
+      "denominator": 8,
+      "interval": {
+        "lower": 0.071479212752109,
+        "upper": 0.5907245696898311
+      },
+      "metric": "Clasificador auxiliar · accuracy sólo decisiones contestadas",
+      "note": "Etiquetas conocidas: 50 positivas y 9 negativas; 4 desconocidas. Abstenciones: 42 positivas, 9 negativas y 3 desconocidas. Papel adverso reportado al publicar, sobre pares pertinentes revisados. Abstenciones penalizan recall y accuracy adjudicada; el subconjunto contestado excluye abstenciones. Desconocidos impiden accuracy global.",
+      "numerator": 2,
+      "value": 0.25
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes ampliadas",
+      "denominator": null,
+      "interval": null,
+      "metric": "Clasificador auxiliar · accuracy global",
+      "note": "Etiquetas conocidas: 50 positivas y 9 negativas; 4 desconocidas. Abstenciones: 42 positivas, 9 negativas y 3 desconocidas. Papel adverso reportado al publicar, sobre pares pertinentes revisados. Abstenciones penalizan recall y accuracy adjudicada; el subconjunto contestado excluye abstenciones. Desconocidos impiden accuracy global.",
+      "numerator": null,
+      "value": null
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes ampliadas",
+      "denominator": 63,
+      "interval": {
+        "lower": 0.07701948334720692,
+        "upper": 0.24974565921625858
+      },
+      "metric": "Clasificador auxiliar · cobertura de decisión",
+      "note": "Etiquetas conocidas: 50 positivas y 9 negativas; 4 desconocidas. Abstenciones: 42 positivas, 9 negativas y 3 desconocidas. Papel adverso reportado al publicar, sobre pares pertinentes revisados. Abstenciones penalizan recall y accuracy adjudicada; el subconjunto contestado excluye abstenciones. Desconocidos impiden accuracy global.",
+      "numerator": 9,
+      "value": 0.14285714285714285
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes ampliadas",
+      "denominator": 18,
+      "interval": {
+        "lower": 0.8241207763533425,
+        "upper": 1.0
+      },
+      "metric": "Reglas NLP · precisión",
+      "note": "Etiquetas conocidas: 50 positivas y 9 negativas; 4 desconocidas. Abstenciones: 3 positivas, 0 negativas y 0 desconocidas. Papel adverso reportado al publicar, sobre pares pertinentes revisados. Abstenciones penalizan recall y accuracy adjudicada; el subconjunto contestado excluye abstenciones. Desconocidos impiden accuracy global.",
+      "numerator": 18,
+      "value": 1.0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes ampliadas",
+      "denominator": 50,
+      "interval": {
+        "lower": 0.24138749651846741,
+        "upper": 0.49858983123887307
+      },
+      "metric": "Reglas NLP · recall",
+      "note": "Etiquetas conocidas: 50 positivas y 9 negativas; 4 desconocidas. Abstenciones: 3 positivas, 0 negativas y 0 desconocidas. Papel adverso reportado al publicar, sobre pares pertinentes revisados. Abstenciones penalizan recall y accuracy adjudicada; el subconjunto contestado excluye abstenciones. Desconocidos impiden accuracy global.",
+      "numerator": 18,
+      "value": 0.36
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes ampliadas",
+      "denominator": null,
+      "metric": "Reglas NLP · F1",
+      "note": "Etiquetas conocidas: 50 positivas y 9 negativas; 4 desconocidas. Abstenciones: 3 positivas, 0 negativas y 0 desconocidas. Papel adverso reportado al publicar, sobre pares pertinentes revisados. Abstenciones penalizan recall y accuracy adjudicada; el subconjunto contestado excluye abstenciones. Desconocidos impiden accuracy global.",
+      "numerator": null,
+      "value": 0.5294117647058824
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes ampliadas",
+      "denominator": 59,
+      "interval": {
+        "lower": 0.3370130585185591,
+        "upper": 0.5834216338989654
+      },
+      "metric": "Reglas NLP · accuracy en subconjunto adjudicado",
+      "note": "Etiquetas conocidas: 50 positivas y 9 negativas; 4 desconocidas. Abstenciones: 3 positivas, 0 negativas y 0 desconocidas. Papel adverso reportado al publicar, sobre pares pertinentes revisados. Abstenciones penalizan recall y accuracy adjudicada; el subconjunto contestado excluye abstenciones. Desconocidos impiden accuracy global.",
+      "numerator": 27,
+      "value": 0.4576271186440678
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes ampliadas",
+      "denominator": 56,
+      "interval": {
+        "lower": 0.3566821941245828,
+        "upper": 0.6098961607582303
+      },
+      "metric": "Reglas NLP · accuracy sólo decisiones contestadas",
+      "note": "Etiquetas conocidas: 50 positivas y 9 negativas; 4 desconocidas. Abstenciones: 3 positivas, 0 negativas y 0 desconocidas. Papel adverso reportado al publicar, sobre pares pertinentes revisados. Abstenciones penalizan recall y accuracy adjudicada; el subconjunto contestado excluye abstenciones. Desconocidos impiden accuracy global.",
+      "numerator": 27,
+      "value": 0.48214285714285715
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes ampliadas",
+      "denominator": null,
+      "interval": null,
+      "metric": "Reglas NLP · accuracy global",
+      "note": "Etiquetas conocidas: 50 positivas y 9 negativas; 4 desconocidas. Abstenciones: 3 positivas, 0 negativas y 0 desconocidas. Papel adverso reportado al publicar, sobre pares pertinentes revisados. Abstenciones penalizan recall y accuracy adjudicada; el subconjunto contestado excluye abstenciones. Desconocidos impiden accuracy global.",
+      "numerator": null,
+      "value": null
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes ampliadas",
+      "denominator": 63,
+      "interval": {
+        "lower": 0.8690903216209392,
+        "upper": 0.9836738311320045
+      },
+      "metric": "Reglas NLP · cobertura de decisión",
+      "note": "Etiquetas conocidas: 50 positivas y 9 negativas; 4 desconocidas. Abstenciones: 3 positivas, 0 negativas y 0 desconocidas. Papel adverso reportado al publicar, sobre pares pertinentes revisados. Abstenciones penalizan recall y accuracy adjudicada; el subconjunto contestado excluye abstenciones. Desconocidos impiden accuracy global.",
+      "numerator": 60,
+      "value": 0.9523809523809523
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "denominator": 72,
+      "interval": {
+        "lower": 0.9493488274035422,
+        "upper": 1.0
+      },
+      "metric": "Pertinencia · precisión revisada",
+      "note": "Pertinencia respecto de la persona, no señal adversa; excluye desconocidos del cociente y conserva su cantidad en JSON.",
+      "numerator": 72,
+      "value": 1.0
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "denominator": 115,
+      "interval": {
+        "lower": 0.49123893331263274,
+        "upper": 0.6686379327957415
+      },
+      "metric": "Recuperación exacta · recall de pares",
+      "note": "Coincidencia de URL según canonical_url; pares persona-URL relevantes conocidos. No recall de internet. En corpus es adquisición desde URLs conocidas.",
+      "numerator": 67,
+      "value": 0.5826086956521739
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "denominator": 97,
+      "interval": {
+        "lower": 0.5399919512124193,
+        "upper": 0.7277550678782961
+      },
+      "metric": "Recuperación exacta · recall de URLs",
+      "note": "Coincidencia de URL según canonical_url, sin equiparar barras finales por heurística. Denominador 97 URLs, distinto de los 115 pares.",
+      "numerator": 62,
+      "value": 0.6391752577319587
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "denominator": 60,
+      "interval": {
+        "lower": 0.4249193588533434,
+        "upper": 0.6690634559324476
+      },
+      "metric": "Cobertura · entidades con texto pertinente",
+      "note": "Numerador: entidades con al menos un texto pertinente revisado; denominador: 60 personas.",
+      "numerator": 33,
+      "value": 0.55
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "denominator": 115,
+      "interval": {
+        "lower": 0.49123893331263274,
+        "upper": 0.6686379327957415
+      },
+      "metric": "Recuperación con redirects verificados · recall de pares",
+      "note": "Suplemento sin alterar gold ni métricas exactas: sólo equivalencias de redirección de páginas originales usables, verificadas por captura y hash. Denominador 115 pares.",
+      "numerator": 67,
+      "value": 0.5826086956521739
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "denominator": 97,
+      "interval": {
+        "lower": 0.5399919512124193,
+        "upper": 0.7277550678782961
+      },
+      "metric": "Recuperación con redirects verificados · recall de URLs",
+      "note": "Equivalencias de permalink verificadas por respuestas conservadas; no se quitan barras finales de forma general. Denominador 97 URLs. En corpus sigue siendo adquisición, no búsqueda.",
+      "numerator": 62,
+      "value": 0.6391752577319587
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "denominator": 0,
+      "interval": null,
+      "metric": "Clasificador auxiliar · precisión",
+      "note": "Etiquetas conocidas: 47 positivas y 20 negativas; 5 desconocidas. Abstenciones: 38 positivas, 16 negativas y 5 desconocidas. Papel adverso reportado al publicar, sobre pares pertinentes revisados. Abstenciones penalizan recall y accuracy adjudicada; el subconjunto contestado excluye abstenciones. Desconocidos impiden accuracy global.",
+      "numerator": 0,
+      "value": null
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "denominator": 47,
+      "interval": {
+        "lower": 0.0,
+        "upper": 0.07555760416399632
+      },
+      "metric": "Clasificador auxiliar · recall",
+      "note": "Etiquetas conocidas: 47 positivas y 20 negativas; 5 desconocidas. Abstenciones: 38 positivas, 16 negativas y 5 desconocidas. Papel adverso reportado al publicar, sobre pares pertinentes revisados. Abstenciones penalizan recall y accuracy adjudicada; el subconjunto contestado excluye abstenciones. Desconocidos impiden accuracy global.",
+      "numerator": 0,
+      "value": 0.0
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "denominator": null,
+      "metric": "Clasificador auxiliar · F1",
+      "note": "Etiquetas conocidas: 47 positivas y 20 negativas; 5 desconocidas. Abstenciones: 38 positivas, 16 negativas y 5 desconocidas. Papel adverso reportado al publicar, sobre pares pertinentes revisados. Abstenciones penalizan recall y accuracy adjudicada; el subconjunto contestado excluye abstenciones. Desconocidos impiden accuracy global.",
+      "numerator": null,
+      "value": 0.0
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "denominator": 67,
+      "interval": {
+        "lower": 0.023459351139819028,
+        "upper": 0.14369501041371535
+      },
+      "metric": "Clasificador auxiliar · accuracy en subconjunto adjudicado",
+      "note": "Etiquetas conocidas: 47 positivas y 20 negativas; 5 desconocidas. Abstenciones: 38 positivas, 16 negativas y 5 desconocidas. Papel adverso reportado al publicar, sobre pares pertinentes revisados. Abstenciones penalizan recall y accuracy adjudicada; el subconjunto contestado excluye abstenciones. Desconocidos impiden accuracy global.",
+      "numerator": 4,
+      "value": 0.05970149253731343
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "denominator": 13,
+      "interval": {
+        "lower": 0.12680703655710515,
+        "upper": 0.5763065681945096
+      },
+      "metric": "Clasificador auxiliar · accuracy sólo decisiones contestadas",
+      "note": "Etiquetas conocidas: 47 positivas y 20 negativas; 5 desconocidas. Abstenciones: 38 positivas, 16 negativas y 5 desconocidas. Papel adverso reportado al publicar, sobre pares pertinentes revisados. Abstenciones penalizan recall y accuracy adjudicada; el subconjunto contestado excluye abstenciones. Desconocidos impiden accuracy global.",
+      "numerator": 4,
+      "value": 0.3076923076923077
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "denominator": null,
+      "interval": null,
+      "metric": "Clasificador auxiliar · accuracy global",
+      "note": "Etiquetas conocidas: 47 positivas y 20 negativas; 5 desconocidas. Abstenciones: 38 positivas, 16 negativas y 5 desconocidas. Papel adverso reportado al publicar, sobre pares pertinentes revisados. Abstenciones penalizan recall y accuracy adjudicada; el subconjunto contestado excluye abstenciones. Desconocidos impiden accuracy global.",
+      "numerator": null,
+      "value": null
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "denominator": 72,
+      "interval": {
+        "lower": 0.10866816510019897,
+        "upper": 0.28480341739198245
+      },
+      "metric": "Clasificador auxiliar · cobertura de decisión",
+      "note": "Etiquetas conocidas: 47 positivas y 20 negativas; 5 desconocidas. Abstenciones: 38 positivas, 16 negativas y 5 desconocidas. Papel adverso reportado al publicar, sobre pares pertinentes revisados. Abstenciones penalizan recall y accuracy adjudicada; el subconjunto contestado excluye abstenciones. Desconocidos impiden accuracy global.",
+      "numerator": 13,
+      "value": 0.18055555555555555
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "denominator": 12,
+      "interval": {
+        "lower": 0.7575059933447592,
+        "upper": 1.0
+      },
+      "metric": "Reglas NLP · precisión",
+      "note": "Etiquetas conocidas: 47 positivas y 20 negativas; 5 desconocidas. Abstenciones: 24 positivas, 3 negativas y 4 desconocidas. Papel adverso reportado al publicar, sobre pares pertinentes revisados. Abstenciones penalizan recall y accuracy adjudicada; el subconjunto contestado excluye abstenciones. Desconocidos impiden accuracy global.",
+      "numerator": 12,
+      "value": 1.0
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "denominator": 47,
+      "interval": {
+        "lower": 0.152531540350547,
+        "upper": 0.3950817553041745
+      },
+      "metric": "Reglas NLP · recall",
+      "note": "Etiquetas conocidas: 47 positivas y 20 negativas; 5 desconocidas. Abstenciones: 24 positivas, 3 negativas y 4 desconocidas. Papel adverso reportado al publicar, sobre pares pertinentes revisados. Abstenciones penalizan recall y accuracy adjudicada; el subconjunto contestado excluye abstenciones. Desconocidos impiden accuracy global.",
+      "numerator": 12,
+      "value": 0.2553191489361702
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "denominator": null,
+      "metric": "Reglas NLP · F1",
+      "note": "Etiquetas conocidas: 47 positivas y 20 negativas; 5 desconocidas. Abstenciones: 24 positivas, 3 negativas y 4 desconocidas. Papel adverso reportado al publicar, sobre pares pertinentes revisados. Abstenciones penalizan recall y accuracy adjudicada; el subconjunto contestado excluye abstenciones. Desconocidos impiden accuracy global.",
+      "numerator": null,
+      "value": 0.4067796610169492
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "denominator": 67,
+      "interval": {
+        "lower": 0.3210431149754174,
+        "upper": 0.5519126350920708
+      },
+      "metric": "Reglas NLP · accuracy en subconjunto adjudicado",
+      "note": "Etiquetas conocidas: 47 positivas y 20 negativas; 5 desconocidas. Abstenciones: 24 positivas, 3 negativas y 4 desconocidas. Papel adverso reportado al publicar, sobre pares pertinentes revisados. Abstenciones penalizan recall y accuracy adjudicada; el subconjunto contestado excluye abstenciones. Desconocidos impiden accuracy global.",
+      "numerator": 29,
+      "value": 0.43283582089552236
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "denominator": 40,
+      "interval": {
+        "lower": 0.5716504419378943,
+        "upper": 0.8389198375233267
+      },
+      "metric": "Reglas NLP · accuracy sólo decisiones contestadas",
+      "note": "Etiquetas conocidas: 47 positivas y 20 negativas; 5 desconocidas. Abstenciones: 24 positivas, 3 negativas y 4 desconocidas. Papel adverso reportado al publicar, sobre pares pertinentes revisados. Abstenciones penalizan recall y accuracy adjudicada; el subconjunto contestado excluye abstenciones. Desconocidos impiden accuracy global.",
+      "numerator": 29,
+      "value": 0.725
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "denominator": null,
+      "interval": null,
+      "metric": "Reglas NLP · accuracy global",
+      "note": "Etiquetas conocidas: 47 positivas y 20 negativas; 5 desconocidas. Abstenciones: 24 positivas, 3 negativas y 4 desconocidas. Papel adverso reportado al publicar, sobre pares pertinentes revisados. Abstenciones penalizan recall y accuracy adjudicada; el subconjunto contestado excluye abstenciones. Desconocidos impiden accuracy global.",
+      "numerator": null,
+      "value": null
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "denominator": 72,
+      "interval": {
+        "lower": 0.45443306167310615,
+        "upper": 0.6774209421329412
+      },
+      "metric": "Reglas NLP · cobertura de decisión",
+      "note": "Etiquetas conocidas: 47 positivas y 20 negativas; 5 desconocidas. Abstenciones: 24 positivas, 3 negativas y 4 desconocidas. Papel adverso reportado al publicar, sobre pares pertinentes revisados. Abstenciones penalizan recall y accuracy adjudicada; el subconjunto contestado excluye abstenciones. Desconocidos impiden accuracy global.",
+      "numerator": 41,
+      "value": 0.5694444444444444
+    },
+    {
+      "arm": "Retest adaptado · un editor (Notisistema)",
+      "denominator": 5,
+      "interval": {
+        "lower": 0.5655175352168251,
+        "upper": 1.0
+      },
+      "metric": "Pertinencia · precisión revisada",
+      "note": "Pertinencia respecto de la persona, no señal adversa; excluye desconocidos del cociente y conserva su cantidad en JSON.",
+      "numerator": 5,
+      "value": 1.0
+    },
+    {
+      "arm": "Retest adaptado · un editor (Notisistema)",
+      "denominator": 115,
+      "interval": {
+        "lower": 0.0,
+        "upper": 0.03232423144931307
+      },
+      "metric": "Recuperación exacta · recall de pares",
+      "note": "Coincidencia de URL según canonical_url; pares persona-URL relevantes conocidos. No recall de internet. En corpus es adquisición desde URLs conocidas.",
+      "numerator": 0,
+      "value": 0.0
+    },
+    {
+      "arm": "Retest adaptado · un editor (Notisistema)",
+      "denominator": 97,
+      "interval": {
+        "lower": 0.0,
+        "upper": 0.03809404252594769
+      },
+      "metric": "Recuperación exacta · recall de URLs",
+      "note": "Coincidencia de URL según canonical_url, sin equiparar barras finales por heurística. Denominador 97 URLs, distinto de los 115 pares.",
+      "numerator": 0,
+      "value": 0.0
+    },
+    {
+      "arm": "Retest adaptado · un editor (Notisistema)",
+      "denominator": 60,
+      "interval": {
+        "lower": 0.026228698724506214,
+        "upper": 0.1592535731319717
+      },
+      "metric": "Cobertura · entidades con texto pertinente",
+      "note": "Numerador: entidades con al menos un texto pertinente revisado; denominador: 60 personas.",
+      "numerator": 4,
+      "value": 0.06666666666666667
+    },
+    {
+      "arm": "Retest adaptado · un editor (Notisistema)",
+      "denominator": 115,
+      "interval": {
+        "lower": 0.004782352362605557,
+        "upper": 0.06120016668847053
+      },
+      "metric": "Recuperación con redirects verificados · recall de pares",
+      "note": "Suplemento sin alterar gold ni métricas exactas: sólo equivalencias de redirección de páginas originales usables, verificadas por captura y hash. Denominador 115 pares.",
+      "numerator": 2,
+      "value": 0.017391304347826087
+    },
+    {
+      "arm": "Retest adaptado · un editor (Notisistema)",
+      "denominator": 97,
+      "interval": {
+        "lower": 0.005672685102266338,
+        "upper": 0.07208758247415772
+      },
+      "metric": "Recuperación con redirects verificados · recall de URLs",
+      "note": "Equivalencias de permalink verificadas por respuestas conservadas; no se quitan barras finales de forma general. Denominador 97 URLs. En corpus sigue siendo adquisición, no búsqueda.",
+      "numerator": 2,
+      "value": 0.020618556701030927
+    },
+    {
+      "arm": "Retest adaptado · un editor (Notisistema)",
+      "denominator": 0,
+      "interval": null,
+      "metric": "Clasificador auxiliar · precisión",
+      "note": "Etiquetas conocidas: 5 positivas y 0 negativas; 0 desconocidas. Abstenciones: 5 positivas, 0 negativas y 0 desconocidas. Papel adverso reportado al publicar, sobre pares pertinentes revisados. Abstenciones penalizan recall y accuracy adjudicada; el subconjunto contestado excluye abstenciones. Desconocidos impiden accuracy global.",
+      "numerator": 0,
+      "value": null
+    },
+    {
+      "arm": "Retest adaptado · un editor (Notisistema)",
+      "denominator": 5,
+      "interval": {
+        "lower": 0.0,
+        "upper": 0.43448246478317476
+      },
+      "metric": "Clasificador auxiliar · recall",
+      "note": "Etiquetas conocidas: 5 positivas y 0 negativas; 0 desconocidas. Abstenciones: 5 positivas, 0 negativas y 0 desconocidas. Papel adverso reportado al publicar, sobre pares pertinentes revisados. Abstenciones penalizan recall y accuracy adjudicada; el subconjunto contestado excluye abstenciones. Desconocidos impiden accuracy global.",
+      "numerator": 0,
+      "value": 0.0
+    },
+    {
+      "arm": "Retest adaptado · un editor (Notisistema)",
+      "denominator": null,
+      "metric": "Clasificador auxiliar · F1",
+      "note": "Etiquetas conocidas: 5 positivas y 0 negativas; 0 desconocidas. Abstenciones: 5 positivas, 0 negativas y 0 desconocidas. Papel adverso reportado al publicar, sobre pares pertinentes revisados. Abstenciones penalizan recall y accuracy adjudicada; el subconjunto contestado excluye abstenciones. Desconocidos impiden accuracy global.",
+      "numerator": null,
+      "value": 0.0
+    },
+    {
+      "arm": "Retest adaptado · un editor (Notisistema)",
+      "denominator": 5,
+      "interval": {
+        "lower": 0.0,
+        "upper": 0.43448246478317476
+      },
+      "metric": "Clasificador auxiliar · accuracy en subconjunto adjudicado",
+      "note": "Etiquetas conocidas: 5 positivas y 0 negativas; 0 desconocidas. Abstenciones: 5 positivas, 0 negativas y 0 desconocidas. Papel adverso reportado al publicar, sobre pares pertinentes revisados. Abstenciones penalizan recall y accuracy adjudicada; el subconjunto contestado excluye abstenciones. Desconocidos impiden accuracy global.",
+      "numerator": 0,
+      "value": 0.0
+    },
+    {
+      "arm": "Retest adaptado · un editor (Notisistema)",
+      "denominator": 0,
+      "interval": null,
+      "metric": "Clasificador auxiliar · accuracy sólo decisiones contestadas",
+      "note": "Etiquetas conocidas: 5 positivas y 0 negativas; 0 desconocidas. Abstenciones: 5 positivas, 0 negativas y 0 desconocidas. Papel adverso reportado al publicar, sobre pares pertinentes revisados. Abstenciones penalizan recall y accuracy adjudicada; el subconjunto contestado excluye abstenciones. Desconocidos impiden accuracy global.",
+      "numerator": 0,
+      "value": null
+    },
+    {
+      "arm": "Retest adaptado · un editor (Notisistema)",
+      "denominator": 5,
+      "interval": {
+        "lower": 0.0,
+        "upper": 0.43448246478317476
+      },
+      "metric": "Clasificador auxiliar · accuracy global",
+      "note": "Etiquetas conocidas: 5 positivas y 0 negativas; 0 desconocidas. Abstenciones: 5 positivas, 0 negativas y 0 desconocidas. Papel adverso reportado al publicar, sobre pares pertinentes revisados. Abstenciones penalizan recall y accuracy adjudicada; el subconjunto contestado excluye abstenciones. Desconocidos impiden accuracy global.",
+      "numerator": 0,
+      "value": 0.0
+    },
+    {
+      "arm": "Retest adaptado · un editor (Notisistema)",
+      "denominator": 5,
+      "interval": {
+        "lower": 0.0,
+        "upper": 0.43448246478317476
+      },
+      "metric": "Clasificador auxiliar · cobertura de decisión",
+      "note": "Etiquetas conocidas: 5 positivas y 0 negativas; 0 desconocidas. Abstenciones: 5 positivas, 0 negativas y 0 desconocidas. Papel adverso reportado al publicar, sobre pares pertinentes revisados. Abstenciones penalizan recall y accuracy adjudicada; el subconjunto contestado excluye abstenciones. Desconocidos impiden accuracy global.",
+      "numerator": 0,
+      "value": 0.0
+    },
+    {
+      "arm": "Retest adaptado · un editor (Notisistema)",
+      "denominator": 0,
+      "interval": null,
+      "metric": "Reglas NLP · precisión",
+      "note": "Etiquetas conocidas: 5 positivas y 0 negativas; 0 desconocidas. Abstenciones: 0 positivas, 0 negativas y 0 desconocidas. Papel adverso reportado al publicar, sobre pares pertinentes revisados. Abstenciones penalizan recall y accuracy adjudicada; el subconjunto contestado excluye abstenciones. Desconocidos impiden accuracy global.",
+      "numerator": 0,
+      "value": null
+    },
+    {
+      "arm": "Retest adaptado · un editor (Notisistema)",
+      "denominator": 5,
+      "interval": {
+        "lower": 0.0,
+        "upper": 0.43448246478317476
+      },
+      "metric": "Reglas NLP · recall",
+      "note": "Etiquetas conocidas: 5 positivas y 0 negativas; 0 desconocidas. Abstenciones: 0 positivas, 0 negativas y 0 desconocidas. Papel adverso reportado al publicar, sobre pares pertinentes revisados. Abstenciones penalizan recall y accuracy adjudicada; el subconjunto contestado excluye abstenciones. Desconocidos impiden accuracy global.",
+      "numerator": 0,
+      "value": 0.0
+    },
+    {
+      "arm": "Retest adaptado · un editor (Notisistema)",
+      "denominator": null,
+      "metric": "Reglas NLP · F1",
+      "note": "Etiquetas conocidas: 5 positivas y 0 negativas; 0 desconocidas. Abstenciones: 0 positivas, 0 negativas y 0 desconocidas. Papel adverso reportado al publicar, sobre pares pertinentes revisados. Abstenciones penalizan recall y accuracy adjudicada; el subconjunto contestado excluye abstenciones. Desconocidos impiden accuracy global.",
+      "numerator": null,
+      "value": 0.0
+    },
+    {
+      "arm": "Retest adaptado · un editor (Notisistema)",
+      "denominator": 5,
+      "interval": {
+        "lower": 0.0,
+        "upper": 0.43448246478317476
+      },
+      "metric": "Reglas NLP · accuracy en subconjunto adjudicado",
+      "note": "Etiquetas conocidas: 5 positivas y 0 negativas; 0 desconocidas. Abstenciones: 0 positivas, 0 negativas y 0 desconocidas. Papel adverso reportado al publicar, sobre pares pertinentes revisados. Abstenciones penalizan recall y accuracy adjudicada; el subconjunto contestado excluye abstenciones. Desconocidos impiden accuracy global.",
+      "numerator": 0,
+      "value": 0.0
+    },
+    {
+      "arm": "Retest adaptado · un editor (Notisistema)",
+      "denominator": 5,
+      "interval": {
+        "lower": 0.0,
+        "upper": 0.43448246478317476
+      },
+      "metric": "Reglas NLP · accuracy sólo decisiones contestadas",
+      "note": "Etiquetas conocidas: 5 positivas y 0 negativas; 0 desconocidas. Abstenciones: 0 positivas, 0 negativas y 0 desconocidas. Papel adverso reportado al publicar, sobre pares pertinentes revisados. Abstenciones penalizan recall y accuracy adjudicada; el subconjunto contestado excluye abstenciones. Desconocidos impiden accuracy global.",
+      "numerator": 0,
+      "value": 0.0
+    },
+    {
+      "arm": "Retest adaptado · un editor (Notisistema)",
+      "denominator": 5,
+      "interval": {
+        "lower": 0.0,
+        "upper": 0.43448246478317476
+      },
+      "metric": "Reglas NLP · accuracy global",
+      "note": "Etiquetas conocidas: 5 positivas y 0 negativas; 0 desconocidas. Abstenciones: 0 positivas, 0 negativas y 0 desconocidas. Papel adverso reportado al publicar, sobre pares pertinentes revisados. Abstenciones penalizan recall y accuracy adjudicada; el subconjunto contestado excluye abstenciones. Desconocidos impiden accuracy global.",
+      "numerator": 0,
+      "value": 0.0
+    },
+    {
+      "arm": "Retest adaptado · un editor (Notisistema)",
+      "denominator": 5,
+      "interval": {
+        "lower": 0.5655175352168251,
+        "upper": 1.0
+      },
+      "metric": "Reglas NLP · cobertura de decisión",
+      "note": "Etiquetas conocidas: 5 positivas y 0 negativas; 0 desconocidas. Abstenciones: 0 positivas, 0 negativas y 0 desconocidas. Papel adverso reportado al publicar, sobre pares pertinentes revisados. Abstenciones penalizan recall y accuracy adjudicada; el subconjunto contestado excluye abstenciones. Desconocidos impiden accuracy global.",
+      "numerator": 5,
+      "value": 1.0
+    }
+  ],
+  "scope": "Evaluación retrospectiva documental al corte del 16 de octubre de 2026. Muestra de 60 personas y tres brazos iniciales separados y un cuarto retest adaptado: búsqueda por nombre con fuentes iniciales, búsqueda con fuentes ampliadas y descarga de URLs conocidas. El conjunto de referencia incluye noticias y documentos institucionales. No es validación prospectiva ni cálculo de riesgo de las personas. El retest de un editor es posterior a los fallos observados; no es un A/B de las mismas fuentes.",
+  "source_rows": [
+    {
+      "arm": "Descubrimiento por nombre · fuentes iniciales",
+      "candidates": 22,
+      "http": 97,
+      "queries": 74,
+      "source": "contralinea_index",
+      "status": "74 done. Consultas previstas: 74. Registro original de ejecución; no suma entre fuentes.",
+      "texts": 22
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes iniciales",
+      "candidates": 0,
+      "http": 38,
+      "queries": 16,
+      "source": "aristegui_index",
+      "status": "16 done, 58 deferred. Consultas previstas: 74. Registro original de ejecución; no suma entre fuentes.",
+      "texts": 0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes iniciales",
+      "candidates": 6,
+      "http": 81,
+      "queries": 74,
+      "source": "desinformemonos_index",
+      "status": "74 done. Consultas previstas: 74. Registro original de ejecución; no suma entre fuentes.",
+      "texts": 6
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes iniciales",
+      "candidates": 11,
+      "http": 83,
+      "queries": 74,
+      "source": "periodicocentral_probe",
+      "status": "74 done. Consultas previstas: 74. Registro original de ejecución; no suma entre fuentes.",
+      "texts": 0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes iniciales",
+      "candidates": 1,
+      "http": 75,
+      "queries": 74,
+      "source": "alcaldesdemexico_probe",
+      "status": "74 done. Consultas previstas: 74. Registro original de ejecución; no suma entre fuentes.",
+      "texts": 0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes ampliadas",
+      "candidates": 25,
+      "http": 100,
+      "queries": 74,
+      "source": "candidate_plazadearmas_com_mx",
+      "status": "74 done. Consultas previstas: 74. Registro original de ejecución; no suma entre fuentes.",
+      "texts": 25
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes ampliadas",
+      "candidates": 7,
+      "http": 80,
+      "queries": 74,
+      "source": "candidate_elqueretano_info",
+      "status": "74 done. Consultas previstas: 74. Registro original de ejecución; no suma entre fuentes.",
+      "texts": 0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes ampliadas",
+      "candidates": 1,
+      "http": 82,
+      "queries": 74,
+      "source": "candidate_laevidencia_com_mx",
+      "status": "74 done. Consultas previstas: 74. Registro original de ejecución; no suma entre fuentes.",
+      "texts": 0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes ampliadas",
+      "candidates": 7,
+      "http": 82,
+      "queries": 74,
+      "source": "candidate_www_zonadocs_mx",
+      "status": "74 done. Consultas previstas: 74. Registro original de ejecución; no suma entre fuentes.",
+      "texts": 7
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes ampliadas",
+      "candidates": 34,
+      "http": 109,
+      "queries": 74,
+      "source": "candidate_www_rioaxaca_com",
+      "status": "74 done. Consultas previstas: 74. Registro original de ejecución; no suma entre fuentes.",
+      "texts": 34
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes ampliadas",
+      "candidates": 3,
+      "http": 78,
+      "queries": 74,
+      "source": "candidate_www_periodicocontexto_com_mx",
+      "status": "74 done. Consultas previstas: 74. Registro original de ejecución; no suma entre fuentes.",
+      "texts": 3
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes ampliadas",
+      "candidates": 2,
+      "http": 77,
+      "queries": 74,
+      "source": "candidate_avimexnews_com",
+      "status": "74 done. Consultas previstas: 74. Registro original de ejecución; no suma entre fuentes.",
+      "texts": 2
+    },
+    {
+      "arm": "Retest adaptado · un editor (Notisistema)",
+      "candidates": 5,
+      "http": 78,
+      "queries": 72,
+      "source": "notisistema_search",
+      "status": "72 done. Consultas previstas: 72. Registro original de ejecución; no suma entre fuentes.",
+      "texts": 5
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 2,
+      "http": null,
+      "queries": null,
+      "source": "acropolisnoticias.com",
+      "status": "URLs conocidas, no consultas por nombre. 2 collected",
+      "texts": 2
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 3,
+      "http": null,
+      "queries": null,
+      "source": "archivo.municipiospuebla.mx",
+      "status": "URLs conocidas, no consultas por nombre. 3 collected",
+      "texts": 3
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 1,
+      "http": null,
+      "queries": null,
+      "source": "avimexnews.com",
+      "status": "URLs conocidas, no consultas por nombre. 1 collected",
+      "texts": 1
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 2,
+      "http": null,
+      "queries": null,
+      "source": "codigoqro.mx",
+      "status": "URLs conocidas, no consultas por nombre. 2 collected",
+      "texts": 2
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 1,
+      "http": null,
+      "queries": null,
+      "source": "colegiodenotarios.org.mx",
+      "status": "URLs conocidas, no consultas por nombre. 1 collected",
+      "texts": 1
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 1,
+      "http": null,
+      "queries": null,
+      "source": "colimapm.com",
+      "status": "URLs conocidas, no consultas por nombre. 1 collected",
+      "texts": 1
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 1,
+      "http": null,
+      "queries": null,
+      "source": "da21w.e-veracruz.mx",
+      "status": "URLs conocidas, no consultas por nombre. 1 rejected_article_quality",
+      "texts": 0
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 1,
+      "http": null,
+      "queries": null,
+      "source": "diario.mx",
+      "status": "URLs conocidas, no consultas por nombre. 1 not_collected_transport",
+      "texts": 0
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 1,
+      "http": null,
+      "queries": null,
+      "source": "e-oaxaca.com",
+      "status": "URLs conocidas, no consultas por nombre. 1 rejected_article_quality",
+      "texts": 0
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 1,
+      "http": null,
+      "queries": null,
+      "source": "elfinanciero-elfinanciero-prod.cdn.arcpublishing.com",
+      "status": "URLs conocidas, no consultas por nombre. 1 collected",
+      "texts": 1
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 1,
+      "http": null,
+      "queries": null,
+      "source": "elmundodelderecho.com",
+      "status": "URLs conocidas, no consultas por nombre. 1 collected",
+      "texts": 1
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 2,
+      "http": null,
+      "queries": null,
+      "source": "elqueretano.info",
+      "status": "URLs conocidas, no consultas por nombre. 2 rejected_article_quality",
+      "texts": 0
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 1,
+      "http": null,
+      "queries": null,
+      "source": "etcetera.com.mx",
+      "status": "URLs conocidas, no consultas por nombre. 1 collected",
+      "texts": 1
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 1,
+      "http": null,
+      "queries": null,
+      "source": "hidalgo.quadratin.com.mx",
+      "status": "URLs conocidas, no consultas por nombre. 1 rejected_article_quality",
+      "texts": 0
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 1,
+      "http": null,
+      "queries": null,
+      "source": "historico.e-consulta.com",
+      "status": "URLs conocidas, no consultas por nombre. 1 collected",
+      "texts": 1
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 1,
+      "http": null,
+      "queries": null,
+      "source": "historico.e-tlaxcala.mx",
+      "status": "URLs conocidas, no consultas por nombre. 1 collected",
+      "texts": 1
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 1,
+      "http": null,
+      "queries": null,
+      "source": "historico.e-veracruz.mx",
+      "status": "URLs conocidas, no consultas por nombre. 1 collected",
+      "texts": 1
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 1,
+      "http": null,
+      "queries": null,
+      "source": "imparcialoaxaca.mx",
+      "status": "URLs conocidas, no consultas por nombre. 1 collected",
+      "texts": 1
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 1,
+      "http": null,
+      "queries": null,
+      "source": "interactivos.eluniversal.com.mx",
+      "status": "URLs conocidas, no consultas por nombre. 1 collected",
+      "texts": 1
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 2,
+      "http": null,
+      "queries": null,
+      "source": "laevidencia.com.mx",
+      "status": "URLs conocidas, no consultas por nombre. 2 rejected_article_quality",
+      "texts": 0
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 1,
+      "http": null,
+      "queries": null,
+      "source": "lajornadahidalgo.com",
+      "status": "URLs conocidas, no consultas por nombre. 1 collected",
+      "texts": 1
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 1,
+      "http": null,
+      "queries": null,
+      "source": "libertaddepalabra.mx",
+      "status": "URLs conocidas, no consultas por nombre. 1 collected",
+      "texts": 1
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 1,
+      "http": null,
+      "queries": null,
+      "source": "lineadirectaportal.com",
+      "status": "URLs conocidas, no consultas por nombre. 1 collected",
+      "texts": 1
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 1,
+      "http": null,
+      "queries": null,
+      "source": "municipiospuebla.mx",
+      "status": "URLs conocidas, no consultas por nombre. 1 not_collected_transport",
+      "texts": 0
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 1,
+      "http": null,
+      "queries": null,
+      "source": "ntv.com.mx",
+      "status": "URLs conocidas, no consultas por nombre. 1 collected",
+      "texts": 1
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 1,
+      "http": null,
+      "queries": null,
+      "source": "nuevoleon.quadratin.com.mx",
+      "status": "URLs conocidas, no consultas por nombre. 1 rejected_article_quality",
+      "texts": 0
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 1,
+      "http": null,
+      "queries": null,
+      "source": "oaxaca.eluniversal.com.mx",
+      "status": "URLs conocidas, no consultas por nombre. 1 collected",
+      "texts": 0
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 3,
+      "http": null,
+      "queries": null,
+      "source": "oem.com.mx",
+      "status": "URLs conocidas, no consultas por nombre. 3 not_collected_transport",
+      "texts": 0
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 1,
+      "http": null,
+      "queries": null,
+      "source": "plazadearmas.com.mx",
+      "status": "URLs conocidas, no consultas por nombre. 1 collected",
+      "texts": 1
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 1,
+      "http": null,
+      "queries": null,
+      "source": "queretaro.quadratin.com.mx",
+      "status": "URLs conocidas, no consultas por nombre. 1 rejected_article_quality",
+      "texts": 0
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 1,
+      "http": null,
+      "queries": null,
+      "source": "reporteros.mx",
+      "status": "URLs conocidas, no consultas por nombre. 1 collected",
+      "texts": 1
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 1,
+      "http": null,
+      "queries": null,
+      "source": "revistafortuna.com.mx",
+      "status": "URLs conocidas, no consultas por nombre. 1 rejected_article_quality",
+      "texts": 0
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 1,
+      "http": null,
+      "queries": null,
+      "source": "riodoce.mx",
+      "status": "URLs conocidas, no consultas por nombre. 1 rejected_article_quality",
+      "texts": 0
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 1,
+      "http": null,
+      "queries": null,
+      "source": "udgtv.com",
+      "status": "URLs conocidas, no consultas por nombre. 1 collected",
+      "texts": 1
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 1,
+      "http": null,
+      "queries": null,
+      "source": "ultranoticias.com.mx",
+      "status": "URLs conocidas, no consultas por nombre. 1 not_collected_transport",
+      "texts": 0
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 1,
+      "http": null,
+      "queries": null,
+      "source": "visionpeninsular.com",
+      "status": "URLs conocidas, no consultas por nombre. 1 collected",
+      "texts": 1
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 1,
+      "http": null,
+      "queries": null,
+      "source": "vocesnl.com.mx",
+      "status": "URLs conocidas, no consultas por nombre. 1 collected",
+      "texts": 1
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 1,
+      "http": null,
+      "queries": null,
+      "source": "web.jornada.com.mx",
+      "status": "URLs conocidas, no consultas por nombre. 1 collected",
+      "texts": 1
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 1,
+      "http": null,
+      "queries": null,
+      "source": "web.ntrguadalajara.com",
+      "status": "URLs conocidas, no consultas por nombre. 1 not_collected_transport",
+      "texts": 0
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 5,
+      "http": null,
+      "queries": null,
+      "source": "www.am.com.mx",
+      "status": "URLs conocidas, no consultas por nombre. 5 rejected_article_quality",
+      "texts": 0
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 1,
+      "http": null,
+      "queries": null,
+      "source": "www.e-consulta.com",
+      "status": "URLs conocidas, no consultas por nombre. 1 not_collected_transport",
+      "texts": 0
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 1,
+      "http": null,
+      "queries": null,
+      "source": "www.eldiariodechihuahua.mx",
+      "status": "URLs conocidas, no consultas por nombre. 1 not_collected_transport",
+      "texts": 0
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 1,
+      "http": null,
+      "queries": null,
+      "source": "www.elfinanciero.com.mx",
+      "status": "URLs conocidas, no consultas por nombre. 1 collected",
+      "texts": 1
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 7,
+      "http": null,
+      "queries": null,
+      "source": "www.eluniversal.com.mx",
+      "status": "URLs conocidas, no consultas por nombre. 7 not_collected_transport",
+      "texts": 0
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 1,
+      "http": null,
+      "queries": null,
+      "source": "www.eluniversalqueretaro.mx",
+      "status": "URLs conocidas, no consultas por nombre. 1 collected",
+      "texts": 0
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 1,
+      "http": null,
+      "queries": null,
+      "source": "www.infobae.com",
+      "status": "URLs conocidas, no consultas por nombre. 1 collected",
+      "texts": 1
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 1,
+      "http": null,
+      "queries": null,
+      "source": "www.infobaja.info",
+      "status": "URLs conocidas, no consultas por nombre. 1 collected",
+      "texts": 1
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 2,
+      "http": null,
+      "queries": null,
+      "source": "www.informador.mx",
+      "status": "URLs conocidas, no consultas por nombre. 2 not_collected_transport",
+      "texts": 0
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 1,
+      "http": null,
+      "queries": null,
+      "source": "www.jefaturadegobierno.cdmx.gob.mx",
+      "status": "URLs conocidas, no consultas por nombre. 1 not_collected_transport",
+      "texts": 0
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 1,
+      "http": null,
+      "queries": null,
+      "source": "www.jhonnyoliverquintal.com",
+      "status": "URLs conocidas, no consultas por nombre. 1 collected",
+      "texts": 1
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 15,
+      "http": null,
+      "queries": null,
+      "source": "www.jornada.com.mx",
+      "status": "URLs conocidas, no consultas por nombre. 15 collected",
+      "texts": 14
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 1,
+      "http": null,
+      "queries": null,
+      "source": "www.lajornadamaya.mx",
+      "status": "URLs conocidas, no consultas por nombre. 1 collected",
+      "texts": 1
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 1,
+      "http": null,
+      "queries": null,
+      "source": "www.lineadirectaportal.com",
+      "status": "URLs conocidas, no consultas por nombre. 1 collected",
+      "texts": 1
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 4,
+      "http": null,
+      "queries": null,
+      "source": "www.meganoticias.mx",
+      "status": "URLs conocidas, no consultas por nombre. 4 collected",
+      "texts": 4
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 1,
+      "http": null,
+      "queries": null,
+      "source": "www.milenio.com",
+      "status": "URLs conocidas, no consultas por nombre. 1 collected",
+      "texts": 1
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 1,
+      "http": null,
+      "queries": null,
+      "source": "www.nmas.com.mx",
+      "status": "URLs conocidas, no consultas por nombre. 1 rejected_article_quality",
+      "texts": 0
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 2,
+      "http": null,
+      "queries": null,
+      "source": "www.notariadomexicano.org.mx",
+      "status": "URLs conocidas, no consultas por nombre. 2 collected",
+      "texts": 2
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 2,
+      "http": null,
+      "queries": null,
+      "source": "www.notisistema.com",
+      "status": "URLs conocidas, no consultas por nombre. 2 collected",
+      "texts": 2
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 3,
+      "http": null,
+      "queries": null,
+      "source": "www.ntrguadalajara.com",
+      "status": "URLs conocidas, no consultas por nombre. 3 collected",
+      "texts": 3
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 1,
+      "http": null,
+      "queries": null,
+      "source": "www.nvinoticias.com",
+      "status": "URLs conocidas, no consultas por nombre. 1 collected",
+      "texts": 1
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 1,
+      "http": null,
+      "queries": null,
+      "source": "www.periodicocontexto.com.mx",
+      "status": "URLs conocidas, no consultas por nombre. 1 collected",
+      "texts": 1
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 2,
+      "http": null,
+      "queries": null,
+      "source": "www.razon.com.mx",
+      "status": "URLs conocidas, no consultas por nombre. 2 collected",
+      "texts": 2
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 1,
+      "http": null,
+      "queries": null,
+      "source": "www.reporteindigo.com",
+      "status": "URLs conocidas, no consultas por nombre. 1 not_collected_transport",
+      "texts": 0
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 5,
+      "http": null,
+      "queries": null,
+      "source": "www.revistaabogacia.com",
+      "status": "URLs conocidas, no consultas por nombre. 5 collected",
+      "texts": 5
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 1,
+      "http": null,
+      "queries": null,
+      "source": "www.rioaxaca.com",
+      "status": "URLs conocidas, no consultas por nombre. 1 collected",
+      "texts": 1
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 1,
+      "http": null,
+      "queries": null,
+      "source": "www.zonadocs.mx",
+      "status": "URLs conocidas, no consultas por nombre. 1 collected",
+      "texts": 1
+    }
+  ],
+  "summary_cards": [
+    {
+      "label": "Fuentes iniciales · URLs con texto",
+      "note": "14,7 min en adquisición fría; no cubrió toda la cola.",
+      "value": 28
+    },
+    {
+      "label": "Fuentes ampliadas · URLs con texto",
+      "note": "12,1 min en adquisición fría; hay coincidencias ajenas y tareas pendientes.",
+      "value": 71
+    },
+    {
+      "label": "Retest de un editor · URLs con texto",
+      "note": "6,6 min; 72 consultas nominales. Selección adaptada de proveedor, no comparación de latencias con los otros brazos.",
+      "value": 5
+    },
+    {
+      "label": "Referencias · URLs con texto usable",
+      "note": "2,2 min; las URLs se conocían antes. No cuenta como descubrimiento.",
+      "value": 71
+    },
+    {
+      "label": "Búsqueda inicial · recall del gold",
+      "note": "Pares de referencia pertinentes recuperados con texto; el denominador es finito.",
+      "value": "0 / 115"
+    },
+    {
+      "label": "Auxiliar · recall documental en corpus",
+      "note": "No recuperó positivos del corpus de referencia. Los otros brazos se evalúan por separado; no se ajustaron sus pesos.",
+      "value": "0 / 47"
+    },
+    {
+      "label": "Accuracy global",
+      "note": "La verdad es desconocida en parte de la muestra; no se reemplaza por un 0 ni se infiere inocuidad.",
+      "value": null
+    }
+  ],
+  "title": "Notarios: volumen recuperado, cobertura y calidad",
+  "volume_rows": [
+    {
+      "arm": "Descubrimiento por nombre · fuentes iniciales",
+      "candidates": 0,
+      "entity_id": "positive-01",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Fernando Lugo García Pelayo",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes iniciales",
+      "candidates": 0,
+      "entity_id": "positive-02",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Carlos Fernando Licona Rivemar",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes iniciales",
+      "candidates": 0,
+      "entity_id": "positive-03",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Daniel Fernando Rangel Moctezuma",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes iniciales",
+      "candidates": 0,
+      "entity_id": "positive-04",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Horacio Aguilar Álvarez de Alba",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes iniciales",
+      "candidates": 0,
+      "entity_id": "positive-05",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Horacio Lucas Wong Villareal",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes iniciales",
+      "candidates": 0,
+      "entity_id": "positive-06",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Ernesto Pérez Charles",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes iniciales",
+      "candidates": 0,
+      "entity_id": "positive-07",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Carlos Tomás Goff Rodríguez",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes iniciales",
+      "candidates": 1,
+      "entity_id": "positive-08",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Octavio Eduardo Soto Hernández",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 1,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 1
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes iniciales",
+      "candidates": 0,
+      "entity_id": "positive-09",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Luis Felipe del Valle Prieto Ortega",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes iniciales",
+      "candidates": 0,
+      "entity_id": "positive-10",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Alejandro Moreno Morales",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes iniciales",
+      "candidates": 11,
+      "entity_id": "positive-11",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Flavino Ríos Alvarado",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 3,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 3
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes iniciales",
+      "candidates": 0,
+      "entity_id": "positive-12",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Héctor Manuel Navarro Manjarrez",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes iniciales",
+      "candidates": 0,
+      "entity_id": "positive-13",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Álvaro Guzmán Merino",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes iniciales",
+      "candidates": 8,
+      "entity_id": "positive-14",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Celso Rodríguez González",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 8,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 8
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes iniciales",
+      "candidates": 0,
+      "entity_id": "positive-15",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Jorge Gerardo Gutiérrez Ortiz Monasterio",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes iniciales",
+      "candidates": 0,
+      "entity_id": "positive-16",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Sergio Alejandro López Rivera",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes iniciales",
+      "candidates": 0,
+      "entity_id": "positive-17",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Luis Antonio Guerrero Campos",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes iniciales",
+      "candidates": 1,
+      "entity_id": "positive-18",
+      "gold_status": "Reporte histórico conocido",
+      "name": "José Antonio Jaime Reynoso",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes iniciales",
+      "candidates": 0,
+      "entity_id": "positive-19",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Guillermo Coronado Figueroa",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes iniciales",
+      "candidates": 0,
+      "entity_id": "positive-20",
+      "gold_status": "Reporte histórico conocido",
+      "name": "José Luis Organista Macías",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes iniciales",
+      "candidates": 0,
+      "entity_id": "positive-21",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Juan Hernández Rivas",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes iniciales",
+      "candidates": 0,
+      "entity_id": "positive-22",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Samuel Fernández Ávila",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes iniciales",
+      "candidates": 0,
+      "entity_id": "positive-23",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Javier Manuel Gutiérrez Dávila",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes iniciales",
+      "candidates": 0,
+      "entity_id": "positive-24",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Alejandro José Vidaña Luna",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes iniciales",
+      "candidates": 0,
+      "entity_id": "positive-25",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Omar Abacuc Sánchez Heras",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes iniciales",
+      "candidates": 0,
+      "entity_id": "positive-26",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Eduardo García Corpus",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes iniciales",
+      "candidates": 0,
+      "entity_id": "positive-27",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Manuel Lazcano Meza",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes iniciales",
+      "candidates": 3,
+      "entity_id": "positive-28",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Édgar Veytia Cambero",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 3,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 3
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes iniciales",
+      "candidates": 0,
+      "entity_id": "positive-29",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Alejandro Durán Llamas",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes iniciales",
+      "candidates": 32,
+      "entity_id": "positive-30",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Mario Marín Torres",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 9,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 9
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes iniciales",
+      "candidates": 0,
+      "entity_id": "mx-notary-cdmx-058",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Iñigo Xavier Reynoso De Teresa",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes iniciales",
+      "candidates": 1,
+      "entity_id": "mx-notary-cdmx-242",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Roberto Garzón Jiménez",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes iniciales",
+      "candidates": 0,
+      "entity_id": "mx-notary-cdmx-224",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Jesús Torres Gómez",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes iniciales",
+      "candidates": 0,
+      "entity_id": "mx-notary-cdmx-181",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Miguel Soberón Mainero",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes iniciales",
+      "candidates": 0,
+      "entity_id": "mx-notary-cdmx-238",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Alfonso Martín León-Orantes",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes iniciales",
+      "candidates": 0,
+      "entity_id": "mx-notary-cdmx-129",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Ignacio Soto Borja y Anda",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes iniciales",
+      "candidates": 0,
+      "entity_id": "mx-notary-cdmx-194",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Enrique Zapata González Pacheco",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes iniciales",
+      "candidates": 0,
+      "entity_id": "mx-notary-cdmx-074",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Francisco Javier Arce Gargollo",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes iniciales",
+      "candidates": 0,
+      "entity_id": "mx-notary-cdmx-045",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Rafael Manuel Oliveros Lara",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes iniciales",
+      "candidates": 0,
+      "entity_id": "mx-notary-cdmx-229",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Marco Antonio Ruiz Aguirre",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes iniciales",
+      "candidates": 0,
+      "entity_id": "mx-notary-cdmx-098",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Gonzalo Manuel Ortiz Blanco",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes iniciales",
+      "candidates": 0,
+      "entity_id": "mx-notary-cdmx-230",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Alfredo Bazúa Witte",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes iniciales",
+      "candidates": 0,
+      "entity_id": "mx-notary-cdmx-114",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "María Teresa Rodríguez y Rodríguez",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes iniciales",
+      "candidates": 0,
+      "entity_id": "mx-notary-cdmx-022",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Daniel García Córdova",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes iniciales",
+      "candidates": 0,
+      "entity_id": "mx-notary-cdmx-071",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Eduardo Javier Muñoz Pinchetti",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes iniciales",
+      "candidates": 0,
+      "entity_id": "mx-notary-cdmx-025",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Emiliano Zubiría Maqueo",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes iniciales",
+      "candidates": 0,
+      "entity_id": "mx-notary-cdmx-002",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Alfredo González Serrano",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes iniciales",
+      "candidates": 0,
+      "entity_id": "mx-notary-cdmx-205",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Arturo Adolfo Llorente Martínez",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes iniciales",
+      "candidates": 0,
+      "entity_id": "mx-notary-cdmx-159",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Tarcisio Domingo Sánchez Ulloa",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes iniciales",
+      "candidates": 2,
+      "entity_id": "mx-notary-cdmx-244",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Celso de Jesús Pola Castillo",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 2,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 2
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes iniciales",
+      "candidates": 0,
+      "entity_id": "mx-notary-cdmx-140",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Jorge Alfredo Domínguez Martínez",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes iniciales",
+      "candidates": 1,
+      "entity_id": "mx-notary-cdmx-015",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Eduardo Alejandro Francisco García Villegas",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 1,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 1
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes iniciales",
+      "candidates": 0,
+      "entity_id": "mx-notary-cdmx-216",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Ernestina Bejarano Alfonso",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes iniciales",
+      "candidates": 1,
+      "entity_id": "mx-notary-cdmx-088",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Ricardo Vargas Navarro",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 1,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 1
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes iniciales",
+      "candidates": 2,
+      "entity_id": "mx-notary-cdmx-061",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Javier Eduardo Del Valle y Palazuelos",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 2,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 2
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes iniciales",
+      "candidates": 0,
+      "entity_id": "mx-notary-cdmx-241",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Sergio Rea Field",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes iniciales",
+      "candidates": 0,
+      "entity_id": "mx-notary-cdmx-166",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Gustavo Jiménez Ortiz",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes iniciales",
+      "candidates": 0,
+      "entity_id": "mx-notary-cdmx-086",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "José Daniel Labardini Schettino",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes iniciales",
+      "candidates": 0,
+      "entity_id": "mx-notary-cdmx-236",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Alejandro Domínguez García Villalobos",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes iniciales",
+      "candidates": 0,
+      "entity_id": "mx-notary-cdmx-197",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Sara Cuevas Villalobos",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes ampliadas",
+      "candidates": 21,
+      "entity_id": "positive-01",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Fernando Lugo García Pelayo",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 12,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 12
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes ampliadas",
+      "candidates": 0,
+      "entity_id": "positive-02",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Carlos Fernando Licona Rivemar",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes ampliadas",
+      "candidates": 0,
+      "entity_id": "positive-03",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Daniel Fernando Rangel Moctezuma",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes ampliadas",
+      "candidates": 0,
+      "entity_id": "positive-04",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Horacio Aguilar Álvarez de Alba",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes ampliadas",
+      "candidates": 0,
+      "entity_id": "positive-05",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Horacio Lucas Wong Villareal",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes ampliadas",
+      "candidates": 1,
+      "entity_id": "positive-06",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Ernesto Pérez Charles",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 1,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 1
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes ampliadas",
+      "candidates": 0,
+      "entity_id": "positive-07",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Carlos Tomás Goff Rodríguez",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes ampliadas",
+      "candidates": 1,
+      "entity_id": "positive-08",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Octavio Eduardo Soto Hernández",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 1,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 1
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes ampliadas",
+      "candidates": 0,
+      "entity_id": "positive-09",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Luis Felipe del Valle Prieto Ortega",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes ampliadas",
+      "candidates": 0,
+      "entity_id": "positive-10",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Alejandro Moreno Morales",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes ampliadas",
+      "candidates": 6,
+      "entity_id": "positive-11",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Flavino Ríos Alvarado",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 6,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 6
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes ampliadas",
+      "candidates": 0,
+      "entity_id": "positive-12",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Héctor Manuel Navarro Manjarrez",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes ampliadas",
+      "candidates": 2,
+      "entity_id": "positive-13",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Álvaro Guzmán Merino",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 1,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 1
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes ampliadas",
+      "candidates": 2,
+      "entity_id": "positive-14",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Celso Rodríguez González",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes ampliadas",
+      "candidates": 1,
+      "entity_id": "positive-15",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Jorge Gerardo Gutiérrez Ortiz Monasterio",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes ampliadas",
+      "candidates": 4,
+      "entity_id": "positive-16",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Sergio Alejandro López Rivera",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 2,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 2
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes ampliadas",
+      "candidates": 1,
+      "entity_id": "positive-17",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Luis Antonio Guerrero Campos",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes ampliadas",
+      "candidates": 3,
+      "entity_id": "positive-18",
+      "gold_status": "Reporte histórico conocido",
+      "name": "José Antonio Jaime Reynoso",
+      "notes": "0 textos ajenos; 1 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 1
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes ampliadas",
+      "candidates": 2,
+      "entity_id": "positive-19",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Guillermo Coronado Figueroa",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes ampliadas",
+      "candidates": 2,
+      "entity_id": "positive-20",
+      "gold_status": "Reporte histórico conocido",
+      "name": "José Luis Organista Macías",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes ampliadas",
+      "candidates": 2,
+      "entity_id": "positive-21",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Juan Hernández Rivas",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes ampliadas",
+      "candidates": 1,
+      "entity_id": "positive-22",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Samuel Fernández Ávila",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes ampliadas",
+      "candidates": 2,
+      "entity_id": "positive-23",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Javier Manuel Gutiérrez Dávila",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes ampliadas",
+      "candidates": 6,
+      "entity_id": "positive-24",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Alejandro José Vidaña Luna",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 6,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 6
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes ampliadas",
+      "candidates": 5,
+      "entity_id": "positive-25",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Omar Abacuc Sánchez Heras",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 5,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 5
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes ampliadas",
+      "candidates": 13,
+      "entity_id": "positive-26",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Eduardo García Corpus",
+      "notes": "10 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 3,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 13
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes ampliadas",
+      "candidates": 0,
+      "entity_id": "positive-27",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Manuel Lazcano Meza",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes ampliadas",
+      "candidates": 14,
+      "entity_id": "positive-28",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Édgar Veytia Cambero",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 14,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 14
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes ampliadas",
+      "candidates": 0,
+      "entity_id": "positive-29",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Alejandro Durán Llamas",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes ampliadas",
+      "candidates": 12,
+      "entity_id": "positive-30",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Mario Marín Torres",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 10,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 10
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes ampliadas",
+      "candidates": 0,
+      "entity_id": "mx-notary-cdmx-058",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Iñigo Xavier Reynoso De Teresa",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes ampliadas",
+      "candidates": 4,
+      "entity_id": "mx-notary-cdmx-242",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Roberto Garzón Jiménez",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes ampliadas",
+      "candidates": 0,
+      "entity_id": "mx-notary-cdmx-224",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Jesús Torres Gómez",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes ampliadas",
+      "candidates": 0,
+      "entity_id": "mx-notary-cdmx-181",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Miguel Soberón Mainero",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes ampliadas",
+      "candidates": 0,
+      "entity_id": "mx-notary-cdmx-238",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Alfonso Martín León-Orantes",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes ampliadas",
+      "candidates": 0,
+      "entity_id": "mx-notary-cdmx-129",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Ignacio Soto Borja y Anda",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes ampliadas",
+      "candidates": 0,
+      "entity_id": "mx-notary-cdmx-194",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Enrique Zapata González Pacheco",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes ampliadas",
+      "candidates": 0,
+      "entity_id": "mx-notary-cdmx-074",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Francisco Javier Arce Gargollo",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes ampliadas",
+      "candidates": 0,
+      "entity_id": "mx-notary-cdmx-045",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Rafael Manuel Oliveros Lara",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes ampliadas",
+      "candidates": 0,
+      "entity_id": "mx-notary-cdmx-229",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Marco Antonio Ruiz Aguirre",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes ampliadas",
+      "candidates": 0,
+      "entity_id": "mx-notary-cdmx-098",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Gonzalo Manuel Ortiz Blanco",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes ampliadas",
+      "candidates": 0,
+      "entity_id": "mx-notary-cdmx-230",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Alfredo Bazúa Witte",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes ampliadas",
+      "candidates": 0,
+      "entity_id": "mx-notary-cdmx-114",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "María Teresa Rodríguez y Rodríguez",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes ampliadas",
+      "candidates": 0,
+      "entity_id": "mx-notary-cdmx-022",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Daniel García Córdova",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes ampliadas",
+      "candidates": 0,
+      "entity_id": "mx-notary-cdmx-071",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Eduardo Javier Muñoz Pinchetti",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes ampliadas",
+      "candidates": 0,
+      "entity_id": "mx-notary-cdmx-025",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Emiliano Zubiría Maqueo",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes ampliadas",
+      "candidates": 0,
+      "entity_id": "mx-notary-cdmx-002",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Alfredo González Serrano",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes ampliadas",
+      "candidates": 0,
+      "entity_id": "mx-notary-cdmx-205",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Arturo Adolfo Llorente Martínez",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes ampliadas",
+      "candidates": 0,
+      "entity_id": "mx-notary-cdmx-159",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Tarcisio Domingo Sánchez Ulloa",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes ampliadas",
+      "candidates": 1,
+      "entity_id": "mx-notary-cdmx-244",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Celso de Jesús Pola Castillo",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 1,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 1
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes ampliadas",
+      "candidates": 0,
+      "entity_id": "mx-notary-cdmx-140",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Jorge Alfredo Domínguez Martínez",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes ampliadas",
+      "candidates": 0,
+      "entity_id": "mx-notary-cdmx-015",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Eduardo Alejandro Francisco García Villegas",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes ampliadas",
+      "candidates": 0,
+      "entity_id": "mx-notary-cdmx-216",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Ernestina Bejarano Alfonso",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes ampliadas",
+      "candidates": 0,
+      "entity_id": "mx-notary-cdmx-088",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Ricardo Vargas Navarro",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes ampliadas",
+      "candidates": 0,
+      "entity_id": "mx-notary-cdmx-061",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Javier Eduardo Del Valle y Palazuelos",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes ampliadas",
+      "candidates": 0,
+      "entity_id": "mx-notary-cdmx-241",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Sergio Rea Field",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes ampliadas",
+      "candidates": 0,
+      "entity_id": "mx-notary-cdmx-166",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Gustavo Jiménez Ortiz",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes ampliadas",
+      "candidates": 0,
+      "entity_id": "mx-notary-cdmx-086",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "José Daniel Labardini Schettino",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes ampliadas",
+      "candidates": 1,
+      "entity_id": "mx-notary-cdmx-236",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Alejandro Domínguez García Villalobos",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 1,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 1
+    },
+    {
+      "arm": "Descubrimiento por nombre · fuentes ampliadas",
+      "candidates": 0,
+      "entity_id": "mx-notary-cdmx-197",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Sara Cuevas Villalobos",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 8,
+      "entity_id": "positive-01",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Fernando Lugo García Pelayo",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes. Las URLs se conocían de antemano; no mide descubrimiento.",
+      "relevant_texts": 4,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 4
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 2,
+      "entity_id": "positive-02",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Carlos Fernando Licona Rivemar",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes. Las URLs se conocían de antemano; no mide descubrimiento.",
+      "relevant_texts": 1,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 1
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 3,
+      "entity_id": "positive-03",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Daniel Fernando Rangel Moctezuma",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes. Las URLs se conocían de antemano; no mide descubrimiento.",
+      "relevant_texts": 1,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 1
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 3,
+      "entity_id": "positive-04",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Horacio Aguilar Álvarez de Alba",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes. Las URLs se conocían de antemano; no mide descubrimiento.",
+      "relevant_texts": 2,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 2
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 3,
+      "entity_id": "positive-05",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Horacio Lucas Wong Villareal",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes. Las URLs se conocían de antemano; no mide descubrimiento.",
+      "relevant_texts": 3,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 3
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 3,
+      "entity_id": "positive-06",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Ernesto Pérez Charles",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes. Las URLs se conocían de antemano; no mide descubrimiento.",
+      "relevant_texts": 2,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 2
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 3,
+      "entity_id": "positive-07",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Carlos Tomás Goff Rodríguez",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes. Las URLs se conocían de antemano; no mide descubrimiento.",
+      "relevant_texts": 3,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 3
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 3,
+      "entity_id": "positive-08",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Octavio Eduardo Soto Hernández",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes. Las URLs se conocían de antemano; no mide descubrimiento.",
+      "relevant_texts": 3,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 3
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 6,
+      "entity_id": "positive-09",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Luis Felipe del Valle Prieto Ortega",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes. Las URLs se conocían de antemano; no mide descubrimiento.",
+      "relevant_texts": 6,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 6
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 3,
+      "entity_id": "positive-10",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Alejandro Moreno Morales",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes. Las URLs se conocían de antemano; no mide descubrimiento.",
+      "relevant_texts": 1,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 1
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 3,
+      "entity_id": "positive-11",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Flavino Ríos Alvarado",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes. Las URLs se conocían de antemano; no mide descubrimiento.",
+      "relevant_texts": 1,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 1
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 2,
+      "entity_id": "positive-12",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Héctor Manuel Navarro Manjarrez",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes. Las URLs se conocían de antemano; no mide descubrimiento.",
+      "relevant_texts": 0,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 0
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 4,
+      "entity_id": "positive-13",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Álvaro Guzmán Merino",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes. Las URLs se conocían de antemano; no mide descubrimiento.",
+      "relevant_texts": 3,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 3
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 3,
+      "entity_id": "positive-14",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Celso Rodríguez González",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes. Las URLs se conocían de antemano; no mide descubrimiento.",
+      "relevant_texts": 1,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 1
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 2,
+      "entity_id": "positive-15",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Jorge Gerardo Gutiérrez Ortiz Monasterio",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes. Las URLs se conocían de antemano; no mide descubrimiento.",
+      "relevant_texts": 0,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 0
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 3,
+      "entity_id": "positive-16",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Sergio Alejandro López Rivera",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes. Las URLs se conocían de antemano; no mide descubrimiento.",
+      "relevant_texts": 2,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 2
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 3,
+      "entity_id": "positive-17",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Luis Antonio Guerrero Campos",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes. Las URLs se conocían de antemano; no mide descubrimiento.",
+      "relevant_texts": 1,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 1
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 3,
+      "entity_id": "positive-18",
+      "gold_status": "Reporte histórico conocido",
+      "name": "José Antonio Jaime Reynoso",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes. Las URLs se conocían de antemano; no mide descubrimiento.",
+      "relevant_texts": 1,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 1
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 3,
+      "entity_id": "positive-19",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Guillermo Coronado Figueroa",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes. Las URLs se conocían de antemano; no mide descubrimiento.",
+      "relevant_texts": 1,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 1
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 4,
+      "entity_id": "positive-20",
+      "gold_status": "Reporte histórico conocido",
+      "name": "José Luis Organista Macías",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes. Las URLs se conocían de antemano; no mide descubrimiento.",
+      "relevant_texts": 2,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 2
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 2,
+      "entity_id": "positive-21",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Juan Hernández Rivas",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes. Las URLs se conocían de antemano; no mide descubrimiento.",
+      "relevant_texts": 0,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 0
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 2,
+      "entity_id": "positive-22",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Samuel Fernández Ávila",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes. Las URLs se conocían de antemano; no mide descubrimiento.",
+      "relevant_texts": 1,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 1
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 3,
+      "entity_id": "positive-23",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Javier Manuel Gutiérrez Dávila",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes. Las URLs se conocían de antemano; no mide descubrimiento.",
+      "relevant_texts": 0,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 0
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 3,
+      "entity_id": "positive-24",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Alejandro José Vidaña Luna",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes. Las URLs se conocían de antemano; no mide descubrimiento.",
+      "relevant_texts": 3,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 3
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 2,
+      "entity_id": "positive-25",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Omar Abacuc Sánchez Heras",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes. Las URLs se conocían de antemano; no mide descubrimiento.",
+      "relevant_texts": 1,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 1
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 4,
+      "entity_id": "positive-26",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Eduardo García Corpus",
+      "notes": "0 textos ajenos; 1 sin pertinencia adjudicada. URLs, no historias independientes. Las URLs se conocían de antemano; no mide descubrimiento.",
+      "relevant_texts": 2,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 3
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 3,
+      "entity_id": "positive-27",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Manuel Lazcano Meza",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes. Las URLs se conocían de antemano; no mide descubrimiento.",
+      "relevant_texts": 2,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 2
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 3,
+      "entity_id": "positive-28",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Édgar Veytia Cambero",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes. Las URLs se conocían de antemano; no mide descubrimiento.",
+      "relevant_texts": 3,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 3
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 4,
+      "entity_id": "positive-29",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Alejandro Durán Llamas",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes. Las URLs se conocían de antemano; no mide descubrimiento.",
+      "relevant_texts": 0,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 0
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 5,
+      "entity_id": "positive-30",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Mario Marín Torres",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes. Las URLs se conocían de antemano; no mide descubrimiento.",
+      "relevant_texts": 2,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 2
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 0,
+      "entity_id": "mx-notary-cdmx-058",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Iñigo Xavier Reynoso De Teresa",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes. Las URLs se conocían de antemano; no mide descubrimiento.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 3,
+      "entity_id": "mx-notary-cdmx-242",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Roberto Garzón Jiménez",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes. Las URLs se conocían de antemano; no mide descubrimiento.",
+      "relevant_texts": 1,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 1
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 0,
+      "entity_id": "mx-notary-cdmx-224",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Jesús Torres Gómez",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes. Las URLs se conocían de antemano; no mide descubrimiento.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 0,
+      "entity_id": "mx-notary-cdmx-181",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Miguel Soberón Mainero",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes. Las URLs se conocían de antemano; no mide descubrimiento.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 0,
+      "entity_id": "mx-notary-cdmx-238",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Alfonso Martín León-Orantes",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes. Las URLs se conocían de antemano; no mide descubrimiento.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 1,
+      "entity_id": "mx-notary-cdmx-129",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Ignacio Soto Borja y Anda",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes. Las URLs se conocían de antemano; no mide descubrimiento.",
+      "relevant_texts": 1,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 1
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 0,
+      "entity_id": "mx-notary-cdmx-194",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Enrique Zapata González Pacheco",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes. Las URLs se conocían de antemano; no mide descubrimiento.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 0,
+      "entity_id": "mx-notary-cdmx-074",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Francisco Javier Arce Gargollo",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes. Las URLs se conocían de antemano; no mide descubrimiento.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 0,
+      "entity_id": "mx-notary-cdmx-045",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Rafael Manuel Oliveros Lara",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes. Las URLs se conocían de antemano; no mide descubrimiento.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 2,
+      "entity_id": "mx-notary-cdmx-229",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Marco Antonio Ruiz Aguirre",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes. Las URLs se conocían de antemano; no mide descubrimiento.",
+      "relevant_texts": 1,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 1
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 0,
+      "entity_id": "mx-notary-cdmx-098",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Gonzalo Manuel Ortiz Blanco",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes. Las URLs se conocían de antemano; no mide descubrimiento.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 2,
+      "entity_id": "mx-notary-cdmx-230",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Alfredo Bazúa Witte",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes. Las URLs se conocían de antemano; no mide descubrimiento.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 1,
+      "entity_id": "mx-notary-cdmx-114",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "María Teresa Rodríguez y Rodríguez",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes. Las URLs se conocían de antemano; no mide descubrimiento.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 8,
+      "entity_id": "mx-notary-cdmx-022",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Daniel García Córdova",
+      "notes": "0 textos ajenos; 1 sin pertinencia adjudicada. URLs, no historias independientes. Las URLs se conocían de antemano; no mide descubrimiento.",
+      "relevant_texts": 6,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 7
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 0,
+      "entity_id": "mx-notary-cdmx-071",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Eduardo Javier Muñoz Pinchetti",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes. Las URLs se conocían de antemano; no mide descubrimiento.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 0,
+      "entity_id": "mx-notary-cdmx-025",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Emiliano Zubiría Maqueo",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes. Las URLs se conocían de antemano; no mide descubrimiento.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 0,
+      "entity_id": "mx-notary-cdmx-002",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Alfredo González Serrano",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes. Las URLs se conocían de antemano; no mide descubrimiento.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 0,
+      "entity_id": "mx-notary-cdmx-205",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Arturo Adolfo Llorente Martínez",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes. Las URLs se conocían de antemano; no mide descubrimiento.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 1,
+      "entity_id": "mx-notary-cdmx-159",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Tarcisio Domingo Sánchez Ulloa",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes. Las URLs se conocían de antemano; no mide descubrimiento.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 1,
+      "entity_id": "mx-notary-cdmx-244",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Celso de Jesús Pola Castillo",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes. Las URLs se conocían de antemano; no mide descubrimiento.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 1,
+      "entity_id": "mx-notary-cdmx-140",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Jorge Alfredo Domínguez Martínez",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes. Las URLs se conocían de antemano; no mide descubrimiento.",
+      "relevant_texts": 1,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 1
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 0,
+      "entity_id": "mx-notary-cdmx-015",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Eduardo Alejandro Francisco García Villegas",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes. Las URLs se conocían de antemano; no mide descubrimiento.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 0,
+      "entity_id": "mx-notary-cdmx-216",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Ernestina Bejarano Alfonso",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes. Las URLs se conocían de antemano; no mide descubrimiento.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 10,
+      "entity_id": "mx-notary-cdmx-088",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Ricardo Vargas Navarro",
+      "notes": "0 textos ajenos; 2 sin pertinencia adjudicada. URLs, no historias independientes. Las URLs se conocían de antemano; no mide descubrimiento.",
+      "relevant_texts": 8,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 10
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 0,
+      "entity_id": "mx-notary-cdmx-061",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Javier Eduardo Del Valle y Palazuelos",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes. Las URLs se conocían de antemano; no mide descubrimiento.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 0,
+      "entity_id": "mx-notary-cdmx-241",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Sergio Rea Field",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes. Las URLs se conocían de antemano; no mide descubrimiento.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 0,
+      "entity_id": "mx-notary-cdmx-166",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Gustavo Jiménez Ortiz",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes. Las URLs se conocían de antemano; no mide descubrimiento.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 0,
+      "entity_id": "mx-notary-cdmx-086",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "José Daniel Labardini Schettino",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes. Las URLs se conocían de antemano; no mide descubrimiento.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 1,
+      "entity_id": "mx-notary-cdmx-236",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Alejandro Domínguez García Villalobos",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes. Las URLs se conocían de antemano; no mide descubrimiento.",
+      "relevant_texts": 1,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 1
+    },
+    {
+      "arm": "Descarga de referencias ya conocidas",
+      "candidates": 1,
+      "entity_id": "mx-notary-cdmx-197",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Sara Cuevas Villalobos",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes. Las URLs se conocían de antemano; no mide descubrimiento.",
+      "relevant_texts": 1,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 1
+    },
+    {
+      "arm": "Retest adaptado · un editor (Notisistema)",
+      "candidates": 0,
+      "entity_id": "positive-01",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Fernando Lugo García Pelayo",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 0
+    },
+    {
+      "arm": "Retest adaptado · un editor (Notisistema)",
+      "candidates": 0,
+      "entity_id": "positive-02",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Carlos Fernando Licona Rivemar",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 0
+    },
+    {
+      "arm": "Retest adaptado · un editor (Notisistema)",
+      "candidates": 0,
+      "entity_id": "positive-03",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Daniel Fernando Rangel Moctezuma",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 0
+    },
+    {
+      "arm": "Retest adaptado · un editor (Notisistema)",
+      "candidates": 0,
+      "entity_id": "positive-04",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Horacio Aguilar Álvarez de Alba",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 0
+    },
+    {
+      "arm": "Retest adaptado · un editor (Notisistema)",
+      "candidates": 0,
+      "entity_id": "positive-05",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Horacio Lucas Wong Villareal",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 0
+    },
+    {
+      "arm": "Retest adaptado · un editor (Notisistema)",
+      "candidates": 0,
+      "entity_id": "positive-06",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Ernesto Pérez Charles",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 0
+    },
+    {
+      "arm": "Retest adaptado · un editor (Notisistema)",
+      "candidates": 0,
+      "entity_id": "positive-07",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Carlos Tomás Goff Rodríguez",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 0
+    },
+    {
+      "arm": "Retest adaptado · un editor (Notisistema)",
+      "candidates": 0,
+      "entity_id": "positive-08",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Octavio Eduardo Soto Hernández",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 0
+    },
+    {
+      "arm": "Retest adaptado · un editor (Notisistema)",
+      "candidates": 0,
+      "entity_id": "positive-09",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Luis Felipe del Valle Prieto Ortega",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 0
+    },
+    {
+      "arm": "Retest adaptado · un editor (Notisistema)",
+      "candidates": 0,
+      "entity_id": "positive-10",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Alejandro Moreno Morales",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 0
+    },
+    {
+      "arm": "Retest adaptado · un editor (Notisistema)",
+      "candidates": 0,
+      "entity_id": "positive-11",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Flavino Ríos Alvarado",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 0
+    },
+    {
+      "arm": "Retest adaptado · un editor (Notisistema)",
+      "candidates": 0,
+      "entity_id": "positive-12",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Héctor Manuel Navarro Manjarrez",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 0
+    },
+    {
+      "arm": "Retest adaptado · un editor (Notisistema)",
+      "candidates": 0,
+      "entity_id": "positive-13",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Álvaro Guzmán Merino",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 0
+    },
+    {
+      "arm": "Retest adaptado · un editor (Notisistema)",
+      "candidates": 0,
+      "entity_id": "positive-14",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Celso Rodríguez González",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 0
+    },
+    {
+      "arm": "Retest adaptado · un editor (Notisistema)",
+      "candidates": 0,
+      "entity_id": "positive-15",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Jorge Gerardo Gutiérrez Ortiz Monasterio",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 0
+    },
+    {
+      "arm": "Retest adaptado · un editor (Notisistema)",
+      "candidates": 0,
+      "entity_id": "positive-16",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Sergio Alejandro López Rivera",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 0
+    },
+    {
+      "arm": "Retest adaptado · un editor (Notisistema)",
+      "candidates": 0,
+      "entity_id": "positive-17",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Luis Antonio Guerrero Campos",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 0
+    },
+    {
+      "arm": "Retest adaptado · un editor (Notisistema)",
+      "candidates": 0,
+      "entity_id": "positive-18",
+      "gold_status": "Reporte histórico conocido",
+      "name": "José Antonio Jaime Reynoso",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 0
+    },
+    {
+      "arm": "Retest adaptado · un editor (Notisistema)",
+      "candidates": 2,
+      "entity_id": "positive-19",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Guillermo Coronado Figueroa",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 2,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 2
+    },
+    {
+      "arm": "Retest adaptado · un editor (Notisistema)",
+      "candidates": 1,
+      "entity_id": "positive-20",
+      "gold_status": "Reporte histórico conocido",
+      "name": "José Luis Organista Macías",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 1,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 1
+    },
+    {
+      "arm": "Retest adaptado · un editor (Notisistema)",
+      "candidates": 0,
+      "entity_id": "positive-21",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Juan Hernández Rivas",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 0
+    },
+    {
+      "arm": "Retest adaptado · un editor (Notisistema)",
+      "candidates": 1,
+      "entity_id": "positive-22",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Samuel Fernández Ávila",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 1,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 1
+    },
+    {
+      "arm": "Retest adaptado · un editor (Notisistema)",
+      "candidates": 1,
+      "entity_id": "positive-23",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Javier Manuel Gutiérrez Dávila",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 1,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 1
+    },
+    {
+      "arm": "Retest adaptado · un editor (Notisistema)",
+      "candidates": 0,
+      "entity_id": "positive-24",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Alejandro José Vidaña Luna",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 0
+    },
+    {
+      "arm": "Retest adaptado · un editor (Notisistema)",
+      "candidates": 0,
+      "entity_id": "positive-25",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Omar Abacuc Sánchez Heras",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 0
+    },
+    {
+      "arm": "Retest adaptado · un editor (Notisistema)",
+      "candidates": 0,
+      "entity_id": "positive-26",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Eduardo García Corpus",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 0
+    },
+    {
+      "arm": "Retest adaptado · un editor (Notisistema)",
+      "candidates": 0,
+      "entity_id": "positive-27",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Manuel Lazcano Meza",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 0
+    },
+    {
+      "arm": "Retest adaptado · un editor (Notisistema)",
+      "candidates": 0,
+      "entity_id": "positive-28",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Édgar Veytia Cambero",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 0
+    },
+    {
+      "arm": "Retest adaptado · un editor (Notisistema)",
+      "candidates": 0,
+      "entity_id": "positive-29",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Alejandro Durán Llamas",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 0
+    },
+    {
+      "arm": "Retest adaptado · un editor (Notisistema)",
+      "candidates": 0,
+      "entity_id": "positive-30",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Mario Marín Torres",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Casos históricos dirigidos",
+      "texts": 0
+    },
+    {
+      "arm": "Retest adaptado · un editor (Notisistema)",
+      "candidates": 0,
+      "entity_id": "mx-notary-cdmx-058",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Iñigo Xavier Reynoso De Teresa",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Retest adaptado · un editor (Notisistema)",
+      "candidates": 0,
+      "entity_id": "mx-notary-cdmx-242",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Roberto Garzón Jiménez",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Retest adaptado · un editor (Notisistema)",
+      "candidates": 0,
+      "entity_id": "mx-notary-cdmx-224",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Jesús Torres Gómez",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Retest adaptado · un editor (Notisistema)",
+      "candidates": 0,
+      "entity_id": "mx-notary-cdmx-181",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Miguel Soberón Mainero",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Retest adaptado · un editor (Notisistema)",
+      "candidates": 0,
+      "entity_id": "mx-notary-cdmx-238",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Alfonso Martín León-Orantes",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Retest adaptado · un editor (Notisistema)",
+      "candidates": 0,
+      "entity_id": "mx-notary-cdmx-129",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Ignacio Soto Borja y Anda",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Retest adaptado · un editor (Notisistema)",
+      "candidates": 0,
+      "entity_id": "mx-notary-cdmx-194",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Enrique Zapata González Pacheco",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Retest adaptado · un editor (Notisistema)",
+      "candidates": 0,
+      "entity_id": "mx-notary-cdmx-074",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Francisco Javier Arce Gargollo",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Retest adaptado · un editor (Notisistema)",
+      "candidates": 0,
+      "entity_id": "mx-notary-cdmx-045",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Rafael Manuel Oliveros Lara",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Retest adaptado · un editor (Notisistema)",
+      "candidates": 0,
+      "entity_id": "mx-notary-cdmx-229",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Marco Antonio Ruiz Aguirre",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Retest adaptado · un editor (Notisistema)",
+      "candidates": 0,
+      "entity_id": "mx-notary-cdmx-098",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Gonzalo Manuel Ortiz Blanco",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Retest adaptado · un editor (Notisistema)",
+      "candidates": 0,
+      "entity_id": "mx-notary-cdmx-230",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Alfredo Bazúa Witte",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Retest adaptado · un editor (Notisistema)",
+      "candidates": 0,
+      "entity_id": "mx-notary-cdmx-114",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "María Teresa Rodríguez y Rodríguez",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Retest adaptado · un editor (Notisistema)",
+      "candidates": 0,
+      "entity_id": "mx-notary-cdmx-022",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Daniel García Córdova",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Retest adaptado · un editor (Notisistema)",
+      "candidates": 0,
+      "entity_id": "mx-notary-cdmx-071",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Eduardo Javier Muñoz Pinchetti",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Retest adaptado · un editor (Notisistema)",
+      "candidates": 0,
+      "entity_id": "mx-notary-cdmx-025",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Emiliano Zubiría Maqueo",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Retest adaptado · un editor (Notisistema)",
+      "candidates": 0,
+      "entity_id": "mx-notary-cdmx-002",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Alfredo González Serrano",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Retest adaptado · un editor (Notisistema)",
+      "candidates": 0,
+      "entity_id": "mx-notary-cdmx-205",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Arturo Adolfo Llorente Martínez",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Retest adaptado · un editor (Notisistema)",
+      "candidates": 0,
+      "entity_id": "mx-notary-cdmx-159",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Tarcisio Domingo Sánchez Ulloa",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Retest adaptado · un editor (Notisistema)",
+      "candidates": 0,
+      "entity_id": "mx-notary-cdmx-244",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Celso de Jesús Pola Castillo",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Retest adaptado · un editor (Notisistema)",
+      "candidates": 0,
+      "entity_id": "mx-notary-cdmx-140",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Jorge Alfredo Domínguez Martínez",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Retest adaptado · un editor (Notisistema)",
+      "candidates": 0,
+      "entity_id": "mx-notary-cdmx-015",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Eduardo Alejandro Francisco García Villegas",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Retest adaptado · un editor (Notisistema)",
+      "candidates": 0,
+      "entity_id": "mx-notary-cdmx-216",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Ernestina Bejarano Alfonso",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Retest adaptado · un editor (Notisistema)",
+      "candidates": 0,
+      "entity_id": "mx-notary-cdmx-088",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Ricardo Vargas Navarro",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Retest adaptado · un editor (Notisistema)",
+      "candidates": 0,
+      "entity_id": "mx-notary-cdmx-061",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Javier Eduardo Del Valle y Palazuelos",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Retest adaptado · un editor (Notisistema)",
+      "candidates": 0,
+      "entity_id": "mx-notary-cdmx-241",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Sergio Rea Field",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Retest adaptado · un editor (Notisistema)",
+      "candidates": 0,
+      "entity_id": "mx-notary-cdmx-166",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Gustavo Jiménez Ortiz",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Retest adaptado · un editor (Notisistema)",
+      "candidates": 0,
+      "entity_id": "mx-notary-cdmx-086",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "José Daniel Labardini Schettino",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Retest adaptado · un editor (Notisistema)",
+      "candidates": 0,
+      "entity_id": "mx-notary-cdmx-236",
+      "gold_status": "Reporte histórico conocido",
+      "name": "Alejandro Domínguez García Villalobos",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    },
+    {
+      "arm": "Retest adaptado · un editor (Notisistema)",
+      "candidates": 0,
+      "entity_id": "mx-notary-cdmx-197",
+      "gold_status": "Incidentes de la persona: desconocidos",
+      "name": "Sara Cuevas Villalobos",
+      "notes": "0 textos ajenos; 0 sin pertinencia adjudicada. URLs, no historias independientes.",
+      "relevant_texts": 0,
+      "selection_group": "Comparación aleatoria CDMX; no negativo certificado",
+      "texts": 0
+    }
+  ]
+}

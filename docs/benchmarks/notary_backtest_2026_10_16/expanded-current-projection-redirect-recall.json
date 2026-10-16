@@ -1,0 +1,89 @@
+{
+  "dataset": "expanded_current_projection",
+  "derived_after_final_copied_bank_receipt": true,
+  "gold_snapshot_sha256": "d49edc73a57beb49f806126b741dc4e7b99eae8be4d8dfb69970bfc7222c30e8",
+  "known_relevant_pairs": 115,
+  "known_relevant_urls": 97,
+  "network_requests": 0,
+  "reference_denominators_unchanged": true,
+  "schema_version": 4,
+  "stages": {
+    "candidates": {
+      "exact_reference_pair_recall": {
+        "denominator": 115,
+        "numerator": 1,
+        "value": 0.008695652173913044,
+        "wilson95": {
+          "lower": 0.0015366489058808025,
+          "upper": 0.047616726344313784
+        }
+      },
+      "exact_reference_unique_url_recall": {
+        "denominator": 97,
+        "numerator": 1,
+        "value": 0.010309278350515464,
+        "wilson95": {
+          "lower": 0.0018221648082868518,
+          "upper": 0.05610499024289903
+        }
+      },
+      "verified_redirect_reference_pair_recall": {
+        "denominator": 115,
+        "numerator": 4,
+        "value": 0.034782608695652174,
+        "wilson95": {
+          "lower": 0.013607842790201288,
+          "upper": 0.08603296386263783
+        }
+      },
+      "verified_redirect_reference_unique_url_recall": {
+        "denominator": 97,
+        "numerator": 4,
+        "value": 0.041237113402061855,
+        "wilson95": {
+          "lower": 0.016151236586163194,
+          "upper": 0.10127525604073725
+        }
+      }
+    },
+    "original_texts": {
+      "exact_reference_pair_recall": {
+        "denominator": 115,
+        "numerator": 1,
+        "value": 0.008695652173913044,
+        "wilson95": {
+          "lower": 0.0015366489058808025,
+          "upper": 0.047616726344313784
+        }
+      },
+      "exact_reference_unique_url_recall": {
+        "denominator": 97,
+        "numerator": 1,
+        "value": 0.010309278350515464,
+        "wilson95": {
+          "lower": 0.0018221648082868518,
+          "upper": 0.05610499024289903
+        }
+      },
+      "verified_redirect_reference_pair_recall": {
+        "denominator": 115,
+        "numerator": 4,
+        "value": 0.034782608695652174,
+        "wilson95": {
+          "lower": 0.013607842790201288,
+          "upper": 0.08603296386263783
+        }
+      },
+      "verified_redirect_reference_unique_url_recall": {
+        "denominator": 97,
+        "numerator": 4,
+        "value": 0.041237113402061855,
+        "wilson95": {
+          "lower": 0.016151236586163194,
+          "upper": 0.10127525604073725
+        }
+      }
+    }
+  },
+  "verified_redirect_mapping_file_sha256": "3e6491701e97faf456bd89eff50d6f8a1ba6c699e86f070ac1bc22a023810428"
+}

@@ -1,0 +1,30 @@
+{
+  "limitations": "Passing regression checks does not demonstrate adequate news coverage, out-of-sample accuracy, or a network SLA.",
+  "offline_replay_v2": {
+    "checks": 19,
+    "network_calls": {
+      "dns": 0,
+      "http": 0,
+      "tcp": 0
+    },
+    "passed": true
+  },
+  "scope": "Software regression validation, distinct from retrieval/model quality",
+  "search_clarity_ui": {
+    "checks": 21,
+    "log_sha256": "4875a3963be53a7313c38ac70d66e48b3d1addbecc87df3f252b7462bbfa64c7",
+    "passed": true
+  },
+  "shared_acquisition_ui": {
+    "checks": 29,
+    "log_sha256": "4e021ab89a742d0d92a67b046ec44ec606f830e1dba9eac0babcbd95f45947dd",
+    "passed": true
+  },
+  "unit_tests": {
+    "log_sha256": "fa4e50dbcb578415f7ae1c939cd1795a3ca683742c67536c84e298386ab5a2c3",
+    "optional_skipped": 7,
+    "passed": true,
+    "seconds": 65.368,
+    "tests": 1044
+  }
+}

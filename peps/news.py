@@ -765,6 +765,100 @@ class NewsAcquirer:
                             (state, result.get('error') or result.get('status'), job['payload']['article_id']))
         return True
 
+    def _defer_host_pending(self, fetcher, result, cache_mode='reuse'):
+        """Share an authoritative host wait without claiming the whole backlog.
+
+        This is a conservative scheduling hint. The fetcher's atomic _reserve
+        remains mandatory, including when another profile requires more delay.
+        Cached URLs, ambiguous URLs and concurrent producers are never delayed.
+        """
+        from .collector import CollectionError
+        if (cache_mode == 'local' or self.engine.stop_event.is_set()
+                or result.get('error_code') != 'host_interval'
+                or result.get('request_attempted') is not False
+                or not hasattr(fetcher, 'admission_uncached_urls')
+                or not hasattr(fetcher, '_validate_url')):
+            return 0
+        try:
+            raw_retry = result.get('retry_at')
+            retry = (float(raw_retry) if isinstance(raw_retry, (int, float)) and not isinstance(raw_retry, bool)
+                     else datetime.fromisoformat(raw_retry.replace('Z', '+00:00')).timestamp())
+            host = result['admission_host']
+            if not isinstance(host, str) or fetcher._hostname(host) != host:
+                return 0
+        except (ValueError, TypeError, AttributeError, KeyError, OverflowError, CollectionError):
+            return 0
+        if not math.isfinite(retry) or retry <= time.time():
+            return 0
+        observed_at = now()
+        observed_epoch = time.time()
+        sources = {source['id']: source for source in self.sources()}
+
+        def request_url(row):
+            try:
+                payload = json.loads(row['payload'])
+                source = sources[payload['source_id']]
+                if not source.get('enabled') or not source.get('terms_approved'):
+                    return None
+                if row['kind'] == 'news_query':
+                    effective = self._query_url(source, payload)
+                elif row['kind'] in ('news_feed', 'news_article'):
+                    effective = payload['url']
+                else:
+                    return None
+                request_source = (dict(source, allowed_hosts=source.get('article_allowed_hosts') or source.get('allowed_hosts', []))
+                                  if row['kind'] == 'news_article' else source)
+                url, candidate_host, _ = fetcher._validate_url(effective, request_source, resolve=False)
+                # Persisted payloads without an unambiguous current URL are
+                # processed normally rather than guessed at by the scheduler.
+                saved_url, _, _ = fetcher._validate_url(payload['url'], request_source, resolve=False)
+                return url if saved_url == url and candidate_host == host else None
+            except (ValueError, TypeError, KeyError, AttributeError, RecursionError, CollectionError):
+                return None
+
+        with self.store.connection() as con:
+            rows = con.execute("SELECT id,kind,payload FROM jobs WHERE status IN ('queued','deferred') "
+                               "AND kind IN ('news_query','news_feed','news_article') "
+                               "AND COALESCE(lease_until,0)<=? AND due<?", (observed_epoch, retry)).fetchall()
+            # Remember producers before inspecting the HTTP cache. A producer
+            # may complete between that inspection and the jobs write lock.
+            producers = con.execute("SELECT id,kind,payload FROM jobs WHERE status='running' "
+                                    "AND kind IN ('news_query','news_feed','news_article')").fetchall()
+        protected = {url for row in producers if (url := request_url(row)) is not None}
+        candidates = [(row, url) for row in rows if (url := request_url(row)) is not None and url not in protected]
+        if not candidates:
+            return 0
+        uncached = fetcher.admission_uncached_urls(url for _, url in candidates)
+        if not uncached or self.engine.stop_event.is_set():
+            return 0
+        with self.store.connection() as con:
+            con.execute('BEGIN IMMEDIATE')
+            current = time.time()
+            if current < observed_epoch or current >= retry or self.engine.stop_event.is_set():
+                return 0
+            # Running producers and producers completed since the read/cache
+            # snapshot protect their duplicate URLs. Resolve only in memory:
+            # no network/cache database lock is nested inside this transaction.
+            producers = con.execute("SELECT id,kind,payload FROM jobs WHERE (status='running' OR updated_at>=?) "
+                                    "AND kind IN ('news_query','news_feed','news_article')", (observed_at,)).fetchall()
+            protected.update(url for row in producers if (url := request_url(row)) is not None)
+            changed = []
+            updated_at = now()
+            for row, url in candidates:
+                if url not in uncached or url in protected:
+                    continue
+                count = con.execute("UPDATE jobs SET due=MAX(due,?),updated_at=? WHERE id=? AND payload=? "
+                                    "AND kind=? AND status IN ('queued','deferred') AND COALESCE(lease_until,0)<=? "
+                                    "AND due<?", (retry, updated_at, row['id'], row['payload'], row['kind'], current, retry)).rowcount
+                if count:
+                    changed.append(row['id'])
+            if changed:
+                self.store._audit(con, 'news_host_admission_deferred',
+                                  {'host': host, 'ready_at': retry, 'count': len(changed),
+                                   'job_ids': changed, 'reason': 'host_interval',
+                                   'attempts_and_leases_preserved': True})
+            return len(changed)
+
     def _source_for_article(self, url, originating_source=None, all_sources=None):
         from .public_search import PUBLIC_SEARCH_KINDS
         host = (urlsplit(url).hostname or '').lower()
@@ -1595,8 +1689,13 @@ class NewsAcquirer:
         if stopped():
             return counts
         with self.store.connection() as con:
+            # A known local miss already occupies its selected slot. Releasing
+            # it on every local resume silently promotes more uncached URLs;
+            # an explicit network/revalidation run can resume that frontier.
             pending = {row[0] for row in con.execute("SELECT json_extract(CASE WHEN json_valid(payload) THEN payload ELSE '{}' END,'$.article_id') FROM jobs "
-                       "WHERE kind='news_article' AND status IN ('queued','running','deferred')")}
+                       "WHERE kind='news_article' AND (status IN ('queued','running','deferred') OR "
+                       "(?='local' AND status='blocked' AND substr(error,1,?)=?))",
+                       (getattr(self, '_active_cache_mode', 'reuse'), len('local_cache_miss:'), 'local_cache_miss:'))}
             from .news_projection import projection_ready, projection_signature
             signature = projection_signature(con)
             projected = (projection_ready(con)
@@ -1738,6 +1837,58 @@ class NewsAcquirer:
                 self.store._audit(con, 'news_local_cache_misses_resumed',
                                   {'job_ids': identifiers, 'attempts_and_transport_backoff_preserved': True})
 
+    def settle_legacy_insufficient_articles(self):
+        """Retire deterministic old body retries without waiting or networking.
+
+        Historical retries retain their schedule, attempts, owner and payload.
+        Running work and live leases remain untouched. A malformed legacy
+        payload cannot identify a reference safely and is left for review.
+        """
+        if self.engine.stop_event.is_set():
+            return 0
+        prefix = '_InsufficientArticleText:'
+        message = ('article_text_insufficient: Cuerpo insuficiente; la referencia se conserva. '
+                   'Revisa la fuente y solicita una revalidación manual.')
+        identifiers = []
+        with self.store.connection() as con:
+            con.execute('BEGIN IMMEDIATE')
+            checked_at = time.time()
+            rows = con.execute("SELECT id,status,owner,lease_until,payload,error FROM jobs "
+                               "WHERE kind='news_article' AND status IN ('queued','deferred') "
+                               'AND substr(error,1,?)=? AND COALESCE(lease_until,0)<=? ORDER BY id',
+                               (len(prefix), prefix, checked_at)).fetchall()
+            for row in rows:
+                try:
+                    payload = json.loads(row['payload'])
+                except (ValueError, TypeError, RecursionError):
+                    continue
+                article_id = payload.get('article_id') if isinstance(payload, dict) else None
+                if not isinstance(article_id, str) or not article_id:
+                    continue
+                article = con.execute('SELECT id FROM news_articles WHERE id=?', (article_id,)).fetchone()
+                if article is None:
+                    continue
+                # Recheck ownership, status and lease while holding the write
+                # transaction; a worker's newer receipt must never be retired.
+                changed = con.execute("UPDATE jobs SET status='blocked',error=?,updated_at=? "
+                    "WHERE id=? AND kind='news_article' AND status=? AND owner IS ? "
+                    'AND lease_until IS ? AND COALESCE(lease_until,0)<=? AND payload=? AND error=?',
+                    (message, now(), row['id'], row['status'], row['owner'], row['lease_until'],
+                     checked_at, row['payload'], row['error'])).rowcount
+                if not changed:
+                    continue
+                identifiers.append(row['id'])
+                con.execute("UPDATE news_articles SET status='blocked',error=? WHERE id=? "
+                            "AND scope!='full_article' AND document_id IS NULL", (message, article_id))
+            if self.engine.stop_event.is_set():
+                raise _MetadataScanStopped()
+            if identifiers:
+                self.store._audit(con, 'news_legacy_insufficient_articles_settled',
+                    {'job_ids': identifiers, 'reason': 'article_text_insufficient',
+                     'previous_error_prefix': prefix, 'attempts_due_owner_payload_preserved': True,
+                     'original_content_preserved': True})
+        return len(identifiers)
+
     def acquire(self, workers=4, seconds=120, max_articles=1000, download_all=False, queue=True,
                 window=None, start=None, end=None, *, progress=None, reset_stop=True, relevant_only=None,
                 body_budget=None, per_entity_body_limit=None, cache_mode='reuse'):
@@ -1813,6 +1964,8 @@ class NewsAcquirer:
             for entity in entities:
                 check_preparation()
                 yield entity
+        check_preparation()
+        self.settle_legacy_insufficient_articles()
         check_preparation()
         self.store.reconcile_jobs('news_')
         _emit_progress(progress, 'download', 0, None, 'tareas', 'Preparando la reanudación y las fuentes autorizadas.',
@@ -1933,6 +2086,7 @@ class NewsAcquirer:
                     request_source = dict(source, timeout_seconds=min(float(source.get('timeout_seconds', 20)), remaining),
                                           _deadline_monotonic=deadline, _cache_mode=cache_mode)
                     result = fetcher.fetch(url, request_source)
+                    self._defer_host_pending(fetcher, result, cache_mode=cache_mode)
                     self._session.note(network_requests=result.get('network_requests'),
                         http_cache_hits=int(bool(result.get('from_cache') or result.get('cache_status') in ('fresh', 'local', 'revalidated'))))
                     self._session.save()
@@ -2006,6 +2160,15 @@ class NewsAcquirer:
                 execution_result = None
                 try:
                     execution_result = self.execute(job, session_fetcher, resolver, download_all, relevance, budget)
+                except _InsufficientArticleText:
+                    # A successful response with no editorial body is a local
+                    # quality limit. Replaying the same cached bytes after an
+                    # exponential network backoff cannot make it readable.
+                    # Keep its reference/cache and permit an explicit reviewed
+                    # retry; never substitute menus or lower the text minimum.
+                    self.store.finish(job, 'blocked',
+                        'article_text_insufficient: Cuerpo insuficiente; la referencia se conserva. '
+                        'Revisa la fuente y solicita una revalidación manual.')
                 except Exception as exc:
                     self.store.finish(job, 'deferred', f'{type(exc).__name__}: {exc}', time.time() + min(3600, 30 * 2 ** job['attempts']))
                 finally:

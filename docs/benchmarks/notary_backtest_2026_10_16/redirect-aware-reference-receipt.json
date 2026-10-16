@@ -1,0 +1,17 @@
+{
+  "input_sha256": {
+    "closed-reference-corpus-v1/report.json": "7c937e05241cbcaf6189474ad64d3244d716a41b1b90ffc046b0b1e9c64dc87d",
+    "final-evaluation/corpus-adjudicated-input-v3.json": "829a4e83365812f05bb9f6a0fb76149f2b62b765b17768c02f29d71711800f96",
+    "final-evaluation/expanded-adjudicated-input-v3.json": "835be723d896ff7efdb2032c7198686c17d6800700f97a80323c8ad2676cb409",
+    "final-evaluation/native-adjudicated-input-v3.json": "be235121a6510e852a686daecc8fa74f572fcf13b9ec3754d3ca618b79c1b4e8",
+    "final-evaluation/notisistema-adjudicated-input-v4.json": "5dc59521ac0ab29ad9eccb96451c3d7a2586522bebe1fb7d13881610505df01a",
+    "gold-adjudicated-v1.json": "cd8eb6cfb40881fe0292e93f9209addec4e84a3c0982e6e0ddbeadb39dfac7a8"
+  },
+  "network_requests": 0,
+  "original_v3_files_unchanged": true,
+  "output_sha256": {
+    "redirect-aware-reference-recall-v4.json": "3e6491701e97faf456bd89eff50d6f8a1ba6c699e86f070ac1bc22a023810428",
+    "tables/redirect-aware-reference-recall-v4.csv": "afb23a99b07f4f33df41642811b3e2ca9c8262f758fa03fb6320f93bb067ca36"
+  },
+  "schema_version": 4
+}

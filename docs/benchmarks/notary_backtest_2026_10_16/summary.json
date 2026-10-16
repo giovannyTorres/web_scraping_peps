@@ -1,0 +1,2125 @@
+{
+  "datasets": {
+    "corpus": {
+      "classification": {
+        "context_role_auxiliary": {
+          "baseline_original_dates": {
+            "abstention_policy": "known-label abstentions remain in recall, specificity and accuracy denominators",
+            "abstentions": {
+              "negative": 16,
+              "positive": 39,
+              "unknown_truth": 5
+            },
+            "accuracy": {
+              "denominator": null,
+              "numerator": null,
+              "undefined_reason": "unknown ground truth prevents cohort-wide accuracy",
+              "value": null,
+              "wilson95": null
+            },
+            "adjudicated_decision_coverage": {
+              "denominator": 67,
+              "numerator": 12,
+              "value": 0.1791044776119403,
+              "wilson95": {
+                "lower": 0.10553591339881956,
+                "upper": 0.28747489247918
+              }
+            },
+            "adjudicated_subset_accuracy": {
+              "denominator": 67,
+              "numerator": 4,
+              "value": 0.05970149253731343,
+              "wilson95": {
+                "lower": 0.023459351139819028,
+                "upper": 0.14369501041371535
+              }
+            },
+            "adjudicated_subset_balanced_accuracy": 0.1,
+            "answered_adjudicated_subset_accuracy": {
+              "denominator": 12,
+              "numerator": 4,
+              "value": 0.3333333333333333,
+              "wilson95": {
+                "lower": 0.13812009109121315,
+                "upper": 0.6093779111272004
+              }
+            },
+            "audited_relevant_text_pairs": 72,
+            "balanced_accuracy": null,
+            "confusion_matrix": {
+              "fn": 8,
+              "fp": 0,
+              "tn": 4,
+              "tp": 0
+            },
+            "decision_coverage": {
+              "denominator": 72,
+              "numerator": 12,
+              "value": 0.16666666666666666,
+              "wilson95": {
+                "lower": 0.09799371242561683,
+                "upper": 0.269107069305355
+              }
+            },
+            "known_label_f1": 0.0,
+            "known_label_precision": {
+              "denominator": 0,
+              "numerator": 0,
+              "undefined_reason": "empty denominator",
+              "value": null,
+              "wilson95": null
+            },
+            "known_negative_specificity": {
+              "denominator": 20,
+              "numerator": 4,
+              "value": 0.2,
+              "wilson95": {
+                "lower": 0.08065766257979806,
+                "upper": 0.41601743225189364
+              }
+            },
+            "known_positive_recall": {
+              "denominator": 47,
+              "numerator": 0,
+              "value": 0.0,
+              "wilson95": {
+                "lower": 0.0,
+                "upper": 0.07555760416399632
+              }
+            },
+            "missing_predictions_counted_as_abstentions": 0,
+            "negative_support": 20,
+            "positive_support": 47,
+            "predictions_excluded_irrelevant_or_unreviewed": 4,
+            "scope": "adverse role reported at publication on independently reviewed relevant entity-text pairs",
+            "target": "reported_adverse_role_at_publication",
+            "unknown_truth_support": 5
+          },
+          "baseline_same_dates": {
+            "abstention_policy": "known-label abstentions remain in recall, specificity and accuracy denominators",
+            "abstentions": {
+              "negative": 16,
+              "positive": 38,
+              "unknown_truth": 5
+            },
+            "accuracy": {
+              "denominator": null,
+              "numerator": null,
+              "undefined_reason": "unknown ground truth prevents cohort-wide accuracy",
+              "value": null,
+              "wilson95": null
+            },
+            "adjudicated_decision_coverage": {
+              "denominator": 67,
+              "numerator": 13,
+              "value": 0.19402985074626866,
+              "wilson95": {
+                "lower": 0.1170517391641159,
+                "upper": 0.3041911222544419
+              }
+            },
+            "adjudicated_subset_accuracy": {
+              "denominator": 67,
+              "numerator": 4,
+              "value": 0.05970149253731343,
+              "wilson95": {
+                "lower": 0.023459351139819028,
+                "upper": 0.14369501041371535
+              }
+            },
+            "adjudicated_subset_balanced_accuracy": 0.1,
+            "answered_adjudicated_subset_accuracy": {
+              "denominator": 13,
+              "numerator": 4,
+              "value": 0.3076923076923077,
+              "wilson95": {
+                "lower": 0.12680703655710515,
+                "upper": 0.5763065681945096
+              }
+            },
+            "audited_relevant_text_pairs": 72,
+            "balanced_accuracy": null,
+            "confusion_matrix": {
+              "fn": 9,
+              "fp": 0,
+              "tn": 4,
+              "tp": 0
+            },
+            "decision_coverage": {
+              "denominator": 72,
+              "numerator": 13,
+              "value": 0.18055555555555555,
+              "wilson95": {
+                "lower": 0.10866816510019897,
+                "upper": 0.28480341739198245
+              }
+            },
+            "known_label_f1": 0.0,
+            "known_label_precision": {
+              "denominator": 0,
+              "numerator": 0,
+              "undefined_reason": "empty denominator",
+              "value": null,
+              "wilson95": null
+            },
+            "known_negative_specificity": {
+              "denominator": 20,
+              "numerator": 4,
+              "value": 0.2,
+              "wilson95": {
+                "lower": 0.08065766257979806,
+                "upper": 0.41601743225189364
+              }
+            },
+            "known_positive_recall": {
+              "denominator": 47,
+              "numerator": 0,
+              "value": 0.0,
+              "wilson95": {
+                "lower": 0.0,
+                "upper": 0.07555760416399632
+              }
+            },
+            "missing_predictions_counted_as_abstentions": 0,
+            "negative_support": 20,
+            "positive_support": 47,
+            "predictions_excluded_irrelevant_or_unreviewed": 4,
+            "scope": "adverse role reported at publication on independently reviewed relevant entity-text pairs",
+            "target": "reported_adverse_role_at_publication",
+            "unknown_truth_support": 5
+          },
+          "final_same_dates": {
+            "abstention_policy": "known-label abstentions remain in recall, specificity and accuracy denominators",
+            "abstentions": {
+              "negative": 16,
+              "positive": 38,
+              "unknown_truth": 5
+            },
+            "accuracy": {
+              "denominator": null,
+              "numerator": null,
+              "undefined_reason": "unknown ground truth prevents cohort-wide accuracy",
+              "value": null,
+              "wilson95": null
+            },
+            "adjudicated_decision_coverage": {
+              "denominator": 67,
+              "numerator": 13,
+              "value": 0.19402985074626866,
+              "wilson95": {
+                "lower": 0.1170517391641159,
+                "upper": 0.3041911222544419
+              }
+            },
+            "adjudicated_subset_accuracy": {
+              "denominator": 67,
+              "numerator": 4,
+              "value": 0.05970149253731343,
+              "wilson95": {
+                "lower": 0.023459351139819028,
+                "upper": 0.14369501041371535
+              }
+            },
+            "adjudicated_subset_balanced_accuracy": 0.1,
+            "answered_adjudicated_subset_accuracy": {
+              "denominator": 13,
+              "numerator": 4,
+              "value": 0.3076923076923077,
+              "wilson95": {
+                "lower": 0.12680703655710515,
+                "upper": 0.5763065681945096
+              }
+            },
+            "audited_relevant_text_pairs": 72,
+            "balanced_accuracy": null,
+            "confusion_matrix": {
+              "fn": 9,
+              "fp": 0,
+              "tn": 4,
+              "tp": 0
+            },
+            "decision_coverage": {
+              "denominator": 72,
+              "numerator": 13,
+              "value": 0.18055555555555555,
+              "wilson95": {
+                "lower": 0.10866816510019897,
+                "upper": 0.28480341739198245
+              }
+            },
+            "known_label_f1": 0.0,
+            "known_label_precision": {
+              "denominator": 0,
+              "numerator": 0,
+              "undefined_reason": "empty denominator",
+              "value": null,
+              "wilson95": null
+            },
+            "known_negative_specificity": {
+              "denominator": 20,
+              "numerator": 4,
+              "value": 0.2,
+              "wilson95": {
+                "lower": 0.08065766257979806,
+                "upper": 0.41601743225189364
+              }
+            },
+            "known_positive_recall": {
+              "denominator": 47,
+              "numerator": 0,
+              "value": 0.0,
+              "wilson95": {
+                "lower": 0.0,
+                "upper": 0.07555760416399632
+              }
+            },
+            "missing_predictions_counted_as_abstentions": 0,
+            "negative_support": 20,
+            "positive_support": 47,
+            "predictions_excluded_irrelevant_or_unreviewed": 4,
+            "scope": "adverse role reported at publication on independently reviewed relevant entity-text pairs",
+            "target": "reported_adverse_role_at_publication",
+            "unknown_truth_support": 5
+          }
+        },
+        "nlp_direct_adverse": {
+          "baseline_original_dates": {
+            "abstention_policy": "known-label abstentions remain in recall, specificity and accuracy denominators",
+            "abstentions": {
+              "negative": 4,
+              "positive": 27,
+              "unknown_truth": 4
+            },
+            "accuracy": {
+              "denominator": null,
+              "numerator": null,
+              "undefined_reason": "unknown ground truth prevents cohort-wide accuracy",
+              "value": null,
+              "wilson95": null
+            },
+            "adjudicated_decision_coverage": {
+              "denominator": 67,
+              "numerator": 36,
+              "value": 0.5373134328358209,
+              "wilson95": {
+                "lower": 0.4191645760462989,
+                "upper": 0.6514155628050964
+              }
+            },
+            "adjudicated_subset_accuracy": {
+              "denominator": 67,
+              "numerator": 24,
+              "value": 0.3582089552238806,
+              "wilson95": {
+                "lower": 0.2539805707639161,
+                "upper": 0.4778149016007813
+              }
+            },
+            "adjudicated_subset_balanced_accuracy": 0.48510638297872344,
+            "answered_adjudicated_subset_accuracy": {
+              "denominator": 36,
+              "numerator": 24,
+              "value": 0.6666666666666666,
+              "wilson95": {
+                "lower": 0.5033399787115652,
+                "upper": 0.7978538117569468
+              }
+            },
+            "audited_relevant_text_pairs": 72,
+            "balanced_accuracy": null,
+            "confusion_matrix": {
+              "fn": 12,
+              "fp": 0,
+              "tn": 16,
+              "tp": 8
+            },
+            "decision_coverage": {
+              "denominator": 72,
+              "numerator": 37,
+              "value": 0.5138888888888888,
+              "wilson95": {
+                "lower": 0.40069754605192803,
+                "upper": 0.6256732547092813
+              }
+            },
+            "known_label_f1": 0.2909090909090909,
+            "known_label_precision": {
+              "denominator": 8,
+              "numerator": 8,
+              "value": 1.0,
+              "wilson95": {
+                "lower": 0.6755924351161198,
+                "upper": 1.0
+              }
+            },
+            "known_negative_specificity": {
+              "denominator": 20,
+              "numerator": 16,
+              "value": 0.8,
+              "wilson95": {
+                "lower": 0.5839825677481064,
+                "upper": 0.919342337420202
+              }
+            },
+            "known_positive_recall": {
+              "denominator": 47,
+              "numerator": 8,
+              "value": 0.1702127659574468,
+              "wilson95": {
+                "lower": 0.0888636387649026,
+                "upper": 0.3013977597262439
+              }
+            },
+            "missing_predictions_counted_as_abstentions": 0,
+            "negative_support": 20,
+            "positive_support": 47,
+            "predictions_excluded_irrelevant_or_unreviewed": 4,
+            "scope": "adverse role reported at publication on independently reviewed relevant entity-text pairs",
+            "target": "reported_adverse_role_at_publication",
+            "unknown_truth_support": 5
+          },
+          "baseline_same_dates": {
+            "abstention_policy": "known-label abstentions remain in recall, specificity and accuracy denominators",
+            "abstentions": {
+              "negative": 3,
+              "positive": 24,
+              "unknown_truth": 4
+            },
+            "accuracy": {
+              "denominator": null,
+              "numerator": null,
+              "undefined_reason": "unknown ground truth prevents cohort-wide accuracy",
+              "value": null,
+              "wilson95": null
+            },
+            "adjudicated_decision_coverage": {
+              "denominator": 67,
+              "numerator": 40,
+              "value": 0.5970149253731343,
+              "wilson95": {
+                "lower": 0.47741328881114453,
+                "upper": 0.7060950722024834
+              }
+            },
+            "adjudicated_subset_accuracy": {
+              "denominator": 67,
+              "numerator": 25,
+              "value": 0.373134328358209,
+              "wilson95": {
+                "lower": 0.2671815998117198,
+                "upper": 0.49284592809353583
+              }
+            },
+            "adjudicated_subset_balanced_accuracy": 0.5101063829787233,
+            "answered_adjudicated_subset_accuracy": {
+              "denominator": 40,
+              "numerator": 25,
+              "value": 0.625,
+              "wilson95": {
+                "lower": 0.47032439137301096,
+                "upper": 0.7577702083276673
+              }
+            },
+            "audited_relevant_text_pairs": 72,
+            "balanced_accuracy": null,
+            "confusion_matrix": {
+              "fn": 15,
+              "fp": 0,
+              "tn": 17,
+              "tp": 8
+            },
+            "decision_coverage": {
+              "denominator": 72,
+              "numerator": 41,
+              "value": 0.5694444444444444,
+              "wilson95": {
+                "lower": 0.45443306167310615,
+                "upper": 0.6774209421329412
+              }
+            },
+            "known_label_f1": 0.2909090909090909,
+            "known_label_precision": {
+              "denominator": 8,
+              "numerator": 8,
+              "value": 1.0,
+              "wilson95": {
+                "lower": 0.6755924351161198,
+                "upper": 1.0
+              }
+            },
+            "known_negative_specificity": {
+              "denominator": 20,
+              "numerator": 17,
+              "value": 0.85,
+              "wilson95": {
+                "lower": 0.6395811352592431,
+                "upper": 0.9476312541037835
+              }
+            },
+            "known_positive_recall": {
+              "denominator": 47,
+              "numerator": 8,
+              "value": 0.1702127659574468,
+              "wilson95": {
+                "lower": 0.0888636387649026,
+                "upper": 0.3013977597262439
+              }
+            },
+            "missing_predictions_counted_as_abstentions": 0,
+            "negative_support": 20,
+            "positive_support": 47,
+            "predictions_excluded_irrelevant_or_unreviewed": 4,
+            "scope": "adverse role reported at publication on independently reviewed relevant entity-text pairs",
+            "target": "reported_adverse_role_at_publication",
+            "unknown_truth_support": 5
+          },
+          "final_same_dates": {
+            "abstention_policy": "known-label abstentions remain in recall, specificity and accuracy denominators",
+            "abstentions": {
+              "negative": 3,
+              "positive": 24,
+              "unknown_truth": 4
+            },
+            "accuracy": {
+              "denominator": null,
+              "numerator": null,
+              "undefined_reason": "unknown ground truth prevents cohort-wide accuracy",
+              "value": null,
+              "wilson95": null
+            },
+            "adjudicated_decision_coverage": {
+              "denominator": 67,
+              "numerator": 40,
+              "value": 0.5970149253731343,
+              "wilson95": {
+                "lower": 0.47741328881114453,
+                "upper": 0.7060950722024834
+              }
+            },
+            "adjudicated_subset_accuracy": {
+              "denominator": 67,
+              "numerator": 29,
+              "value": 0.43283582089552236,
+              "wilson95": {
+                "lower": 0.3210431149754174,
+                "upper": 0.5519126350920708
+              }
+            },
+            "adjudicated_subset_balanced_accuracy": 0.5526595744680851,
+            "answered_adjudicated_subset_accuracy": {
+              "denominator": 40,
+              "numerator": 29,
+              "value": 0.725,
+              "wilson95": {
+                "lower": 0.5716504419378943,
+                "upper": 0.8389198375233267
+              }
+            },
+            "audited_relevant_text_pairs": 72,
+            "balanced_accuracy": null,
+            "confusion_matrix": {
+              "fn": 11,
+              "fp": 0,
+              "tn": 17,
+              "tp": 12
+            },
+            "decision_coverage": {
+              "denominator": 72,
+              "numerator": 41,
+              "value": 0.5694444444444444,
+              "wilson95": {
+                "lower": 0.45443306167310615,
+                "upper": 0.6774209421329412
+              }
+            },
+            "known_label_f1": 0.4067796610169492,
+            "known_label_precision": {
+              "denominator": 12,
+              "numerator": 12,
+              "value": 1.0,
+              "wilson95": {
+                "lower": 0.7575059933447592,
+                "upper": 1.0
+              }
+            },
+            "known_negative_specificity": {
+              "denominator": 20,
+              "numerator": 17,
+              "value": 0.85,
+              "wilson95": {
+                "lower": 0.6395811352592431,
+                "upper": 0.9476312541037835
+              }
+            },
+            "known_positive_recall": {
+              "denominator": 47,
+              "numerator": 12,
+              "value": 0.2553191489361702,
+              "wilson95": {
+                "lower": 0.152531540350547,
+                "upper": 0.3950817553041745
+              }
+            },
+            "missing_predictions_counted_as_abstentions": 0,
+            "negative_support": 20,
+            "positive_support": 47,
+            "predictions_excluded_irrelevant_or_unreviewed": 4,
+            "scope": "adverse role reported at publication on independently reviewed relevant entity-text pairs",
+            "target": "reported_adverse_role_at_publication",
+            "unknown_truth_support": 5
+          }
+        }
+      },
+      "classification_support": {
+        "no": 20,
+        "unknown": 5,
+        "yes": 47
+      },
+      "entity_accuracy": {
+        "denominator": null,
+        "numerator": null,
+        "undefined_reason": "unknown ground truth prevents cohort-wide accuracy",
+        "value": null,
+        "wilson95": null
+      },
+      "entity_unknown_ground_truth": 30,
+      "missing_publication_date_text_pairs": 34,
+      "model_replay_is_retrospective": true,
+      "observed": {
+        "discovery_evaluated": false,
+        "raw_original_urls": 74,
+        "reference_urls_were_supplied": true,
+        "seconds": 131.621496,
+        "usable_original_urls": 71
+      },
+      "retrieval": {
+        "candidate_precision_all_results_bounds": {
+          "denominator": 130,
+          "lower": 0.5692307692307692,
+          "unjudged": 56,
+          "upper": 1.0
+        },
+        "candidate_precision_among_reviewed": {
+          "denominator": 74,
+          "numerator": 74,
+          "value": 1.0,
+          "wilson95": {
+            "lower": 0.950650220603614,
+            "upper": 1.0
+          }
+        },
+        "candidate_reference_pair_recall": {
+          "denominator": 115,
+          "numerator": 115,
+          "value": 1.0,
+          "wilson95": {
+            "lower": 0.9676757685506868,
+            "upper": 0.9999999999999999
+          }
+        },
+        "candidate_reference_unique_url_recall": {
+          "denominator": 97,
+          "numerator": 97,
+          "value": 1.0,
+          "wilson95": {
+            "lower": 0.9619059574740523,
+            "upper": 1.0
+          }
+        },
+        "entities_with_reviewed_relevant_text": {
+          "denominator": 60,
+          "numerator": 33,
+          "value": 0.55,
+          "wilson95": {
+            "lower": 0.4249193588533434,
+            "upper": 0.6690634559324476
+          }
+        },
+        "entities_with_text": {
+          "denominator": 60,
+          "numerator": 33,
+          "value": 0.55,
+          "wilson95": {
+            "lower": 0.4249193588533434,
+            "upper": 0.6690634559324476
+          }
+        },
+        "known_eligible_reference_recall": {
+          "denominator": 0,
+          "numerator": 0,
+          "undefined_reason": "empty denominator",
+          "value": null,
+          "wilson95": null
+        },
+        "known_positive_incident_document_detection": {
+          "denominator": 30,
+          "numerator": 23,
+          "value": 0.7666666666666667,
+          "wilson95": {
+            "lower": 0.5907167384187784,
+            "upper": 0.8820761185551049
+          }
+        },
+        "reference_macro_entity_recall": {
+          "entities_with_references": 38,
+          "entities_without_references": 22,
+          "scope": "Mean of per-entity pair recall over entities with at least one relevant frozen reference; no-reference entities remain undefined.",
+          "value": 0.5499999999999999
+        },
+        "source_eligibility_not_inferred_from_host_match": true,
+        "text_precision_all_results_bounds": {
+          "denominator": 76,
+          "lower": 0.9473684210526315,
+          "unjudged": 4,
+          "upper": 1.0
+        },
+        "text_precision_among_reviewed": {
+          "denominator": 72,
+          "numerator": 72,
+          "value": 1.0,
+          "wilson95": {
+            "lower": 0.9493488274035422,
+            "upper": 1.0
+          }
+        },
+        "text_reference_pair_recall": {
+          "denominator": 115,
+          "numerator": 67,
+          "value": 0.5826086956521739,
+          "wilson95": {
+            "lower": 0.49123893331263274,
+            "upper": 0.6686379327957415
+          }
+        },
+        "text_reference_unique_url_recall": {
+          "denominator": 97,
+          "numerator": 62,
+          "value": 0.6391752577319587,
+          "wilson95": {
+            "lower": 0.5399919512124193,
+            "upper": 0.7277550678782961
+          }
+        }
+      },
+      "scope": "closed_reference_reading_not_search",
+      "search_recall_claim_allowed": false,
+      "strata": {
+        "known_incident": {
+          "entities": 30,
+          "entities_with_relevant_text": {
+            "denominator": 30,
+            "numerator": 25,
+            "value": 0.8333333333333334,
+            "wilson95": {
+              "lower": 0.6643564949358398,
+              "upper": 0.9266345762815145
+            }
+          },
+          "entities_with_text": {
+            "denominator": 30,
+            "numerator": 25,
+            "value": 0.8333333333333334,
+            "wilson95": {
+              "lower": 0.6643564949358398,
+              "upper": 0.9266345762815145
+            }
+          },
+          "text_pairs": 53,
+          "text_precision_among_reviewed": {
+            "denominator": 52,
+            "numerator": 52,
+            "value": 1.0,
+            "wilson95": {
+              "lower": 0.9312077638761376,
+              "upper": 1.0
+            }
+          },
+          "text_reference_pair_recall": {
+            "denominator": 98,
+            "numerator": 53,
+            "value": 0.5408163265306123,
+            "wilson95": {
+              "lower": 0.44248041592362974,
+              "upper": 0.6360730542705189
+            }
+          },
+          "text_reference_unique_url_recall": {
+            "denominator": 80,
+            "numerator": 48,
+            "value": 0.6,
+            "wilson95": {
+              "lower": 0.4904546500516039,
+              "upper": 0.7003817240412906
+            }
+          }
+        },
+        "no_known_incident": {
+          "entities": 30,
+          "entities_with_relevant_text": {
+            "denominator": 30,
+            "numerator": 8,
+            "value": 0.26666666666666666,
+            "wilson95": {
+              "lower": 0.14182663319596317,
+              "upper": 0.4444796169518888
+            }
+          },
+          "entities_with_text": {
+            "denominator": 30,
+            "numerator": 8,
+            "value": 0.26666666666666666,
+            "wilson95": {
+              "lower": 0.14182663319596317,
+              "upper": 0.4444796169518888
+            }
+          },
+          "text_pairs": 23,
+          "text_precision_among_reviewed": {
+            "denominator": 20,
+            "numerator": 20,
+            "value": 1.0,
+            "wilson95": {
+              "lower": 0.8388748419471806,
+              "upper": 1.0
+            }
+          },
+          "text_reference_pair_recall": {
+            "denominator": 17,
+            "numerator": 14,
+            "value": 0.8235294117647058,
+            "wilson95": {
+              "lower": 0.5897054143116588,
+              "upper": 0.9380887336237901
+            }
+          },
+          "text_reference_unique_url_recall": {
+            "denominator": 17,
+            "numerator": 14,
+            "value": 0.8235294117647058,
+            "wilson95": {
+              "lower": 0.5897054143116588,
+              "upper": 0.9380887336237901
+            }
+          }
+        }
+      },
+      "volume": {
+        "candidate_pairs": 130,
+        "candidate_unique_urls": 111,
+        "original_text_pairs": 76,
+        "original_text_unique_body_hashes": 71,
+        "original_text_unique_urls": 71,
+        "reviewed_irrelevant_text_pairs": 0,
+        "reviewed_relevant_text_pairs": 72,
+        "unknown_relevance_text_pairs": 4
+      }
+    },
+    "expanded": {
+      "classification": {
+        "context_role_auxiliary": {
+          "baseline_same_dates": {
+            "abstention_policy": "known-label abstentions remain in recall, specificity and accuracy denominators",
+            "abstentions": {
+              "negative": 9,
+              "positive": 42,
+              "unknown_truth": 3
+            },
+            "accuracy": {
+              "denominator": null,
+              "numerator": null,
+              "undefined_reason": "unknown ground truth prevents cohort-wide accuracy",
+              "value": null,
+              "wilson95": null
+            },
+            "adjudicated_decision_coverage": {
+              "denominator": 59,
+              "numerator": 8,
+              "value": 0.13559322033898305,
+              "wilson95": {
+                "lower": 0.0703417467253372,
+                "upper": 0.24539660806537295
+              }
+            },
+            "adjudicated_subset_accuracy": {
+              "denominator": 59,
+              "numerator": 2,
+              "value": 0.03389830508474576,
+              "wilson95": {
+                "lower": 0.00934590909166131,
+                "upper": 0.11543570750110752
+              }
+            },
+            "adjudicated_subset_balanced_accuracy": 0.02,
+            "answered_adjudicated_subset_accuracy": {
+              "denominator": 8,
+              "numerator": 2,
+              "value": 0.25,
+              "wilson95": {
+                "lower": 0.071479212752109,
+                "upper": 0.5907245696898311
+              }
+            },
+            "audited_relevant_text_pairs": 63,
+            "balanced_accuracy": null,
+            "confusion_matrix": {
+              "fn": 6,
+              "fp": 0,
+              "tn": 0,
+              "tp": 2
+            },
+            "decision_coverage": {
+              "denominator": 63,
+              "numerator": 9,
+              "value": 0.14285714285714285,
+              "wilson95": {
+                "lower": 0.07701948334720692,
+                "upper": 0.24974565921625858
+              }
+            },
+            "known_label_f1": 0.07692307692307693,
+            "known_label_precision": {
+              "denominator": 2,
+              "numerator": 2,
+              "value": 1.0,
+              "wilson95": {
+                "lower": 0.34238022750665303,
+                "upper": 1.0
+              }
+            },
+            "known_negative_specificity": {
+              "denominator": 9,
+              "numerator": 0,
+              "value": 0.0,
+              "wilson95": {
+                "lower": 0.0,
+                "upper": 0.2991450484195441
+              }
+            },
+            "known_positive_recall": {
+              "denominator": 50,
+              "numerator": 2,
+              "value": 0.04,
+              "wilson95": {
+                "lower": 0.011038884327619805,
+                "upper": 0.1346009068750702
+              }
+            },
+            "missing_predictions_counted_as_abstentions": 0,
+            "negative_support": 9,
+            "positive_support": 50,
+            "predictions_excluded_irrelevant_or_unreviewed": 11,
+            "scope": "adverse role reported at publication on independently reviewed relevant entity-text pairs",
+            "target": "reported_adverse_role_at_publication",
+            "unknown_truth_support": 4
+          },
+          "final_same_dates": {
+            "abstention_policy": "known-label abstentions remain in recall, specificity and accuracy denominators",
+            "abstentions": {
+              "negative": 9,
+              "positive": 42,
+              "unknown_truth": 3
+            },
+            "accuracy": {
+              "denominator": null,
+              "numerator": null,
+              "undefined_reason": "unknown ground truth prevents cohort-wide accuracy",
+              "value": null,
+              "wilson95": null
+            },
+            "adjudicated_decision_coverage": {
+              "denominator": 59,
+              "numerator": 8,
+              "value": 0.13559322033898305,
+              "wilson95": {
+                "lower": 0.0703417467253372,
+                "upper": 0.24539660806537295
+              }
+            },
+            "adjudicated_subset_accuracy": {
+              "denominator": 59,
+              "numerator": 2,
+              "value": 0.03389830508474576,
+              "wilson95": {
+                "lower": 0.00934590909166131,
+                "upper": 0.11543570750110752
+              }
+            },
+            "adjudicated_subset_balanced_accuracy": 0.02,
+            "answered_adjudicated_subset_accuracy": {
+              "denominator": 8,
+              "numerator": 2,
+              "value": 0.25,
+              "wilson95": {
+                "lower": 0.071479212752109,
+                "upper": 0.5907245696898311
+              }
+            },
+            "audited_relevant_text_pairs": 63,
+            "balanced_accuracy": null,
+            "confusion_matrix": {
+              "fn": 6,
+              "fp": 0,
+              "tn": 0,
+              "tp": 2
+            },
+            "decision_coverage": {
+              "denominator": 63,
+              "numerator": 9,
+              "value": 0.14285714285714285,
+              "wilson95": {
+                "lower": 0.07701948334720692,
+                "upper": 0.24974565921625858
+              }
+            },
+            "known_label_f1": 0.07692307692307693,
+            "known_label_precision": {
+              "denominator": 2,
+              "numerator": 2,
+              "value": 1.0,
+              "wilson95": {
+                "lower": 0.34238022750665303,
+                "upper": 1.0
+              }
+            },
+            "known_negative_specificity": {
+              "denominator": 9,
+              "numerator": 0,
+              "value": 0.0,
+              "wilson95": {
+                "lower": 0.0,
+                "upper": 0.2991450484195441
+              }
+            },
+            "known_positive_recall": {
+              "denominator": 50,
+              "numerator": 2,
+              "value": 0.04,
+              "wilson95": {
+                "lower": 0.011038884327619805,
+                "upper": 0.1346009068750702
+              }
+            },
+            "missing_predictions_counted_as_abstentions": 0,
+            "negative_support": 9,
+            "positive_support": 50,
+            "predictions_excluded_irrelevant_or_unreviewed": 11,
+            "scope": "adverse role reported at publication on independently reviewed relevant entity-text pairs",
+            "target": "reported_adverse_role_at_publication",
+            "unknown_truth_support": 4
+          }
+        },
+        "nlp_direct_adverse": {
+          "baseline_same_dates": {
+            "abstention_policy": "known-label abstentions remain in recall, specificity and accuracy denominators",
+            "abstentions": {
+              "negative": 0,
+              "positive": 3,
+              "unknown_truth": 0
+            },
+            "accuracy": {
+              "denominator": null,
+              "numerator": null,
+              "undefined_reason": "unknown ground truth prevents cohort-wide accuracy",
+              "value": null,
+              "wilson95": null
+            },
+            "adjudicated_decision_coverage": {
+              "denominator": 59,
+              "numerator": 56,
+              "value": 0.9491525423728814,
+              "wilson95": {
+                "lower": 0.8608349778472311,
+                "upper": 0.9825572825270099
+              }
+            },
+            "adjudicated_subset_accuracy": {
+              "denominator": 59,
+              "numerator": 25,
+              "value": 0.423728813559322,
+              "wilson95": {
+                "lower": 0.30612727435188697,
+                "upper": 0.5506551719996571
+              }
+            },
+            "adjudicated_subset_balanced_accuracy": 0.66,
+            "answered_adjudicated_subset_accuracy": {
+              "denominator": 56,
+              "numerator": 25,
+              "value": 0.44642857142857145,
+              "wilson95": {
+                "lower": 0.3238672125478337,
+                "upper": 0.5758678521006054
+              }
+            },
+            "audited_relevant_text_pairs": 63,
+            "balanced_accuracy": null,
+            "confusion_matrix": {
+              "fn": 31,
+              "fp": 0,
+              "tn": 9,
+              "tp": 16
+            },
+            "decision_coverage": {
+              "denominator": 63,
+              "numerator": 60,
+              "value": 0.9523809523809523,
+              "wilson95": {
+                "lower": 0.8690903216209392,
+                "upper": 0.9836738311320045
+              }
+            },
+            "known_label_f1": 0.48484848484848486,
+            "known_label_precision": {
+              "denominator": 16,
+              "numerator": 16,
+              "value": 1.0,
+              "wilson95": {
+                "lower": 0.8063923194655637,
+                "upper": 1.0
+              }
+            },
+            "known_negative_specificity": {
+              "denominator": 9,
+              "numerator": 9,
+              "value": 1.0,
+              "wilson95": {
+                "lower": 0.7008549515804559,
+                "upper": 1.0
+              }
+            },
+            "known_positive_recall": {
+              "denominator": 50,
+              "numerator": 16,
+              "value": 0.32,
+              "wilson95": {
+                "lower": 0.20758216260656845,
+                "upper": 0.45810297308144077
+              }
+            },
+            "missing_predictions_counted_as_abstentions": 0,
+            "negative_support": 9,
+            "positive_support": 50,
+            "predictions_excluded_irrelevant_or_unreviewed": 11,
+            "scope": "adverse role reported at publication on independently reviewed relevant entity-text pairs",
+            "target": "reported_adverse_role_at_publication",
+            "unknown_truth_support": 4
+          },
+          "final_same_dates": {
+            "abstention_policy": "known-label abstentions remain in recall, specificity and accuracy denominators",
+            "abstentions": {
+              "negative": 0,
+              "positive": 3,
+              "unknown_truth": 0
+            },
+            "accuracy": {
+              "denominator": null,
+              "numerator": null,
+              "undefined_reason": "unknown ground truth prevents cohort-wide accuracy",
+              "value": null,
+              "wilson95": null
+            },
+            "adjudicated_decision_coverage": {
+              "denominator": 59,
+              "numerator": 56,
+              "value": 0.9491525423728814,
+              "wilson95": {
+                "lower": 0.8608349778472311,
+                "upper": 0.9825572825270099
+              }
+            },
+            "adjudicated_subset_accuracy": {
+              "denominator": 59,
+              "numerator": 27,
+              "value": 0.4576271186440678,
+              "wilson95": {
+                "lower": 0.3370130585185591,
+                "upper": 0.5834216338989654
+              }
+            },
+            "adjudicated_subset_balanced_accuracy": 0.6799999999999999,
+            "answered_adjudicated_subset_accuracy": {
+              "denominator": 56,
+              "numerator": 27,
+              "value": 0.48214285714285715,
+              "wilson95": {
+                "lower": 0.3566821941245828,
+                "upper": 0.6098961607582303
+              }
+            },
+            "audited_relevant_text_pairs": 63,
+            "balanced_accuracy": null,
+            "confusion_matrix": {
+              "fn": 29,
+              "fp": 0,
+              "tn": 9,
+              "tp": 18
+            },
+            "decision_coverage": {
+              "denominator": 63,
+              "numerator": 60,
+              "value": 0.9523809523809523,
+              "wilson95": {
+                "lower": 0.8690903216209392,
+                "upper": 0.9836738311320045
+              }
+            },
+            "known_label_f1": 0.5294117647058824,
+            "known_label_precision": {
+              "denominator": 18,
+              "numerator": 18,
+              "value": 1.0,
+              "wilson95": {
+                "lower": 0.8241207763533425,
+                "upper": 1.0
+              }
+            },
+            "known_negative_specificity": {
+              "denominator": 9,
+              "numerator": 9,
+              "value": 1.0,
+              "wilson95": {
+                "lower": 0.7008549515804559,
+                "upper": 1.0
+              }
+            },
+            "known_positive_recall": {
+              "denominator": 50,
+              "numerator": 18,
+              "value": 0.36,
+              "wilson95": {
+                "lower": 0.24138749651846741,
+                "upper": 0.49858983123887307
+              }
+            },
+            "missing_predictions_counted_as_abstentions": 0,
+            "negative_support": 9,
+            "positive_support": 50,
+            "predictions_excluded_irrelevant_or_unreviewed": 11,
+            "scope": "adverse role reported at publication on independently reviewed relevant entity-text pairs",
+            "target": "reported_adverse_role_at_publication",
+            "unknown_truth_support": 4
+          }
+        }
+      },
+      "classification_support": {
+        "no": 9,
+        "unknown": 4,
+        "yes": 50
+      },
+      "entity_accuracy": {
+        "denominator": null,
+        "numerator": null,
+        "undefined_reason": "unknown ground truth prevents cohort-wide accuracy",
+        "value": null,
+        "wilson95": null
+      },
+      "entity_unknown_ground_truth": 30,
+      "missing_publication_date_text_pairs": 0,
+      "model_replay_is_retrospective": true,
+      "observed": {
+        "cold_run_model_version": "metadata-relevance-1.2.0",
+        "current_retrieval_rule_applied_to_cold_run": false,
+        "operational_summary": {
+          "actual_http_requests": 608,
+          "entities_with_text": 14,
+          "entity_candidate_pairs": 82,
+          "entity_text_pairs": 74,
+          "historical_coverage_complete": false,
+          "job_status_counts": {
+            "deferred": 12,
+            "done": 589
+          },
+          "known_queue_drained_without_errors": false,
+          "robots_requests": 7,
+          "transport_budget_stop_reason": null,
+          "unique_candidate_urls": 89,
+          "unique_original_documents": 71
+        },
+        "source_count": 7,
+        "timings_seconds": {
+          "cold_acquisition": 727.190152819996,
+          "first_original_body_durable_job_complete": 43.96699603900197,
+          "offline_reuse_and_repeat": 18.496272936012247,
+          "total": 752.1797457509965
+        }
+      },
+      "retrieval": {
+        "candidate_precision_all_results_bounds": {
+          "denominator": 107,
+          "lower": 0.5887850467289719,
+          "unjudged": 34,
+          "upper": 0.9065420560747663
+        },
+        "candidate_precision_among_reviewed": {
+          "denominator": 73,
+          "numerator": 63,
+          "value": 0.863013698630137,
+          "wilson95": {
+            "lower": 0.765875725934301,
+            "upper": 0.9238561039060587
+          }
+        },
+        "candidate_reference_pair_recall": {
+          "denominator": 115,
+          "numerator": 1,
+          "value": 0.008695652173913044,
+          "wilson95": {
+            "lower": 0.0015366489058808025,
+            "upper": 0.047616726344313784
+          }
+        },
+        "candidate_reference_unique_url_recall": {
+          "denominator": 97,
+          "numerator": 1,
+          "value": 0.010309278350515464,
+          "wilson95": {
+            "lower": 0.0018221648082868518,
+            "upper": 0.05610499024289903
+          }
+        },
+        "entities_with_reviewed_relevant_text": {
+          "denominator": 60,
+          "numerator": 13,
+          "value": 0.21666666666666667,
+          "wilson95": {
+            "lower": 0.13123044048190308,
+            "upper": 0.33620027573194783
+          }
+        },
+        "entities_with_text": {
+          "denominator": 60,
+          "numerator": 14,
+          "value": 0.23333333333333334,
+          "wilson95": {
+            "lower": 0.1443956173664283,
+            "upper": 0.35436270377601964
+          }
+        },
+        "known_eligible_reference_recall": {
+          "denominator": 0,
+          "numerator": 0,
+          "undefined_reason": "empty denominator",
+          "value": null,
+          "wilson95": null
+        },
+        "known_positive_incident_document_detection": {
+          "denominator": 30,
+          "numerator": 12,
+          "value": 0.4,
+          "wilson95": {
+            "lower": 0.24590628116801852,
+            "upper": 0.5767963974667752
+          }
+        },
+        "reference_macro_entity_recall": {
+          "entities_with_references": 38,
+          "entities_without_references": 22,
+          "scope": "Mean of per-entity pair recall over entities with at least one relevant frozen reference; no-reference entities remain undefined.",
+          "value": 0.02631578947368421
+        },
+        "source_eligibility_not_inferred_from_host_match": true,
+        "text_precision_all_results_bounds": {
+          "denominator": 74,
+          "lower": 0.8513513513513513,
+          "unjudged": 1,
+          "upper": 0.8648648648648649
+        },
+        "text_precision_among_reviewed": {
+          "denominator": 73,
+          "numerator": 63,
+          "value": 0.863013698630137,
+          "wilson95": {
+            "lower": 0.765875725934301,
+            "upper": 0.9238561039060587
+          }
+        },
+        "text_reference_pair_recall": {
+          "denominator": 115,
+          "numerator": 1,
+          "value": 0.008695652173913044,
+          "wilson95": {
+            "lower": 0.0015366489058808025,
+            "upper": 0.047616726344313784
+          }
+        },
+        "text_reference_unique_url_recall": {
+          "denominator": 97,
+          "numerator": 1,
+          "value": 0.010309278350515464,
+          "wilson95": {
+            "lower": 0.0018221648082868518,
+            "upper": 0.05610499024289903
+          }
+        }
+      },
+      "scope": "observed_expanded_publisher_search",
+      "search_recall_claim_allowed": true,
+      "strata": {
+        "known_incident": {
+          "entities": 30,
+          "entities_with_relevant_text": {
+            "denominator": 30,
+            "numerator": 11,
+            "value": 0.36666666666666664,
+            "wilson95": {
+              "lower": 0.21873920806100708,
+              "upper": 0.5448643634520511
+            }
+          },
+          "entities_with_text": {
+            "denominator": 30,
+            "numerator": 12,
+            "value": 0.4,
+            "wilson95": {
+              "lower": 0.24590628116801852,
+              "upper": 0.5767963974667752
+            }
+          },
+          "text_pairs": 72,
+          "text_precision_among_reviewed": {
+            "denominator": 71,
+            "numerator": 61,
+            "value": 0.8591549295774648,
+            "wilson95": {
+              "lower": 0.7597825071652419,
+              "upper": 0.9216579778764283
+            }
+          },
+          "text_reference_pair_recall": {
+            "denominator": 98,
+            "numerator": 0,
+            "value": 0.0,
+            "wilson95": {
+              "lower": 3.469446951953614e-18,
+              "upper": 0.037719990121680605
+            }
+          },
+          "text_reference_unique_url_recall": {
+            "denominator": 80,
+            "numerator": 0,
+            "value": 0.0,
+            "wilson95": {
+              "lower": 0.0,
+              "upper": 0.0458181295355271
+            }
+          }
+        },
+        "no_known_incident": {
+          "entities": 30,
+          "entities_with_relevant_text": {
+            "denominator": 30,
+            "numerator": 2,
+            "value": 0.06666666666666667,
+            "wilson95": {
+              "lower": 0.018477023791270378,
+              "upper": 0.2132345836261692
+            }
+          },
+          "entities_with_text": {
+            "denominator": 30,
+            "numerator": 2,
+            "value": 0.06666666666666667,
+            "wilson95": {
+              "lower": 0.018477023791270378,
+              "upper": 0.2132345836261692
+            }
+          },
+          "text_pairs": 2,
+          "text_precision_among_reviewed": {
+            "denominator": 2,
+            "numerator": 2,
+            "value": 1.0,
+            "wilson95": {
+              "lower": 0.34238022750665303,
+              "upper": 1.0
+            }
+          },
+          "text_reference_pair_recall": {
+            "denominator": 17,
+            "numerator": 1,
+            "value": 0.058823529411764705,
+            "wilson95": {
+              "lower": 0.010460400984997592,
+              "upper": 0.26982030637575405
+            }
+          },
+          "text_reference_unique_url_recall": {
+            "denominator": 17,
+            "numerator": 1,
+            "value": 0.058823529411764705,
+            "wilson95": {
+              "lower": 0.010460400984997592,
+              "upper": 0.26982030637575405
+            }
+          }
+        }
+      },
+      "volume": {
+        "candidate_pairs": 107,
+        "candidate_unique_urls": 89,
+        "original_text_pairs": 74,
+        "original_text_unique_body_hashes": 71,
+        "original_text_unique_urls": 71,
+        "reviewed_irrelevant_text_pairs": 10,
+        "reviewed_relevant_text_pairs": 63,
+        "unknown_relevance_text_pairs": 1
+      }
+    },
+    "native": {
+      "classification": {
+        "context_role_auxiliary": {
+          "baseline_same_dates": {
+            "abstention_policy": "known-label abstentions remain in recall, specificity and accuracy denominators",
+            "abstentions": {
+              "negative": 13,
+              "positive": 7,
+              "unknown_truth": 1
+            },
+            "accuracy": {
+              "denominator": null,
+              "numerator": null,
+              "undefined_reason": "unknown ground truth prevents cohort-wide accuracy",
+              "value": null,
+              "wilson95": null
+            },
+            "adjudicated_decision_coverage": {
+              "denominator": 28,
+              "numerator": 8,
+              "value": 0.2857142857142857,
+              "wilson95": {
+                "lower": 0.1525399605666909,
+                "upper": 0.47059288433295715
+              }
+            },
+            "adjudicated_subset_accuracy": {
+              "denominator": 28,
+              "numerator": 5,
+              "value": 0.17857142857142858,
+              "wilson95": {
+                "lower": 0.07878501945604277,
+                "upper": 0.35591424789342946
+              }
+            },
+            "adjudicated_subset_balanced_accuracy": 0.1388888888888889,
+            "answered_adjudicated_subset_accuracy": {
+              "denominator": 8,
+              "numerator": 5,
+              "value": 0.625,
+              "wilson95": {
+                "lower": 0.30574239460262737,
+                "upper": 0.8631557141764026
+              }
+            },
+            "audited_relevant_text_pairs": 30,
+            "balanced_accuracy": null,
+            "confusion_matrix": {
+              "fn": 3,
+              "fp": 0,
+              "tn": 5,
+              "tp": 0
+            },
+            "decision_coverage": {
+              "denominator": 30,
+              "numerator": 9,
+              "value": 0.3,
+              "wilson95": {
+                "lower": 0.16664748268243793,
+                "upper": 0.47875787458714947
+              }
+            },
+            "known_label_f1": 0.0,
+            "known_label_precision": {
+              "denominator": 0,
+              "numerator": 0,
+              "undefined_reason": "empty denominator",
+              "value": null,
+              "wilson95": null
+            },
+            "known_negative_specificity": {
+              "denominator": 18,
+              "numerator": 5,
+              "value": 0.2777777777777778,
+              "wilson95": {
+                "lower": 0.12499753379553993,
+                "upper": 0.5087265656029746
+              }
+            },
+            "known_positive_recall": {
+              "denominator": 10,
+              "numerator": 0,
+              "value": 0.0,
+              "wilson95": {
+                "lower": 0.0,
+                "upper": 0.2775327998628892
+              }
+            },
+            "missing_predictions_counted_as_abstentions": 0,
+            "negative_support": 18,
+            "positive_support": 10,
+            "predictions_excluded_irrelevant_or_unreviewed": 0,
+            "scope": "adverse role reported at publication on independently reviewed relevant entity-text pairs",
+            "target": "reported_adverse_role_at_publication",
+            "unknown_truth_support": 2
+          },
+          "final_same_dates": {
+            "abstention_policy": "known-label abstentions remain in recall, specificity and accuracy denominators",
+            "abstentions": {
+              "negative": 13,
+              "positive": 7,
+              "unknown_truth": 1
+            },
+            "accuracy": {
+              "denominator": null,
+              "numerator": null,
+              "undefined_reason": "unknown ground truth prevents cohort-wide accuracy",
+              "value": null,
+              "wilson95": null
+            },
+            "adjudicated_decision_coverage": {
+              "denominator": 28,
+              "numerator": 8,
+              "value": 0.2857142857142857,
+              "wilson95": {
+                "lower": 0.1525399605666909,
+                "upper": 0.47059288433295715
+              }
+            },
+            "adjudicated_subset_accuracy": {
+              "denominator": 28,
+              "numerator": 5,
+              "value": 0.17857142857142858,
+              "wilson95": {
+                "lower": 0.07878501945604277,
+                "upper": 0.35591424789342946
+              }
+            },
+            "adjudicated_subset_balanced_accuracy": 0.1388888888888889,
+            "answered_adjudicated_subset_accuracy": {
+              "denominator": 8,
+              "numerator": 5,
+              "value": 0.625,
+              "wilson95": {
+                "lower": 0.30574239460262737,
+                "upper": 0.8631557141764026
+              }
+            },
+            "audited_relevant_text_pairs": 30,
+            "balanced_accuracy": null,
+            "confusion_matrix": {
+              "fn": 3,
+              "fp": 0,
+              "tn": 5,
+              "tp": 0
+            },
+            "decision_coverage": {
+              "denominator": 30,
+              "numerator": 9,
+              "value": 0.3,
+              "wilson95": {
+                "lower": 0.16664748268243793,
+                "upper": 0.47875787458714947
+              }
+            },
+            "known_label_f1": 0.0,
+            "known_label_precision": {
+              "denominator": 0,
+              "numerator": 0,
+              "undefined_reason": "empty denominator",
+              "value": null,
+              "wilson95": null
+            },
+            "known_negative_specificity": {
+              "denominator": 18,
+              "numerator": 5,
+              "value": 0.2777777777777778,
+              "wilson95": {
+                "lower": 0.12499753379553993,
+                "upper": 0.5087265656029746
+              }
+            },
+            "known_positive_recall": {
+              "denominator": 10,
+              "numerator": 0,
+              "value": 0.0,
+              "wilson95": {
+                "lower": 0.0,
+                "upper": 0.2775327998628892
+              }
+            },
+            "missing_predictions_counted_as_abstentions": 0,
+            "negative_support": 18,
+            "positive_support": 10,
+            "predictions_excluded_irrelevant_or_unreviewed": 0,
+            "scope": "adverse role reported at publication on independently reviewed relevant entity-text pairs",
+            "target": "reported_adverse_role_at_publication",
+            "unknown_truth_support": 2
+          }
+        },
+        "nlp_direct_adverse": {
+          "baseline_same_dates": {
+            "abstention_policy": "known-label abstentions remain in recall, specificity and accuracy denominators",
+            "abstentions": {
+              "negative": 0,
+              "positive": 0,
+              "unknown_truth": 0
+            },
+            "accuracy": {
+              "denominator": null,
+              "numerator": null,
+              "undefined_reason": "unknown ground truth prevents cohort-wide accuracy",
+              "value": null,
+              "wilson95": null
+            },
+            "adjudicated_decision_coverage": {
+              "denominator": 28,
+              "numerator": 28,
+              "value": 1.0,
+              "wilson95": {
+                "lower": 0.8793566952341543,
+                "upper": 0.9999999999999998
+              }
+            },
+            "adjudicated_subset_accuracy": {
+              "denominator": 28,
+              "numerator": 21,
+              "value": 0.75,
+              "wilson95": {
+                "lower": 0.5664432968100104,
+                "upper": 0.8732350508070668
+              }
+            },
+            "adjudicated_subset_balanced_accuracy": 0.65,
+            "answered_adjudicated_subset_accuracy": {
+              "denominator": 28,
+              "numerator": 21,
+              "value": 0.75,
+              "wilson95": {
+                "lower": 0.5664432968100104,
+                "upper": 0.8732350508070668
+              }
+            },
+            "audited_relevant_text_pairs": 30,
+            "balanced_accuracy": null,
+            "confusion_matrix": {
+              "fn": 7,
+              "fp": 0,
+              "tn": 18,
+              "tp": 3
+            },
+            "decision_coverage": {
+              "denominator": 30,
+              "numerator": 30,
+              "value": 1.0,
+              "wilson95": {
+                "lower": 0.8864866068260312,
+                "upper": 0.9999999999999999
+              }
+            },
+            "known_label_f1": 0.46153846153846156,
+            "known_label_precision": {
+              "denominator": 3,
+              "numerator": 3,
+              "value": 1.0,
+              "wilson95": {
+                "lower": 0.4385029682449546,
+                "upper": 1.0
+              }
+            },
+            "known_negative_specificity": {
+              "denominator": 18,
+              "numerator": 18,
+              "value": 1.0,
+              "wilson95": {
+                "lower": 0.8241207763533425,
+                "upper": 1.0
+              }
+            },
+            "known_positive_recall": {
+              "denominator": 10,
+              "numerator": 3,
+              "value": 0.3,
+              "wilson95": {
+                "lower": 0.10779126740630099,
+                "upper": 0.6032218525388546
+              }
+            },
+            "missing_predictions_counted_as_abstentions": 0,
+            "negative_support": 18,
+            "positive_support": 10,
+            "predictions_excluded_irrelevant_or_unreviewed": 0,
+            "scope": "adverse role reported at publication on independently reviewed relevant entity-text pairs",
+            "target": "reported_adverse_role_at_publication",
+            "unknown_truth_support": 2
+          },
+          "final_same_dates": {
+            "abstention_policy": "known-label abstentions remain in recall, specificity and accuracy denominators",
+            "abstentions": {
+              "negative": 0,
+              "positive": 0,
+              "unknown_truth": 0
+            },
+            "accuracy": {
+              "denominator": null,
+              "numerator": null,
+              "undefined_reason": "unknown ground truth prevents cohort-wide accuracy",
+              "value": null,
+              "wilson95": null
+            },
+            "adjudicated_decision_coverage": {
+              "denominator": 28,
+              "numerator": 28,
+              "value": 1.0,
+              "wilson95": {
+                "lower": 0.8793566952341543,
+                "upper": 0.9999999999999998
+              }
+            },
+            "adjudicated_subset_accuracy": {
+              "denominator": 28,
+              "numerator": 21,
+              "value": 0.75,
+              "wilson95": {
+                "lower": 0.5664432968100104,
+                "upper": 0.8732350508070668
+              }
+            },
+            "adjudicated_subset_balanced_accuracy": 0.65,
+            "answered_adjudicated_subset_accuracy": {
+              "denominator": 28,
+              "numerator": 21,
+              "value": 0.75,
+              "wilson95": {
+                "lower": 0.5664432968100104,
+                "upper": 0.8732350508070668
+              }
+            },
+            "audited_relevant_text_pairs": 30,
+            "balanced_accuracy": null,
+            "confusion_matrix": {
+              "fn": 7,
+              "fp": 0,
+              "tn": 18,
+              "tp": 3
+            },
+            "decision_coverage": {
+              "denominator": 30,
+              "numerator": 30,
+              "value": 1.0,
+              "wilson95": {
+                "lower": 0.8864866068260312,
+                "upper": 0.9999999999999999
+              }
+            },
+            "known_label_f1": 0.46153846153846156,
+            "known_label_precision": {
+              "denominator": 3,
+              "numerator": 3,
+              "value": 1.0,
+              "wilson95": {
+                "lower": 0.4385029682449546,
+                "upper": 1.0
+              }
+            },
+            "known_negative_specificity": {
+              "denominator": 18,
+              "numerator": 18,
+              "value": 1.0,
+              "wilson95": {
+                "lower": 0.8241207763533425,
+                "upper": 1.0
+              }
+            },
+            "known_positive_recall": {
+              "denominator": 10,
+              "numerator": 3,
+              "value": 0.3,
+              "wilson95": {
+                "lower": 0.10779126740630099,
+                "upper": 0.6032218525388546
+              }
+            },
+            "missing_predictions_counted_as_abstentions": 0,
+            "negative_support": 18,
+            "positive_support": 10,
+            "predictions_excluded_irrelevant_or_unreviewed": 0,
+            "scope": "adverse role reported at publication on independently reviewed relevant entity-text pairs",
+            "target": "reported_adverse_role_at_publication",
+            "unknown_truth_support": 2
+          }
+        }
+      },
+      "classification_support": {
+        "no": 18,
+        "unknown": 2,
+        "yes": 10
+      },
+      "entity_accuracy": {
+        "denominator": null,
+        "numerator": null,
+        "undefined_reason": "unknown ground truth prevents cohort-wide accuracy",
+        "value": null,
+        "wilson95": null
+      },
+      "entity_unknown_ground_truth": 30,
+      "missing_publication_date_text_pairs": 0,
+      "model_replay_is_retrospective": true,
+      "observed": {
+        "cold_run_model_version": "metadata-relevance-1.2.0",
+        "current_retrieval_rule_applied_to_cold_run": false,
+        "operational_summary": {
+          "actual_http_requests": 374,
+          "entities_with_text": 9,
+          "entity_candidate_pairs": 42,
+          "entity_text_pairs": 30,
+          "historical_coverage_complete": false,
+          "job_status_counts": {
+            "deferred": 58,
+            "done": 340
+          },
+          "known_queue_drained_without_errors": false,
+          "robots_requests": 5,
+          "transport_budget_stop_reason": null,
+          "unique_candidate_urls": 61,
+          "unique_original_documents": 28
+        },
+        "source_count": 5,
+        "timings_seconds": {
+          "cold_acquisition": 881.3872156100115,
+          "first_original_body_durable_job_complete": 18.764161896004225,
+          "offline_reuse_and_repeat": 10.922856047007372,
+          "total": 898.0121808360127
+        }
+      },
+      "retrieval": {
+        "candidate_precision_all_results_bounds": {
+          "denominator": 63,
+          "lower": 0.47619047619047616,
+          "unjudged": 33,
+          "upper": 1.0
+        },
+        "candidate_precision_among_reviewed": {
+          "denominator": 30,
+          "numerator": 30,
+          "value": 1.0,
+          "wilson95": {
+            "lower": 0.8864866068260312,
+            "upper": 0.9999999999999999
+          }
+        },
+        "candidate_reference_pair_recall": {
+          "denominator": 115,
+          "numerator": 0,
+          "value": 0.0,
+          "wilson95": {
+            "lower": 0.0,
+            "upper": 0.03232423144931307
+          }
+        },
+        "candidate_reference_unique_url_recall": {
+          "denominator": 97,
+          "numerator": 0,
+          "value": 0.0,
+          "wilson95": {
+            "lower": 0.0,
+            "upper": 0.03809404252594769
+          }
+        },
+        "entities_with_reviewed_relevant_text": {
+          "denominator": 60,
+          "numerator": 9,
+          "value": 0.15,
+          "wilson95": {
+            "lower": 0.08097440580167739,
+            "upper": 0.2611458906977855
+          }
+        },
+        "entities_with_text": {
+          "denominator": 60,
+          "numerator": 9,
+          "value": 0.15,
+          "wilson95": {
+            "lower": 0.08097440580167739,
+            "upper": 0.2611458906977855
+          }
+        },
+        "known_eligible_reference_recall": {
+          "denominator": 0,
+          "numerator": 0,
+          "undefined_reason": "empty denominator",
+          "value": null,
+          "wilson95": null
+        },
+        "known_positive_incident_document_detection": {
+          "denominator": 30,
+          "numerator": 5,
+          "value": 0.16666666666666666,
+          "wilson95": {
+            "lower": 0.0733654237184855,
+            "upper": 0.3356435050641603
+          }
+        },
+        "reference_macro_entity_recall": {
+          "entities_with_references": 38,
+          "entities_without_references": 22,
+          "scope": "Mean of per-entity pair recall over entities with at least one relevant frozen reference; no-reference entities remain undefined.",
+          "value": 0.0
+        },
+        "source_eligibility_not_inferred_from_host_match": true,
+        "text_precision_all_results_bounds": {
+          "denominator": 30,
+          "lower": 1.0,
+          "unjudged": 0,
+          "upper": 1.0
+        },
+        "text_precision_among_reviewed": {
+          "denominator": 30,
+          "numerator": 30,
+          "value": 1.0,
+          "wilson95": {
+            "lower": 0.8864866068260312,
+            "upper": 0.9999999999999999
+          }
+        },
+        "text_reference_pair_recall": {
+          "denominator": 115,
+          "numerator": 0,
+          "value": 0.0,
+          "wilson95": {
+            "lower": 0.0,
+            "upper": 0.03232423144931307
+          }
+        },
+        "text_reference_unique_url_recall": {
+          "denominator": 97,
+          "numerator": 0,
+          "value": 0.0,
+          "wilson95": {
+            "lower": 0.0,
+            "upper": 0.03809404252594769
+          }
+        }
+      },
+      "scope": "observed_native_search",
+      "search_recall_claim_allowed": true,
+      "strata": {
+        "known_incident": {
+          "entities": 30,
+          "entities_with_relevant_text": {
+            "denominator": 30,
+            "numerator": 5,
+            "value": 0.16666666666666666,
+            "wilson95": {
+              "lower": 0.0733654237184855,
+              "upper": 0.3356435050641603
+            }
+          },
+          "entities_with_text": {
+            "denominator": 30,
+            "numerator": 5,
+            "value": 0.16666666666666666,
+            "wilson95": {
+              "lower": 0.0733654237184855,
+              "upper": 0.3356435050641603
+            }
+          },
+          "text_pairs": 24,
+          "text_precision_among_reviewed": {
+            "denominator": 24,
+            "numerator": 24,
+            "value": 1.0,
+            "wilson95": {
+              "lower": 0.8620237953250198,
+              "upper": 1.0
+            }
+          },
+          "text_reference_pair_recall": {
+            "denominator": 98,
+            "numerator": 0,
+            "value": 0.0,
+            "wilson95": {
+              "lower": 3.469446951953614e-18,
+              "upper": 0.037719990121680605
+            }
+          },
+          "text_reference_unique_url_recall": {
+            "denominator": 80,
+            "numerator": 0,
+            "value": 0.0,
+            "wilson95": {
+              "lower": 0.0,
+              "upper": 0.0458181295355271
+            }
+          }
+        },
+        "no_known_incident": {
+          "entities": 30,
+          "entities_with_relevant_text": {
+            "denominator": 30,
+            "numerator": 4,
+            "value": 0.13333333333333333,
+            "wilson95": {
+              "lower": 0.053096554840547455,
+              "upper": 0.296813266820363
+            }
+          },
+          "entities_with_text": {
+            "denominator": 30,
+            "numerator": 4,
+            "value": 0.13333333333333333,
+            "wilson95": {
+              "lower": 0.053096554840547455,
+              "upper": 0.296813266820363
+            }
+          },
+          "text_pairs": 6,
+          "text_precision_among_reviewed": {
+            "denominator": 6,
+            "numerator": 6,
+            "value": 1.0,
+            "wilson95": {
+              "lower": 0.6096657120978346,
+              "upper": 1.0
+            }
+          },
+          "text_reference_pair_recall": {
+            "denominator": 17,
+            "numerator": 0,
+            "value": 0.0,
+            "wilson95": {
+              "lower": 0.0,
+              "upper": 0.1843181350088518
+            }
+          },
+          "text_reference_unique_url_recall": {
+            "denominator": 17,
+            "numerator": 0,
+            "value": 0.0,
+            "wilson95": {
+              "lower": 0.0,
+              "upper": 0.1843181350088518
+            }
+          }
+        }
+      },
+      "volume": {
+        "candidate_pairs": 63,
+        "candidate_unique_urls": 61,
+        "original_text_pairs": 30,
+        "original_text_unique_body_hashes": 28,
+        "original_text_unique_urls": 28,
+        "reviewed_irrelevant_text_pairs": 0,
+        "reviewed_relevant_text_pairs": 30,
+        "unknown_relevance_text_pairs": 0
+      }
+    }
+  },
+  "entity_identity_confirmed": false,
+  "evaluation_status": "observed acquisition plus retrospective offline document-model comparison; not a held-out performance guarantee",
+  "f1_scope": "Only document known_label_f1 is used in this summary. The legacy retrieval harmonic field combines reviewed precision and finite-reference recall across different universes and is not a standard single-confusion-matrix F1.",
+  "generated_at": "2026-10-16T22:46:04.085150+00:00",
+  "network_requests": 0,
+  "personal_scoring_performed": false,
+  "schema_version": 3,
+  "unique_count_scope": "Unique URLs and exact conserved-body hashes are distinct from unique journalistic stories; syndicated stories and navigation variants are not semantically deduplicated."
+}

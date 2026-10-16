@@ -119,6 +119,9 @@ def main():
                             page.locator('#workflow-search-strategy').select_option('shared')
                             expect(page.locator('#workflow-search-preset')).to_be_disabled()
                             catalogue = {source['id']: source for source in api(page, 'news')['body']['sources']}
+                            directed_source = page.locator('#news-sources .source[data-source-id="notisistema_search"]')
+                            expect(directed_source).to_contain_text('Búsqueda por nombre · también admite índice compartido')
+                            checked('directed_regional_source_describes_name_search_capability')
                             real_shared_ids = {'contralinea_index', 'aristegui_index', 'desinformemonos_index',
                                                'contralinea_sitemap', 'mcci_sitemap', 'articulo19_sitemap'}
                             checked('six_real_catalogue_index_sources_are_available_without_automatic_permissions',

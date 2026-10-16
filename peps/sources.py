@@ -13,7 +13,7 @@ from xml.etree import ElementTree
 class _TextExtractor(HTMLParser):
     ignored = {"script", "style", "noscript", "svg", "iframe", "template", "head", "nav", "form"}
 
-    def __init__(self, limit: int = 200_000):
+    def __init__(self, limit: int = 200_000, publication_url: str | None = None):
         super().__init__(convert_charrefs=True)
         self.limit = limit
         self.chunks: list[str] = []
@@ -22,8 +22,14 @@ class _TextExtractor(HTMLParser):
         self.in_title = False
         self.length = 0
         self.published_at = None
+        self.publication_metadata = None
+        if publication_url is not None:
+            from .publication_metadata import PublicationMetadata
+            self.publication_metadata = PublicationMetadata(publication_url)
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        if self.publication_metadata is not None:
+            self.publication_metadata.start(tag, attrs)
         values = dict(attrs)
         if tag == "title":
             self.in_title = True
@@ -35,6 +41,8 @@ class _TextExtractor(HTMLParser):
             self._append(" ")
 
     def handle_endtag(self, tag: str) -> None:
+        if self.publication_metadata is not None:
+            self.publication_metadata.end(tag)
         if tag == "title":
             self.in_title = False
         if tag in self.ignored_stack:
@@ -51,6 +59,8 @@ class _TextExtractor(HTMLParser):
             self.length += len(value)
 
     def handle_data(self, data: str) -> None:
+        if self.publication_metadata is not None:
+            self.publication_metadata.data(data)
         if self.in_title:
             self.title.append(data[:1000])
         if not self.ignored_stack:
@@ -249,10 +259,14 @@ def parse_results(fetch_result: dict, source: dict) -> list[dict]:
                     link = element.attrib.get("href") or value
             candidates.append(dict(url=link or fields.get("link", ""), title=fields.get("title", ""), text=fields.get("description") or fields.get("summary") or fields.get("encoded") or fields.get("content", ""), published_at=_date(fields.get("pubDate") or fields.get("published") or fields.get("date")), updated_at=_date(fields.get("updated")), source_kind=source.get("document_kind", "news"), source_id=source_id))
     else:
-        parser = _TextExtractor()
+        parser = _TextExtractor(publication_url=base)
         parser.feed(body)
         parser.close()
-        candidates.append(dict(url=base, title=" ".join(parser.title).strip()[:1000], text=parser.text, published_at=_date(parser.published_at), source_kind=kind, source_id=source_id))
+        title = " ".join(parser.title).strip()[:1000]
+        published_at = _date(parser.published_at)
+        if published_at is None and parser.publication_metadata is not None:
+            published_at = parser.publication_metadata.published_at(title, fetch_result.get("retrieved_at"))
+        candidates.append(dict(url=base, title=title, text=parser.text, published_at=published_at, source_kind=kind, source_id=source_id))
     results, seen = [], set()
     for item in candidates:
         url = _public_document_url(str(item.get("url") or ""), base)

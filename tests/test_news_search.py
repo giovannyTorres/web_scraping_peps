@@ -109,7 +109,8 @@ class SearchPlanTests(unittest.TestCase):
     def test_old_approved_publisher_profiles_search_652_names_in_one_interval_without_policy_changes(self):
         root = Path(__file__).resolve().parents[1]
         defaults = json.loads((root / 'peps/defaults/news_sources.json').read_text(encoding='utf-8'))
-        sources = [deepcopy(source) for source in defaults['sources'] if source['kind'] == 'wordpress_api']
+        legacy_ids = {'contralinea_index', 'aristegui_index', 'desinformemonos_index'}
+        sources = [deepcopy(source) for source in defaults['sources'] if source['id'] in legacy_ids]
         self.assertEqual(len(sources), 3)
         for source in sources:
             source.pop('search_kind', None)
@@ -360,7 +361,12 @@ class SearchPlanTests(unittest.TestCase):
 
     def test_shared_sources_are_added_disabled_and_old_permissions_remain_exact(self):
         defaults = json.loads((Path(__file__).resolve().parents[1] / 'peps/defaults/news_sources.json').read_text(encoding='utf-8'))
-        sources = [source for source in defaults['sources'] if source['kind'] in ('wordpress_api', 'sitemap')]
+        legacy_shared_ids = {'contralinea_index', 'aristegui_index', 'desinformemonos_index',
+                             'contralinea_sitemap', 'mcci_sitemap', 'articulo19_sitemap'}
+        # Keep this historical migration fixture bounded to its original
+        # shared sources; optional directed regional adapters have their own
+        # catalogue and migration regression below.
+        sources = [source for source in defaults['sources'] if source['id'] in legacy_shared_ids]
         self.assertEqual(len(sources), 6)
         for source in sources:
             for permission in ('enabled', 'terms_approved', 'download_articles', 'article_terms_approved'):

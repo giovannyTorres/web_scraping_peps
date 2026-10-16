@@ -1,0 +1,80 @@
+[
+  {
+    "all_checks_passed": false,
+    "checks": {
+      "all12_legacy_jobs_blocked_immediately": true,
+      "all_audits_valid": true,
+      "documents_exactly_unchanged": true,
+      "http_cache_bytes_unchanged": true,
+      "legacy_attempts_due_owner_payload_lease_preserved": true,
+      "observations_exactly_unchanged": false,
+      "original_all_logical_tables_unchanged": true,
+      "original_archive_and_config_files_unchanged": true,
+      "original_observation_rows_preserved": true,
+      "original_report_unchanged": true,
+      "production_code_unchanged_during_replay": true,
+      "recorded_network_requests_unchanged": true,
+      "repeat_body_jobs_idempotent": false,
+      "repeat_news_articles_idempotent": false,
+      "repeat_observations_idempotent": true,
+      "repeat_projection_idempotent": true,
+      "ten_false_body_pairs_removed": true,
+      "zero_dns_tcp_http": true,
+      "zero_pending_after_both_passes": true
+    },
+    "network_calls": {
+      "dns": 0,
+      "http": 0,
+      "tcp": 0
+    },
+    "original_result_sha256": "1acab0c94705b5e764ef7299dfafe5f8bb8b0b1a9e0cf7877886d5d85b524152",
+    "relevance_version": "metadata-relevance-1.2.1",
+    "revision": "failed_v1",
+    "scope": "Corrected retrospective local replay on a separate SQLite-backup clone; no new real-web experiment or unseen holdout claim.",
+    "seconds": [
+      10.049511310004164,
+      9.27496895600052
+    ],
+    "source_file_sha256": "7df2d683bbd1eb4cfb8960a982d84567c7d99468bd317634bb146d0a4dad6db4",
+    "total_seconds": 21.404847211000742
+  },
+  {
+    "all_checks_passed": true,
+    "checks": {
+      "all12_legacy_jobs_blocked_immediately": true,
+      "all_audits_valid": true,
+      "documents_exactly_unchanged": true,
+      "http_cache_bytes_unchanged": true,
+      "legacy_attempts_due_owner_payload_lease_preserved": true,
+      "one_time_versioned_observation_migration_verified": true,
+      "original_all_logical_tables_unchanged": true,
+      "original_archive_and_config_files_unchanged": true,
+      "original_observation_rows_preserved": true,
+      "original_report_unchanged": true,
+      "production_code_unchanged_during_replay": true,
+      "recorded_network_requests_unchanged": true,
+      "repeat_body_jobs_idempotent": true,
+      "repeat_news_articles_idempotent": true,
+      "repeat_observations_idempotent": true,
+      "repeat_projection_idempotent": true,
+      "ten_false_body_pairs_removed": true,
+      "zero_dns_tcp_http": true,
+      "zero_pending_after_both_passes": true
+    },
+    "network_calls": {
+      "dns": 0,
+      "http": 0,
+      "tcp": 0
+    },
+    "original_result_sha256": "1acab0c94705b5e764ef7299dfafe5f8bb8b0b1a9e0cf7877886d5d85b524152",
+    "relevance_version": "metadata-relevance-1.2.1",
+    "revision": "corrected_v2",
+    "scope": "Corrected retrospective local replay on a separate SQLite-backup clone; no new real-web experiment or unseen holdout claim.",
+    "seconds": [
+      7.873401984994416,
+      7.639556685011485
+    ],
+    "source_file_sha256": "4ed21debfd421a9b8bd4a296dfbc7ae7726e403ff63e2c03fc5c7807f973a7ad",
+    "total_seconds": 17.209820415999275
+  }
+]
