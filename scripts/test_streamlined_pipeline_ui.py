@@ -31,6 +31,7 @@ def main():
     from peps.app import create_server
     from peps.engine import Engine
     from peps.news import NewsAcquirer
+    from peps.workflow import GuidedWorkflow
 
     out = ROOT / "runtime/streamlined-pipeline-ui-validation"
     out.mkdir(parents=True, exist_ok=True)
@@ -44,6 +45,8 @@ def main():
     errors = []
     external = []
     starts = []
+    hold_retry = False
+    held_retry_routes = []
     control = ControlledOperations()
 
     def checked(name, condition=True):
@@ -136,6 +139,9 @@ def main():
                                         "#workflow-sources-next"
                                     ).is_disabled(),
                                 )
+                            if r.url.endswith("/api/news-retry") and hold_retry:
+                                held_retry_routes.append(route)
+                                return
                             route.continue_()
 
                         context.route("**/*", request)
@@ -336,7 +342,27 @@ def main():
                         )
                         page.locator("#workflow-task-filter").select_option("blocked")
                         expect(page.locator("[data-task-retry]")).to_be_visible()
+                        hold_retry = True
                         page.locator("[data-task-retry]").click()
+                        wait_until(
+                            page,
+                            lambda: bool(held_retry_routes),
+                            "Retry was not requested",
+                        )
+                        page.evaluate(
+                            "stats=>window.pepsWorkflow.update(stats)",
+                            api(page, "stats")["body"],
+                        )
+                        checked(
+                            "retry_stays_disabled_while_request_is_pending_across_poll",
+                            page.locator("[data-task-retry]").is_disabled(),
+                        )
+                        checked(
+                            "pending_retry_blocks_other_mutations",
+                            page.locator("#news-acquire").is_disabled(),
+                        )
+                        hold_retry = False
+                        held_retry_routes.pop().continue_()
                         expect(page.locator("#message")).to_contain_text("Reanuda")
                         checked(
                             "retry_is_scoped_and_never_autostarts",
@@ -426,6 +452,47 @@ def main():
                             report["screenshots"].append(
                                 f"runtime/streamlined-pipeline-ui-validation/pipeline-{label}.png"
                             )
+                        # Finish the selected synthetic retry without HTTP so
+                        # the preparation scenario has a genuinely empty queue.
+                        retried_job = engine.store.claim(kind_prefix="news_")
+                        assert retried_job and retried_job["id"] == jid
+                        engine.store.finish(retried_job)
+                        GuidedWorkflow(
+                            engine.store, NewsAcquirer(engine).sources
+                        ).mark_download(
+                            status="paused",
+                            details={
+                                "preparation_incomplete": True,
+                                "queue_complete": False,
+                                "pending": 0,
+                                "stop_reason": "time_limit",
+                            },
+                        )
+                        page.set_viewport_size({"width": 1280, "height": 900})
+                        page.reload(wait_until="networkidle")
+                        page.locator("[data-tab=news]").click()
+                        expect(page.locator("#news-acquire")).to_have_text(
+                            "Completar preparación"
+                        )
+                        expect(page.locator("#workflow-download-note")).to_contain_text(
+                            "La búsqueda aún no está completa"
+                        )
+                        expect(page.locator("#workflow-download-status")).to_have_text(
+                            "Preparación pendiente"
+                        )
+                        expect(
+                            page.locator("#workflow-download-current")
+                        ).to_contain_text("antes de completar el índice o el plan")
+                        expect(page.locator("#workflow-download-wait")).to_contain_text(
+                            "El plan sigue incompleto"
+                        )
+                        expect(page.locator("#workflow-analyze")).to_be_disabled()
+                        expect(
+                            page.locator("#workflow-partial-description")
+                        ).to_contain_text("El plan de búsqueda quedó incompleto")
+                        checked(
+                            "incomplete_preparation_is_distinct_from_a_finished_empty_queue"
+                        )
                         checked("no_browser_errors", not errors)
                         checked("no_external_requests", not external)
                         browser.close()

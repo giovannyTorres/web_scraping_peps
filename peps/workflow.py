@@ -27,8 +27,8 @@ class OperationTracker:
 
     _COUNTERS = ('processed', 'pending', 'deferred', 'blocked', 'dead', 'failed', 'discovery_pending',
                  'unreported_completed', 'ready', 'active_tasks', 'done', 'queued', 'running')
-    _FLAGS = ('waiting', 'queue_complete', 'cancelled')
-    _TIMES = ('next_retry_at', 'next_retry_seconds', 'wait_seconds')
+    _FLAGS = ('waiting', 'queue_complete', 'cancelled', 'preparation_incomplete', 'queue_snapshot_exact')
+    _TIMES = ('next_retry_at', 'next_retry_seconds', 'wait_seconds', 'queue_snapshot_age_seconds')
     _TEXT = ('next_retry', 'current_source', 'job_kind', 'last_error')
     _STOP_REASONS = ('completed', 'cancelled', 'time_limit', 'job_limit', 'backoff', 'scheduled', 'external_lease')
 
@@ -179,6 +179,7 @@ class OperationTracker:
         details = self._state['details']
         return (self._state['status'] != 'cancel_requested' and not self.cancel_event.is_set()
                 and not details.get('cancelled') and details.get('stop_reason') != 'cancelled'
+                and not details.get('preparation_incomplete') and details.get('queue_complete') is not False
                 and not any(details.get(key, 0) for key in ('pending', 'failed', 'blocked', 'dead')))
 
     @staticmethod
@@ -576,15 +577,17 @@ class GuidedWorkflow:
         sources_confirmed = state.get('sources_confirmed') == {'sources': signature['sources'], 'mode': mode}
         pending = counts['pending_downloads'] > 0
         receipt = state.get('download') or {}
+        download_details = receipt.get('details') or {}
+        coverage['preparation_incomplete'] = bool(isinstance(download_details, dict)
+                                                 and download_details.get('preparation_incomplete'))
         acquisition_current = receipt.get('signature') == self._acquisition_signature(signature)
         previous_signature = receipt.get('signature') or {}
         resume_scope_current = all(previous_signature.get(key) == signature[key] for key in ('bank', 'sources'))
-        coverage['resume_available'] = bool(pending and resume_scope_current)
-        coverage['needs_new_search'] = bool(pending and not coverage['resume_available'])
+        coverage['resume_available'] = bool(pending and resume_scope_current and not coverage['preparation_incomplete'])
+        coverage['needs_new_search'] = bool(coverage['preparation_incomplete'] or pending and not coverage['resume_available'])
         coverage['acquisition_current'] = acquisition_current
         active = busy or bool(coverage['active_running'])
         coverage['worker_active'] = active
-        download_details = receipt.get('details') or {}
         plan = self._plan_summary(download_details)
         coverage['search_plan'] = plan
         coverage['acquisition_context'] = deepcopy(download_details.get('acquisition_context')) if isinstance(download_details, dict) else None
@@ -595,7 +598,7 @@ class GuidedWorkflow:
             if key in download_details}
         limited_plan = bool(plan and (plan.get('coverage') == 'best_effort_not_exhaustive' or
                             any(source.get('complete_archive') is False for source in plan.get('sources', []) if isinstance(source, dict))))
-        coverage['partial'] = bool(pending or coverage['failed'] or coverage['unfetched_articles'] or coverage['saturated_windows'] or coverage['insufficient_documents'] or coverage['plan_truncated'] or limited_plan)
+        coverage['partial'] = bool(coverage['preparation_incomplete'] or pending or coverage['failed'] or coverage['unfetched_articles'] or coverage['saturated_windows'] or coverage['insufficient_documents'] or coverage['plan_truncated'] or limited_plan)
         coverage['accepted_partial'] = self._partial_current(state, signature, coverage)
         coverage['closed_partial'] = coverage['accepted_partial'] and receipt.get('status') == 'closed_partial'
         coverage['limitations'] = deepcopy((state.get('partial_acceptance') or {}).get('limitations'))
@@ -721,7 +724,8 @@ class GuidedWorkflow:
             if status != 'running' and previous.get('status') == 'running':
                 for key in ('bank', 'sources'):
                     acquisition[key] = previous['signature'][key]
-            if status == 'completed' and coverage['pending_downloads']:
+            if status == 'completed' and (coverage['pending_downloads'] or
+                    isinstance(details, dict) and (details.get('preparation_incomplete') or details.get('queue_complete') is False)):
                 status = 'paused'
             state['download'] = {'status': status, 'signature': acquisition, 'at': now(), 'details': deepcopy(details), 'resuming': resuming}
             state.pop('analysis', None)
@@ -756,6 +760,7 @@ class GuidedWorkflow:
                 limitations.update(articles=counts['articles'], documents=counts['documents'], captured_at=stamp,
                     decision='Cierre explícito con cobertura disponible; la cola se conserva para una reanudación posterior.')
                 limitations['search_plan'] = self._plan_summary(receipt.get('details'))
+                limitations['preparation_incomplete'] = bool((receipt.get('details') or {}).get('preparation_incomplete'))
                 state['partial_signature'] = self._acquisition_signature(signature)
                 state['partial_acceptance'] = {'signature': self._acquisition_signature(signature),
                     'queue_signature': coverage['queue_signature'], 'at': stamp, 'limitations': limitations}

@@ -343,7 +343,19 @@ def query_url(source, payload):
     return source.get('base_url', 'https://api.gdeltproject.org/api/v2/doc/doc') + '?' + urlencode(args)
 
 
-def build_search_plan(entities, sources, config=None, *, start=None, end=None, now=None):
+class SearchPlanningStopped(Exception):
+    """The caller stopped local planning before a complete plan was published."""
+
+
+def build_search_plan(entities, sources, config=None, *, start=None, end=None, now=None, should_stop=None):
+    def check():
+        if should_stop is not None and should_stop():
+            raise SearchPlanningStopped()
+    def checked(values):
+        for value in values:
+            check()
+            yield value
+    check()
     current = _utc(now)
     config = normalize_search_config(config, current)
     first, last = _bound(start or config['start']), _bound(end or config['end'], end=True)
@@ -358,11 +370,11 @@ def build_search_plan(entities, sources, config=None, *, start=None, end=None, n
             'execution': {'mode': config['execution_mode'], 'session_seconds': config['session_seconds'],
                 'scope_note': 'El presupuesto es global para la sesión. Se conservan consultas pendientes; no garantiza consultar todas las entidades ni descargar todos sus artículos.'},
             'entity_count_note': 'Entidades planificadas no equivale a entidades consultadas ni a cobertura comprobada.'}
-    entities = list(entities)
+    entities = list(checked(entities))
     shared_sources = []
     prepared = []
     public_providers = set()
-    for source in active:
+    for source in checked(active):
         public = source.get('kind') in PUBLIC_SEARCH_KINDS
         if config['strategy'] == 'public' and not public:
             continue
@@ -454,7 +466,7 @@ def build_search_plan(entities, sources, config=None, *, start=None, end=None, n
         total_ids = {str(entity['id']) for entity in entities}
         hosts = list(dict.fromkeys(urlsplit(source.get('search_url') or source.get('base_url') or source.get('url') or '').hostname or source['id']
                                    for source, _ in prepared))
-        for source, windows in prepared:
+        for source, windows in checked(prepared):
             grouped = {}
             source_suffix = ''
             if source.get('kind') == 'gdelt':
@@ -466,11 +478,11 @@ def build_search_plan(entities, sources, config=None, *, start=None, end=None, n
             host = urlsplit(source.get('search_url') or source.get('base_url') or source.get('url') or '').hostname or source['id']
             offset = hosts.index(host) * ((len(entities) + len(hosts) - 1) // len(hosts)) if quick else 0
             ordered = entities[offset:] + entities[:offset]
-            batches = list(_gdelt_batch_queries(ordered, source, config, source_suffix, max_chars)) if source.get('kind') == 'gdelt' else []
+            batches = list(_gdelt_batch_queries(checked(ordered), source, config, source_suffix, max_chars)) if source.get('kind') == 'gdelt' else []
             included = {identifier for query in batches for identifier in query['entity_ids']}
             if source.get('kind') == 'gdelt' and any(_phrase(entity.get('name')) and str(entity['id']) not in included for entity in ordered):
                 plan['warnings'].append(source['id'] + ': nombres o términos que exceden el límite local de longitud no se pudieron incluir en lotes.')
-            for entity in ordered:
+            for entity in checked(ordered):
                 variants = _variants(entity, config['include_aliases'])
                 if source.get('kind') in PUBLIC_SEARCH_KINDS:
                     queries = public_queries(entity, config, variants)
@@ -480,7 +492,7 @@ def build_search_plan(entities, sources, config=None, *, start=None, end=None, n
                     queries = wordpress_queries(entity, config, variants=variants)
                 else:
                     queries = entity_queries(entity, config, max(1, max_chars - len(source_suffix)))
-                for rank, query in enumerate(queries):
+                for rank, query in enumerate(checked(queries)):
                     if source.get('kind') == 'gdelt':
                         if query['query_type'] == 'identity':
                             continue  # Canonical requests were batched above.
@@ -501,9 +513,11 @@ def build_search_plan(entities, sources, config=None, *, start=None, end=None, n
         max_windows = max((len(windows) for _, windows, _ in templates), default=0)
         max_rank = max((query['rank'] for _, _, queries in templates for query in queries), default=-1)
         for window_index in range(max_windows):
+            check()
             if len(plan['queries']) >= config['max_queries']:
                 break
             for rank in range(max_rank + 1):
+                check()
                 if len(plan['queries']) >= config['max_queries']:
                     break
                 for source, windows, queries in templates:
@@ -512,7 +526,7 @@ def build_search_plan(entities, sources, config=None, *, start=None, end=None, n
                     if window_index >= len(windows):
                         continue
                     a, b = windows[window_index]
-                    for query in queries:
+                    for query in checked(queries):
                         if query['rank'] != rank:
                             continue
                         if len(plan['queries']) >= config['max_queries']:
@@ -545,7 +559,7 @@ def build_search_plan(entities, sources, config=None, *, start=None, end=None, n
     intervals = {source['id']: max(1, float(source.get('min_interval_seconds', 5))) for source in sources}
     hosts, source_entities, first_session, first_by_source = {}, {}, set(), {}
     last_start = 0.
-    for query in plan['queries']:
+    for query in checked(plan['queries']):
         host = urlsplit(query['url']).hostname or query['source_id']
         scheduled = hosts.get(host, 0.)
         last_start = max(last_start, scheduled)
@@ -565,6 +579,7 @@ def build_search_plan(entities, sources, config=None, *, start=None, end=None, n
         plan['warnings'].append('Modo rápido: primero nombres canónicos; los lotes sólo se aplican a GDELT. Las respuestas saturadas quedan como cobertura incompleta sin expansión automática; alias y contexto siguen al primer barrido.')
     plan['schedule_estimate_note'] = 'Programación mínima orientativa por intervalos de host; excluye latencia, robots, reintentos y divisiones adicionales. No es un SLA ni ETA de finalización.'
     plan['warnings'] = list(dict.fromkeys(plan['warnings']))
+    check()
     return plan
 
 

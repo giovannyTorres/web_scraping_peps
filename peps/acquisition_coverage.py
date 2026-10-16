@@ -29,6 +29,13 @@ def _json(value):
         return {}
 
 
+def _object_sql(column):
+    # CASE is deliberately nested: SQLite may evaluate json_type before a
+    # neighboring json_valid predicate and raise on malformed legacy JSON.
+    return (f"CASE WHEN json_valid({column}) THEN CASE WHEN json_type({column})='object' "
+            f"THEN {column} ELSE '{{}}' END ELSE '{{}}' END")
+
+
 def _shared_coverage(con, tables, result, *, json_sql):
     """Count observed local index scans independently from directed searches.
 
@@ -68,7 +75,7 @@ def _shared_coverage(con, tables, result, *, json_sql):
         return
 
     if 'news_discovery_runs' in tables:
-        receipts = ("WITH parsed AS (SELECT CASE WHEN json_valid(parser_metadata) THEN parser_metadata ELSE '{}' END AS metadata "
+        receipts = ("WITH parsed AS (SELECT " + _object_sql('parser_metadata') + " AS metadata "
                     "FROM news_discovery_runs), current AS (SELECT metadata FROM parsed "
                     "WHERE json_type(metadata,'$.shared_index')='true' AND json_extract(metadata,'$.bank_revision')=?) ")
         counts = con.execute(receipts + "SELECT count(*),COALESCE(sum(CASE "
@@ -82,7 +89,7 @@ def _shared_coverage(con, tables, result, *, json_sql):
             "JOIN entities e ON e.id=CAST(v.value AS TEXT) "
             "WHERE json_type(r.metadata,'$.locally_checked_entity_ids')='array'", (revision,)).fetchone()[0]
     result['shared_pages_pending'] = con.execute("WITH parsed AS (SELECT "
-        "CASE WHEN json_valid(payload) THEN payload ELSE '{}' END AS payload FROM jobs "
+        + _object_sql('payload') + " AS payload FROM jobs "
         "WHERE kind='news_feed' AND status IN ('queued','deferred','running')) SELECT count(*) FROM parsed "
         "WHERE json_type(payload,'$.shared_index')='true' AND json_extract(payload,'$.bank_revision')=?", (revision,)).fetchone()[0]
 
@@ -96,7 +103,8 @@ def _fallback(con, tables, result, revision):
     if 'news_discovery_runs' in tables:
         for row in con.execute('SELECT j.kind,j.payload,r.parser_metadata FROM news_discovery_runs r JOIN jobs j ON j.id=r.job_id'):
             payload = _json(row['payload'])
-            targets = {str(value) for value in payload.get('entity_ids', [])} & ids
+            raw_targets = payload.get('entity_ids')
+            targets = {str(value) for value in raw_targets} & ids if isinstance(raw_targets, list) else set()
             if str(payload.get('bank_revision')) != revision:
                 continue
             if row['kind'] == 'news_query':
@@ -196,12 +204,21 @@ def acquisition_coverage(store, sources):
         result.update(entities_with_candidates=counts[0], entities_with_bodies=counts[1],
                       relevant_articles=counts[2], body_articles=counts[3], metadata_only_articles=counts[2] - counts[3])
         if 'news_discovery_runs' in tables:
-            result['entities_queried'] = con.execute("SELECT count(DISTINCT e.id) FROM news_discovery_runs r "
-                "JOIN jobs j ON j.id=r.job_id JOIN json_each(j.payload,'$.entity_ids') v JOIN entities e ON e.id=CAST(v.value AS TEXT) "
-                "WHERE j.kind='news_query' AND CAST(json_extract(j.payload,'$.bank_revision') AS TEXT)=?", (revision,)).fetchone()[0]
-            result['excluded_records'] = con.execute("SELECT COALESCE(sum(max(0,COALESCE(json_extract(r.parser_metadata,'$.candidate_filter.excluded_records'),0))),0) "
-                "FROM news_discovery_runs r JOIN jobs j ON j.id=r.job_id WHERE CAST(json_extract(j.payload,'$.bank_revision') AS TEXT)=? AND (j.kind='news_feed' OR EXISTS "
-                "(SELECT 1 FROM json_each(j.payload,'$.entity_ids') v JOIN entities e ON e.id=CAST(v.value AS TEXT)))", (revision,)).fetchone()[0]
+            # Normalize corrupt/scalar legacy payloads before any json_each or
+            # json_extract. A malformed receipt never mutates the stored job.
+            receipts = ("WITH parsed AS (SELECT j.kind," + _object_sql('j.payload') + " AS payload,"
+                        + _object_sql('r.parser_metadata') + " AS metadata "
+                        "FROM news_discovery_runs r JOIN jobs j ON j.id=r.job_id), "
+                        "current AS (SELECT * FROM parsed WHERE CAST(json_extract(payload,'$.bank_revision') AS TEXT)=?) ")
+            counts = con.execute(receipts + "SELECT (SELECT count(DISTINCT e.id) FROM current r "
+                "JOIN json_each(r.payload,'$.entity_ids') v JOIN entities e ON e.id=CAST(v.value AS TEXT) "
+                "WHERE r.kind='news_query' AND json_type(r.payload,'$.entity_ids')='array'),"
+                "(SELECT COALESCE(sum(CASE WHEN json_type(r.metadata,'$.candidate_filter.excluded_records')='integer' "
+                "THEN max(0,json_extract(r.metadata,'$.candidate_filter.excluded_records')) ELSE 0 END),0) "
+                "FROM current r WHERE r.kind='news_feed' OR (json_type(r.payload,'$.entity_ids')='array' AND EXISTS "
+                "(SELECT 1 FROM json_each(r.payload,'$.entity_ids') v JOIN entities e ON e.id=CAST(v.value AS TEXT))))",
+                (revision,)).fetchone()
+            result.update(entities_queried=counts[0], excluded_records=counts[1])
         news_guard = 'AND d.id NOT IN (SELECT document_id FROM news_articles WHERE document_id IS NOT NULL)' if 'news_articles' in tables else ''
         local = con.execute("SELECT count(DISTINCT d.id),count(DISTINCT e.entity_id) FROM evidence e "
             "JOIN entities current ON current.id=e.entity_id JOIN documents d ON d.id=e.document_id "

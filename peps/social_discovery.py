@@ -107,6 +107,10 @@ class _Text(HTMLParser):
 def _text(value, limit):
     if not isinstance(value, str):
         return ''
+    try:
+        value.encode('utf-8')
+    except UnicodeError as exc:
+        raise ValueError('Lemmy devolvió texto Unicode inválido') from exc
     parser = _Text()
     parser.feed(value[:100_000])
     return ' '.join(' '.join(parser.parts).split())[:limit]
@@ -138,7 +142,7 @@ def _date(value):
     try:
         stamp = datetime.fromisoformat(value.replace('Z', '+00:00'))
         return (stamp.replace(tzinfo=timezone.utc) if stamp.tzinfo is None else stamp).astimezone(timezone.utc).isoformat()
-    except ValueError:
+    except (ValueError, OverflowError):
         return None
 
 

@@ -1,0 +1,195 @@
+{
+  "schema_version": 1,
+  "synthetic": true,
+  "public_network": false,
+  "method": "Real production rescue, relevance and SQLite paths; fixed synthetic fixture; no public requests.",
+  "fixture": {
+    "entities": 3000,
+    "news_articles": 90000,
+    "news_observations": 68948
+  },
+  "distribution": {
+    "ordinary_relevant_fraction": 0.2,
+    "positive_summaries": "17 lengths interleaved with entity IDs; positive metadata is varied across 18000 cards.",
+    "additional_observations": "2–6 distinct snippets on each nineteenth URL, including pertinent text on neutral original cards.",
+    "popular_url_observations": 50000,
+    "popular_url": "Many duplicates interspersed with older pertinent titles; the former last-10 observation cap lost 24 current candidate IDs."
+  },
+  "before": {
+    "source_sha256": {
+      "peps/news.py": "12103164950948bfc00f0d05a74938bbabdfc19228477242203475e2b3617780",
+      "peps/news_projection.py": "a895637979de365e9e7ff8435445207c9fd4a803fab35c86c42335f1863f23ca",
+      "peps/acquisition_coverage.py": "bda454eb0de2f640378b9ca5802dbbdcbad066e7a7a3b742cbf1d2b65fedbf26",
+      "peps/relevance.py": "2c2fc48a62b5b88c0c7633486ef4f10010da17d9a6cd5fdac3a867078d2b9ebc"
+    },
+    "cases": [
+      {
+        "name": "rescue_bounded",
+        "seconds": 60.024710429999686,
+        "rss_before": 30621696,
+        "rss_after": 59674624,
+        "peak_rss": 59187200,
+        "result": {
+          "body_skipped_budget": 4902
+        }
+      },
+      {
+        "name": "rescue_cancel_after_250ms",
+        "seconds": 0.2535263270037831,
+        "rss_before": 59727872,
+        "rss_after": 59736064,
+        "peak_rss": 59187200,
+        "result": {
+          "body_skipped_budget": 0
+        }
+      },
+      {
+        "name": "rescue_expired",
+        "seconds": 0.00307592999888584,
+        "rss_before": 59736064,
+        "rss_after": 59736064,
+        "peak_rss": 59187200,
+        "result": {
+          "body_skipped_budget": 0
+        }
+      }
+    ],
+    "jobs_after": 0,
+    "historical_candidate_count": 0,
+    "audit_valid": true
+  },
+  "after_streaming_and_bounded_memo": {
+    "source_sha256": {
+      "peps/news.py": "68b9857a7e9dc7e74e6c682c5d13b7af21481b843e04223e199269ba6e289bc0",
+      "peps/news_projection.py": "f7e184560d0e018a0622037c55a13fba07037024177ebd8868ac16fef298a369",
+      "peps/acquisition_coverage.py": "12c9119db1e35a7fac0b375e318a61c29be0481143ff5b97913b870e5b59b50c",
+      "peps/relevance.py": "2c2fc48a62b5b88c0c7633486ef4f10010da17d9a6cd5fdac3a867078d2b9ebc"
+    },
+    "cases": [
+      {
+        "name": "rescue_bounded",
+        "seconds": 39.378603261000535,
+        "rss_before": 31551488,
+        "rss_after": 62672896,
+        "peak_rss": 62472192,
+        "result": {
+          "body_skipped_budget": 21490,
+          "body_queued": 300
+        }
+      },
+      {
+        "name": "rescue_cancel_after_250ms",
+        "seconds": 0.2553482229996007,
+        "rss_before": 62722048,
+        "rss_after": 62730240,
+        "peak_rss": 62603264,
+        "result": {
+          "body_skipped_budget": 0
+        }
+      },
+      {
+        "name": "rescue_expired",
+        "seconds": 1.6544996469747275e-05,
+        "rss_before": 62730240,
+        "rss_after": 62730240,
+        "peak_rss": 62603264,
+        "result": {}
+      }
+    ],
+    "jobs_after": 300,
+    "historical_candidate_count": 24,
+    "audit_valid": true
+  },
+  "after_with_current_projection": {
+    "source_sha256": {
+      "peps/news.py": "f6f467813d0e741871f954c2c8320c102eeab55eceb50feb4369d13ce024cfcf",
+      "peps/news_projection.py": "f7e184560d0e018a0622037c55a13fba07037024177ebd8868ac16fef298a369",
+      "peps/acquisition_coverage.py": "12c9119db1e35a7fac0b375e318a61c29be0481143ff5b97913b870e5b59b50c",
+      "peps/relevance.py": "2c2fc48a62b5b88c0c7633486ef4f10010da17d9a6cd5fdac3a867078d2b9ebc"
+    },
+    "cases": [
+      {
+        "name": "projection",
+        "seconds": 18.643363292001595,
+        "rss_before": 31186944,
+        "rss_after": 35872768,
+        "cpu_seconds": 18.634614736,
+        "peak_rss": 35721216,
+        "result": true
+      },
+      {
+        "name": "rescue_bounded",
+        "seconds": 24.38288167000428,
+        "rss_before": 35872768,
+        "rss_after": 61788160,
+        "cpu_seconds": 24.370245192000002,
+        "peak_rss": 61673472,
+        "result": {
+          "body_skipped_budget": 21490,
+          "body_queued": 300
+        }
+      },
+      {
+        "name": "rescue_cancel_after_250ms",
+        "seconds": 0.25611305100028403,
+        "rss_before": 61829120,
+        "rss_after": 61837312,
+        "cpu_seconds": 0.25616487400000665,
+        "peak_rss": 61673472,
+        "result": {
+          "body_skipped_budget": 0
+        }
+      },
+      {
+        "name": "rescue_expired",
+        "seconds": 2.0542000129353255e-05,
+        "rss_before": 61837312,
+        "rss_after": 61837312,
+        "cpu_seconds": 7.68069999992349e-05,
+        "peak_rss": 61673472,
+        "result": {}
+      }
+    ],
+    "jobs_after": 300,
+    "historical_candidate_count": 24,
+    "audit_valid": true
+  },
+  "checks": {
+    "completed_within_budget": true,
+    "projection_completed": true,
+    "requested_shape": true,
+    "historical_leads_recovered": true,
+    "body_budget_preserved": true,
+    "cancellation_acknowledged": true,
+    "expired_deadline_respected": true,
+    "history_preserved": true,
+    "audit_valid": true,
+    "code_unchanged": true
+  },
+  "passed": true,
+  "history_sha256": {
+    "before": "cf094c59d6118be6716dfb036f345f988288522b47cb269ce1f5af482e7ab384",
+    "after": "cf094c59d6118be6716dfb036f345f988288522b47cb269ce1f5af482e7ab384"
+  },
+  "reproduce": {
+    "command": "python scripts/stress_news_rescue.py --entities 3000 --refs 90000 --max-seconds 60 --build-projection --output runtime/stress/rescue.json",
+    "expected_exit_code": 0,
+    "script_sha256": "e50f3be055d823d4416ddb14ce8bb97a0fb3b90608f94be1cb79b93ab57cd82a",
+    "baseline": "python scripts/stress_news_rescue.py --source-root /path/to/main-580eed3 --entities 3000 --refs 90000 --max-seconds 60 --output runtime/stress/rescue-baseline.json",
+    "baseline_expected_exit_code": 1,
+    "baseline_note": "The baseline command intentionally omits --build-projection, matching the recorded rescue-only 60-second baseline. An unfinished case still writes measured checks."
+  },
+  "current_source_sha256": {
+    "peps/news.py": "f99372019c180151fc417746822d8468e5743fd103fa137bf8f6f7589eb66eb7",
+    "peps/news_projection.py": "e41de0275891fba72d872ef3205826a990c4adb8b89da9b46a4d6ee4b60527b5",
+    "peps/acquisition_coverage.py": "12c9119db1e35a7fac0b375e318a61c29be0481143ff5b97913b870e5b59b50c",
+    "peps/news_search.py": "de52b9a98f314e75ab25f097b31feb12bcfc42b4503598b2c5b5b201223c5723"
+  },
+  "limits": [
+    "The baseline stopped at 60 seconds; it is not a completed baseline duration or an exact speedup measurement.",
+    "The final measured cold projection took 18.643 seconds and rescue 24.383 seconds; these are separate phases, not a public-web acquisition SLA.",
+    "Memory peaks include fixture creation. Measurements predate a later progress-denominator correction and the derived-cache signature bump all-history-1. Those changes do not change the measured rescue algorithm; original measured source hashes are retained alongside the current hashes.",
+    "Reuse depends on exact repeated metadata. A separate distinct-metadata deadline case is recorded in projection_stress_2_9_1.json.",
+    "Historical snippets remain candidate-retrieval leads; identity and scoring weights are unchanged."
+  ]
+}

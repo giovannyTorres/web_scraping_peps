@@ -34,6 +34,12 @@ from urllib.robotparser import RobotFileParser
 from .robots_policy import robots_allowed
 
 
+# The start of the last representable UTC day works on Windows as well as
+# POSIX. A publisher may request an arbitrarily large delay; retain that
+# restriction without passing infinity or year 10000 into datetime/SQLite.
+_MAX_RETRY_TIMESTAMP = 253402214400.0
+
+
 def _iso(timestamp: float | None = None) -> str:
     return datetime.fromtimestamp(time.time() if timestamp is None else timestamp, timezone.utc).isoformat()
 
@@ -571,9 +577,13 @@ class SafeFetcher:
             delay = float(self.config.get("circuit_seconds", 86400)) if blocked else min(3600, 30 * 2 ** (failures - 1))
             value = (headers or {}).get("retry-after")
             if value:
-                try:
-                    delay = max(delay, float(value))
-                except (TypeError, ValueError):
+                value = str(value).strip()
+                # RFC 9110 permits a nonnegative decimal integer or HTTP date.
+                # float() alone also accepts Infinity/NaN/exponents, and a
+                # sufficiently long valid decimal overflows to infinity.
+                if re.fullmatch(r"[0-9]+", value):
+                    delay = max(delay, min(float(value), max(0.0, _MAX_RETRY_TIMESTAMP - now)))
+                else:
                     try:
                         parsed = parsedate_to_datetime(value)
                         if parsed.tzinfo is None:
@@ -581,7 +591,7 @@ class SafeFetcher:
                         delay = max(delay, parsed.timestamp() - now)
                     except (TypeError, ValueError, OverflowError):
                         pass
-            retry = now + max(1.0, delay)
+            retry = min(_MAX_RETRY_TIMESTAMP, now + max(1.0, delay))
             if blocked:
                 db.execute("UPDATE hosts SET blocked_until=?, next_at=MAX(next_at,?), reason=?, failures=? WHERE host=?",
                            (retry, retry, reason, failures, host))
@@ -983,7 +993,7 @@ class SafeFetcher:
                 charset = item.split("=", 1)[1].strip(" \"'")
         try:
             body = raw.decode(charset, errors="replace")
-        except LookupError:
+        except (LookupError, UnicodeError):
             body = raw.decode("utf-8", errors="replace")
         if self._captcha(body):
             final_host = urlsplit(final_url).hostname

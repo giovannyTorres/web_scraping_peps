@@ -24,6 +24,7 @@ jobs:
       - run: python scripts/benchmark_ui_polling.py --tab sources --duration 6 --assert-optimized
       - run: python scripts/test_import_ui.py
       - run: python scripts/test_explainability_ui.py
+      - run: python scripts/stress_pipeline.py --profile quick --output runtime/stress-ci/stress.json
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -39,6 +40,7 @@ jobs:
             runtime/ui-polling-validation/
             runtime/import-ui-validation/
             runtime/ui-validation/
+            runtime/stress-ci/
   unit:
     strategy:
       matrix:

@@ -1,2 +1,2 @@
 """WebScope: web scraping y revisión documental local reproducible."""
-__version__ = "2.9.0"
+__version__ = "2.9.1"

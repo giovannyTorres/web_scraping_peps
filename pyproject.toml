@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "peps-mx"
-version = "2.9.0"
+version = "2.9.1"
 description = "WebScope: herramienta local de web scraping y análisis documental auditable"
 requires-python = ">=3.10"
 dependencies = []

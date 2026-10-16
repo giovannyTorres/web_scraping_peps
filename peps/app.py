@@ -96,7 +96,9 @@ def create_server(engine, port=0):
                               progress=tracker.update, reset_stop=False, relevant_only=True,
                               per_entity_body_limit=per_entity, body_budget=min(10000, per_entity * entities),
                               cache_mode=cache_mode)
-        incomplete = result.get('cancelled') or result.get('pending', 0) or result.get('failed', 0)
+        incomplete = (result.get('cancelled') or result.get('pending', 0) or result.get('failed', 0)
+                      or result.get('preparation_incomplete') or result.get('status') == 'paused'
+                      or result.get('queue_complete') is False)
         status = workflow.mark_download(status='paused' if incomplete else 'completed', details=result)
         return dict(result, status='paused' if status == 'paused' else result.get('status', 'ok'))
 
@@ -147,7 +149,7 @@ def create_server(engine, port=0):
         source = query.get('source_id', [''])[0]
         if len(source) > 200:
             raise ValueError('Fuente no válida')
-        conditions, params = ["kind LIKE 'news_%'"], []
+        conditions, params = ["kind GLOB 'news_*'"], []
         if status:
             conditions.append('status=?')
             params.append(status)
@@ -162,12 +164,21 @@ def create_server(engine, port=0):
         labels = {source['id']: source.get('source_name') or source.get('name') or source['id'] for source in news.sources()}
         stamp, items = time.time(), []
         for row in rows:
-            payload = json.loads(row['payload'])
+            try:
+                payload = json.loads(row['payload'])
+            except (ValueError, TypeError):
+                payload = None
+            metadata_valid = isinstance(payload, dict)
+            payload = payload if metadata_valid else {}
             source_id = payload.get('source_id')
+            if source_id is not None and not isinstance(source_id, str):
+                source_id, metadata_valid = None, False
             url = safe_result_url(payload.get('url') or payload.get('search_url') or '') or ''
             items.append({key: row[key] for key in ('id', 'kind', 'status', 'attempts', 'due', 'error', 'updated_at')})
             items[-1].update(source_id=source_id, label=labels.get(source_id, source_id or 'Documento'),
                              url=url, next_retry_seconds=max(0., row['due'] - stamp) if row['status'] == 'deferred' else None)
+            if not metadata_valid:
+                items[-1]['metadata_warning'] = 'No se pueden leer los metadatos de esta tarea. El registro original se conserva.'
         return {'items': items, 'total': total, 'limit': limit, 'offset': offset, 'has_more': offset + len(items) < total}
 
     def analyze_bank():
