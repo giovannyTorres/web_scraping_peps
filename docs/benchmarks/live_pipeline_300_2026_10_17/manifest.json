@@ -1,0 +1,27 @@
+{
+  "receipt_sha256": "2c2895fcea2b5cf14251ee829f2df09d8b42a510754028beb570ecb2bf09710d",
+  "public_files_sha256": {
+    "README.md": "181e90342d82b82a7fdcab588863f4f1b6a4987504f0162f20764e817ba17f49",
+    "cold-attempt-summary.json": "4d80297889501726c5b53b074f5a97da1d3903552a5385e33e74b280ad6ee4a9",
+    "entities.csv": "5d1f60f1c721a5768e349389b240ce234cbc5357b3a2e1f802aca72ced6d3db2",
+    "evaluated-nlp-1.0.4.py.txt": "cfdf49739700968d4fb9613d9db07d25b473e125c92f28e8ab605c3f1f09ed88",
+    "font-licenses.txt": "a6bdcabac6de5ba8d9839b141e107bc105d32952017b8222eb88e97ffb43790a",
+    "index.html": "5296d9b45757b06242188374bd448ce9aca4dbf52536d2bf32ce761f28a85bd9",
+    "observed-fixes.json": "41dc3fd57027be986cda7fdac798f8f7dca78bff3dc3e973293456ef844e1e22",
+    "observed-fixes.md": "181129d7cdc2c9a5a3d1362a996214dacfd8f7afd1510de227c6c913ca75fe61",
+    "originals.csv": "ad9ac2cbd7d1543efc8ffca763e0c5af48bd281ce4c72d637b36ede51f6bc8c6",
+    "post-audit-comparison.json": "b1b9ee8c884369294b0922d06bbe7c2e0263e659e1ecccb06075fd8f076db378",
+    "post-audit-comparison.md": "5ba57fc679e14de7c926cd58384d9dc5a8dad5c449cec7aef8f49ae4b12fa445",
+    "post-audit-processing-summary.json": "5f0874a65a63d3219ed4c0cf5ae5b4df4baa5a7069a0b876efe417ebb5dfaf8f",
+    "publisher-bridge-report.md": "7acae67c5b9a32d313e15c0de815b1bd4a5e30ce77e3029c82b6999fbb64e749",
+    "publisher-bridge-summary.json": "229120f18eb7f84d1a4a1bfb6c4fbf538bf2232068b517f100e5c48729aad8b0",
+    "quality-metrics.json": "b119752c2531ed3288b8554a18454aeeb1fbd71889f9510839d73aa1e4e233fa",
+    "quality-report.md": "d83f65176fc056ff2274041f882d98a5b7ba5601abbcabb03f417d4772d01a68",
+    "queries.csv": "7575058063bc35ecbd4e614b5104ba2bfd014f9f3d3651502bcb9ae0342a43ed",
+    "reference-recall.json": "858c71880bdd4de90d0577e1a770c3e92838bf8f789a9607435bc08ac57f0c49",
+    "roster-provenance.csv": "12e3f2ef534c851ec798152f18bd0459c1dc376954146f5a93ffdb76519c58e2",
+    "roster-provenance.json": "e183877b5427197fa9a4fed3f91968529fc886e7e9fccb6019e2d6a6f3ddf2d5",
+    "sources.csv": "fe08146ec190c3e3828d061b51f3d38021fa835289fb0709e76f63f936675189",
+    "summary.json": "8ba478ec44d6dcccd003d9fc885f1ed138edefc292260081b61d879767c1b0b5"
+  }
+}

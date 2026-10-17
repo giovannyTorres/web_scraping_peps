@@ -33,7 +33,7 @@ from .store import canonical, digest, now
 TRACKING = {'fbclid', 'gclid', 'dclid', 'msclkid', 'mc_cid', 'mc_eid', '_ga', 'igshid'}
 UNRESERVED = frozenset('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~')
 SUPERSEDED_PLAN = 'Plan sustituido (superseded_news_plan): '
-ARTICLE_EXTRACTION_VERSION = 'article-main-5'
+ARTICLE_EXTRACTION_VERSION = 'article-main-7'
 _ARTICLE_LINK_START = '\ufff0editorial-link-start\ufff1'
 _ARTICLE_LINK_END = '\ufff0editorial-link-end\ufff1'
 _ARTICLE_LINK_MARKERS = frozenset((_ARTICLE_LINK_START, _ARTICLE_LINK_END))
@@ -176,7 +176,9 @@ class _ArticleText(HTMLParser):
         self.stack, self.all, self.main, self.article, self.editorial = [], [], [], [], []
 
     def handle_starttag(self, tag, attrs):
-        attrs = dict(attrs)
+        # Valueless HTML attributes are legal and HTMLParser represents them
+        # as None; preserve attribute presence while normalizing text values.
+        attrs = {key: value if value is not None else '' for key, value in attrs}
         # HTML permits </head> to be omitted before visible body content.
         if (self.stack and self.stack[-1][0] == 'head'
                 and tag not in ('base', 'link', 'meta', 'title', 'noscript', 'style', 'script', 'template')):
@@ -184,8 +186,20 @@ class _ArticleText(HTMLParser):
         hidden = tag in ('head', 'title', 'template', 'iframe', 'script', 'style', 'nav',
                          'aside', 'footer', 'header', 'form', 'noscript', 'svg')
         hidden = hidden or attrs.get('aria-hidden') == 'true' or 'hidden' in attrs
-        hidden = hidden or bool(re.search(r'\b(?:advert|related|social-share|cookie|menu|sidebar)\b', attrs.get('class', ''), re.I))
+        # Themes put layout classes such as ``has-sidebar`` and ``sidebar-right``
+        # on the document roots. Those describe the page, not a sidebar subtree;
+        # inheriting a hidden state here would discard the entire real article.
+        # Explicit HTML visibility remains authoritative on every tag.
         classes = set(attrs.get('class', '').lower().split())
+        if tag not in ('html', 'body'):
+            navigation_classes = classes
+            if tag == 'article' and 'has-sidebar' in classes:
+                # Some themes put the whole story and a real sidebar inside
+                # one semantic article. Its layout does not hide its body;
+                # interior sidebars and related/card classes still do.
+                navigation_classes = classes - {'has-sidebar', 'sidebar-left', 'sidebar-right'}
+            hidden = hidden or bool(re.search(r'\b(?:advert|related|social-share|cookie|menu|sidebar)\b',
+                                               ' '.join(navigation_classes), re.I))
         # Milenio's inline recommendation has neither a related-content class
         # nor an aside tag. Its recirculation attribute and exact component
         # class distinguish this navigation from genuine editorial prose.
@@ -197,10 +211,12 @@ class _ArticleText(HTMLParser):
         card = bool(classes & {'elementor-post__card', 'elementor-portfolio-item',
                                'post-card', 'article-card', 'news-card'})
         card = card or (tag == 'article' and 'elementor-grid-item' in classes)
+        card = card or (tag == 'article' and any(re.fullmatch(r'et_pb_blog_item_\d+_\d+', name)
+                                               for name in classes))
         explicit = ('articleBody' in attrs.get('itemprop', '').split()
                     or bool(classes & {'entry-content', 'post-content', 'article-content',
                                        'article-body', 'story-body', 'td-post-content',
-                                       'elementor-widget-theme-post-content'})
+                                       'elementor-widget-theme-post-content', 'et_pb_post_content'})
                     or attrs.get('data-widget_type', '').split('.', 1)[0] == 'theme-post-content')
         hidden = hidden or (card and not explicit)
         parent = self.stack[-1][1] if self.stack else (False, False, None, None, False)
@@ -451,7 +467,7 @@ class _BodyBudget:
 
 
 class NewsAcquirer:
-    def __init__(self, engine, config_path=None):
+    def __init__(self, engine, config_path=None, *, merge_defaults=True):
         self.engine, self.store = engine, engine.store
         self._plan_cache, self._plan_lock = None, threading.Lock()
         self.config_path = Path(config_path) if config_path else engine.data_dir / 'news_sources.json'
@@ -459,7 +475,7 @@ class NewsAcquirer:
             default = Path(__file__).parent / 'defaults' / 'news_sources.json'
             config = json.loads(default.read_text(encoding='utf-8')) if default.exists() else {'sources': []}
             self.config_path.write_text(json.dumps(config, ensure_ascii=False, indent=2), encoding='utf-8')
-        else:
+        elif merge_defaults:
             from .news_search import merge_source_defaults
             default = Path(__file__).parent / 'defaults' / 'news_sources.json'
             existing = json.loads(self.config_path.read_text(encoding='utf-8'))
@@ -509,6 +525,10 @@ class NewsAcquirer:
               CREATE TABLE IF NOT EXISTS news_shared_queue(
                 scope TEXT NOT NULL,url TEXT NOT NULL,job_id TEXT NOT NULL,
                 PRIMARY KEY(scope,url));
+              CREATE TABLE IF NOT EXISTS news_body_quality_receipts(
+                article_id TEXT PRIMARY KEY,previous_document_id TEXT,version TEXT NOT NULL,
+                raw_snapshot_sha256 TEXT NOT NULL,raw_snapshot_path TEXT NOT NULL,
+                classification TEXT NOT NULL,checked_at TEXT NOT NULL);
               CREATE TABLE IF NOT EXISTS news_extraction_receipts(
                 article_id TEXT PRIMARY KEY,document_id TEXT NOT NULL,version TEXT NOT NULL,
                 raw_snapshot_sha256 TEXT NOT NULL,checked_at TEXT NOT NULL);
@@ -797,6 +817,12 @@ class NewsAcquirer:
         def request_url(row):
             try:
                 payload = json.loads(row['payload'])
+                # A saved URL on another host cannot equal this host's
+                # reconstructed effective URL. Discard it before rebuilding
+                # every unrelated publisher query (including its dates).
+                saved_host = urlsplit(payload['url']).hostname
+                if saved_host is None or fetcher._hostname(saved_host) != host:
+                    return None
                 source = sources[payload['source_id']]
                 if not source.get('enabled') or not source.get('terms_approved'):
                     return None
@@ -861,12 +887,14 @@ class NewsAcquirer:
 
     def _source_for_article(self, url, originating_source=None, all_sources=None):
         from .public_search import PUBLIC_SEARCH_KINDS
+        from .article_paths import article_path_allowed
         host = (urlsplit(url).hostname or '').lower()
         sources = ([originating_source] if originating_source else []) + (all_sources if all_sources is not None else self.sources())
         return next((s for s in sources if s and s.get('kind') not in PUBLIC_SEARCH_KINDS
                      and not s.get('discovery_only') and s.get('enabled') and s.get('terms_approved')
                      and s.get('download_articles') and (s.get('article_terms_approved') or s.get('body_terms_approved'))
-                     and host in (s.get('article_allowed_hosts') or s.get('allowed_hosts', []))), None)
+                     and host in (s.get('article_allowed_hosts') or s.get('allowed_hosts', []))
+                     and article_path_allowed(url, s)), None)
 
     def _stored_candidate(self, row, relevance, connection=None, *, should_stop=None):
         def check():
@@ -1035,7 +1063,7 @@ class NewsAcquirer:
         return key
 
     def _observe(self, record, source, discovery_url, result, resolver, download_all=False, connection=None, all_sources=None,
-                 candidate=None, body_budget=None, publisher_lead=None):
+                 candidate=None, body_budget=None, publisher_lead=None, projection_candidate=None):
         try:
             url = canonical_url(record['url'])
         except (ValueError, KeyError):
@@ -1073,7 +1101,8 @@ class NewsAcquirer:
             row = con.execute('SELECT * FROM news_articles WHERE id=?', (article_id,)).fetchone()
             if candidate is not None:
                 from .news_projection import update_projection
-                update_projection(con, article_id, candidate, bank_revision=candidate.get('bank_revision'))
+                current_candidate = projection_candidate if projection_candidate is not None else candidate
+                update_projection(con, article_id, current_candidate, bank_revision=current_candidate.get('bank_revision'))
         session = getattr(self, '_session', None)
         if session and not inserted_article:
             session.note(duplicate_candidates=1)
@@ -1087,6 +1116,8 @@ class NewsAcquirer:
         body_source = self._source_for_article(url, source, all_sources)
         checked = row['validated_at'] or row['retrieved_at']
         mode = getattr(self, '_active_cache_mode', 'reuse')
+        if row['scope'] == 'multimedia_reference' and mode != 'revalidate':
+            return {'status': 'multimedia_reference', 'id': article_id, 'candidates': candidate_count}
         fresh = checked and (mode == 'local' or (mode != 'revalidate' and
                 time.time() - self._epoch(checked) < float((body_source or {}).get('refresh_seconds', 86400))))
         if fresh and session:
@@ -1399,12 +1430,22 @@ class NewsAcquirer:
                 session.note(excluded_records=statuses['excluded_irrelevant'])
             iterator = iter(candidates)
             while batch := list(islice(iterator, 250)):
+                projected_batch = []
+                for record, ranked, publisher_lead in batch:
+                    # Directed discovery keeps its requested-name filter. The
+                    # global lookup also covers other names in retained cards.
+                    projected = ranked
+                    if ranked is not None and (payload.get('entity_ids') or payload.get('names')):
+                        projected = relevance.rank(record.get('title', ''), record.get('text', ''))
+                        projected['bank_revision'] = getattr(relevance, 'bank_revision', None)
+                    projected_batch.append((record, ranked, publisher_lead, projected))
                 with self.store.connection() as con:
                     con.execute('BEGIN IMMEDIATE')
-                    for record, ranked, publisher_lead in batch:
+                    for record, ranked, publisher_lead, projected in projected_batch:
                         statuses[self._observe(record, source, url, result, resolver, download_all,
                                                connection=con, all_sources=sources, candidate=ranked,
-                                               body_budget=body_budget, publisher_lead=publisher_lead)['status']] += 1
+                                               body_budget=body_budget, publisher_lead=publisher_lead,
+                                               projection_candidate=projected)['status']] += 1
             parse_info['body_budget'] = {'global_limit': body_budget.maximum if body_budget else None,
                                          'per_entity_limit': body_budget.per_entity if body_budget else None,
                                          'queued': statuses['article_queued'],
@@ -1437,7 +1478,13 @@ class NewsAcquirer:
             return {'discovery_metadata': parse_info}
         if job['kind'] != 'news_article':
             raise ValueError('Tipo de trabajo de noticias desconocido')
+        from .article_paths import ARTICLE_PATH_SCOPE_FLAG, article_path_allowed
+        if not article_path_allowed(payload['url'], source):
+            self._failure(job, {'status': 'blocked', 'error_code': 'article_path_scope',
+                                'error': 'Article URL path is outside the configured source scope'})
+            return
         article_source = dict(source, allowed_hosts=source.get('article_allowed_hosts') or source.get('allowed_hosts', []))
+        article_source[ARTICLE_PATH_SCOPE_FLAG] = True
         result = fetcher.fetch(payload['url'], article_source)
         if self._failure(job, result):
             return
@@ -1445,7 +1492,7 @@ class NewsAcquirer:
         self.store.finish(job)
         return {'article_id': payload['article_id'], 'body_result': conserved['status']}
 
-    def _conserve_article(self, payload, source, result, *, reextraction=None, relevance=None):
+    def _conserve_article(self, payload, source, result, *, reextraction=None, relevance=None, mutation_receipts=None):
         from .sources import parse_results
         # Parse metadata as an article, regardless of the source's RSS transport.
         page_source = dict(source, kind=source.get('document_kind', 'news'))
@@ -1478,6 +1525,14 @@ class NewsAcquirer:
                     raise
             finally:
                 temporary.unlink(missing_ok=True)
+        from .news_body_quality import classify_body, quarantine_reference
+        quality = classify_body(result['body'], body)
+        if not quality['body_usable']:
+            return quarantine_reference(self, row['id'], quality,
+                {'raw_snapshot_sha256': snapshot_hash,
+                 'raw_snapshot_path': str(snapshot.relative_to(self.engine.data_dir)),
+                 'retrieved_at': result.get('retrieved_at') or now()},
+                expected_document_id=row['document_id'])
         metadata = {'news_module': True, 'article_id': row['id'], 'publisher_id': row['publisher_id'],
                     'content_cluster': fingerprint, 'scope': 'full_article', 'source_config_hash': digest(canonical(source)),
                     'terms_url': source.get('terms_url'), 'source_policy': source_policy(source), 'raw_snapshot_sha256': snapshot_hash,
@@ -1527,6 +1582,12 @@ class NewsAcquirer:
                               'raw_snapshot_sha256': snapshot_hash, 'content_cluster': fingerprint,
                               'topic_candidate': topic, 'canonical_response_url': url,
                               'local_reextraction': reextraction is not None})
+            if reextraction is not None and mutation_receipts is not None:
+                # Capture this transaction's exact immutable audit event.
+                # A different worker's interleaved mutation has no receipt.
+                own_event = con.execute('SELECT seq,event_hash FROM audit WHERE seq=last_insert_rowid()').fetchone()
+                mutation_receipts.append({'seq': own_event['seq'], 'event_hash': own_event['event_hash'],
+                                          'document_id': doc_id})
             # Project only real original text, using the acquisition index's
             # captured bank revision. A concurrent bank import invalidates this
             # disposable lookup instead of stamping stale IDs as current.
@@ -1547,7 +1608,7 @@ class NewsAcquirer:
             session.body(row['id'], new=previous_document != doc_id)
         return {'status': 'unchanged' if previous_document == doc_id else 'upgraded', 'document_id': doc_id}
 
-    def reextract_snapshots(self, limit=1000, *, progress=None, cancelable=False):
+    def reextract_snapshots(self, limit=1000, *, progress=None, cancelable=False, mutation_receipts=None):
         """Upgrade known old extractors from hashed local HTML; never use HTTP.
 
         A receipt makes unchanged bodies idempotent without mutating immutable
@@ -1564,7 +1625,7 @@ class NewsAcquirer:
                 "JOIN documents d ON d.id=n.document_id LEFT JOIN news_extraction_receipts r "
                 "ON r.article_id=n.id AND r.document_id=n.document_id WHERE n.scope='full_article' "
                 "AND COALESCE(r.version,json_extract(d.metadata,'$.extraction_version'),'') "
-                "IN ('article-main-1','article-main-2','article-main-3','article-main-4') ORDER BY n.id LIMIT ?",
+                "IN ('article-main-1','article-main-2','article-main-3','article-main-4','article-main-5','article-main-6') ORDER BY n.id LIMIT ?",
                 (-1 if maximum is None else maximum,)).fetchall()
         total = len(rows)
         if total:
@@ -1601,14 +1662,15 @@ class NewsAcquirer:
                           'sha256': metadata.get('fetch_sha256')}
                 original = dict(row, metadata=metadata)
                 try:
-                    conserved = self._conserve_article(payload, source, result, reextraction=original)
+                    conserved = self._conserve_article(payload, source, result, reextraction=original,
+                                                       mutation_receipts=mutation_receipts)
                     counts[conserved['status']] += 1
                 except _InsufficientArticleText:
                     reason = 'La captura guardada no contiene un cuerpo editorial suficiente; requiere nueva adquisición.'
                     counts['insufficient' if self._invalidate_snapshot_body(row, reason) else 'concurrent_skip'] += 1
             _emit_progress(progress, 'attribution', index + 1, total, 'artículos',
                            f'{index + 1} de {total} capturas comprobadas, sin solicitudes de red.')
-        counts['examined'] = sum(counts[key] for key in ('upgraded','unchanged','concurrent_skip','insufficient','unavailable_or_invalid_snapshot'))
+        counts['examined'] = sum(counts[key] for key in ('upgraded','unchanged','concurrent_skip','insufficient','multimedia_reference','unavailable_or_invalid_snapshot'))
         if total:
             _emit_progress(progress, 'attribution', counts['examined'], total, 'artículos',
                            'Comprobación de capturas finalizada.', event='finish', **counts)
@@ -1624,11 +1686,14 @@ class NewsAcquirer:
             con.execute("UPDATE news_articles SET document_id=NULL,retrieved_at=NULL,scope='feed_metadata_only',"
                         "status='insufficient_body',error=?,attributed_signature=NULL WHERE id=?", (reason, row['article_id']))
             self._retire_replaced_document(con, row['document_id'], None, row['article_id'])
+            # Original-body matches are no longer valid retrieval candidates.
+            con.execute("DELETE FROM meta WHERE key='news_projection_ready'")
+            con.execute("UPDATE meta SET value=CAST(value AS INTEGER)+1 WHERE key='news_data_revision'")
             self.store._audit(con, 'news_snapshot_insufficient', {'article_id': row['article_id'],
                 'document_id': row['document_id'], 'reason': reason})
         return True
 
-    def _retire_replaced_document(self, con, previous_document, document_id, article_id):
+    def _retire_replaced_document(self, con, previous_document, document_id, article_id, *, reason=None):
         """Keep replaced bodies/reviews in history, never as active evidence.
 
         Same-publisher duplicates can share a document. Its evidence remains
@@ -1642,7 +1707,7 @@ class NewsAcquirer:
         rows = con.execute('SELECT e.entity_id,e.analysis,e.review,n.resolution FROM evidence e '
                            'LEFT JOIN news_identity_links n ON n.document_id=e.document_id AND n.entity_id=e.entity_id '
                            'WHERE e.document_id=?', (previous_document,)).fetchall()
-        reason = 'El artículo tiene una nueva versión de texto; la evidencia y revisión anteriores quedan sólo en el historial.'
+        reason = reason or 'El artículo tiene una nueva versión de texto; la evidencia y revisión anteriores quedan sólo en el historial.'
         for old in rows:
             history_id = digest(canonical(['article_body_replaced', previous_document, document_id,
                                            old['entity_id'], old['resolution'], old['review'], revision]))
@@ -1711,7 +1776,7 @@ class NewsAcquirer:
                                     "AND json_extract(CASE WHEN json_valid(o.details) THEN o.details ELSE '{}' END,"
                                     "'$.publisher_phrase_lead.version')=1))" if projected else '')
                 params = ((previous, signature['bank_revision'], signature['relevance_version']) if projected else (previous,))
-                batch = reader.execute('SELECT id,canonical_url,source_id,title,summary,retrieved_at,validated_at FROM news_articles n '
+                batch = reader.execute('SELECT id,canonical_url,source_id,title,summary,retrieved_at,validated_at,scope FROM news_articles n '
                                        'WHERE id>?' + candidate_filter + ' ORDER BY id LIMIT 250', params).fetchall()
                 if not batch:
                     return
@@ -1733,6 +1798,8 @@ class NewsAcquirer:
                     continue
                 checked = row['validated_at'] or row['retrieved_at']
                 mode = getattr(self, '_active_cache_mode', 'reuse')
+                if row['scope'] == 'multimedia_reference' and mode != 'revalidate':
+                    continue
                 fresh = checked and (mode == 'local' or (mode != 'revalidate' and
                         time.time() - self._epoch(checked) < float(source.get('refresh_seconds', 86400))))
                 if fresh and getattr(self, '_session', None):
@@ -2020,6 +2087,7 @@ class NewsAcquirer:
         condition = threading.Condition()
         in_flight = set()
         last_activity = [0.]
+        idle_until = [0.]
         task_context = threading.local()
         discovery_counts = Counter(recovered)
         cached_summary = [self._runtime_queue()]
@@ -2116,6 +2184,16 @@ class NewsAcquirer:
                 with condition:
                     if counter[0] >= max_articles:
                         return
+                    # A single reader checks a quiet durable queue. Otherwise
+                    # every idle reader opens a SQLite write transaction four
+                    # times a second throughout a known host wait. Completion
+                    # notifications clear this hint immediately; a one-second
+                    # ceiling still observes work from another process.
+                    idle_remaining = idle_until[0] - time.monotonic()
+                    if idle_remaining > 0:
+                        condition.wait(timeout=min(.25, idle_remaining,
+                                                   max(0., deadline - time.monotonic())))
+                        continue
                     job = self.store.claim(lease_seconds=300, kind_prefix='news_', preferred_kind='news_article')
                     if job:
                         counter[0] += 1
@@ -2140,15 +2218,19 @@ class NewsAcquirer:
                     else:
                         # Idle workers remain available while a feed/query can
                         # enqueue articles. Previously they exited at this point.
+                        summary = self._runtime_queue(len(in_flight), in_flight)
                         if not in_flight:
-                            summary = self._runtime_queue()
                             due = summary['next_retry_at']
                             if (due is None or due > time.time() + max(0., deadline - time.monotonic())):
                                 return
                             if time.monotonic() - last_activity[0] >= 1:
                                 last_activity[0] = time.monotonic()
                                 report_activity(summary, f"Esperando el reintento programado hasta {summary['next_retry'] or 'la fecha permitida'}.")
-                        condition.wait(timeout=min(.25, max(0., deadline - time.monotonic())))
+                        due = summary['next_retry_at']
+                        pause = (max(.001, min(1., due - time.time()))
+                                 if due is not None else .001 if summary['ready'] else 1.)
+                        idle_until[0] = time.monotonic() + pause
+                        condition.wait(timeout=min(.25, pause, max(0., deadline - time.monotonic())))
                         continue
                 lease_stop = threading.Event()
                 def renew():
@@ -2200,6 +2282,7 @@ class NewsAcquirer:
                         discovery_counts['body_queued'] += body_info.get('queued', 0)
                         discovery_counts['body_skipped_budget'] += body_info.get('skipped', 0)
                     in_flight.discard(job['id'])
+                    idle_until[0] = 0.
                     if progress is not None:
                         summary = activity_summary()
                         elapsed = max(0., time.monotonic() - task['started'])
@@ -2267,14 +2350,17 @@ class NewsAcquirer:
                 'elapsed_seconds': round(time.monotonic() - started, 4),
                 'network_before': before, 'network_after': after, 'bank': self.stats()}
 
-    def attribute(self, limit=1000, force=False, *, progress=None, rescore=True, cancelable=False):
+    def attribute(self, limit=1000, force=False, *, progress=None, rescore=True, cancelable=False, mutation_receipts=None):
         from .engine import _emit_progress
         from .identity import IdentityResolver, entity_for_analysis, MODEL_VERSION, RULES_HASH
         from .nlp import analyze
         from .public_search import PUBLIC_SEARCH_KINDS
         metadata_only_sources = {source['id'] for source in self.sources()
                                  if source.get('kind') in PUBLIC_SEARCH_KINDS or source.get('discovery_only')}
-        reextraction = self.reextract_snapshots(limit, progress=progress, cancelable=cancelable)
+        from .news_body_quality import quarantine_existing_references
+        body_quality = quarantine_existing_references(self)
+        reextraction = self.reextract_snapshots(limit, progress=progress, cancelable=cancelable,
+                                               mutation_receipts=mutation_receipts)
         with self.store.connection() as con:
             # Read the entire identity universe and its revision in one snapshot.
             # A concurrent bank import must not lend a new revision to an old index.
@@ -2307,7 +2393,8 @@ class NewsAcquirer:
         for row in pending_rows():
             if cancelable and self.engine.stop_event.is_set():
                 break
-            if row['scope'] != 'full_article' and row['source_id'] in metadata_only_sources:
+            multimedia = row['scope'] == 'multimedia_reference'
+            if multimedia or (row['scope'] != 'full_article' and row['source_id'] in metadata_only_sources):
                 with self.store.connection() as con:
                     con.execute('BEGIN IMMEDIATE')
                     con.execute('UPDATE news_articles SET document_id=NULL,attributed_signature=? WHERE id=?',
@@ -2317,7 +2404,7 @@ class NewsAcquirer:
                     self.store._audit(con, 'news_discovery_metadata_not_evidence',
                                       {'article_id': row['id'], 'source_id': row['source_id'],
                                        'scope': row['scope'], 'reason': 'Discovery excerpts are leads, never article evidence.'})
-                counts['discovery_metadata_only'] += 1
+                counts['multimedia_reference' if multimedia else 'discovery_metadata_only'] += 1
                 processed += 1
                 _emit_progress(progress, 'attribution', processed, total, 'artículos',
                                'Pista de descubrimiento conservada; falta el cuerpo editorial.', article_id=row['id'])
@@ -2391,6 +2478,11 @@ class NewsAcquirer:
                        con.execute('SELECT count(*) FROM news_articles WHERE attributed_signature IS NULL OR attributed_signature!=?',
                                    (bank_signature,)).fetchone()[0])
         cancelled = bool(cancelable and self.engine.stop_event.is_set() and processed < total)
+        # Extraction and body-quality migrations invalidate this disposable
+        # lookup. Publish a complete current-bank snapshot before consumers
+        # read coverage; ensure_projection rolls back on cancellation or races.
+        from .news_projection import ensure_projection
+        ensure_projection(self, None)
         _emit_progress(progress, 'attribution', processed, total, 'artículos',
                        'Atribución detenida.' if cancelled else f'Lote de atribución finalizado; {pending} artículos pendientes.',
                        event='finish', pending=pending, cancelled=cancelled)
@@ -2400,7 +2492,8 @@ class NewsAcquirer:
         return {'articles_processed': processed, 'identity_links': dict(counts), 'entities_scored': scored,
                 'entities_affected': len(affected), 'pending': pending, 'cancelled': cancelled,
                 'identity_module': MODEL_VERSION,
-                'name_only_is_not_unique_identity': True, 'reextraction': reextraction}
+                'name_only_is_not_unique_identity': True, 'reextraction': reextraction,
+                'body_quality': body_quality}
 
     def stats(self):
         with self.store.connection() as con:
@@ -2416,7 +2509,7 @@ class NewsAcquirer:
             counts['truncated_feed_runs'] = con.execute("SELECT count(*) FROM news_discovery_runs WHERE kind='news_feed' AND json_extract(parser_metadata,'$.truncated')=1").fetchone()[0]
             return counts
 
-    def articles(self, limit=100, *, relevant_only=False):
+    def articles(self, limit=100, *, relevant_only=False, scope=None):
         with self.store.connection() as con:
             con.execute('BEGIN')
             if relevant_only:
@@ -2438,6 +2531,11 @@ class NewsAcquirer:
             else:
                 relevant = ''
                 arguments = ()
+            if scope is not None:
+                if scope not in ('full_article', 'multimedia_reference'):
+                    raise ValueError('Invalid news article scope filter')
+                relevant = ('WHERE (' + relevant[6:] + ') AND n.scope=? ' if relevant else 'WHERE n.scope=? ')
+                arguments = (*arguments, scope)
             return [dict(r) for r in con.execute('SELECT n.* FROM news_articles n ' + relevant +
                         'ORDER BY n.discovered_at DESC LIMIT ?', (*arguments, min(500, max(1, int(limit)))))]
 

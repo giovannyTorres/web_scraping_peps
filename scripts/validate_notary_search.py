@@ -138,6 +138,7 @@ def observed_fetcher(engine, args, events, fetches, directory, deadline):
 def _body_proof(engine, people):
     """Report original-body hashes and matches, without exporting article text."""
     index = RelevanceIndex(people)
+    folded_names = {person['id']: _fold(person['name']) for person in people}
     rows = []
     with engine.store.connection() as con:
         for row in con.execute('SELECT n.id,n.canonical_url,n.title,n.summary,n.published_at,n.scope,'
@@ -149,12 +150,13 @@ def _body_proof(engine, people):
             raw = gzip.decompress(snapshot.read_bytes()).decode('utf-8') if snapshot.exists() else ''
             body_rank = index.rank('', row['text'])
             metadata_rank = index.rank(row['title'], row['summary'])
+            folded_text = _fold(row['text'])
             rows.append({key: row[key] for key in ('id', 'canonical_url', 'published_at', 'scope', 'document_id')} |
                         {'body_chars': len(row['text']), 'body_sha256': row['content_hash'],
                          'raw_snapshot_sha256': snapshot_hash,
                          'raw_snapshot_hash_valid': bool(raw) and hashlib.sha256(raw.encode()).hexdigest() == snapshot_hash,
                          'explicit_paywall_metadata': bool(re.search(r'"isAccessibleForFree"\s*:\s*(?:false|"false")', raw, re.I)),
-                         'literal_name_mentions': {person['id']: _fold(row['text']).count(_fold(person['name'])) for person in people},
+                         'literal_name_mentions': {identifier: folded_text.count(name) for identifier, name in folded_names.items()},
                          'metadata_relevance': metadata_rank, 'original_body_relevance': body_rank,
                          'identity_confirmed': False, 'scored': False})
     return rows

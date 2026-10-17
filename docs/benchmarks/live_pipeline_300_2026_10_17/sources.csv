@@ -1,0 +1,12 @@
+source_id,planned,completed,pending,blocked_failed,http,originals,http_p95_cold_seconds,http_p95_resume_1_seconds,http_p95_resume_seconds
+duckduckgo_web,300,85,0,215,87,0,0.786565,,
+desinformemonos_index,300,300,0,0,310,9,6.693701,,
+periodicocontexto_search,300,300,0,0,395,93,2.115804,,1.721883
+plazadearmas_search,300,300,0,0,309,8,4.915592,,
+rioaxaca_search,300,300,0,0,327,23,4.092083,,1.931722
+elqueretano_search,300,300,0,0,313,12,2.696645,,
+laevidencia_search,300,300,0,0,314,13,2.521725,,
+avimexnews_search,300,300,0,0,452,150,2.15286,2.081812,
+contralinea_index,300,300,0,0,328,27,2.788827,,
+notisistema_search,300,300,0,0,339,23,1.162462,,0.324754
+zonadocs_search,300,300,0,0,320,18,1.972981,,

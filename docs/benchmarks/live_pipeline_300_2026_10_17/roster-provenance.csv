@@ -1,0 +1,301 @@
+﻿id,name,entity_group,state,municipality,notary_number,source_url,input_role_hint
+MUN-NL-001,Reynaldo Javier Cantú Montes,municipal_president,Nuevo León,Abasolo,,https://www.nl.gob.mx/sites/default/files/repositorio/Dependencias/Secretar%C3%ADa%20de%20Participaci%C3%B3n%20Ciudadana/Repositorios/20261001_directorio_alcaldias.pdf,presidente municipal
+MUN-NL-002,Aldo Castellanos Amaya,municipal_president,Nuevo León,Agualeguas,,https://www.nl.gob.mx/sites/default/files/repositorio/Dependencias/Secretar%C3%ADa%20de%20Participaci%C3%B3n%20Ciudadana/Repositorios/20261001_directorio_alcaldias.pdf,presidente municipal
+MUN-NL-003,Eduardo Leal Buenfil,municipal_president,Nuevo León,Allende,,https://www.nl.gob.mx/sites/default/files/repositorio/Dependencias/Secretar%C3%ADa%20de%20Participaci%C3%B3n%20Ciudadana/Repositorios/20261001_directorio_alcaldias.pdf,presidente municipal
+MUN-NL-004,Juan Manuel Mortón González,municipal_president,Nuevo León,Ciudad Anáhuac,,https://www.nl.gob.mx/sites/default/files/repositorio/Dependencias/Secretar%C3%ADa%20de%20Participaci%C3%B3n%20Ciudadana/Repositorios/20261001_directorio_alcaldias.pdf,presidente municipal
+MUN-NL-005,César Garza Arredondo,municipal_president,Nuevo León,Apodaca,,https://www.nl.gob.mx/sites/default/files/repositorio/Dependencias/Secretar%C3%ADa%20de%20Participaci%C3%B3n%20Ciudadana/Repositorios/20261001_directorio_alcaldias.pdf,presidente municipal
+MUN-NL-006,Martín Castillo Covarrubias,municipal_president,Nuevo León,Aramberri,,https://www.nl.gob.mx/sites/default/files/repositorio/Dependencias/Secretar%C3%ADa%20de%20Participaci%C3%B3n%20Ciudadana/Repositorios/20261001_directorio_alcaldias.pdf,presidente municipal
+MUN-NL-007,Mario Alfonso Reséndez Garza,municipal_president,Nuevo León,Bustamante,,https://www.nl.gob.mx/sites/default/files/repositorio/Dependencias/Secretar%C3%ADa%20de%20Participaci%C3%B3n%20Ciudadana/Repositorios/20261001_directorio_alcaldias.pdf,presidente municipal
+MUN-NL-008,Carlos Rafael Rodríguez Gómez,municipal_president,Nuevo León,Cadereyta Jiménez,,https://www.nl.gob.mx/sites/default/files/repositorio/Dependencias/Secretar%C3%ADa%20de%20Participaci%C3%B3n%20Ciudadana/Repositorios/20261001_directorio_alcaldias.pdf,presidente municipal
+MUN-NL-009,Baltazar Martínez Montemayor,municipal_president,Nuevo León,Cerralvo,,https://www.nl.gob.mx/sites/default/files/repositorio/Dependencias/Secretar%C3%ADa%20de%20Participaci%C3%B3n%20Ciudadana/Repositorios/20261001_directorio_alcaldias.pdf,presidente municipal
+MUN-NL-010,Alejo Rodríguez Cantú,municipal_president,Nuevo León,China,,https://www.nl.gob.mx/sites/default/files/repositorio/Dependencias/Secretar%C3%ADa%20de%20Participaci%C3%B3n%20Ciudadana/Repositorios/20261001_directorio_alcaldias.pdf,presidente municipal
+MUN-NL-011,Miguel Ángel Quiroga Treviño,municipal_president,Nuevo León,Ciénega de Flores,,https://www.nl.gob.mx/sites/default/files/repositorio/Dependencias/Secretar%C3%ADa%20de%20Participaci%C3%B3n%20Ciudadana/Repositorios/20261001_directorio_alcaldias.pdf,presidente municipal
+MUN-NL-012,Juan José Vargas Rosales,municipal_president,Nuevo León,Doctor Arroyo,,https://www.nl.gob.mx/sites/default/files/repositorio/Dependencias/Secretar%C3%ADa%20de%20Participaci%C3%B3n%20Ciudadana/Repositorios/20261001_directorio_alcaldias.pdf,presidente municipal
+MUN-NL-013,José Guadalupe Ríos Ríos,municipal_president,Nuevo León,Doctor Coss,,https://www.nl.gob.mx/sites/default/files/repositorio/Dependencias/Secretar%C3%ADa%20de%20Participaci%C3%B3n%20Ciudadana/Repositorios/20261001_directorio_alcaldias.pdf,presidente municipal
+MUN-NL-014,Alejandro González Treviño,municipal_president,Nuevo León,Doctor González,,https://www.nl.gob.mx/sites/default/files/repositorio/Dependencias/Secretar%C3%ADa%20de%20Participaci%C3%B3n%20Ciudadana/Repositorios/20261001_directorio_alcaldias.pdf,presidente municipal
+MUN-NL-015,Gerardo Alfonso De la Maza Villarreal,municipal_president,Nuevo León,El Carmen,,https://www.nl.gob.mx/sites/default/files/repositorio/Dependencias/Secretar%C3%ADa%20de%20Participaci%C3%B3n%20Ciudadana/Repositorios/20261001_directorio_alcaldias.pdf,presidente municipal
+MUN-NL-016,Alejandra Ramírez Díaz,municipal_president,Nuevo León,Galeana,,https://www.nl.gob.mx/sites/default/files/repositorio/Dependencias/Secretar%C3%ADa%20de%20Participaci%C3%B3n%20Ciudadana/Repositorios/20261001_directorio_alcaldias.pdf,presidente municipal
+MUN-NL-017,Manuel Guerra Cavazos,municipal_president,Nuevo León,García,,https://www.nl.gob.mx/sites/default/files/repositorio/Dependencias/Secretar%C3%ADa%20de%20Participaci%C3%B3n%20Ciudadana/Repositorios/20261001_directorio_alcaldias.pdf,presidente municipal
+MUN-NL-018,Héctor García García,municipal_president,Nuevo León,Guadalupe,,https://www.nl.gob.mx/sites/default/files/repositorio/Dependencias/Secretar%C3%ADa%20de%20Participaci%C3%B3n%20Ciudadana/Repositorios/20261001_directorio_alcaldias.pdf,presidente municipal
+MUN-NL-019,Patricia Frinee Cantú Garza,municipal_president,Nuevo León,General Bravo,,https://www.nl.gob.mx/sites/default/files/repositorio/Dependencias/Secretar%C3%ADa%20de%20Participaci%C3%B3n%20Ciudadana/Repositorios/20261001_directorio_alcaldias.pdf,presidente municipal
+MUN-NL-020,Manuel Meza Muñiz,municipal_president,Nuevo León,General Escobedo,,https://www.nl.gob.mx/sites/default/files/repositorio/Dependencias/Secretar%C3%ADa%20de%20Participaci%C3%B3n%20Ciudadana/Repositorios/20261001_directorio_alcaldias.pdf,presidente municipal
+MUN-NL-021,David Jonathan Sánchez Quintanilla,municipal_president,Nuevo León,General Terán,,https://www.nl.gob.mx/sites/default/files/repositorio/Dependencias/Secretar%C3%ADa%20de%20Participaci%C3%B3n%20Ciudadana/Repositorios/20261001_directorio_alcaldias.pdf,presidente municipal
+MUN-NL-022,Maribel Hinojosa García,municipal_president,Nuevo León,General Treviño,,https://www.nl.gob.mx/sites/default/files/repositorio/Dependencias/Secretar%C3%ADa%20de%20Participaci%C3%B3n%20Ciudadana/Repositorios/20261001_directorio_alcaldias.pdf,presidente municipal
+MUN-NL-023,Elva Deyanira Martínez González,municipal_president,Nuevo León,General Zuazua,,https://www.nl.gob.mx/sites/default/files/repositorio/Dependencias/Secretar%C3%ADa%20de%20Participaci%C3%B3n%20Ciudadana/Repositorios/20261001_directorio_alcaldias.pdf,presidente municipal
+MUN-NL-024,Judith Amaranta Ibarra Rodríguez,municipal_president,Nuevo León,General Zaragoza,,https://www.nl.gob.mx/sites/default/files/repositorio/Dependencias/Secretar%C3%ADa%20de%20Participaci%C3%B3n%20Ciudadana/Repositorios/20261001_directorio_alcaldias.pdf,presidente municipal
+MUN-NL-025,Adriana Margarita Garza Gutiérrez,municipal_president,Nuevo León,Hidalgo,,https://www.nl.gob.mx/sites/default/files/repositorio/Dependencias/Secretar%C3%ADa%20de%20Participaci%C3%B3n%20Ciudadana/Repositorios/20261001_directorio_alcaldias.pdf,presidente municipal
+MUN-NL-026,Rafael René González Martínez,municipal_president,Nuevo León,Higueras,,https://www.nl.gob.mx/sites/default/files/repositorio/Dependencias/Secretar%C3%ADa%20de%20Participaci%C3%B3n%20Ciudadana/Repositorios/20261001_directorio_alcaldias.pdf,presidente municipal
+MUN-NL-027,Jesús Homero Aguilar Hernández,municipal_president,Nuevo León,Hualahuises,,https://www.nl.gob.mx/sites/default/files/repositorio/Dependencias/Secretar%C3%ADa%20de%20Participaci%C3%B3n%20Ciudadana/Repositorios/20261001_directorio_alcaldias.pdf,presidente municipal
+MUN-NL-028,Arnoldo Carreón Rodríguez,municipal_president,Nuevo León,Iturbide,,https://www.nl.gob.mx/sites/default/files/repositorio/Dependencias/Secretar%C3%ADa%20de%20Participaci%C3%B3n%20Ciudadana/Repositorios/20261001_directorio_alcaldias.pdf,presidente municipal
+MUN-NL-029,Mónica Marisela Oyervides Acosta,municipal_president,Nuevo León,Juárez,,https://www.nl.gob.mx/sites/default/files/repositorio/Dependencias/Secretar%C3%ADa%20de%20Participaci%C3%B3n%20Ciudadana/Repositorios/20261001_directorio_alcaldias.pdf,presidente municipal
+MUN-NL-030,Adriana Deyanira Martínez Zúñiga,municipal_president,Nuevo León,Lampazos de Naranjo,,https://www.nl.gob.mx/sites/default/files/repositorio/Dependencias/Secretar%C3%ADa%20de%20Participaci%C3%B3n%20Ciudadana/Repositorios/20261001_directorio_alcaldias.pdf,presidente municipal
+MUN-NL-031,Gerardo Guzmán González,municipal_president,Nuevo León,Linares,,https://www.nl.gob.mx/sites/default/files/repositorio/Dependencias/Secretar%C3%ADa%20de%20Participaci%C3%B3n%20Ciudadana/Repositorios/20261001_directorio_alcaldias.pdf,presidente municipal
+MUN-NL-032,Janett Leal Leal,municipal_president,Nuevo León,Los Aldamas,,https://www.nl.gob.mx/sites/default/files/repositorio/Dependencias/Secretar%C3%ADa%20de%20Participaci%C3%B3n%20Ciudadana/Repositorios/20261001_directorio_alcaldias.pdf,presidente municipal
+MUN-NL-033,Héctor Raúl González Garza,municipal_president,Nuevo León,Los Herreras,,https://www.nl.gob.mx/sites/default/files/repositorio/Dependencias/Secretar%C3%ADa%20de%20Participaci%C3%B3n%20Ciudadana/Repositorios/20261001_directorio_alcaldias.pdf,presidente municipal
+MUN-NL-034,Delia Lizeth Leal Rios,municipal_president,Nuevo León,Los Ramones,,https://www.nl.gob.mx/sites/default/files/repositorio/Dependencias/Secretar%C3%ADa%20de%20Participaci%C3%B3n%20Ciudadana/Repositorios/20261001_directorio_alcaldias.pdf,presidente municipal
+MUN-NL-035,Juan Carlos Rosales Herrera,municipal_president,Nuevo León,Marín,,https://www.nl.gob.mx/sites/default/files/repositorio/Dependencias/Secretar%C3%ADa%20de%20Participaci%C3%B3n%20Ciudadana/Repositorios/20261001_directorio_alcaldias.pdf,presidente municipal
+MUN-NL-036,Omar Ramos García,municipal_president,Nuevo León,Melchor Ocampo,,https://www.nl.gob.mx/sites/default/files/repositorio/Dependencias/Secretar%C3%ADa%20de%20Participaci%C3%B3n%20Ciudadana/Repositorios/20261001_directorio_alcaldias.pdf,presidente municipal
+MUN-NL-037,Fidencio Gerardo Zavala González,municipal_president,Nuevo León,Mier y Noriega,,https://www.nl.gob.mx/sites/default/files/repositorio/Dependencias/Secretar%C3%ADa%20de%20Participaci%C3%B3n%20Ciudadana/Repositorios/20261001_directorio_alcaldias.pdf,presidente municipal
+MUN-NL-038,Edgar Candelario Molina Elizondo,municipal_president,Nuevo León,Mina,,https://www.nl.gob.mx/sites/default/files/repositorio/Dependencias/Secretar%C3%ADa%20de%20Participaci%C3%B3n%20Ciudadana/Repositorios/20261001_directorio_alcaldias.pdf,presidente municipal
+MUN-NL-039,Miguel Ángel Salazar Rangel,municipal_president,Nuevo León,Montemorelos,,https://www.nl.gob.mx/sites/default/files/repositorio/Dependencias/Secretar%C3%ADa%20de%20Participaci%C3%B3n%20Ciudadana/Repositorios/20261001_directorio_alcaldias.pdf,presidente municipal
+MUN-NL-040,Adrián Emilio De la Garza Santos,municipal_president,Nuevo León,Monterrey,,https://www.nl.gob.mx/sites/default/files/repositorio/Dependencias/Secretar%C3%ADa%20de%20Participaci%C3%B3n%20Ciudadana/Repositorios/20261001_directorio_alcaldias.pdf,presidente municipal
+MUN-NL-041,Ana Iza Oliveira Treviño,municipal_president,Nuevo León,Parás,,https://www.nl.gob.mx/sites/default/files/repositorio/Dependencias/Secretar%C3%ADa%20de%20Participaci%C3%B3n%20Ciudadana/Repositorios/20261001_directorio_alcaldias.pdf,presidente municipal
+MUN-NL-042,Francisco Esquivel Garza,municipal_president,Nuevo León,Pesquería,,https://www.nl.gob.mx/sites/default/files/repositorio/Dependencias/Secretar%C3%ADa%20de%20Participaci%C3%B3n%20Ciudadana/Repositorios/20261001_directorio_alcaldias.pdf,presidente municipal
+MUN-NL-043,Rolando Montoya Del Bosque,municipal_president,Nuevo León,Rayones,,https://www.nl.gob.mx/sites/default/files/repositorio/Dependencias/Secretar%C3%ADa%20de%20Participaci%C3%B3n%20Ciudadana/Repositorios/20261001_directorio_alcaldias.pdf,presidente municipal
+MUN-NL-044,Daniel Omar González Garza,municipal_president,Nuevo León,Sabinas Hidalgo,,https://www.nl.gob.mx/sites/default/files/repositorio/Dependencias/Secretar%C3%ADa%20de%20Participaci%C3%B3n%20Ciudadana/Repositorios/20261001_directorio_alcaldias.pdf,presidente municipal
+MUN-NL-045,Raúl Cantú De la Garza,municipal_president,Nuevo León,Salinas Victoria,,https://www.nl.gob.mx/sites/default/files/repositorio/Dependencias/Secretar%C3%ADa%20de%20Participaci%C3%B3n%20Ciudadana/Repositorios/20261001_directorio_alcaldias.pdf,presidente municipal
+MUN-NL-046,Daniel Carrillo Martínez,municipal_president,Nuevo León,San Nicolás de los Garza,,https://www.nl.gob.mx/sites/default/files/repositorio/Dependencias/Secretar%C3%ADa%20de%20Participaci%C3%B3n%20Ciudadana/Repositorios/20261001_directorio_alcaldias.pdf,presidente municipal
+MUN-NL-047,Mauricio Farah Giacoman,municipal_president,Nuevo León,San Pedro Garza García,,https://www.nl.gob.mx/sites/default/files/repositorio/Dependencias/Secretar%C3%ADa%20de%20Participaci%C3%B3n%20Ciudadana/Repositorios/20261001_directorio_alcaldias.pdf,presidente municipal
+MUN-NL-048,Jesús Ángel Nava Rivera,municipal_president,Nuevo León,Santa Catarina,,https://www.nl.gob.mx/sites/default/files/repositorio/Dependencias/Secretar%C3%ADa%20de%20Participaci%C3%B3n%20Ciudadana/Repositorios/20261001_directorio_alcaldias.pdf,presidente municipal
+MUN-NL-049,David De la Peña Marroquín,municipal_president,Nuevo León,Santiago,,https://www.nl.gob.mx/sites/default/files/repositorio/Dependencias/Secretar%C3%ADa%20de%20Participaci%C3%B3n%20Ciudadana/Repositorios/20261001_directorio_alcaldias.pdf,presidente municipal
+MUN-NL-050,Erasmo Serna Vázquez,municipal_president,Nuevo León,Vallecillo,,https://www.nl.gob.mx/sites/default/files/repositorio/Dependencias/Secretar%C3%ADa%20de%20Participaci%C3%B3n%20Ciudadana/Repositorios/20261001_directorio_alcaldias.pdf,presidente municipal
+MUN-NL-051,Luis Eduardo Sepúlveda De León,municipal_president,Nuevo León,Villaldama,,https://www.nl.gob.mx/sites/default/files/repositorio/Dependencias/Secretar%C3%ADa%20de%20Participaci%C3%B3n%20Ciudadana/Repositorios/20261001_directorio_alcaldias.pdf,presidente municipal
+MUN-JAL-001,Sandra Castañeda Alatorre,municipal_president,Jalisco,Acatic,,https://iieg.gob.mx/ns/wp-content/uploads/2024/11/PresidentesMunicipalesCoaliciones2Nov24.pdf,presidente municipal
+MUN-JAL-002,Jaime Enrique Velasco López,municipal_president,Jalisco,Acatlán de Juárez,,https://iieg.gob.mx/ns/wp-content/uploads/2024/11/PresidentesMunicipalesCoaliciones2Nov24.pdf,presidente municipal
+MUN-JAL-003,José Bladimir Arreola Álvarez,municipal_president,Jalisco,Ahualulco de Mercado,,https://iieg.gob.mx/ns/wp-content/uploads/2024/11/PresidentesMunicipalesCoaliciones2Nov24.pdf,presidente municipal
+MUN-JAL-004,Neri Quintero Barragán,municipal_president,Jalisco,Amacueca,,https://iieg.gob.mx/ns/wp-content/uploads/2024/11/PresidentesMunicipalesCoaliciones2Nov24.pdf,presidente municipal
+MUN-JAL-005,Lionel Partida Ortiz,municipal_president,Jalisco,Amatitán,,https://iieg.gob.mx/ns/wp-content/uploads/2024/11/PresidentesMunicipalesCoaliciones2Nov24.pdf,presidente municipal
+MUN-JAL-006,Martha Catalina Loza Castro,municipal_president,Jalisco,Ameca,,https://iieg.gob.mx/ns/wp-content/uploads/2024/11/PresidentesMunicipalesCoaliciones2Nov24.pdf,presidente municipal
+MUN-JAL-007,José Adrián Rodríguez García,municipal_president,Jalisco,San Juanito de Escobedo,,https://iieg.gob.mx/ns/wp-content/uploads/2024/11/PresidentesMunicipalesCoaliciones2Nov24.pdf,presidente municipal
+MUN-JAL-008,José Socorro Martínez Velázquez,municipal_president,Jalisco,Arandas,,https://iieg.gob.mx/ns/wp-content/uploads/2024/11/PresidentesMunicipalesCoaliciones2Nov24.pdf,presidente municipal
+MUN-JAL-009,Gildardo Partida Hermosillo,municipal_president,Jalisco,El Arenal,,https://iieg.gob.mx/ns/wp-content/uploads/2024/11/PresidentesMunicipalesCoaliciones2Nov24.pdf,presidente municipal
+MUN-JAL-010,Victor Manuel Vázquez Beas,municipal_president,Jalisco,Atemajac de Brizuela,,https://iieg.gob.mx/ns/wp-content/uploads/2024/11/PresidentesMunicipalesCoaliciones2Nov24.pdf,presidente municipal
+MUN-JAL-011,Carlos Pelayo González,municipal_president,Jalisco,Atengo,,https://iieg.gob.mx/ns/wp-content/uploads/2024/11/PresidentesMunicipalesCoaliciones2Nov24.pdf,presidente municipal
+MUN-JAL-012,Rosalio Villaseñor Álvarez,municipal_president,Jalisco,Atenguillo,,https://iieg.gob.mx/ns/wp-content/uploads/2024/11/PresidentesMunicipalesCoaliciones2Nov24.pdf,presidente municipal
+MUN-JAL-013,Martha Liliana Padilla Ramírez,municipal_president,Jalisco,Atotonilco el Alto,,https://iieg.gob.mx/ns/wp-content/uploads/2024/11/PresidentesMunicipalesCoaliciones2Nov24.pdf,presidente municipal
+MUN-JAL-014,Juan Francisco Osorio de la Cruz,municipal_president,Jalisco,Atoyac,,https://iieg.gob.mx/ns/wp-content/uploads/2024/11/PresidentesMunicipalesCoaliciones2Nov24.pdf,presidente municipal
+MUN-JAL-015,Gustavo Salvador Robles Martínez,municipal_president,Jalisco,Autlán de Navarro,,https://iieg.gob.mx/ns/wp-content/uploads/2024/11/PresidentesMunicipalesCoaliciones2Nov24.pdf,presidente municipal
+MUN-JAL-016,Guillermo Rodríguez Escoto,municipal_president,Jalisco,Ayotlán,,https://iieg.gob.mx/ns/wp-content/uploads/2024/11/PresidentesMunicipalesCoaliciones2Nov24.pdf,presidente municipal
+MUN-JAL-018,Ricardo Hernández Becerra,municipal_president,Jalisco,La Barca,,https://iieg.gob.mx/ns/wp-content/uploads/2024/11/PresidentesMunicipalesCoaliciones2Nov24.pdf,presidente municipal
+MUN-JAL-020,Joaquín Romero Bravo,municipal_president,Jalisco,Cabo Corrientes,,https://iieg.gob.mx/ns/wp-content/uploads/2024/11/PresidentesMunicipalesCoaliciones2Nov24.pdf,presidente municipal
+MUN-JAL-022,Apolonio de Jesús Pelayo Flores,municipal_president,Jalisco,Cihuatlán,,https://iieg.gob.mx/ns/wp-content/uploads/2024/11/PresidentesMunicipalesCoaliciones2Nov24.pdf,presidente municipal
+MUN-JAL-023,Magali Casillas Contreras,municipal_president,Jalisco,Zapotlán el Grande,,https://iieg.gob.mx/ns/wp-content/uploads/2024/11/PresidentesMunicipalesCoaliciones2Nov24.pdf,presidente municipal
+MUN-JAL-024,Luis Armando Aldana González,municipal_president,Jalisco,Cocula,,https://iieg.gob.mx/ns/wp-content/uploads/2024/11/PresidentesMunicipalesCoaliciones2Nov24.pdf,presidente municipal
+MUN-JAL-025,José Julián Quezada Santoyo,municipal_president,Jalisco,Colotlán,,https://iieg.gob.mx/ns/wp-content/uploads/2024/11/PresidentesMunicipalesCoaliciones2Nov24.pdf,presidente municipal
+MUN-JAL-026,Gerardo López Cuellar,municipal_president,Jalisco,Concepción de Buenos Aires,,https://iieg.gob.mx/ns/wp-content/uploads/2024/11/PresidentesMunicipalesCoaliciones2Nov24.pdf,presidente municipal
+MUN-JAL-027,María del Rosario Delgado Camberos,municipal_president,Jalisco,Cuautitlán de García Barragán,,https://iieg.gob.mx/ns/wp-content/uploads/2024/11/PresidentesMunicipalesCoaliciones2Nov24.pdf,presidente municipal
+MUN-JAL-028,Luz del Carmen López Valle,municipal_president,Jalisco,Cuautla,,https://iieg.gob.mx/ns/wp-content/uploads/2024/11/PresidentesMunicipalesCoaliciones2Nov24.pdf,presidente municipal
+MUN-JAL-029,Ubaldo Chávez Delgadillo,municipal_president,Jalisco,Cuquío,,https://iieg.gob.mx/ns/wp-content/uploads/2024/11/PresidentesMunicipalesCoaliciones2Nov24.pdf,presidente municipal
+MUN-JAL-030,Alejandro de Jesús Aguirre Curiel,municipal_president,Jalisco,Chapala,,https://iieg.gob.mx/ns/wp-content/uploads/2024/11/PresidentesMunicipalesCoaliciones2Nov24.pdf,presidente municipal
+MUN-JAL-031,Silvino Yáñez López,municipal_president,Jalisco,Chimaltitán,,https://iieg.gob.mx/ns/wp-content/uploads/2024/11/PresidentesMunicipalesCoaliciones2Nov24.pdf,presidente municipal
+MUN-JAL-032,Álvaro González Alvarado,municipal_president,Jalisco,Chiquilistlán,,https://iieg.gob.mx/ns/wp-content/uploads/2024/11/PresidentesMunicipalesCoaliciones2Nov24.pdf,presidente municipal
+MUN-JAL-033,Fernando Villaseñor Castro,municipal_president,Jalisco,Degollado,,https://iieg.gob.mx/ns/wp-content/uploads/2024/11/PresidentesMunicipalesCoaliciones2Nov24.pdf,presidente municipal
+MUN-JAL-034,Rosa Angelica Rivera González,municipal_president,Jalisco,Ejutla,,https://iieg.gob.mx/ns/wp-content/uploads/2024/11/PresidentesMunicipalesCoaliciones2Nov24.pdf,presidente municipal
+MUN-JAL-035,Erika Adriana Cuevas Fuentes,municipal_president,Jalisco,Encarnación de Díaz,,https://iieg.gob.mx/ns/wp-content/uploads/2024/11/PresidentesMunicipalesCoaliciones2Nov24.pdf,presidente municipal
+MUN-JAL-036,Carlos Martínez Reyes,municipal_president,Jalisco,Etzatlán,,https://iieg.gob.mx/ns/wp-content/uploads/2024/11/PresidentesMunicipalesCoaliciones2Nov24.pdf,presidente municipal
+MUN-JAL-037,Milton Carlos Cárdenas Osorio,municipal_president,Jalisco,El Grullo,,https://iieg.gob.mx/ns/wp-content/uploads/2024/11/PresidentesMunicipalesCoaliciones2Nov24.pdf,presidente municipal
+MUN-JAL-038,Viridiana Rodríguez Topete,municipal_president,Jalisco,Guachinango,,https://iieg.gob.mx/ns/wp-content/uploads/2024/11/PresidentesMunicipalesCoaliciones2Nov24.pdf,presidente municipal
+MUN-JAL-039,Veronica Delgadillo García,municipal_president,Jalisco,Guadalajara,,https://iieg.gob.mx/ns/wp-content/uploads/2024/11/PresidentesMunicipalesCoaliciones2Nov24.pdf,presidente municipal
+MUN-JAL-040,Teresa de Jesús González Carmona,municipal_president,Jalisco,Hostotipaquillo,,https://iieg.gob.mx/ns/wp-content/uploads/2024/11/PresidentesMunicipalesCoaliciones2Nov24.pdf,presidente municipal
+MUN-JAL-041,Hilda Díaz de Santiago,municipal_president,Jalisco,Huejúcar,,https://iieg.gob.mx/ns/wp-content/uploads/2024/11/PresidentesMunicipalesCoaliciones2Nov24.pdf,presidente municipal
+MUN-JAL-042,Miguel Pérez Graciano,municipal_president,Jalisco,Huejuquilla el Alto,,https://iieg.gob.mx/ns/wp-content/uploads/2024/11/PresidentesMunicipalesCoaliciones2Nov24.pdf,presidente municipal
+MUN-JAL-043,Luis Arias Madrigal,municipal_president,Jalisco,La Huerta,,https://iieg.gob.mx/ns/wp-content/uploads/2024/11/PresidentesMunicipalesCoaliciones2Nov24.pdf,presidente municipal
+MUN-JAL-044,José Heriberto García Murillo,municipal_president,Jalisco,Ixtlahuacán de Los Membrillos,,https://iieg.gob.mx/ns/wp-content/uploads/2024/11/PresidentesMunicipalesCoaliciones2Nov24.pdf,presidente municipal
+MUN-JAL-045,Leoncio Guzmán González,municipal_president,Jalisco,Ixtlahuacán del Río,,https://iieg.gob.mx/ns/wp-content/uploads/2024/11/PresidentesMunicipalesCoaliciones2Nov24.pdf,presidente municipal
+MUN-JAL-046,Judith Macías Ramírez,municipal_president,Jalisco,Jalostotitlán,,https://iieg.gob.mx/ns/wp-content/uploads/2024/11/PresidentesMunicipalesCoaliciones2Nov24.pdf,presidente municipal
+MUN-JAL-047,César Celestino Molina Sahagun,municipal_president,Jalisco,Jamay,,https://iieg.gob.mx/ns/wp-content/uploads/2024/11/PresidentesMunicipalesCoaliciones2Nov24.pdf,presidente municipal
+MUN-JAL-048,Olivia Sevilla López,municipal_president,Jalisco,Jesús María,,https://iieg.gob.mx/ns/wp-content/uploads/2024/11/PresidentesMunicipalesCoaliciones2Nov24.pdf,presidente municipal
+MUN-JAL-049,Hisel González Mendoza,municipal_president,Jalisco,Jilotlán de los Dolores,,https://iieg.gob.mx/ns/wp-content/uploads/2024/11/PresidentesMunicipalesCoaliciones2Nov24.pdf,presidente municipal
+MUN-JAL-050,Hugo David García Vargas,municipal_president,Jalisco,Jocotepec,,https://iieg.gob.mx/ns/wp-content/uploads/2024/11/PresidentesMunicipalesCoaliciones2Nov24.pdf,presidente municipal
+MUN-JAL-051,Ana Rosa Vergara Angel,municipal_president,Jalisco,Juanacatlán,,https://iieg.gob.mx/ns/wp-content/uploads/2024/11/PresidentesMunicipalesCoaliciones2Nov24.pdf,presidente municipal
+MUN-JAL-052,Silvia Deniz Cobian Osorio,municipal_president,Jalisco,Juchitlán,,https://iieg.gob.mx/ns/wp-content/uploads/2024/11/PresidentesMunicipalesCoaliciones2Nov24.pdf,presidente municipal
+MUN-JAL-053,Edgar Alfredo González Chávez,municipal_president,Jalisco,Lagos de Moreno,,https://iieg.gob.mx/ns/wp-content/uploads/2024/11/PresidentesMunicipalesCoaliciones2Nov24.pdf,presidente municipal
+MUN-JAL-054,Nelson González Figueroa,municipal_president,Jalisco,El Limón,,https://iieg.gob.mx/ns/wp-content/uploads/2024/11/PresidentesMunicipalesCoaliciones2Nov24.pdf,presidente municipal
+MUN-JAL-055,Marco Trejo Tellez Girón,municipal_president,Jalisco,Magdalena,,https://iieg.gob.mx/ns/wp-content/uploads/2024/11/PresidentesMunicipalesCoaliciones2Nov24.pdf,presidente municipal
+MUN-JAL-056,Aricela López López,municipal_president,Jalisco,Santa María del Oro,,https://iieg.gob.mx/ns/wp-content/uploads/2024/11/PresidentesMunicipalesCoaliciones2Nov24.pdf,presidente municipal
+MUN-JAL-057,Héctor Gonzalo Díaz Díaz,municipal_president,Jalisco,La Manzanilla de la Paz,,https://iieg.gob.mx/ns/wp-content/uploads/2024/11/PresidentesMunicipalesCoaliciones2Nov24.pdf,presidente municipal
+MUN-JAL-058,Marco Antonio Rubio López,municipal_president,Jalisco,Mascota,,https://iieg.gob.mx/ns/wp-content/uploads/2024/11/PresidentesMunicipalesCoaliciones2Nov24.pdf,presidente municipal
+MUN-JAL-059,Amanda Albarrán Ramos,municipal_president,Jalisco,Mazamitla,,https://iieg.gob.mx/ns/wp-content/uploads/2024/11/PresidentesMunicipalesCoaliciones2Nov24.pdf,presidente municipal
+MUN-JAL-060,Jazmín Celenne González López,municipal_president,Jalisco,Mexticacán,,https://iieg.gob.mx/ns/wp-content/uploads/2024/11/PresidentesMunicipalesCoaliciones2Nov24.pdf,presidente municipal
+MUN-JAL-061,Tomas Torres Álvarez,municipal_president,Jalisco,Mezquitic,,https://iieg.gob.mx/ns/wp-content/uploads/2024/11/PresidentesMunicipalesCoaliciones2Nov24.pdf,presidente municipal
+MUN-JAL-062,José Miguel Morelos Sánchez,municipal_president,Jalisco,Mixtlán,,https://iieg.gob.mx/ns/wp-content/uploads/2024/11/PresidentesMunicipalesCoaliciones2Nov24.pdf,presidente municipal
+MUN-JAL-063,Deysi Nallely Angel Hernández,municipal_president,Jalisco,Ocotlán,,https://iieg.gob.mx/ns/wp-content/uploads/2024/11/PresidentesMunicipalesCoaliciones2Nov24.pdf,presidente municipal
+MUN-JAL-064,Juan Carlos Jasso Romo,municipal_president,Jalisco,Ojuelos de Jalisco,,https://iieg.gob.mx/ns/wp-content/uploads/2024/11/PresidentesMunicipalesCoaliciones2Nov24.pdf,presidente municipal
+MUN-JAL-065,Antonio Jorge Alejandro Soto Flores,municipal_president,Jalisco,Pihuamo,,https://iieg.gob.mx/ns/wp-content/uploads/2024/11/PresidentesMunicipalesCoaliciones2Nov24.pdf,presidente municipal
+MUN-JAL-066,Arturo Isrrael Ascencio Gómez,municipal_president,Jalisco,Poncitlán,,https://iieg.gob.mx/ns/wp-content/uploads/2024/11/PresidentesMunicipalesCoaliciones2Nov24.pdf,presidente municipal
+MUN-JAL-067,Luis Ernesto Mungía González,municipal_president,Jalisco,Puerto Vallarta,,https://iieg.gob.mx/ns/wp-content/uploads/2024/11/PresidentesMunicipalesCoaliciones2Nov24.pdf,presidente municipal
+MUN-JAL-069,José de Jesús Morales Barragán,municipal_president,Jalisco,Quitupan,,https://iieg.gob.mx/ns/wp-content/uploads/2024/11/PresidentesMunicipalesCoaliciones2Nov24.pdf,presidente municipal
+MUN-JAL-071,Karina Guzmán Cardona,municipal_president,Jalisco,San Cristóbal de la Barranca,,https://iieg.gob.mx/ns/wp-content/uploads/2024/11/PresidentesMunicipalesCoaliciones2Nov24.pdf,presidente municipal
+MUN-JAL-072,José de Jesús Sánchez González,municipal_president,Jalisco,San Diego de Alejandría,,https://iieg.gob.mx/ns/wp-content/uploads/2024/11/PresidentesMunicipalesCoaliciones2Nov24.pdf,presidente municipal
+MUN-JAL-073,Alejandro de Anda Lozano,municipal_president,Jalisco,San Juan de los Lagos,,https://iieg.gob.mx/ns/wp-content/uploads/2024/11/PresidentesMunicipalesCoaliciones2Nov24.pdf,presidente municipal
+MUN-JAL-074,Cristian Martín Hernández García,municipal_president,Jalisco,San Julián,,https://iieg.gob.mx/ns/wp-content/uploads/2024/11/PresidentesMunicipalesCoaliciones2Nov24.pdf,presidente municipal
+MUN-JAL-075,Laura Saraí Alcantar Hernández,municipal_president,Jalisco,San Marcos,,https://iieg.gob.mx/ns/wp-content/uploads/2024/11/PresidentesMunicipalesCoaliciones2Nov24.pdf,presidente municipal
+MUN-JAL-076,Concepción Magdaleno Zayas,municipal_president,Jalisco,San Martín de Bolaños,,https://iieg.gob.mx/ns/wp-content/uploads/2024/11/PresidentesMunicipalesCoaliciones2Nov24.pdf,presidente municipal
+MUN-JAL-077,Juana Ceballos Guzmán,municipal_president,Jalisco,San Martín Hidalgo,,https://iieg.gob.mx/ns/wp-content/uploads/2024/11/PresidentesMunicipalesCoaliciones2Nov24.pdf,presidente municipal
+MUN-JAL-079,Rosa María Delgadillo Martínez,municipal_president,Jalisco,Gómez Farías,,https://iieg.gob.mx/ns/wp-content/uploads/2024/11/PresidentesMunicipalesCoaliciones2Nov24.pdf,presidente municipal
+MUN-JAL-080,María Aurora Ponce Peña,municipal_president,Jalisco,San Sebastián del Oeste,,https://iieg.gob.mx/ns/wp-content/uploads/2024/11/PresidentesMunicipalesCoaliciones2Nov24.pdf,presidente municipal
+MUN-JAL-081,Minerva Robles Ortega,municipal_president,Jalisco,Santa María de los Ángeles,,https://iieg.gob.mx/ns/wp-content/uploads/2024/11/PresidentesMunicipalesCoaliciones2Nov24.pdf,presidente municipal
+MUN-JAL-082,Jazmín Carrión Calvario,municipal_president,Jalisco,Sayula,,https://iieg.gob.mx/ns/wp-content/uploads/2024/11/PresidentesMunicipalesCoaliciones2Nov24.pdf,presidente municipal
+MUN-JAL-083,Juan Gerardo Ruiz Delgado,municipal_president,Jalisco,Tala,,https://iieg.gob.mx/ns/wp-content/uploads/2024/11/PresidentesMunicipalesCoaliciones2Nov24.pdf,presidente municipal
+MUN-JAL-084,Patricia Sánchez Moro,municipal_president,Jalisco,Talpa de Allende,,https://iieg.gob.mx/ns/wp-content/uploads/2024/11/PresidentesMunicipalesCoaliciones2Nov24.pdf,presidente municipal
+MUN-JAL-085,Laura Gabriela Jiménez Íñiguez,municipal_president,Jalisco,Tamazula de Gordiano,,https://iieg.gob.mx/ns/wp-content/uploads/2024/11/PresidentesMunicipalesCoaliciones2Nov24.pdf,presidente municipal
+MUN-JAL-086,Antonio Morales Díaz,municipal_president,Jalisco,Tapalpa,,https://iieg.gob.mx/ns/wp-content/uploads/2024/11/PresidentesMunicipalesCoaliciones2Nov24.pdf,presidente municipal
+MUN-JAL-087,Brenda Patricia Barriga López,municipal_president,Jalisco,Tecalitlán,,https://iieg.gob.mx/ns/wp-content/uploads/2024/11/PresidentesMunicipalesCoaliciones2Nov24.pdf,presidente municipal
+MUN-JAL-088,José Preciado Soltero,municipal_president,Jalisco,Tecolotlán,,https://iieg.gob.mx/ns/wp-content/uploads/2024/11/PresidentesMunicipalesCoaliciones2Nov24.pdf,presidente municipal
+MUN-JAL-089,Alfredo Sánchez Pulido,municipal_president,Jalisco,Techaluta de Montenegro,,https://iieg.gob.mx/ns/wp-content/uploads/2024/11/PresidentesMunicipalesCoaliciones2Nov24.pdf,presidente municipal
+MUN-JAL-090,José Manuel Cárdenas Castillo,municipal_president,Jalisco,Tenamaxtlán,,https://iieg.gob.mx/ns/wp-content/uploads/2024/11/PresidentesMunicipalesCoaliciones2Nov24.pdf,presidente municipal
+MUN-JAL-091,Silvia Margarita Villalobos Delgado,municipal_president,Jalisco,Teocaltiche,,https://iieg.gob.mx/ns/wp-content/uploads/2024/11/PresidentesMunicipalesCoaliciones2Nov24.pdf,presidente municipal
+MUN-JAL-092,Ricardo Sahagún Quiñonez,municipal_president,Jalisco,Teocuitatlán de Corona,,https://iieg.gob.mx/ns/wp-content/uploads/2024/11/PresidentesMunicipalesCoaliciones2Nov24.pdf,presidente municipal
+MUN-JAL-094,Diego Rivera Navarro,municipal_president,Jalisco,Tequila,,https://iieg.gob.mx/ns/wp-content/uploads/2024/11/PresidentesMunicipalesCoaliciones2Nov24.pdf,presidente municipal
+MUN-JAL-095,José Ascención Murguía Santiago,municipal_president,Jalisco,Teuchitlán,,https://iieg.gob.mx/ns/wp-content/uploads/2024/11/PresidentesMunicipalesCoaliciones2Nov24.pdf,presidente municipal
+MUN-JAL-096,José Santiago Coronado Valencia,municipal_president,Jalisco,Tizapán el Alto,,https://iieg.gob.mx/ns/wp-content/uploads/2024/11/PresidentesMunicipalesCoaliciones2Nov24.pdf,presidente municipal
+MUN-JAL-097,Gerardo Quirino Velázquez Chávez,municipal_president,Jalisco,Tlajomulco de Zúñiga,,https://iieg.gob.mx/ns/wp-content/uploads/2024/11/PresidentesMunicipalesCoaliciones2Nov24.pdf,presidente municipal
+MUN-JAL-098,Laura Imelda Pérez Segura,municipal_president,Jalisco,San Pedro Tlaquepaque,,https://iieg.gob.mx/ns/wp-content/uploads/2024/11/PresidentesMunicipalesCoaliciones2Nov24.pdf,presidente municipal
+MUN-JAL-099,Alma Mirella Siordia Romero,municipal_president,Jalisco,Tolimán,,https://iieg.gob.mx/ns/wp-content/uploads/2024/11/PresidentesMunicipalesCoaliciones2Nov24.pdf,presidente municipal
+MUN-JAL-100,Daniel Ruíz Benavides,municipal_president,Jalisco,Tomatlán,,https://iieg.gob.mx/ns/wp-content/uploads/2024/11/PresidentesMunicipalesCoaliciones2Nov24.pdf,presidente municipal
+MUN-JAL-101,Sergio Armando Chávez Dávalos,municipal_president,Jalisco,Tonalá,,https://iieg.gob.mx/ns/wp-content/uploads/2024/11/PresidentesMunicipalesCoaliciones2Nov24.pdf,presidente municipal
+MUN-JAL-102,Rafael Cisneros Díaz,municipal_president,Jalisco,Tonaya,,https://iieg.gob.mx/ns/wp-content/uploads/2024/11/PresidentesMunicipalesCoaliciones2Nov24.pdf,presidente municipal
+MUN-JAL-103,Gladis Minerva silva González,municipal_president,Jalisco,Tonila,,https://iieg.gob.mx/ns/wp-content/uploads/2024/11/PresidentesMunicipalesCoaliciones2Nov24.pdf,presidente municipal
+MUN-JAL-104,Gema Livier Lara Gómez,municipal_president,Jalisco,Totatiche,,https://iieg.gob.mx/ns/wp-content/uploads/2024/11/PresidentesMunicipalesCoaliciones2Nov24.pdf,presidente municipal
+MUN-JAL-105,Abel Vázquez Villalpando,municipal_president,Jalisco,Tototlán,,https://iieg.gob.mx/ns/wp-content/uploads/2024/11/PresidentesMunicipalesCoaliciones2Nov24.pdf,presidente municipal
+MUN-JAL-106,Ramón Reynaga Araiza,municipal_president,Jalisco,Tuxcacuesco,,https://iieg.gob.mx/ns/wp-content/uploads/2024/11/PresidentesMunicipalesCoaliciones2Nov24.pdf,presidente municipal
+positive-01,Fernando Lugo García Pelayo,notary,Querétaro,,24,https://codigoqro.mx/nota/local/2020/09/22/vinculan-a-proceso-a-extitular-de-la-notaria-24,Notario
+positive-02,Carlos Fernando Licona Rivemar,notary,Hidalgo,,8,https://www.jornada.com.mx/noticia/2022/05/31/estados/fayad-revoca-otra-patente-a-titular-de-notaria-publica-de-pachuca-504,Notario
+positive-03,Daniel Fernando Rangel Moctezuma,notary,Hidalgo,,13,https://www.jornada.com.mx/noticia/2021/03/03/estados/quitan-notaria-a-funcionario-que-las-asignaba-en-hidalgo-2176,Notario
+positive-04,Horacio Aguilar Álvarez de Alba,notary,Estado de México,,102,https://www.razon.com.mx/estados/2020/07/03/revocan-a-notario-en-edomex-por-agresion-a-su-esposa/,Notario
+positive-05,Horacio Lucas Wong Villareal,notary,Puebla,,2 Chalchicomula de Sesma,https://www.milenio.com/politica/comunidad/cesan-horacio-wong-funciones-frente-notaria-puebla,Notario
+positive-06,Ernesto Pérez Charles,notary,Nuevo León,,133,https://www.nl.gob.mx/es/boletines/revocan-patente-al-notario-publico-titular-de-la-notaria-numero-133-por-faltas,Notario
+positive-07,Carlos Tomás Goff Rodríguez,notary,Yucatán,,97,https://www.jhonnyoliverquintal.com/2023/08/quitan-la-notaria-97-carlos-goff.html,Notario
+positive-08,Octavio Eduardo Soto Hernández,notary,Hidalgo,,6 Tizayuca,https://lajornadahidalgo.com/cae-exnotario-octavio-soto-hernandez-por-fraude-procesal-enfrentara-cargos-penales/,Notario
+positive-09,Luis Felipe del Valle Prieto Ortega,notary,Ciudad de México,,20,https://www.jornada.com.mx/2011/10/23/capital/036n1cap,Notario
+positive-10,Alejandro Moreno Morales,notary,Tlaxcala,,2 Zacatelco,https://comunicacion.tlaxcala.gob.mx/index.php?catid=2&id=18875%3Aejecuta-segob-aseguramiento-del-protocolo-notarial-y-cancelacion-de-patente-del-notario-publico-no-2-de-zacatelco&view=article,Notario
+positive-11,Flavino Ríos Alvarado,notary,Veracruz,,9 Minatitlán,https://da21w.e-veracruz.mx/nota/2020-04-29/estado/al-igual-que-yunes-cuitlahuac-va-tras-notarios-acusados-de-corrupcion,Notario
+positive-12,Héctor Manuel Navarro Manjarrez,notary,Chihuahua,,8,https://www.eldiariodechihuahua.mx/local/2024/dec/29/pide-notario-amparo-por-orden-de-aprehension-664825.html,Notario
+positive-13,Álvaro Guzmán Merino,notary,Jalisco,,126 Guadalajara,https://www.ntrguadalajara.com/post.php?id_nota=209830,Notario
+positive-14,Celso Rodríguez González,notary,Jalisco,,34 Guadalajara,https://laevidencia.com.mx/derecho/notarios-sancionados-ejercen-con-amparos/,Notario
+positive-15,Jorge Gerardo Gutiérrez Ortiz Monasterio,notary,Jalisco,,1 Tequila,https://laevidencia.com.mx/derecho/notarios-sancionados-ejercen-con-amparos/,Notario
+positive-16,Sergio Alejandro López Rivera,notary,Jalisco,,64 Guadalajara,https://www.jornada.com.mx/noticia/2022/12/11/estados/catean-notaria-suspendida-en-2014-en-guadalajara-2477,Notario
+positive-17,Luis Antonio Guerrero Campos,notary,Jalisco,,72 Guadalajara,https://laevidencia.com.mx/derecho/notarios-sancionados-ejercen-con-amparos/,Notario
+positive-18,José Antonio Jaime Reynoso,notary,Jalisco,,43 Zapopan,https://www.nvinoticias.com/nacional/comunidad/quitan-fiat-notario-que-resucito-muerto-en-jalisco/149630,Notario
+positive-19,Guillermo Coronado Figueroa,notary,Jalisco,,50 Guadalajara,https://www.notisistema.com/noticias/suspenden-en-definitiva-a-notario-50-de-guadalajara/,Notario
+positive-20,José Luis Organista Macías,notary,Jalisco,,2 Tlajomulco de Zúñiga,https://www.reporteindigo.com/guadalajara/gobierno-de-alfaro-inhabilito-a-11-notarios-publicos-20250701-0107.html,Notario
+positive-21,Juan Hernández Rivas,notary,Jalisco,,2 Tapalpa,https://www.reporteindigo.com/guadalajara/gobierno-de-alfaro-inhabilito-a-11-notarios-publicos-20250701-0107.html,Notario
+positive-22,Samuel Fernández Ávila,notary,Jalisco,,15 San Pedro Tlaquepaque,https://www.notisistema.com/noticias/alfaro-revoco-nombramiento-de-notario-15-de-tlaquepaque-antes-de-terminar-su-mandato/,Notario
+positive-23,Javier Manuel Gutiérrez Dávila,notary,Jalisco,,140 Guadalajara,https://laevidencia.com.mx/derecho/revocan-nombramiento-a-notario-140-de-guadalajara/,Notario
+positive-24,Alejandro José Vidaña Luna,notary,Oaxaca,,106 Cosolapa,https://interactivos.eluniversal.com.mx/2024/notarios-empresas-fantasma/,Notario
+positive-25,Omar Abacuc Sánchez Heras,notary,Oaxaca,,38,https://interactivos.eluniversal.com.mx/2024/notarios-empresas-fantasma/,Notario
+positive-26,Eduardo García Corpus,notary,Oaxaca,,105 Zimatlán de Álvarez,https://e-oaxaca.com/nota/2018-07-17/oaxaca/por-presuntos-actos-de-corrupcion-suspenden-libros-notario,Notario
+positive-27,Manuel Lazcano Meza,notary,Sinaloa,,149 Culiacán,https://riodoce.mx/2023/11/20/quitan-fiat-a-notario-por-asentar-testimonios-de-finados-en-escrituras-publicas/,Notario
+positive-28,Édgar Veytia Cambero,notary,Nayarit,,39 Mezcales,https://interactivos.eluniversal.com.mx/2024/notarios-empresas-fantasma/,Notario
+positive-29,Alejandro Durán Llamas,notary,Guanajuato,,44 León,https://www.am.com.mx/leon/2022/06/14/quedan-en-el-limbo-usuarios-de-notaria-cancelada-en-leon-que-pueden-hacer-610199.html,Notario
+positive-30,Mario Marín Torres,notary,Puebla,,53 Puebla,https://www.e-consulta.com/nota/2020-01-01/politica/2019-el-peor-ano-para-mario-marin-perseguido-y-sin-notaria,Notario
+mx-notary-cdmx-058,Iñigo Xavier Reynoso De Teresa,notary,Ciudad de México,Álvaro Obregón,58,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-242,Roberto Garzón Jiménez,notary,Ciudad de México,Cuajimalpa de Morelos,242,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-224,Jesús Torres Gómez,notary,Ciudad de México,Tlalpan,224,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-181,Miguel Soberón Mainero,notary,Ciudad de México,Álvaro Obregón,181,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-238,Alfonso Martín León-Orantes,notary,Ciudad de México,Benito Juárez,238,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-129,Ignacio Soto Borja y Anda,notary,Ciudad de México,Coyoacán,129,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-194,Enrique Zapata González Pacheco,notary,Ciudad de México,Benito Juárez,194,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-074,Francisco Javier Arce Gargollo,notary,Ciudad de México,Benito Juárez,74,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-045,Rafael Manuel Oliveros Lara,notary,Ciudad de México,Miguel Hidalgo,45,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-229,Marco Antonio Ruiz Aguirre,notary,Ciudad de México,Cuajimalpa de Morelos,229,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-098,Gonzalo Manuel Ortiz Blanco,notary,Ciudad de México,Álvaro Obregón,98,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-230,Alfredo Bazúa Witte,notary,Ciudad de México,Miguel Hidalgo,230,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-114,María Teresa Rodríguez y Rodríguez,notary,Ciudad de México,Coyoacán,114,https://colegiodenotarios.org.mx/directorio,Notaria
+mx-notary-cdmx-022,Daniel García Córdova,notary,Ciudad de México,Miguel Hidalgo,22,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-071,Eduardo Javier Muñoz Pinchetti,notary,Ciudad de México,Miguel Hidalgo,71,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-025,Emiliano Zubiría Maqueo,notary,Ciudad de México,Benito Juárez,25,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-002,Alfredo González Serrano,notary,Ciudad de México,Cuauhtémoc,2,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-205,Arturo Adolfo Llorente Martínez,notary,Ciudad de México,Cuajimalpa de Morelos,205,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-159,Tarcisio Domingo Sánchez Ulloa,notary,Ciudad de México,Miguel Hidalgo,159,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-244,Celso de Jesús Pola Castillo,notary,Ciudad de México,Miguel Hidalgo,244,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-140,Jorge Alfredo Domínguez Martínez,notary,Ciudad de México,Benito Juárez,140,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-015,Eduardo Alejandro Francisco García Villegas,notary,Ciudad de México,Miguel Hidalgo,15,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-216,Ernestina Bejarano Alfonso,notary,Ciudad de México,Álvaro Obregón,216,https://colegiodenotarios.org.mx/directorio,Notaria
+mx-notary-cdmx-088,Ricardo Vargas Navarro,notary,Ciudad de México,Cuauhtémoc,88,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-061,Javier Eduardo Del Valle y Palazuelos,notary,Ciudad de México,MIguel Hidalgo,61,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-241,Sergio Rea Field,notary,Ciudad de México,Cuauhtémoc,241,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-166,Gustavo Jiménez Ortiz,notary,Ciudad de México,Benito Juárez,166,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-086,José Daniel Labardini Schettino,notary,Ciudad de México,MIguel Hidalgo,86,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-236,Alejandro Domínguez García Villalobos,notary,Ciudad de México,Benito Juárez,236,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-197,Sara Cuevas Villalobos,notary,Ciudad de México,Coyoacán,197,https://colegiodenotarios.org.mx/directorio,Notaria
+mx-notary-cdmx-069,Heriberto Castillo Villanueva,notary,Ciudad de México,Álvaro Obregón,69,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-007,Benito Iván Guerra Silla,notary,Ciudad de México,Miguel Hidalgo,7,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-112,José Higinio Núñez y Bandera,notary,Ciudad de México,Benito Juárez,112,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-048,Felipe Guzmán Núñez,notary,Ciudad de México,Cuauhtémoc,48,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-174,Víctor Rafael Aguilar Molina,notary,Ciudad de México,Álvaro Obregón,174,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-029,Luis Antonio Montes de Oca Mayagoitia,notary,Ciudad de México,Miguel Hidalgo,29,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-128,Sergio Navarrete Mardueño,notary,Ciudad de México,Cuauhtémoc,128,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-207,Georgina Schila Olivera González,notary,Ciudad de México,Miguel Hidalgo,207,https://colegiodenotarios.org.mx/directorio,Notaria
+mx-notary-cdmx-139,Jorge Orozco González,notary,Ciudad de México,Benito Juárez,139,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-227,Carlos Antonio Morales Montes de Oca,notary,Ciudad de México,Tlalpan,227,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-137,Carlos de Pablo Serna,notary,Ciudad de México,Cuauhtémoc,137,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-198,Enrique Almanza Pedraza,notary,Ciudad de México,Coyoacán,198,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-147,Francisco Javier Gutiérrez Silva,notary,Ciudad de México,Miguel Hidalgo,147,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-144,Alfredo Gabriel Miranda Solano,notary,Ciudad de México,Benito Juárez,144,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-082,Pedro Bernardo Barrera Cristiani,notary,Ciudad de México,Miguel Hidalgo,82,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-155,Pablo Antonio Pruneda Padilla,notary,Ciudad de México,Xochimilco,155,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-046,Ana Leticia Ochoa Gómez,notary,Ciudad de México,Álvaro Obregón,46,https://colegiodenotarios.org.mx/directorio,Notaria
+mx-notary-cdmx-124,Ranulfo Enrique Tovilla Saenz,notary,Ciudad de México,Gustavo A. Madero,124,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-135,Eduardo Garduño García Villalobos,notary,Ciudad de México,Benito Juárez,135,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-102,José María Morera González,notary,Ciudad de México,Miguel Hidalgo,102,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-218,José Luis Villavicencio Castañeda,notary,Ciudad de México,Álvaro Obregón,218,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-148,Francisco Carbia Pizarro Suárez,notary,Ciudad de México,Cuauhtémoc,148,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-021,Joaquín Humberto Cáceres y Ferráez,notary,Ciudad de México,Miguel Hidalgo,21,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-211,José Eugenio Castañeda Escobedo,notary,Ciudad de México,Benito Juárez,211,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-184,Mario Garciadiego González Cos,notary,Ciudad de México,Álvaro Obregón,184,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-245,Gerardo Aparicio Razo,notary,Ciudad de México,Álvaro Obregón,245,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-040,Carlos Prieto Aceves,notary,Ciudad de México,Cuauhtémoc,40,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-065,Pedro Del Paso Regaert,notary,Ciudad de México,Miguel Hidalgo,65,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-080,Mario Rischia Velázquez,notary,Ciudad de México,Gustavo A. Madero,80,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-115,Jorge Ríos Hellig,notary,Ciudad de México,Coyoacán,115,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-201,Héctor Manuel Cárdenas Villarreal,notary,Ciudad de México,Miguel Hidalgo,201,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-035,Eutiquio López Hernández,notary,Ciudad de México,Cuauhtémoc,35,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-001,Roberto Núñez y Bandera,notary,Ciudad de México,Miguel Hidalgo,1,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-081,Jorge Franco Martínez,notary,Ciudad de México,Álvaro Obregón,81,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-221,Francisco Talavera Autrique,notary,Ciudad de México,Álvaro Obregón,221,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-004,Felipe de Jesús Zacarías Ponce,notary,Ciudad de México,Cuauhtémoc,4,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-219,Estela Álvarez Narváez,notary,Ciudad de México,Tlalpan,219,https://colegiodenotarios.org.mx/directorio,Notaria
+mx-notary-cdmx-019,Miguel Alessio Robles Landa,notary,Ciudad de México,Miguel Hidalgo,19,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-092,Francisco José Visoso Del Valle,notary,Ciudad de México,Benito Juárez,92,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-177,Víctor Manuel Mancilla Guerrero,notary,Ciudad de México,Álvaro Obregón,177,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-096,Mauricio Martínez Rivera,notary,Ciudad de México,Benito Juárez,96,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-232,Carlos Correa Rojo,notary,Ciudad de México,Benito Juárez,232,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-085,Rosa María Ávila Fernández,notary,Ciudad de México,Coyoacán,85,https://colegiodenotarios.org.mx/directorio,Notaria
+mx-notary-cdmx-132,Joaquín Cáceres Jiménez O'Farrill,notary,Ciudad de México,Miguel Hidalgo,132,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-164,Antonio Velarde Violante,notary,Ciudad de México,Miguel Hidalgo,164,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-041,Santiago Javier Covarrubias y González,notary,Ciudad de México,Iztacalco,41,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-059,Patrick Strassburger Weidmann,notary,Ciudad de México,Miguel Hidalgo,59,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-078,Miguel Ángel Zamora y Vega,notary,Ciudad de México,Cuauhtémoc,78,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-167,Benjamín Cervantes Cardiel,notary,Ciudad de México,Benito Juárez,167,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-091,Moisés Farca Charabati,notary,Ciudad de México,Miguel Hidalgo,91,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-103,Ariel Ortiz Macías,notary,Ciudad de México,Benito Juárez,103,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-172,Aquileo Infanzón Rivas,notary,Ciudad de México,Gustavo A. Madero,172,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-110,Javier Ceballos Lujambio,notary,Ciudad de México,Benito Juárez,110,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-077,José de Jesús Niño De la Selva,notary,Ciudad de México,Benito Juárez,77,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-169,Miguel Ángel Beltrán Lara,notary,Ciudad de México,Coyoacán,169,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-018,Rafael Azuela Nieto,notary,Ciudad de México,Benito Juárez,18,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-180,Luis Eduardo Paredes Sánchez,notary,Ciudad de México,Benito Juárez,180,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-099,José Luis Quevedo Salceda,notary,Ciudad de México,Cuauhtémoc,99,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-204,César Humberto Viveros González,notary,Ciudad de México,Azcapotzalco,204,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-072,Carlos Ricardo Viñas Berea,notary,Ciudad de México,Benito Juárez,72,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-199,Antonio Rosado Sánchez,notary,Ciudad de México,Benito Juárez,199,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-107,Maximiliano Pérez Salinas,notary,Ciudad de México,Benito Juárez,107,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-123,Pedro Joaquín Romano Zarrabe,notary,Ciudad de México,Miguel Hidalgo,123,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-163,José Antonio Sosa Castañeda,notary,Ciudad de México,Álvaro Obregón,163,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-175,Miguel López Lira Acevedo,notary,Ciudad de México,Benito Juárez,175,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-052,Raúl César Mayorga Compeán,notary,Ciudad de México,Cuauhtémoc,52,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-049,Arturo Sobrino Franco,notary,Ciudad de México,Benito Juárez,49,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-006,Claudio Juan Ramón Hernández de Rubín,notary,Ciudad de México,Benito Juárez,6,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-037,Carlos Flavio Orozco Pérez,notary,Ciudad de México,Coyoacán,37,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-186,Juan Manuel Asprón Pelayo,notary,Ciudad de México,Benito Juárez,186,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-143,Moisés Téliz Santoyo,notary,Ciudad de México,Benito Juárez,143,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-038,José de Jesús Castro Figueroa,notary,Ciudad de México,Coyoacán,38,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-171,Juan José Agustín Barragán Abascal,notary,Ciudad de México,Miguel Hidalgo,171,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-213,Santiago Caparroso Chaves,notary,Ciudad de México,Álvaro Obregón,213,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-054,Homero Díaz Rodríguez,notary,Ciudad de México,Benito Juárez,54,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-160,Guadalupe Guerrero Guerrero,notary,Ciudad de México,Coyoacán,160,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-056,Eduardo Martínez Urquidi,notary,Ciudad de México,Benito Juárez,56,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-010,Tomás Lozano Molina,notary,Ciudad de México,Miguel Hidalgo,10,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-133,Héctor Guillermo Galeano Inclán,notary,Ciudad de México,Álvaro Obregón,133,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-226,Pedro Cortina Latapí,notary,Ciudad de México,Coyoacán,226,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-178,Andrés Jiménez Cruz,notary,Ciudad de México,Azcapotzalco,178,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-233,Ángel Gilberto Adame López,notary,Ciudad de México,Miguel Hidalgo,233,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-062,Joaquín Ignacio Mendoza Pertierra,notary,Ciudad de México,Cuajimalpa de Morelos,62,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-075,Francisco Javier Gerardo Oliveros Lara,notary,Ciudad de México,Miguel Hidalgo,75,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-111,Alejandro Carvallo Carrillo,notary,Ciudad de México,Miguel Hidalgo,111,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-016,María Fernanda Rodríguez Diez,notary,Ciudad de México,Álvaro Obregón,16,https://colegiodenotarios.org.mx/directorio,Notaria
+mx-notary-cdmx-215,Uriel Oliva Sánchez,notary,Ciudad de México,Miguel Hidalgo,215,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-013,Ignacio Soto Sobreyra y Silva,notary,Ciudad de México,Cuauhtémoc,13,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-120,Miguel Ángel Espíndola Bustillos,notary,Ciudad de México,Gustavo A. Madero,120,https://colegiodenotarios.org.mx/directorio,Notario
+mx-notary-cdmx-066,José Luis Altamirano Quintero,notary,Ciudad de México,Álvaro Obregón,66,https://colegiodenotarios.org.mx/directorio,Notario

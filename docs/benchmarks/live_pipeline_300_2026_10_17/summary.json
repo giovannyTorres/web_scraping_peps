@@ -1,0 +1,587 @@
+{
+  "schema_version": 1,
+  "version": "2.9.5",
+  "generated_at": "2026-10-17T02:00:08.753616+00:00",
+  "method": {
+    "real_names": true,
+    "real_transport": true,
+    "real_clock": true,
+    "production_pipeline": true,
+    "response_substitution": false,
+    "synthetic_documents": false,
+    "gold_urls_used_for_search": false,
+    "automated_human_confirmation": false,
+    "score_is_not_guilt_or_risk_probability": true,
+    "individual_outputs_local_private": true
+  },
+  "started_at": "2026-10-17T01:59:04.682338+00:00",
+  "completed_at": "2026-10-17T02:00:08.753633+00:00",
+  "online_e2e_seconds": 45.435273917988525,
+  "first_original_body_seconds": 13.268617084992002,
+  "timings_seconds": {
+    "import": 0.04073428000265267,
+    "search_and_original_download": 33.87310184900707,
+    "identity_attribution": 0.2027897419902729,
+    "production_scoring": 8.292625980990124,
+    "replay_and_explanations": 1.0302071869955398,
+    "production_export": 1.0217610529944068,
+    "actual_local_cache_reuse": 12.619639256998198,
+    "total_until_report": 64.07130851499096
+  },
+  "frozen_inputs": {
+    "roster_sha256": "8c7398b917e23274d2dec092242ff3f6a7dbf82052448572cc4e92f2a43ec40e",
+    "source_config_input_sha256": "9364784ce6122bfe58ca083a93c123ff8d775e80c231a3f18b8639965826e315",
+    "effective_config_sha256": "62bec9bc1f04f66475b2fe001cd122c2182476703b666c305024b45101f56550",
+    "people_sha256": "b68d349b0514aa3d105af15e8575725cc34a346670ceee8924714dfa0e8267e3",
+    "plan_sha256": "2f0ee16fd0e1b1d6d0387ad14ec7945c24b9be8f92aea857007e4fb736852971",
+    "maximum_http_total": 5000,
+    "body_budget": 600,
+    "per_entity_body_limit": 8
+  },
+  "summary": {
+    "people": 300,
+    "people_with_completed_nominal_search": 300,
+    "people_with_at_least_one_completed_query": 300,
+    "people_with_all_queries_completed": 85,
+    "people_with_actual_query_http": 300,
+    "people_with_current_candidates": 187,
+    "people_with_original_text": 152,
+    "current_candidate_urls": 1107,
+    "unique_original_documents": 401,
+    "production_scores_computed": 300,
+    "assessment_states": {
+      "pending_identity": 151,
+      "insufficient_evidence": 149
+    },
+    "evaluated_zero_scores": 0,
+    "zeros_without_assessable_evidence_are_not_evaluated": true,
+    "actual_http_requests_cumulative": 3528,
+    "actual_http_requests_this_session": 34,
+    "pending_jobs": 0,
+    "job_status_counts": {
+      "blocked": 215,
+      "done": 3501,
+      "cancelled": 5
+    },
+    "query_status_counts": {
+      "blocked": 215,
+      "done": 3085
+    },
+    "http_status_counts_this_session": {
+      "200": 34
+    },
+    "fetch_outcome_counts_this_session": {
+      "robots_pending": 63,
+      "ok": 25,
+      "host_interval": 22
+    },
+    "scope": "Latest derived publisher copy; original nominal search counts inherited, not repeated."
+  },
+  "checks": {
+    "all_people_imported": true,
+    "all_people_have_nominal_plan": true,
+    "plan_not_truncated": true,
+    "audit_valid": true,
+    "cumulative_http_budget_respected": true,
+    "actual_transport_and_durable_http_match": true,
+    "previous_completed_jobs_preserved": true,
+    "original_snapshots_hash_valid": true,
+    "captured_real_transport_bytes_hash_valid": true,
+    "candidate_entity_article_pairs_unique": true,
+    "all_people_received_production_score": true,
+    "all_current_scores_replayed_exactly": true,
+    "all_current_score_explanations_saved": true,
+    "source_modules_stable_within_attempt": true,
+    "frozen_inputs_unchanged": true,
+    "no_fatal_error": true,
+    "original_body_content_hashes_valid": true,
+    "canonical_urls_unique": true,
+    "same_publisher_body_content_deduplicated": true,
+    "actual_cache_reuse_idempotent": true
+  },
+  "partial_reasons": [
+    "Some jobs are blocked/failed/dead; their exact errors remain in jobs/query_results"
+  ],
+  "source_sha256": {
+    "peps/__init__.py": "2f019243c1964eb612f7985936a653e74b69a00e9599af1dbeb435a03729626a",
+    "peps/__main__.py": "3129adff95e0f38b87ab34cddfc27082c7892bcaec267ff5d40f160fdf55b44a",
+    "peps/acquisition_coverage.py": "8bcbd04552a04e4ee90a0d9ae213d926cb2b39acc9b4f88da20b9add2a19631c",
+    "peps/advanced_nlp.py": "1ac3b13daeaef6b76da4f553bfe367604790c04d670d0f4a6418d0f2fbb547cc",
+    "peps/app.py": "3ddcd9f6e87d2055dfe9a2d7d469192685fa209d90bbc2b8252140e1d922ada2",
+    "peps/article_paths.py": "d16b2ce27279ed079fbfe69c099cef1b0d7cc9501605c2eae386c9e372e9e948",
+    "peps/cli.py": "857805ccadf39ef6bedf6c808283b17805ea9274d65df8bd8952c0eeb39dbf31",
+    "peps/collector.py": "a127f4e68d978af345100e88812ae7196bcf4ce84eaa9d3c8b8e70cc35682a66",
+    "peps/context_model.py": "ada181d47cc0bd45c4bb3124db9920ee52fdb4e7115643a582c05f56de30a59b",
+    "peps/contextual.py": "7713ec854c309e1f4ca807fb31f2b464af5495fbd05e4f77ca42865e4baa40d8",
+    "peps/engine.py": "12e154041ce4056974bfd2c844fdda24c63e9c8a207029b84174abd358643b4b",
+    "peps/explainability.py": "5556420200f2d97436313af04c7d7303fbf008752bea4e38bc940838961b3b4e",
+    "peps/identity.py": "f05524947d5b1d765803da6faa145f3b422a61a10971a1caca3c6983f3436d2f",
+    "peps/importing.py": "54fc447531cecb986c3e4be4570d0d3f2280a4f86d5dd50e60c0109bf008e310",
+    "peps/news.py": "35e6475a678ba37217e9d6e13ddb0dd21dbf169b412d64d70400b7b01121bcc2",
+    "peps/news_body_quality.py": "ffd5fb407f0d368064fa37cddec980fb5488f83d26799ce191dd3257d03a0cbc",
+    "peps/news_projection.py": "17e637617a2be061bf72c43e3df8ddd83baf02f15f2ba210c7e259438d3aef3b",
+    "peps/news_search.py": "bb7f45d541f551f7914fc07200085c2582100ffbb0bc9edb9ae981df724c14bd",
+    "peps/news_session.py": "bb82278e198245df66e127902fad03655caad5447e080cc1db155ab681b8ac90",
+    "peps/nlp.py": "cfdf49739700968d4fb9613d9db07d25b473e125c92f28e8ab605c3f1f09ed88",
+    "peps/official.py": "c864c512d84b06a1caf3b458c1cadf5820b805a2be7dc6f1c4c59cae0cfb66cf",
+    "peps/public_search.py": "4be65fdcdf19b9fb916093b96d4e565ba683594fd3dee1fa3b8fea17b05c37be",
+    "peps/publication_metadata.py": "d153030925d35ab29236eaf5cc35a1a30545d04a9dd3340418d6738e2ec93c2a",
+    "peps/relevance.py": "d8179049e62e0ca2b0277e6b3e94a94bf6cf453653db96ef925c4f50273d4175",
+    "peps/retrieval_aliases.py": "c1f7df8b8f2db24b16d8e99d4d2c2bf2cebc570d322060b73f64cb24a810e39b",
+    "peps/robots_policy.py": "33293cbaa7ca859ce37ae3104b8e84ab9478fb60e867d7643d88830513c2e453",
+    "peps/scoring.py": "ff4e9e9f19cb0c781f02c06b68c2e2eaa00ee08f22dd8f71219fa5042879fe7e",
+    "peps/shared_crawl.py": "1e1b522ad433ef2fcc10b52824ed4f9b05ef5e8e957593db49bc05d6b077638f",
+    "peps/shared_discovery.py": "8ee1d61a7fa426ce391938acd5c4c958b89f2d8a29772f053aeb294f63eedb65",
+    "peps/social_discovery.py": "e3420915e1c649020e291fb5a05ac66e52f0b2b206c4ad842fafed675e4d8892",
+    "peps/sources.py": "ee4bfcc6615b3f5d90a54d0d3297d81036393dcef4c5c71adc84ee939ef33c32",
+    "peps/store.py": "2106e27fcc7f670b4ff723ade648d3e76d39dc391eeb818edeb7446670cdfe4e",
+    "peps/workflow.py": "8df817d8c24289ec3c11debe6cf72cc53d82fa865becee0ddcf823b0fe033bc0",
+    "scripts/validate_live_pipeline.py": "227a314891f501d0bee41650b29da6edf61bd6b40b2fb645beb3d44e14789deb",
+    "scripts/validate_notary_search.py": "b65474bdea6b2299c9f43621895d42748a4622b5d335916c52e8ced62ec2883d",
+    "scripts/validate_publisher_bridge.py": "f6285e04179ddbab660cf5fc3a6dedb3a6a4743cf4139583551b70ec824e9d2b",
+    "scripts/validate_real_people.py": "be96acf8248d202a22c60ffeb2b64a3fbbfe4a43f8e08d1026990c74aa9b83e1"
+  },
+  "original_receipt_sha256": "2c2895fcea2b5cf14251ee829f2df09d8b42a510754028beb570ecb2bf09710d",
+  "limitations": [
+    "La muestra es de conveniencia; no representa la prevalencia nacional.",
+    "Una URL o hash distinto no garantiza una historia independiente.",
+    "Un score calculado puede tener estado insuficiente o identidad pendiente: no acredita ausencia de riesgo.",
+    "Los documentos y riesgos personales no se publican. No se crearon revisiones humanas automáticas.",
+    "La ejecución real no demuestra precisión o recall sin verdad documental revisada independiente.",
+    "Las fuentes consultadas, sus topes, las esperas y la cobertura parcial limitan el resultado."
+  ],
+  "public_supplements": {
+    "evaluated-nlp-1.0.4.py.txt": "cfdf49739700968d4fb9613d9db07d25b473e125c92f28e8ab605c3f1f09ed88",
+    "observed-fixes.json": "41dc3fd57027be986cda7fdac798f8f7dca78bff3dc3e973293456ef844e1e22",
+    "observed-fixes.md": "181129d7cdc2c9a5a3d1362a996214dacfd8f7afd1510de227c6c913ca75fe61",
+    "post-audit-processing-summary.json": "5f0874a65a63d3219ed4c0cf5ae5b4df4baa5a7069a0b876efe417ebb5dfaf8f",
+    "publisher-bridge-report.md": "7acae67c5b9a32d313e15c0de815b1bd4a5e30ce77e3029c82b6999fbb64e749",
+    "publisher-bridge-summary.json": "229120f18eb7f84d1a4a1bfb6c4fbf538bf2232068b517f100e5c48729aad8b0",
+    "roster-provenance.csv": "12e3f2ef534c851ec798152f18bd0459c1dc376954146f5a93ffdb76519c58e2",
+    "roster-provenance.json": "e183877b5427197fa9a4fed3f91968529fc886e7e9fccb6019e2d6a6f3ddf2d5",
+    "post-audit-comparison.json": "b1b9ee8c884369294b0922d06bbe7c2e0263e659e1ecccb06075fd8f076db378",
+    "post-audit-comparison.md": "5ba57fc679e14de7c926cd58384d9dc5a8dad5c449cec7aef8f49ae4b12fa445",
+    "quality-metrics.json": "b119752c2531ed3288b8554a18454aeeb1fbd71889f9510839d73aa1e4e233fa",
+    "quality-report.md": "d83f65176fc056ff2274041f882d98a5b7ba5601abbcabb03f417d4772d01a68",
+    "reference-recall.json": "858c71880bdd4de90d0577e1a770c3e92838bf8f789a9607435bc08ac57f0c49"
+  },
+  "base_summary": {
+    "people": 300,
+    "people_with_completed_nominal_search": 300,
+    "people_with_at_least_one_completed_query": 300,
+    "people_with_all_queries_completed": 85,
+    "people_with_actual_query_http": 300,
+    "people_with_fetch_attempt_this_session": 0,
+    "people_with_current_candidates": 182,
+    "people_with_original_text": 141,
+    "current_candidate_urls": 1107,
+    "current_candidate_entity_pairs": 1231,
+    "unique_original_documents": 376,
+    "unique_original_body_hashes": 376,
+    "original_entity_text_pairs": 496,
+    "production_scores_computed": 300,
+    "assessment_states": {
+      "pending_identity": 141,
+      "insufficient_evidence": 159
+    },
+    "evaluated_zero_scores": 0,
+    "zeros_without_assessable_evidence_are_not_evaluated": true,
+    "actual_http_requests_cumulative": 3494,
+    "actual_http_requests_this_session": 7,
+    "pending_jobs": 0,
+    "job_status_counts": {
+      "blocked": 215,
+      "done": 3476,
+      "cancelled": 5
+    },
+    "query_status_counts": {
+      "blocked": 215,
+      "done": 3085
+    },
+    "http_status_counts_this_session": {
+      "200": 7
+    },
+    "fetch_outcome_counts_this_session": {
+      "host_interval": 10,
+      "ok": 7
+    },
+    "groups": {
+      "municipal_president": {
+        "people": 150,
+        "with_completed_nominal_search": 150,
+        "with_at_least_one_completed_query": 150,
+        "with_all_queries_completed": 71,
+        "with_original_text": 98,
+        "assessment_states": {
+          "pending_identity": 98,
+          "insufficient_evidence": 52
+        }
+      },
+      "notary": {
+        "people": 150,
+        "with_completed_nominal_search": 150,
+        "with_at_least_one_completed_query": 150,
+        "with_all_queries_completed": 14,
+        "with_original_text": 43,
+        "assessment_states": {
+          "pending_identity": 43,
+          "insufficient_evidence": 107
+        }
+      }
+    }
+  },
+  "derived_attempt": {
+    "receipt_sha256": "b566c49a9d58d6b0d285c6ce29ef7438426cc5b6360274810b38c629e6311494",
+    "started_at": "2026-10-17T02:01:48.956881+00:00",
+    "completed_at": "2026-10-17T02:02:59.912496+00:00",
+    "total_seconds": 70.95562619199336,
+    "summary": {
+      "people": 300,
+      "unique_original_documents_before": 376,
+      "unique_original_documents_after": 401,
+      "new_unique_original_documents": 25,
+      "new_article_urls_with_text": 25,
+      "people_with_original_text_before": 141,
+      "people_with_original_text_after": 152,
+      "current_candidate_urls": 1107,
+      "production_scores_computed": 300,
+      "assessment_states": {
+        "pending_identity": 151,
+        "insufficient_evidence": 149
+      },
+      "evidence_items": 587,
+      "new_actual_http_requests": 34,
+      "inherited_actual_http_requests": 3494,
+      "job_status_counts": {
+        "blocked": 215,
+        "done": 3501,
+        "cancelled": 5
+      },
+      "blocked_count": 215,
+      "failed_count": 0,
+      "dead_count": 0,
+      "pending_jobs": 0,
+      "http_status_counts": {
+        "200": 34
+      },
+      "fetch_outcome_counts": {
+        "robots_pending": 63,
+        "ok": 25,
+        "host_interval": 22
+      },
+      "transport_latency": {
+        "count": 34,
+        "total_seconds": 40.465073,
+        "p50_seconds": 0.839888,
+        "p95_seconds": 5.375727,
+        "max_seconds": 7.128005
+      }
+    },
+    "timings_seconds": {
+      "validation_backup_and_setup": 6.807204951997846,
+      "real_discovered_publisher_bodies": 32.46567672700621,
+      "production_identity_attribution": 0.6153865889937151,
+      "production_scoring": 12.972184022000874,
+      "production_replay_and_explanations": 1.2898524019983597,
+      "production_export": 1.1624016739951912
+    },
+    "checks": {
+      "cold_bank_fingerprint_unchanged": true,
+      "inherited_audit_prefix_preserved": true,
+      "entities_exactly_preserved": true,
+      "inherited_jobs_exactly_preserved": true,
+      "original_query_windows_unchanged": true,
+      "no_new_discovery_or_search_receipts": true,
+      "original_raw_discovery_observations_preserved": true,
+      "inherited_http_history_preserved": true,
+      "original_host_backoff_unchanged_outside_added_publishers": true,
+      "new_http_budget_respected": true,
+      "new_http_observed_matches_durable": true,
+      "only_new_body_sources_fetched": true,
+      "all_new_bodies_from_original_discovered_urls": true,
+      "all_original_body_snapshots_valid": true,
+      "captured_real_response_hashes_valid": true,
+      "all_people_received_production_score": true,
+      "all_people_rescored_in_this_derived_attempt": true,
+      "all_current_scores_preserve_partial_derived_scope": true,
+      "all_scores_replayed_and_explained": true,
+      "frozen_profile_input_unchanged": true,
+      "origin_report_unchanged": true,
+      "derived_effective_catalogue_unchanged": true,
+      "source_modules_stable_within_attempt": true,
+      "audit_valid": true,
+      "no_fatal_error": true,
+      "original_body_content_hashes_valid": true,
+      "canonical_urls_unique": true,
+      "same_publisher_body_content_deduplicated": true
+    },
+    "partial_reasons": [
+      "Derived body-only extension, not a fresh or exhaustive search of 300 people.",
+      "215 blocked, 0 failed and 0 dead jobs limit acquisition."
+    ],
+    "source_sha256": {
+      "peps/__init__.py": "2f019243c1964eb612f7985936a653e74b69a00e9599af1dbeb435a03729626a",
+      "peps/__main__.py": "3129adff95e0f38b87ab34cddfc27082c7892bcaec267ff5d40f160fdf55b44a",
+      "peps/acquisition_coverage.py": "8bcbd04552a04e4ee90a0d9ae213d926cb2b39acc9b4f88da20b9add2a19631c",
+      "peps/advanced_nlp.py": "1ac3b13daeaef6b76da4f553bfe367604790c04d670d0f4a6418d0f2fbb547cc",
+      "peps/app.py": "3ddcd9f6e87d2055dfe9a2d7d469192685fa209d90bbc2b8252140e1d922ada2",
+      "peps/article_paths.py": "d16b2ce27279ed079fbfe69c099cef1b0d7cc9501605c2eae386c9e372e9e948",
+      "peps/cli.py": "857805ccadf39ef6bedf6c808283b17805ea9274d65df8bd8952c0eeb39dbf31",
+      "peps/collector.py": "a127f4e68d978af345100e88812ae7196bcf4ce84eaa9d3c8b8e70cc35682a66",
+      "peps/context_model.py": "ada181d47cc0bd45c4bb3124db9920ee52fdb4e7115643a582c05f56de30a59b",
+      "peps/contextual.py": "7713ec854c309e1f4ca807fb31f2b464af5495fbd05e4f77ca42865e4baa40d8",
+      "peps/engine.py": "12e154041ce4056974bfd2c844fdda24c63e9c8a207029b84174abd358643b4b",
+      "peps/explainability.py": "5556420200f2d97436313af04c7d7303fbf008752bea4e38bc940838961b3b4e",
+      "peps/identity.py": "f05524947d5b1d765803da6faa145f3b422a61a10971a1caca3c6983f3436d2f",
+      "peps/importing.py": "54fc447531cecb986c3e4be4570d0d3f2280a4f86d5dd50e60c0109bf008e310",
+      "peps/news.py": "35e6475a678ba37217e9d6e13ddb0dd21dbf169b412d64d70400b7b01121bcc2",
+      "peps/news_body_quality.py": "ffd5fb407f0d368064fa37cddec980fb5488f83d26799ce191dd3257d03a0cbc",
+      "peps/news_projection.py": "17e637617a2be061bf72c43e3df8ddd83baf02f15f2ba210c7e259438d3aef3b",
+      "peps/news_search.py": "bb7f45d541f551f7914fc07200085c2582100ffbb0bc9edb9ae981df724c14bd",
+      "peps/news_session.py": "bb82278e198245df66e127902fad03655caad5447e080cc1db155ab681b8ac90",
+      "peps/nlp.py": "cfdf49739700968d4fb9613d9db07d25b473e125c92f28e8ab605c3f1f09ed88",
+      "peps/official.py": "c864c512d84b06a1caf3b458c1cadf5820b805a2be7dc6f1c4c59cae0cfb66cf",
+      "peps/public_search.py": "4be65fdcdf19b9fb916093b96d4e565ba683594fd3dee1fa3b8fea17b05c37be",
+      "peps/publication_metadata.py": "d153030925d35ab29236eaf5cc35a1a30545d04a9dd3340418d6738e2ec93c2a",
+      "peps/relevance.py": "d8179049e62e0ca2b0277e6b3e94a94bf6cf453653db96ef925c4f50273d4175",
+      "peps/retrieval_aliases.py": "c1f7df8b8f2db24b16d8e99d4d2c2bf2cebc570d322060b73f64cb24a810e39b",
+      "peps/robots_policy.py": "33293cbaa7ca859ce37ae3104b8e84ab9478fb60e867d7643d88830513c2e453",
+      "peps/scoring.py": "ff4e9e9f19cb0c781f02c06b68c2e2eaa00ee08f22dd8f71219fa5042879fe7e",
+      "peps/shared_crawl.py": "1e1b522ad433ef2fcc10b52824ed4f9b05ef5e8e957593db49bc05d6b077638f",
+      "peps/shared_discovery.py": "8ee1d61a7fa426ce391938acd5c4c958b89f2d8a29772f053aeb294f63eedb65",
+      "peps/social_discovery.py": "e3420915e1c649020e291fb5a05ac66e52f0b2b206c4ad842fafed675e4d8892",
+      "peps/sources.py": "ee4bfcc6615b3f5d90a54d0d3297d81036393dcef4c5c71adc84ee939ef33c32",
+      "peps/store.py": "2106e27fcc7f670b4ff723ade648d3e76d39dc391eeb818edeb7446670cdfe4e",
+      "peps/workflow.py": "8df817d8c24289ec3c11debe6cf72cc53d82fa865becee0ddcf823b0fe033bc0",
+      "scripts/validate_live_pipeline.py": "227a314891f501d0bee41650b29da6edf61bd6b40b2fb645beb3d44e14789deb",
+      "scripts/validate_notary_search.py": "b65474bdea6b2299c9f43621895d42748a4622b5d335916c52e8ced62ec2883d",
+      "scripts/validate_publisher_bridge.py": "f6285e04179ddbab660cf5fc3a6dedb3a6a4743cf4139583551b70ec824e9d2b",
+      "scripts/validate_real_people.py": "be96acf8248d202a22c60ffeb2b64a3fbbfe4a43f8e08d1026990c74aa9b83e1"
+    }
+  },
+  "intermediate_attempts": [
+    {
+      "receipt_sha256": "b0ca4cf7581200954b1392dcdc4d0a40e3dab587872b5e9592aa13afda5b7dce",
+      "started_at": "2026-10-17T01:44:51.161890+00:00",
+      "completed_at": "2026-10-17T01:49:16.074379+00:00",
+      "online_e2e_seconds": 210.16252167199855,
+      "timings_seconds": {
+        "import": 0.02527497299888637,
+        "search_and_original_download": 182.5549089240085,
+        "identity_attribution": 18.128921244002413,
+        "production_scoring": 6.855232107001939,
+        "replay_and_explanations": 1.1286313230084488,
+        "production_export": 0.7604954020061996,
+        "actual_local_cache_reuse": 16.05578626100032,
+        "total_until_report": 264.91250532199047
+      },
+      "summary": {
+        "people": 300,
+        "people_with_completed_nominal_search": 300,
+        "people_with_at_least_one_completed_query": 300,
+        "people_with_all_queries_completed": 85,
+        "people_with_actual_query_http": 300,
+        "people_with_fetch_attempt_this_session": 20,
+        "people_with_current_candidates": 182,
+        "people_with_original_text": 141,
+        "current_candidate_urls": 1099,
+        "current_candidate_entity_pairs": 1220,
+        "unique_original_documents": 369,
+        "unique_original_body_hashes": 369,
+        "original_entity_text_pairs": 488,
+        "production_scores_computed": 300,
+        "assessment_states": {
+          "pending_identity": 141,
+          "insufficient_evidence": 159
+        },
+        "evaluated_zero_scores": 0,
+        "zeros_without_assessable_evidence_are_not_evaluated": true,
+        "actual_http_requests_cumulative": 3487,
+        "actual_http_requests_this_session": 36,
+        "pending_jobs": 0,
+        "job_status_counts": {
+          "blocked": 215,
+          "done": 3469,
+          "cancelled": 5
+        },
+        "query_status_counts": {
+          "blocked": 215,
+          "done": 3085
+        },
+        "http_status_counts_this_session": {
+          "200": 36
+        },
+        "fetch_outcome_counts_this_session": {
+          "host_interval": 117,
+          "ok": 36
+        },
+        "groups": {
+          "municipal_president": {
+            "people": 150,
+            "with_completed_nominal_search": 150,
+            "with_at_least_one_completed_query": 150,
+            "with_all_queries_completed": 71,
+            "with_original_text": 98,
+            "assessment_states": {
+              "pending_identity": 98,
+              "insufficient_evidence": 52
+            }
+          },
+          "notary": {
+            "people": 150,
+            "with_completed_nominal_search": 150,
+            "with_at_least_one_completed_query": 150,
+            "with_all_queries_completed": 14,
+            "with_original_text": 43,
+            "assessment_states": {
+              "pending_identity": 43,
+              "insufficient_evidence": 107
+            }
+          }
+        }
+      },
+      "checks": {
+        "all_people_imported": true,
+        "all_people_have_nominal_plan": true,
+        "plan_not_truncated": true,
+        "audit_valid": true,
+        "cumulative_http_budget_respected": true,
+        "actual_transport_and_durable_http_match": true,
+        "previous_completed_jobs_preserved": true,
+        "original_snapshots_hash_valid": true,
+        "captured_real_transport_bytes_hash_valid": true,
+        "candidate_entity_article_pairs_unique": true,
+        "all_people_received_production_score": true,
+        "all_current_scores_replayed_exactly": true,
+        "source_modules_stable_within_attempt": true,
+        "frozen_inputs_unchanged": true,
+        "no_fatal_error": true,
+        "original_body_content_hashes_valid": true,
+        "canonical_urls_unique": true,
+        "same_publisher_body_content_deduplicated": true,
+        "actual_cache_reuse_idempotent": false
+      },
+      "partial_reasons": [
+        "Some jobs are blocked/failed/dead; their exact errors remain in jobs/query_results"
+      ]
+    }
+  ],
+  "online_e2e_seconds_across_attempts": 2487.4920502119785,
+  "measured_attempt_total_seconds": 2684.8589145859733,
+  "cold_attempt": {
+    "receipt_sha256": "ba4404eaf4f994e5c74f81cb0a384d0f307bbc48c73a4bb8541c23ead3e332c8",
+    "started_at": "2026-10-17T01:00:08.269348+00:00",
+    "completed_at": "2026-10-17T01:38:13.188804+00:00",
+    "online_e2e_seconds": 2231.8942546219914,
+    "timings_seconds": {
+      "import": 0.08389464700303506,
+      "search_and_original_download": 2100.1923779210047,
+      "identity_attribution": 14.512216438000905,
+      "production_scoring": 8.200206591995084,
+      "replay_and_explanations": 108.16142799300724,
+      "production_export": 0.47532856299949344,
+      "actual_local_cache_reuse": 13.860870087999501,
+      "total_until_report": 2284.9194745569985
+    },
+    "summary": {
+      "people": 300,
+      "people_with_completed_nominal_search": 300,
+      "people_with_actual_query_http": 300,
+      "people_with_fetch_attempt_this_session": 300,
+      "people_with_current_candidates": 182,
+      "people_with_original_text": 143,
+      "current_candidate_urls": 1084,
+      "current_candidate_entity_pairs": 1202,
+      "unique_original_documents": 368,
+      "unique_original_body_hashes": 368,
+      "original_entity_text_pairs": 484,
+      "production_scores_computed": 300,
+      "assessment_states": {
+        "pending_identity": 143,
+        "insufficient_evidence": 157
+      },
+      "evaluated_zero_scores": 0,
+      "zeros_without_assessable_evidence_are_not_evaluated": true,
+      "actual_http_requests_cumulative": 3451,
+      "actual_http_requests_this_session": 3451,
+      "pending_jobs": 20,
+      "job_status_counts": {
+        "blocked": 215,
+        "done": 3433,
+        "cancelled": 5,
+        "deferred": 4,
+        "queued": 16
+      },
+      "query_status_counts": {
+        "blocked": 215,
+        "done": 3065,
+        "deferred": 4,
+        "queued": 16
+      },
+      "http_status_counts_this_session": {
+        "200": 3444,
+        "None": 4,
+        "202": 1,
+        "503": 1,
+        "301": 1
+      },
+      "fetch_outcome_counts_this_session": {
+        "robots_pending": 11,
+        "ok": 3433,
+        "host_interval": 10737,
+        "network_failure": 3,
+        "access_challenge": 1,
+        "host_circuit": 214,
+        "server_backoff": 1,
+        "session_limit": 1
+      },
+      "groups": {
+        "municipal_president": {
+          "people": 150,
+          "with_completed_nominal_search": 150,
+          "with_original_text": 100,
+          "assessment_states": {
+            "pending_identity": 100,
+            "insufficient_evidence": 50
+          }
+        },
+        "notary": {
+          "people": 150,
+          "with_completed_nominal_search": 150,
+          "with_original_text": 43,
+          "assessment_states": {
+            "pending_identity": 43,
+            "insufficient_evidence": 107
+          }
+        }
+      }
+    },
+    "checks": {
+      "all_people_imported": true,
+      "all_people_have_nominal_plan": true,
+      "plan_not_truncated": true,
+      "audit_valid": true,
+      "cumulative_http_budget_respected": true,
+      "actual_transport_and_durable_http_match": true,
+      "previous_completed_jobs_preserved": true,
+      "original_snapshots_hash_valid": true,
+      "captured_real_transport_bytes_hash_valid": true,
+      "candidate_entity_article_pairs_unique": true,
+      "all_people_received_production_score": true,
+      "all_current_scores_replayed_exactly": true,
+      "source_modules_stable_within_attempt": true,
+      "frozen_inputs_unchanged": true,
+      "no_fatal_error": true,
+      "original_body_content_hashes_valid": true,
+      "canonical_urls_unique": true,
+      "same_publisher_body_content_deduplicated": true,
+      "actual_cache_reuse_idempotent": false
+    },
+    "partial_reasons": [
+      "20 queued/deferred/running jobs remain",
+      "Some jobs are blocked/failed; their exact errors remain in jobs/query_results"
+    ]
+  },
+  "elapsed_between_attempts_seconds": 3600.484285,
+  "time_scope": "Cold and corrected reuse are separate real attempts; final counts are cumulative, not sums of their corpora."
+}

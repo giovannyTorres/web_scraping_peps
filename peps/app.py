@@ -144,6 +144,8 @@ def create_server(engine, port=0):
                 'pending_tasks': counts['pending_downloads'], 'failed_tasks': coverage['failed'],
                 'scope': 'current_bank', 'articles': observed['relevant_articles'], 'full_articles': observed['body_articles'],
                 'metadata_only_articles': observed['metadata_only_articles'],
+                'multimedia_reference_articles': observed['multimedia_reference_articles'],
+                'pending_text_articles': observed['pending_text_articles'],
                 'local_documents': observed['local_documents'],
                 'archived_articles': counts['articles'], 'archived_documents': counts['documents'],
                 'search': copy.deepcopy(archived.get('search')), 'search_plan': copy.deepcopy(coverage.get('search_plan')),
@@ -213,10 +215,12 @@ def create_server(engine, port=0):
 
     def analyze_bank():
         workflow.mark_analysis(status='running')
-        attribution = news.attribute(limit=None, rescore=False, cancelable=True, progress=tracker.update)
+        attribution_receipts = []
+        attribution = news.attribute(limit=None, rescore=False, cancelable=True, progress=tracker.update,
+                                     mutation_receipts=attribution_receipts)
         if engine.stop_event.is_set() or attribution.get('cancelled') or attribution.get('pending', 0):
             return {'status': 'paused', 'cancelled': engine.stop_event.is_set(), 'attribution': attribution}
-        workflow.mark_analysis(status='scoring')
+        workflow.mark_analysis(status='scoring', attribution_receipts=attribution_receipts)
         scored = engine.rescore(progress=tracker.update, cancelable=True, acquisition=acquisition_context())
         if engine.stop_event.is_set():
             return {'status': 'paused', 'cancelled': True, 'scored': scored, 'attribution': attribution}
@@ -465,7 +469,10 @@ def create_server(engine, port=0):
                 elif path == '/api/audit':
                     self.reply(engine.store.verify_audit())
                 elif path == '/api/news':
-                    value = {'stats': news.stats(), 'articles': news.articles(relevant_only=query.get('relevant', ['0'])[0] == '1'),
+                    article_scope = query.get('scope', [''])[0]
+                    if article_scope not in ('', 'full_article', 'multimedia_reference'):
+                        raise ValueError('Filtro de referencias no válido')
+                    value = {'stats': news.stats(), 'articles': news.articles(relevant_only=query.get('relevant', ['0'])[0] == '1', scope=article_scope or None),
                              'acquisition': acquisition_coverage(engine.store, news.sources())}
                     if query.get('summary', ['0'])[0] != '1':
                         value.update(sources=news.sources(), plan=news.plan())

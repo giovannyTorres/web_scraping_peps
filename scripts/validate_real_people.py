@@ -131,8 +131,13 @@ def make_config(args, people_count):
 
 
 def source_hashes():
+    # Validation helpers affect acquisition observation, copying and report
+    # semantics too; a future freeze must detect their changes as well.
+    paths = list((ROOT / 'peps').glob('*.py')) + [ROOT / 'scripts' / name for name in (
+        'validate_real_people.py', 'validate_notary_search.py',
+        'validate_live_pipeline.py', 'validate_publisher_bridge.py')]
     return {str(path.relative_to(ROOT)): hashlib.sha256(path.read_bytes()).hexdigest()
-            for path in sorted((ROOT / 'peps').glob('*.py'))}
+            for path in sorted(paths)}
 
 
 def db_counts(store):

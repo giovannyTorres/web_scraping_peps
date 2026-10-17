@@ -10,15 +10,17 @@ import ipaddress
 import json
 import re
 from html.parser import HTMLParser
-from urllib.parse import parse_qs, urlencode, urljoin, urlsplit
+from urllib.parse import parse_qs, unquote, urlencode, urljoin, urlsplit
+from xml.etree import ElementTree
 
 from .identity import COMPANY_KINDS, _fold
 
-PUBLIC_SEARCH_KINDS = frozenset({'mwmbl', 'duckduckgo_html', 'duckduckgo_lite', 'searxng', 'lemmy_search'})
+PUBLIC_SEARCH_KINDS = frozenset({'mwmbl', 'duckduckgo_html', 'duckduckgo_lite', 'searxng', 'lemmy_search', 'bing_news_rss'})
 DEFAULT_ENDPOINTS = {
     'mwmbl': 'https://mwmbl.org/api/v2/search/',
     'duckduckgo_html': 'https://html.duckduckgo.com/html/',
     'duckduckgo_lite': 'https://lite.duckduckgo.com/lite/',
+    'bing_news_rss': 'https://www.bing.com/news/search',
 }
 FOCUS_TERMS = {'adverse': ('corrupción', 'sanción'),
                'public_role': ('contrato', 'nombramiento')}
@@ -76,6 +78,12 @@ def public_search_url(query, source):
         args = {'q': query}
     elif kind == 'searxng':
         args = {'q': query, 'format': 'json', 'language': 'es', 'pageno': 1}
+    elif kind == 'bing_news_rss':
+        parts = urlsplit(endpoint)
+        if (parts.scheme != 'https' or parts.netloc != 'www.bing.com'
+                or parts.path != '/news/search' or parts.query or parts.fragment):
+            raise ValueError('Bing News RSS requiere su endpoint público declarado')
+        args = {'q': query, 'format': 'rss', 'mkt': 'es-MX'}
     else:
         raise ValueError('Buscador público no reconocido')
     return endpoint + ('&' if '?' in endpoint else '?') + urlencode(args)
@@ -149,6 +157,68 @@ def _ddg_url(value, base):
         return safe_result_url(target)
     except (ValueError, UnicodeError):
         return None
+
+
+def _bing_news_url(value):
+    """Read one explicit destination; never request an HTTP click wrapper.
+
+    The live RSS spells wrappers as HTTP. Only the exact observed Bing host
+    and path may provide an HTTPS destination; this does not authorize any
+    publisher, follow redirects or permit nested wrappers.
+    """
+    if (not isinstance(value, str) or not value or len(value) > 16384 or '\\' in value or '#' in value
+            or any(ord(char) < 33 or ord(char) == 127 for char in value)):
+        return None
+    try:
+        parts = urlsplit(value)
+        if parts.hostname != 'www.bing.com':
+            return None
+        if (parts.scheme not in {'http', 'https'} or parts.path != '/news/apiclick.aspx'
+                or parts.username is not None or parts.password is not None or parts.fragment
+                or parts.port not in (None, 80 if parts.scheme == 'http' else 443)):
+            return None
+        values = parse_qs(parts.query, keep_blank_values=True, max_num_fields=32).get('url', [])
+        if len(values) != 1 or not values[0] or len(values[0]) > 8192:
+            return None
+        target = values[0]
+        # parse_qs already decoded one layer. A second encoded absolute scheme
+        # may be decoded once; existing escaped path/query bytes stay intact.
+        if re.match(r'^https%3a%2f%2f', target, re.I):
+            target = unquote(target, errors='strict')
+        target = safe_result_url(target)
+        if target is None or '#' in target:
+            return None
+        destination = urlsplit(target)
+        host = destination.hostname.rstrip('.').lower()
+        if destination.fragment or host == 'bing.com' or host.endswith('.bing.com'):
+            return None
+        return target
+    except (ValueError, UnicodeError):
+        return None
+
+
+def _bing_news_records(body):
+    if body.lstrip('\ufeff \t\r\n').lower().startswith(('<!doctype html', '<html')):
+        raise ValueError('Bing News RSS devolvió HTML; formato no compatible, búsqueda no completada')
+    if '<!DOCTYPE' in body.upper() or '<!ENTITY' in body.upper():
+        raise ValueError('Bing News RSS no admite declaraciones ni entidades XML')
+    try:
+        root = ElementTree.fromstring(body)
+    except (ElementTree.ParseError, ValueError) as exc:
+        raise ValueError('Bing News RSS devolvió XML inválido; búsqueda no completada') from exc
+    channels = root.findall('channel')
+    if root.tag != 'rss' or root.attrib.get('version') != '2.0' or len(channels) != 1:
+        raise ValueError('Bing News RSS devolvió un formato no reconocido; no equivale a cero resultados')
+    records = []
+    for item in channels[0].findall('item'):
+        title, wrapper = item.findtext('title'), item.findtext('link')
+        if not isinstance(title, str) or not isinstance(wrapper, str):
+            raise ValueError('Bing News RSS devolvió una noticia sin título o enlace')
+        records.append({'url': _bing_news_url(wrapper), 'title': title,
+                        'text': item.findtext('description') or '',
+                        'provider_link': wrapper,
+                        'provider_publication_date': (item.findtext('pubDate') or '')[:200] or None})
+    return records
 
 
 class _DuckResults(HTMLParser):
@@ -233,7 +303,9 @@ def parse_public_results(fetch_result, source):
     kind = source.get('kind')
     limit = min(100, max(1, int(source.get('max_records', 50))))
     base = fetch_result.get('final_url') or fetch_result.get('url') or source.get('url', '')
-    if kind in {'duckduckgo_html', 'duckduckgo_lite'}:
+    if kind == 'bing_news_rss':
+        records = _bing_news_records(body)
+    elif kind in {'duckduckgo_html', 'duckduckgo_lite'}:
         parser = _DuckResults(base)
         parser.feed(body)
         parser.close()
@@ -283,6 +355,10 @@ def parse_public_results(fetch_result, source):
             'published_at': None, 'source_kind': 'discovery', 'source_id': source.get('id', kind),
             'metadata': {'discovery_only': True, 'public_web_search': True, 'search_provider': kind,
                          'publication_date_unknown': True, 'score_effect': 'none'}})
+        if kind == 'bing_news_rss':
+            result[-1]['metadata'].update(provider_link=record['provider_link'],
+                provider_publication_date=record['provider_publication_date'],
+                provider_date_unverified=True, explicit_destination_unwrapped=True)
     fetch_result['parse_metadata'] = {'observed_entries': len(records), 'truncated': len(seen) > limit,
         'excluded_unsafe_or_non_https_urls': rejected, 'scope': 'public_web_top_results',
         'publication_dates': 'unknown', 'complete_archive': False, 'discovery_only': True}

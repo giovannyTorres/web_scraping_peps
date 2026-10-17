@@ -52,6 +52,10 @@ class CollectionError(Exception):
     """A request failed a collection boundary."""
 
 
+class _ArticlePathScopeError(CollectionError):
+    """An article or redirect left its configured path scope."""
+
+
 class _DeadlineReader(io.RawIOBase):
     """Enforce one wall-clock budget on every underlying socket receive."""
     def __init__(self, sock, deadline: float):
@@ -452,6 +456,9 @@ class SafeFetcher:
         allowed = {self._hostname(item) for item in source.get("allowed_hosts", [])}
         if host not in allowed:
             raise CollectionError("Host is not in the source allowlist: " + host)
+        from .article_paths import ARTICLE_PATH_SCOPE_FLAG, article_path_allowed
+        if source.get(ARTICLE_PATH_SCOPE_FLAG) and not article_path_allowed(url, source):
+            raise _ArticlePathScopeError('Article URL path is outside the configured source scope')
         if host in {"localhost", "metadata.google.internal"} or host.endswith((".local", ".internal", ".localhost")):
             raise CollectionError("Private hostnames are forbidden")
         normalized = urlunsplit(("https", host, parts.path or "/", parts.query, ""))
@@ -727,6 +734,8 @@ class SafeFetcher:
                 retry = self._backoff(host, reason="Transient network failure")
                 return self._result(url, "deferred", error="Transient network failure: " + type(exc).__name__, retry_at=_iso(retry), error_code="network_failure", request_attempted=True), current, None, {}, b""
             return self._result(url, "error", error=type(exc).__name__), current, None, {}, b""
+        except _ArticlePathScopeError as exc:
+            return self._result(url, 'blocked', error=str(exc), error_code='article_path_scope'), current, None, {}, b''
         except (CollectionError, ValueError, UnicodeError) as exc:
             return self._result(url, "error", error=str(exc)[:500]), current, None, {}, b""
 
@@ -774,6 +783,8 @@ class SafeFetcher:
 
     def _refresh_robots(self, url: str, origin: str, source: dict, now: float):
         robot_source = dict(source, max_bytes=min(int(source.get("max_bytes", 2_000_000)), 512_000))
+        from .article_paths import ARTICLE_PATH_SCOPE_FLAG
+        robot_source.pop(ARTICLE_PATH_SCOPE_FLAG, None)  # robots has its own bounded policy, not article paths
         failure, _, status, headers, raw = self._request(origin + "/robots.txt", robot_source, request_kind="robots")
         if failure:
             if failure["status"] in ("blocked", "deferred"):
@@ -903,6 +914,8 @@ class SafeFetcher:
         source = dict(source)
         try:
             normalized, host, _ = self._validate_url(url, source, resolve=False)
+        except _ArticlePathScopeError as exc:
+            return self._result(url, 'blocked', error=str(exc), error_code='article_path_scope')
         except (CollectionError, ValueError, TypeError) as exc:
             return self._result(url, "error", error=str(exc)[:500])
         now = self._clock()

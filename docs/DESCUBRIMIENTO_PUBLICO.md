@@ -172,3 +172,23 @@ Los feeds y sitemaps de editores siguen siendo complementos útiles y acotados.
 Scrapy, Crawlee y YaCy ayudan a operar un crawler o índice propio, pero instalar
 una biblioteca no crea la cobertura histórica de un buscador global. Véase
 [crawlers y descubrimiento compartido](CRAWLERS_Y_DESCUBRIMIENTO.md).
+
+## Comprobaciones adicionales del 17 de octubre de 2026
+
+El catálogo 2.9.5 incluye dos perfiles opcionales nuevos, deshabilitados y con
+sus permisos de consulta y cuerpos sin conceder. La API pública WordPress de
+Sin Línea MX funciona con el adaptador existente: una consulta nominal de Clara
+Brugada Molina devolvió 38 candidatos, incluidos los ocho localizados por RSS.
+Es una comprobación de descubrimiento para una figura conocida; no mide la
+cobertura de notarios, la pertinencia de los cuerpos ni su identidad.
+
+El endpoint distinto `https://www.bing.com/news/search?format=rss` respondió con
+RSS real en tres de cinco consultas y con HTML en otras dos. Su adaptador nuevo
+señala el HTML como error de formato, conserva el enlace de procedencia y sólo
+extrae destinos HTTPS explícitos del wrapper conocido, sin solicitarlo. El
+resultado anterior sobre `/search` permanece válido para ese otro path. El
+copyright del RSS restringe su presentación a agregadores personales y no
+comerciales; otros usos requieren permiso expreso y escrito de Microsoft.
+El perfil permanece deshabilitado y la prueba masiva de 300 personas no lo usó.
+Los editores de los artículos requieren permisos separados. No se evitan
+verificaciones, bloqueos, reglas de robots ni pausas de las fuentes.

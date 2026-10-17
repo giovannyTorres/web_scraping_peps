@@ -14,8 +14,8 @@ from typing import Any
 
 from .identity import COMPANY_KINDS
 
-MODEL_VERSION = "es-gazetteer-rules-1.0.3"
-RULES_VERSION = "mx-reputational-2026-10-16"
+MODEL_VERSION = "es-gazetteer-rules-1.0.5"
+RULES_VERSION = "mx-reputational-2026-10-17-r2"
 SENTENCE_PATTERN = r"[^\r\n.!?;]+(?:[.!?;]+|(?=\r?\n|$))"
 
 
@@ -95,18 +95,27 @@ NOTARIAL_MEASURE = re.compile(
     r"(?:la|el|su)\s+(?:patente|nombramiento)\b|"
     r"(?:decidio|decidieron|determino|determinaron)\s+"
     r"(?:suspender\s+(?:las\s+)?funciones\s+del ejercicio\s+notarial|"
-    r"revocar\s+de\s+la\s+notaria(?:\s+(?:numero\s+)?\d+)?))\b")
+    r"revocar\s+de\s+la\s+notaria(?:\s+(?:numero\s+)?\d+)?)|"
+    r"inhabilit(?:o|aron)(?:\s+de\s+manera\s+definitiva)?)\b")
+NOTARIAL_RECEIVED_MEASURE = re.compile(
+    r"\brecibio\s+(?:(?:una|la)\s+)?(?:(?:segunda|nueva|otra)\s+)?"
+    r"(?:suspension\s+de\s+(?:sus|las)\s+(?:actividades|funciones)\s+notariales|"
+    r"inhabilitacion(?:\s+definitiva)?\s+a\s+su\s+cargo\s+como\s+fedatario)\b")
 NOTARIAL_GROUNDS = re.compile(
-    r"\b(?:irregularidad(?:es)?|incumplimiento|falta(?:s)?(?:\s+grave)?\s+de\s+probidad|"
+    r"\b(?:irregularidad(?:es)?|irregulares|anomalias?|incumpl(?:imiento|ir)|"
+    r"resolverse\s+(?:una\s+)?(?:segunda\s+)?queja|falta(?:s)?(?:\s+grave)?\s+de\s+probidad|"
     r"faltas?\s+administrativas?|responsabilidad\s+notarial|"
     r"proceso\s+sancionador|procedimiento\s+sancionador|fraude|corrupcion)\b")
 NOTARIAL_VOLUNTARY = re.compile(
     r"\b(?:renuncia|renuncio|jubilacion|fallecimiento|solicitud\s+propia|"
     r"propia\s+voluntad|voluntari[oa])\b")
 NOTARIAL_RECEIVER_TITLE = re.compile(
-    r"(?:notari[oa](?:\s+public[oa])?(?:\s+titular)?|"
+    r"(?:(?:el|la)\s+)?(?:notari[oa](?:\s+public[oa])?(?:\s+titular)?|"
     r"titular(?:\s+de\s+la\s+notaria(?:\s+publica)?)?)"
-    r"(?:\s+numero\s+[\w-]+)?(?:\s+(?:de|del)\s+[\w -]{1,130})?\s*,?\s*$")
+    r"(?:\s+numero\s+[\w-]+|\s+\d+)?(?:\s+(?:de|del)\s+[\w -]{1,130})?\s*,?\s*$")
+NOTARIAL_TARGET_APPOSITIVE = re.compile(
+    r"^\s*,\s*(?:notari[oa](?:\s+public[oa])?|fedatario|"
+    r"titular\s+de\s+la\s+notaria)\b")
 NOTARIAL_RECEIVER_EXCLUSIONS = re.compile(
     r"\b(?:quien|que|segun|explico|informo|denuncio|aseguro|declaro|"
     r"familiar|sobrino|hijo|padre|madre|hermano|esposo|reporto)\b")
@@ -115,19 +124,32 @@ NOTARIAL_BOUND_OBJECT = re.compile(
     r"\bejercicio\s+notarial\b|\brevocar\s+de\s+la\s+notaria\b")
 NOTARIAL_ADMINISTRATIVE_PROCEEDING = re.compile(
     r"\b(?:responsabilidad\s+notarial|proceso\s+sancionador|procedimiento\s+sancionador)\b")
-NOTARIAL_POLICY = "enacted_measure_explicit_recipient_same_clause_adverse_grounds_no_voluntary_1"
+NOTARIAL_POLICY = "enacted_measure_explicit_recipient_same_clause_adverse_grounds_no_voluntary_3"
+
+# A reported departure from custody followed by the same named subject's
+# continued proceeding is neither an acquittal nor a conviction. Do not borrow
+# offences from later pronoun-only sentences or resolve another named actor.
+POST_RELEASE_PROCESS = re.compile(
+    r"\bcontinuara\s+su\s+proceso\s+con\s+medidas\s+cautelares\b")
+POST_RELEASE_SUBJECT_LINK = re.compile(
+    r"\s*,?\s*abandono\s+(?:la\s+carcel|(?:la\s+)?prision)\s*,\s*"
+    r"(?:sin\s+embargo|pero|no\s+obstante)\s*,?\s*")
 
 RULES_HASH = hashlib.sha256(json.dumps({"categories": CATEGORY_PATTERNS,
     "stages": STAGE_PATTERNS, "severity": CATEGORY_SEVERITY, "sentences": SENTENCE_PATTERN,
     "corporate_officer": CORPORATE_OFFICER_OF.pattern,
     "notarial_measure": NOTARIAL_MEASURE.pattern,
+    "notarial_received_measure": NOTARIAL_RECEIVED_MEASURE.pattern,
     "notarial_grounds": NOTARIAL_GROUNDS.pattern,
     "notarial_voluntary": NOTARIAL_VOLUNTARY.pattern,
     "notarial_receiver_title": NOTARIAL_RECEIVER_TITLE.pattern,
+    "notarial_target_appositive": NOTARIAL_TARGET_APPOSITIVE.pattern,
     "notarial_receiver_exclusions": NOTARIAL_RECEIVER_EXCLUSIONS.pattern,
     "notarial_bound_object": NOTARIAL_BOUND_OBJECT.pattern,
     "notarial_administrative_proceeding": NOTARIAL_ADMINISTRATIVE_PROCEEDING.pattern,
     "notarial_policy": NOTARIAL_POLICY,
+    "post_release_process": POST_RELEASE_PROCESS.pattern,
+    "post_release_subject_link": POST_RELEASE_SUBJECT_LINK.pattern,
     "other_actor_passive": OTHER_ACTOR_PASSIVE.pattern,
     "corporate_relation_policy": "officer_and_explicit_other_subject_are_context_1"},
     sort_keys=True, ensure_ascii=False).encode()).hexdigest()
@@ -304,29 +326,66 @@ def _notarial_measure_applies(normalized: str, match, sentence: str,
     This lexical candidate is not identity or legal-outcome verification. It
     deliberately does not resolve pronouns, missing aliases, or other clauses.
     """
-    if not NOTARIAL_GROUNDS.search(normalized) or NOTARIAL_VOLUNTARY.search(normalized):
+    grounds = [ground for ground in NOTARIAL_GROUNDS.finditer(normalized)
+               if not _negated(normalized[max(0, ground.start() - 180):ground.start()])]
+    if not grounds or NOTARIAL_VOLUNTARY.search(normalized):
         return False
     for mention in mentions:
         start = len(_normalized(sentence[:mention['start'] - sentence_start])[0])
+        end = len(_normalized(sentence[:mention['end'] - sentence_start])[0])
+        if NOTARIAL_RECEIVED_MEASURE.fullmatch(match.group()):
+            # The literal named subject must receive a professional measure,
+            # rather than report a complaint or another person's suspension.
+            if (0 <= match.start() - end <= 20
+                    and re.fullmatch(r"\s*,?\s*", normalized[end:match.start()])):
+                return True
+            continue
         if not 0 <= start - match.end() <= 260:
             continue
         between = normalized[match.end():start]
+        if (re.fullmatch(r"(?:revoco|revocaron)\s+(?:de manera definitiva\s+)?"
+                         r"(?:la|su)\s+patente", match.group())
+                and re.fullmatch(r"\s+del\s+notari[oa](?:\s+public[oa])?\s+", between)):
+            # "revocó la patente del notario NAME" names the professional
+            # recipient explicitly; adverse grounds are still mandatory above.
+            return True
+        if (between.strip() == 'de'
+                and re.fullmatch(r"(?:revoco|revocaron|cancelo|cancelaron|retiro|retiraron)\s+"
+                                 r"(?:de manera definitiva\s+)?(?:la|el|su)\s+"
+                                 r"(?:patente|nombramiento)", match.group())
+                and NOTARIAL_TARGET_APPOSITIVE.match(normalized[end:])):
+            # "revocó el nombramiento de NAME, notario..." binds the
+            # professional title to this recipient, not an unrelated license.
+            return True
         recipient_markers = list(re.finditer(r"\b(?:a|al)\s+", between))
         if len(recipient_markers) != 1:
             continue
         object_context = normalized[match.start():match.end()] + between[:recipient_markers[0].start()]
         bound_professional_object = NOTARIAL_BOUND_OBJECT.search(object_context)
         administrative_proceeding = NOTARIAL_ADMINISTRATIVE_PROCEEDING.search(normalized)
-        if not bound_professional_object and not administrative_proceeding:
-            continue
         receiver_title = between[recipient_markers[0].end():]
         if receiver_title.strip() and (not NOTARIAL_RECEIVER_TITLE.fullmatch(receiver_title)
                                       or NOTARIAL_RECEIVER_EXCLUSIONS.search(receiver_title)):
+            continue
+        inhabilitated_notary = (match.group().startswith('inhabilit')
+                               and not between[:recipient_markers[0].start()].strip()
+                               and NOTARIAL_RECEIVER_TITLE.fullmatch(receiver_title))
+        if not bound_professional_object and not administrative_proceeding and not inhabilitated_notary:
             continue
         scope = normalized[max(0, match.start() - 90):start]
         if re.search(r"\b(?:notari[oa]s?|notarial(?:es)?)\b", scope):
             return True
     return False
+
+
+def _post_release_process_matches(normalized, sentence, sentence_start, mentions):
+    for match in POST_RELEASE_PROCESS.finditer(normalized):
+        for mention in mentions:
+            end = len(_normalized(sentence[:mention['end'] - sentence_start])[0])
+            if (end <= match.start()
+                    and POST_RELEASE_SUBJECT_LINK.fullmatch(normalized[end:match.start()])):
+                yield match
+                break
 
 
 def analyze(text: str, entity: dict[str, Any], source_kind: str = "news") -> dict[str, Any]:
@@ -347,8 +406,12 @@ def analyze(text: str, entity: dict[str, Any], source_kind: str = "news") -> dic
         normalized, offsets = _normalized(sentence)
         stages = [(stage, match) for stage, pattern in STAGE_PATTERNS.items()
                   for match in re.finditer(pattern, normalized)]
-        stages.extend(("sanction", match) for match in NOTARIAL_MEASURE.finditer(normalized)
-                      if _notarial_measure_applies(normalized, match, sentence, sentence_start, local_mentions))
+        notarial_matches = [match for pattern in (NOTARIAL_MEASURE, NOTARIAL_RECEIVED_MEASURE)
+                            for match in pattern.finditer(normalized)
+                            if _notarial_measure_applies(normalized, match, sentence, sentence_start, local_mentions)]
+        stages.extend(("sanction", match) for match in notarial_matches)
+        stages.extend(("investigation", match) for match in
+                      _post_release_process_matches(normalized, sentence, sentence_start, local_mentions))
         if not stages:
             continue
         contrasts = list(re.finditer(r"\b(?:pero|aunque|sin embargo)\b|\b[ye]\s+(?=(?:fue|sigue|continua|esta|es|ha|permanece|resulto|quedo|acusad|investigad|detenid|absuelt))", normalized))
@@ -368,7 +431,8 @@ def analyze(text: str, entity: dict[str, Any], source_kind: str = "news") -> dic
             if (relationship == 'direct' and _fold(entity.get('kind', 'person')) in COMPANY_KINDS
                     and _corporate_context(normalized, folded_a, folded_b, match.start(), match.end())):
                 relationship = 'context'
-            if relationship == "direct" and _reporter(normalized, folded_b):
+            if (relationship == "direct" and _reporter(normalized, folded_b)
+                    and match not in notarial_matches):
                 relationship = "context"
             prefix = normalized[max(0, match.start() - 180):match.start()]
             negated = _negated(prefix)
