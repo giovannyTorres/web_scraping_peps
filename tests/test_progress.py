@@ -114,8 +114,11 @@ class ProgressTests(unittest.TestCase):
         for state in ('spawn', 'deferred', 'blocked', 'dead'):
             store.enqueue(prefix, {'state': state}, key=state)
 
+        executed = []
+
         def execute(job, *_):
             state = job['payload']['state']
+            executed.append(state)
             if state == 'spawn':
                 store.enqueue(prefix, {'state': 'child'}, key='dynamic-child')
             store.finish(job, state if state in ('deferred', 'blocked', 'dead') else 'done',
@@ -136,10 +139,13 @@ class ProgressTests(unittest.TestCase):
             if news_only:
                 news = self.news_fixture(count=0)
                 with patch.object(news, 'execute', side_effect=execute):
-                    result = news.acquire(queue=False, workers=1, seconds=2, progress=observe)
+                    result = news.acquire(queue=False, workers=1, seconds=30, max_articles=5, progress=observe)
             else:
                 with patch.object(self.engine, '_execute', side_effect=execute):
-                    result = self.engine.run(workers=1, seconds=2, progress=observe)
+                    result = self.engine.run(workers=1, seconds=30, max_jobs=5, progress=observe)
+        # Counts and committed states are the contract; wall time is only a
+        # safety bound, including on slower SQLite/Windows runners.
+        self.assertCountEqual(executed, ['spawn', 'deferred', 'blocked', 'dead', 'child'])
         self.assertEqual(result['processed'], 5)
         self.assertEqual(result['completed'], 2)
         self.assertEqual(result['pending'], 1)
@@ -218,11 +224,12 @@ class ProgressTests(unittest.TestCase):
     def test_new_discovery_withdraws_a_previously_known_total(self):
         news = self.news_fixture(count=0)
         store = self.engine.store
-        for index in range(2):
-            store.enqueue('news_article', {'index': index}, key='known-article:' + str(index))
-        events = []
+        identifiers = [store.enqueue('news_article', {'index': index}, key='known-article:' + str(index))
+                       for index in range(2)]
+        events, executed = [], []
 
         def execute(job, *_):
+            executed.append(job['id'])
             store.finish(job)
 
         def observe(event):
@@ -235,8 +242,11 @@ class ProgressTests(unittest.TestCase):
                 pass
 
         with patch('peps.collector.SafeFetcher', Fetcher), patch.object(news, 'execute', side_effect=execute):
-            result = news.acquire(queue=False, workers=1, seconds=1, progress=observe)
+            result = news.acquire(queue=False, workers=1, seconds=30, max_articles=2, progress=observe)
         unit_events = [event for event in events if event['event'] == 'progress']
+        self.assertCountEqual(executed, identifiers)
+        self.assertEqual(result['processed'], 2)
+        self.assertEqual(len(unit_events), 2)
         self.assertEqual(unit_events[0]['total'], 2)
         self.assertIsNone(unit_events[1]['total'])
         self.assertIsNone(events[-1]['total'])
@@ -247,24 +257,70 @@ class ProgressTests(unittest.TestCase):
     def test_terminal_failures_remain_in_known_total_without_counting_as_completed(self):
         news = self.news_fixture(count=0)
         store = self.engine.store
-        store.enqueue('news_article', {'outcome': 'done'}, key='done-article')
-        store.enqueue('news_article', {'outcome': 'blocked'}, key='blocked-article')
-        events = []
+        identifiers = [store.enqueue('news_article', {'outcome': outcome}, key=outcome + '-article')
+                       for outcome in ('done', 'blocked')]
+        events, executed = [], []
 
         class Fetcher:
             def __init__(self, *_args, **_kwargs):
                 pass
 
         def execute(job, *_):
+            executed.append(job['id'])
             store.finish(job, job['payload']['outcome'])
 
         with patch('peps.collector.SafeFetcher', Fetcher), patch.object(news, 'execute', side_effect=execute):
-            result = news.acquire(queue=False, workers=1, seconds=1, progress=events.append)
+            result = news.acquire(queue=False, workers=1, seconds=30, max_articles=2, progress=events.append)
+        self.assertCountEqual(executed, identifiers)
+        self.assertEqual(result['processed'], 2)
+        with store.connection() as con:
+            self.assertCountEqual([row['status'] for row in con.execute('SELECT status FROM jobs')],
+                                  ['done', 'blocked'])
         self.assertEqual(result['completed'], 1)
         self.assertEqual(result['total'], 2)
         self.assertEqual(result['failed'], 1)
         self.assertEqual(result['pending'], 0)
         self.assertTrue(all(event['total'] == 2 for event in events[1:]))
+
+    def test_news_deadline_preserves_the_next_unclaimed_unit_and_reports_partial_progress(self):
+        news = self.news_fixture(count=0)
+        store = self.engine.store
+        identifiers = [store.enqueue('news_article', {'index': index}, key='deadline:' + str(index))
+                       for index in range(2)]
+        events, executed, clock = [], [], [0.]
+
+        class Fetcher:
+            def __init__(self, *_args, **_kwargs):
+                pass
+
+        def execute(job, *_):
+            executed.append(job['id'])
+            store.finish(job)
+            # Advance elapsed time after a real commit, without a slow sleep
+            # or a runner-speed assumption in this deadline-specific test.
+            clock[0] = 1.
+
+        with patch('peps.collector.SafeFetcher', Fetcher), \
+             patch.object(news, 'execute', side_effect=execute), \
+             patch('peps.news.time.monotonic', side_effect=lambda: clock[0]):
+            result = news.acquire(queue=False, workers=1, seconds=.5, max_articles=2, progress=events.append)
+        self.assertEqual(len(executed), 1)
+        self.assertIn(executed[0], identifiers)
+        self.assertEqual(result['processed'], 1)
+        self.assertEqual(result['completed'], 1)
+        self.assertEqual(result['pending'], 1)
+        self.assertEqual(result['failed'], 0)
+        self.assertEqual(result['stop_reason'], 'time_limit')
+        self.assertFalse(result['queue_complete'])
+        self.assertEqual(events[-1]['completed'], 1)
+        self.assertEqual(events[-1]['pending'], 1)
+        with store.connection() as con:
+            rows = [dict(row) for row in con.execute('SELECT id,status,attempts,owner FROM jobs')]
+        self.assertEqual(next(row for row in rows if row['id'] == executed[0])['status'], 'done')
+        remaining = next(row for row in rows if row['id'] != executed[0])
+        self.assertEqual(remaining['status'], 'queued')
+        self.assertEqual(remaining['attempts'], 0)
+        self.assertIsNone(remaining['owner'])
 
     def test_early_stop_is_preserved_before_downloader_worker_starts(self):
         news = self.news_fixture(count=0)
