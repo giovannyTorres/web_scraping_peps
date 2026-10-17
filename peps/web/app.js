@@ -341,7 +341,7 @@ action('prepare-public-sources',async()=>{
   })();
   sourceSaves.add(task);window.pepsWorkflow?.update(lastStats);
   try{await task;message('Búsqueda API y lectura pública preparadas. Puedes revisar ambos permisos antes de iniciar.');}
-  finally{sourceSaves.delete(task);for(const field of fields)delete field.dataset.permissionSaving;await loadNews();await refresh(true);}
+  finally{try{await loadNews();await window.pepsWorkflow?.sourcesChanged();await refresh(true);}finally{sourceSaves.delete(task);for(const field of fields)delete field.dataset.permissionSaving;window.pepsWorkflow?.update(lastStats);}}
 });
 $('news-register-scope').onchange=()=>loadNews(false).catch(error=>message(error.message,true));
 function filterNewsSources(){
@@ -402,7 +402,7 @@ async function loadNews(includeSources=true){
     const save=async()=>{
       const fields=publicBodies?[body]:aggregator?[consult]:[consult,body],values={enabled:publicBodies?body.checked:consult.checked,terms_approved:publicBodies?body.checked:consult.checked,download_articles:!aggregator&&body.checked,article_terms_approved:!aggregator&&body.checked};
       for(const field of fields){field.disabled=true;field.dataset.permissionSaving='true';}
-      const task=(async()=>{try{await api('news-source',{id:source.id,...values});saved=values;update();await refresh(true);}catch(error){consult.checked=saved.enabled&&saved.terms_approved;body.checked=saved.download_articles&&saved.article_terms_approved;message(error.message,true);}})();
+      const task=(async()=>{try{await api('news-source',{id:source.id,...values});saved=values;update();await window.pepsWorkflow?.sourcesChanged();await refresh(true);}catch(error){consult.checked=saved.enabled&&saved.terms_approved;body.checked=saved.download_articles&&saved.article_terms_approved;message(error.message,true);}})();
       sourceSaves.add(task);window.pepsWorkflow?.update(lastStats);
       try{await task;}finally{sourceSaves.delete(task);for(const field of fields){delete field.dataset.permissionSaving;field.disabled=false;}window.pepsWorkflow?.update(lastStats);}
     };

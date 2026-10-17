@@ -71,7 +71,8 @@ def observed_response_headers(headers):
 def measured_hashes():
     helpers = (Path(__file__).resolve(), ROOT / 'scripts/validate_real_people.py',
                ROOT / 'scripts/validate_notary_search.py')
-    return source_hashes() | {str(path.relative_to(ROOT)): sha256(path.read_bytes()) for path in helpers}
+    measured = {Path(name).as_posix(): value for name, value in source_hashes().items()}
+    return measured | {path.relative_to(ROOT).as_posix(): sha256(path.read_bytes()) for path in helpers}
 
 
 def write_json(path, value):

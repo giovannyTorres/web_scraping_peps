@@ -21,6 +21,7 @@ jobs:
       - run: python scripts/test_acquisition_ui.py
       - run: python scripts/test_shared_acquisition_ui.py
       - run: python scripts/test_search_clarity_ui.py
+      - run: python scripts/test_source_permissions_ui.py
       - run: python scripts/test_import_ui.py
       - run: python scripts/test_explainability_ui.py
       - uses: actions/upload-artifact@v4
@@ -34,6 +35,7 @@ jobs:
             runtime/acquisition-ui-validation/
             runtime/shared-acquisition-ui-validation/
             runtime/search-clarity-ui-validation/
+            runtime/source-permissions-ui-validation/
             runtime/import-ui-validation/
             runtime/ui-validation/
   unit:

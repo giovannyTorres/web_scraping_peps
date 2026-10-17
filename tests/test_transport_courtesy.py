@@ -1,6 +1,6 @@
 """Durable transport courtesy under DNS delay; fixture transport only."""
 from concurrent.futures import ThreadPoolExecutor
-from contextlib import contextmanager
+from contextlib import closing, contextmanager
 from pathlib import Path
 import socket
 import sqlite3
@@ -115,7 +115,7 @@ class TransportCourtesyTests(unittest.TestCase):
                         return con.execute(sql, *args)
                 yield Connection()
         self.a._db = observed_db
-        with sqlite3.connect(self.a.db_path) as blocker:
+        with closing(sqlite3.connect(self.a.db_path)) as blocker, blocker:
             blocker.execute('BEGIN IMMEDIATE')
             with ThreadPoolExecutor(max_workers=1) as pool:
                 future = pool.submit(self.a._reserve, 'news.example', 1)
@@ -133,20 +133,22 @@ class TransportCourtesyTests(unittest.TestCase):
     def test_existing_host_database_preserves_backoff_without_new_schema(self):
         with tempfile.TemporaryDirectory() as other:
             path = Path(other)
-            with sqlite3.connect(path / 'network.sqlite3') as con:
+            with closing(sqlite3.connect(path / 'network.sqlite3')) as con, con:
                 con.execute("""CREATE TABLE hosts(host TEXT PRIMARY KEY,
                     next_at REAL NOT NULL DEFAULT 0,blocked_until REAL NOT NULL DEFAULT 0,
                     reason TEXT NOT NULL DEFAULT '',failures INTEGER NOT NULL DEFAULT 0,
                     last_at REAL NOT NULL DEFAULT 0)""")
                 con.execute('INSERT INTO hosts VALUES(?,?,?,?,?,?)', ('news.example', 123, 456, 'Existing circuit', 2, 120))
             fetcher = SafeFetcher({}, path)
-            self.addCleanup(fetcher.close)
-            with fetcher._db() as con:
-                row = dict(con.execute("SELECT * FROM hosts WHERE host='news.example'").fetchone())
-            self.assertNotIn('last_transport_at', row)
-            self.assertEqual(row['next_at'], 123)
-            self.assertEqual(row['blocked_until'], 456)
-            self.assertEqual(row['failures'], 2)
+            try:
+                with fetcher._db() as con:
+                    row = dict(con.execute("SELECT * FROM hosts WHERE host='news.example'").fetchone())
+                self.assertNotIn('last_transport_at', row)
+                self.assertEqual(row['next_at'], 123)
+                self.assertEqual(row['blocked_until'], 456)
+                self.assertEqual(row['failures'], 2)
+            finally:
+                fetcher.close()
 
     def test_known_wait_or_circuit_never_resolves_dns(self):
         self.a._dns = lambda *_a, **_k: self.fail('Known host wait attempted DNS')

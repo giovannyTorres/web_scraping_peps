@@ -17,13 +17,13 @@ PERMISSIONS = ('enabled', 'terms_approved', 'download_articles',
 
 class RecommendedSourcesTests(unittest.TestCase):
     def setUp(self):
-        self.defaults = json.loads((ROOT / 'peps/defaults/news_sources.json').read_text())
+        self.defaults = json.loads((ROOT / 'peps/defaults/news_sources.json').read_text(encoding='utf-8'))
         self.sources = {source['id']: source for source in self.defaults['sources']}
 
     def test_new_install_has_reviewed_api_and_independent_reading_both_off(self):
         api = self.sources['lumy_general_v1']
         reader = self.sources['public_research_articles']
-        self.assertEqual(self.defaults, json.loads((ROOT / 'config/news_sources.example.json').read_text()))
+        self.assertEqual(self.defaults, json.loads((ROOT / 'config/news_sources.example.json').read_text(encoding='utf-8')))
         for source in (api, reader):
             self.assertTrue(all(source[key] is False for key in PERMISSIONS))
             self.assertIs(source['robots_required'], True)

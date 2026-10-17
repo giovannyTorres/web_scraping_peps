@@ -10,6 +10,7 @@ import json
 import re
 import unicodedata
 from datetime import date
+from functools import lru_cache
 from typing import Any
 
 from .identity import COMPANY_KINDS
@@ -19,12 +20,24 @@ RULES_VERSION = "mx-reputational-2026-10-17-r4"
 SENTENCE_PATTERN = r"[^\r\n.!?;]+(?:[.!?;]+|(?=\r?\n|$))"
 
 
-def _fold(value: str) -> str:
+def _fold_uncached(value: str) -> str:
     # Preserve ñ: ano and año must never become the same gazetteer entry.
     value = unicodedata.normalize("NFC", value).lower()
     return "".join("ñ" if character == "ñ" else "".join(
         c for c in unicodedata.normalize("NFD", character) if not unicodedata.combining(c))
         for character in value)
+
+
+@lru_cache(maxsize=4096)
+def _fold_short_cached(value: str) -> str:
+    return _fold_uncached(value)
+
+
+def _fold(value: str) -> str:
+    # Normalization visits the same small Unicode clusters millions of times.
+    # Cache only their immutable string transformation, never bodies, findings
+    # or identity decisions. Long clusters and other long inputs stay uncached.
+    return _fold_short_cached(value) if len(value) <= 32 else _fold_uncached(value)
 
 
 def _normalized(value: str) -> tuple[str, list[int]]:

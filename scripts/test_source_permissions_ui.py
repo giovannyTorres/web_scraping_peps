@@ -35,6 +35,94 @@ def main():
         assert condition, name
         report['checks'][name] = True
 
+    # Start from the actual new-install catalogue, not an already useful plan.
+    with tempfile.TemporaryDirectory() as fresh_tmp, patch('peps.collector.SafeFetcher', side_effect=AssertionError('No acquisition while preparing a fresh installation')):
+        fresh_engine = Engine(fresh_tmp)
+        fresh_engine.store.import_entities([
+            {'id': f'fresh-{index:03d}', 'name': f'Persona Sintética de Prueba {index:03d}'}
+            for index in range(300)])
+        fresh_news = NewsAcquirer(fresh_engine)
+        server, _ = create_server(fresh_engine)
+        thread = threading.Thread(target=server.serve_forever, daemon=True);thread.start()
+        address = f'http://127.0.0.1:{server.server_port}'
+        fresh_errors, fresh_external, fresh_mutations = [], [], []
+        try:
+            with sync_playwright() as p:
+                browser = p.chromium.launch(executable_path=args.browser_path, headless=True, args=['--no-sandbox'])
+                page = browser.new_page(viewport={'width': 390, 'height': 844})
+                page.on('pageerror', lambda error: fresh_errors.append(str(error)))
+                page.on('request', lambda request: fresh_external.append(request.url) if not request.url.startswith(address + '/') else fresh_mutations.append(request.url) if request.method == 'POST' else None)
+                page.goto(address)
+                page.locator('#workflow-mobile-step').select_option('sources')
+                expect(page.locator('#public-source-setup')).to_be_visible()
+                expect(page.locator('#workflow-sources-next')).to_be_disabled()
+                check('fresh_install_starts_with_zero_queries_and_no_source_permissions',
+                      fresh_news.search_plan()['query_count'] == 0
+                      and all(not source.get('enabled') and not source.get('terms_approved') for source in fresh_news.sources()))
+                page.locator('#prepare-public-sources').click()
+                estimate = page.locator('#workflow-first-session-estimate')
+                expect(estimate).to_be_visible()
+                expect(estimate).to_contain_text('120 de 300 entidades')
+                expect(estimate).to_contain_text('podrían iniciarse consultas')
+                expect(estimate).to_contain_text('no garantiza cobertura')
+                check('quick_120_of_300_limit_is_visible_outside_collapsed_details', estimate.locator('xpath=ancestor::details').count() == 0)
+                page.locator('#news-online').check()
+                expect(page.locator('#workflow-sources-next')).to_be_enabled()
+                check('fresh_zero_plan_becomes_startable_after_shortcut_without_reload_or_scope_submit',
+                      fresh_news.search_plan()['query_count'] == 300
+                      and fresh_mutations == [address + '/api/news-source', address + '/api/news-source'])
+                page.screenshot(path=str(output / 'fresh-300-quick-mobile.png'), full_page=True)
+                before = fresh_news.search_config()
+                with page.expect_response(lambda response: response.url == address + '/api/news-search'
+                                          and response.request.method == 'POST') as expanded:
+                    page.locator('#workflow-use-ten-minutes').click()
+                assert expanded.value.status == 200, expanded.value.text()
+                expect(page.locator('#workflow-time-budget')).to_have_value('600')
+                expect(estimate).to_contain_text('300 de 300 entidades')
+                expect(page.locator('#workflow-sources-next')).to_be_enabled()
+                after = fresh_news.search_config()
+                check('one_explicit_ten_minute_action_recalculates_plan_and_preserves_other_options',
+                      after['execution_mode'] == 'extended' and after['session_seconds'] == 600
+                      and all(after[key] == value for key, value in before.items()
+                              if key not in ('execution_mode', 'session_seconds')))
+                lumy = page.locator('[data-source-id="lumy_general_v1"]')
+                lumy.locator('input').uncheck()
+                expect(page.locator('#workflow-sources-next')).to_be_disabled()
+                expect(page.locator('#workflow-search-plan')).to_contain_text('0 consultas')
+                lumy.locator('input').check()
+                expect(page.locator('#workflow-sources-next')).to_be_enabled()
+                expect(estimate).to_contain_text('300 de 300 entidades')
+                check('individual_permission_changes_recalculate_zero_and_nonzero_plans_without_reentry')
+                def fail_plan_read(route):
+                    if route.request.method == 'GET':
+                        route.fulfill(status=503, content_type='application/json', body='{"error":"synthetic local plan read failed"}')
+                    else:
+                        route.continue_()
+                page.route('**/api/news-search', fail_plan_read)
+                lumy.locator('input').uncheck()
+                expect(page.locator('#workflow-search-status')).to_contain_text('No se pudo cargar la búsqueda')
+                expect(page.locator('#workflow-sources-next')).to_be_disabled()
+                page.unroute('**/api/news-search', fail_plan_read)
+                lumy.locator('input').check()
+                expect(page.locator('#workflow-sources-next')).to_be_enabled()
+                check('failed_plan_refresh_keeps_start_disabled_until_a_fresh_plan_is_read')
+                saved = fresh_news.search_config()
+                page.locator('#workflow-history-start').fill('2020-01-01')
+                originals = page.locator('[data-source-id="public_research_articles"]')
+                originals.locator('input').uncheck()
+                expect(originals.locator('.source-permission-badge')).to_have_text('Lectura pública sin activar')
+                expect(page.locator('#workflow-search-status')).to_contain_text('Permisos actualizados')
+                expect(page.locator('#workflow-history-start')).to_have_value('2020-01-01')
+                expect(estimate).to_be_hidden()
+                check('source_plan_refresh_preserves_unsaved_search_draft_and_saved_settings', fresh_news.search_config() == saved)
+                check('fresh_setup_and_budget_change_never_start_acquisition_or_external_requests',
+                      not fresh_external and not any('/api/workflow-run' in url for url in fresh_mutations))
+                check('fresh_mobile_controls_have_no_page_overflow_or_browser_errors',
+                      page.evaluate('document.documentElement.scrollWidth<=innerWidth') and not fresh_errors)
+                browser.close()
+        finally:
+            server.shutdown();server.server_close();thread.join()
+
     with tempfile.TemporaryDirectory() as tmp, patch('peps.collector.SafeFetcher', side_effect=AssertionError('No external acquisition in functional controls')):
         engine = Engine(tmp)
         engine.store.import_entities([{'id': 'fixture', 'name': 'Persona Sintética Permisos'}])

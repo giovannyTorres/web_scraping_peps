@@ -1,5 +1,6 @@
 """No external HTTP: exercise durable retry policy through controlled transports."""
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import closing
 from datetime import datetime
 from pathlib import Path
 import socket
@@ -224,17 +225,19 @@ class ClientRetryEpisodesTests(unittest.TestCase):
     def test_ambiguous_legacy_deadline_is_preserved_by_migration(self):
         with tempfile.TemporaryDirectory() as other:
             path = Path(other)
-            with sqlite3.connect(path / 'network.sqlite3') as con:
+            with closing(sqlite3.connect(path / 'network.sqlite3')) as con, con:
                 con.execute("CREATE TABLE hosts(host TEXT PRIMARY KEY,next_at REAL NOT NULL DEFAULT 0,blocked_until REAL NOT NULL DEFAULT 0,reason TEXT NOT NULL DEFAULT '',failures INTEGER NOT NULL DEFAULT 0,last_at REAL NOT NULL DEFAULT 0)")
                 con.execute('INSERT INTO hosts VALUES(?,?,?,?,?,?)', ('news.example', self.now[0] + 1800, 0, 'Transient network failure', 0, self.now[0] - 5))
             migrated = SafeFetcher({'trust_env_proxy': False}, path)
-            self.addCleanup(migrated.close)
-            migrated._clock = self.fetcher._clock
-            migrated._dns = lambda *_a, **_k: self.fail('Legacy wait may not be silently bypassed')
-            result = migrated.fetch('https://news.example/legacy', self.source)
-            self.assertEqual(result['status'], 'deferred')
-            self.assertEqual(result['retry_class'], 'legacy_unclassified')
-            self.assertEqual(datetime.fromisoformat(result['retry_at']).timestamp(), self.now[0] + 1800)
+            try:
+                migrated._clock = self.fetcher._clock
+                migrated._dns = lambda *_a, **_k: self.fail('Legacy wait may not be silently bypassed')
+                result = migrated.fetch('https://news.example/legacy', self.source)
+                self.assertEqual(result['status'], 'deferred')
+                self.assertEqual(result['retry_class'], 'legacy_unclassified')
+                self.assertEqual(datetime.fromisoformat(result['retry_at']).timestamp(), self.now[0] + 1800)
+            finally:
+                migrated.close()
 
     def test_external_operator_deadline_survives_client_recovery(self):
         self.assertIsNone(self.fetcher._reserve('news.example', 0)[0])

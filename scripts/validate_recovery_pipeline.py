@@ -68,7 +68,7 @@ def source_hashes():
              *sorted((ROOT / 'scripts' / 'network_validation_bridge').glob('*.py')),
              *sorted((ROOT / 'scripts' / 'network_validation_bridge').glob('*.lock.txt')),
              *sorted((ROOT / 'scripts' / 'pyinstaller_hooks').rglob('*.py'))]
-    return live.measured_hashes() | {str(path.relative_to(ROOT)): file_hash(path) for path in paths}
+    return live.measured_hashes() | {path.relative_to(ROOT).as_posix(): file_hash(path) for path in paths}
 
 
 def runtime_lock():

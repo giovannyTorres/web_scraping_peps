@@ -1,0 +1,102 @@
+name: Transport closed encrypted validation artifact
+
+on:
+  push:
+    branches: [verification/network-validation]
+    paths: [.github/workflows/validation-artifact-transport.yml]
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  encrypted-transport:
+    if: github.repository == 'giovannyTorres/web_scraping_peps' && github.ref == 'refs/heads/verification/network-validation'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Download closed ciphertext only
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          github-token: ${{ github.token }}
+          repository: giovannyTorres/web_scraping_peps
+          run-id: 39008668474
+          name: encrypted-result-39008668474-1
+          path: ${{ runner.temp }}/encrypted-transport/input
+      - name: Verify ciphertext digest and split without decrypting
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          python - <<'PY'
+          import hashlib, json, os
+          from pathlib import Path
+          root = Path(os.environ['RUNNER_TEMP']) / 'encrypted-transport'
+          source = root / 'input'
+          assert {p.name for p in source.iterdir()} == {'result.pepsenc', 'result.ticket.json'}
+          for path in source.iterdir():
+              assert path.is_file() and not path.is_symlink()
+          ticket_path = source / 'result.ticket.json'
+          assert ticket_path.stat().st_size <= 32768
+          ticket = json.loads(ticket_path.read_text(encoding='utf-8'))
+          binding = ticket['binding']
+          assert ticket['kind'] == 'output'
+          assert binding['repository'] == 'giovannyTorres/web_scraping_peps'
+          assert binding['run_id'] == '39008668474' and binding['run_attempt'] == '1'
+          assert binding['candidate_sha'] == 'ae827e7a3052e2dde9108967a5a2dd712172fab3'
+          original = source / 'result.pepsenc'
+          assert 0 < original.stat().st_size <= 8 * 1024**3 + 32 * 1024**2
+          total, manifest = hashlib.sha256(), []
+          with original.open('rb') as stream:
+              for index in range(24):
+                  block = stream.read(400 * 1024**2)
+                  if not block:
+                      break
+                  total.update(block)
+                  target = root / ('part-' + str(index))
+                  target.mkdir(mode=0o700)
+                  filename = 'result.pepsenc.part-' + str(index)
+                  (target / filename).write_bytes(block)
+                  manifest.append({'index': index, 'name': filename, 'bytes': len(block),
+                                   'sha256': hashlib.sha256(block).hexdigest()})
+              assert not stream.read(1)
+          assert total.hexdigest() == ticket['envelope_sha256']
+          assert len(manifest) == 3
+          first = root / 'part-0'
+          (first / 'result.ticket.json').write_bytes(ticket_path.read_bytes())
+          (first / 'transport-manifest.json').write_text(json.dumps({
+              'schema_version': 1, 'original_run_id': '39008668474',
+              'original_artifact_id': 12091782871,
+              'envelope_sha256': total.hexdigest(), 'parts': manifest,
+              'decryption_performed': False, 'original_signature_unchanged': True
+          }, sort_keys=True), encoding='utf-8')
+          print('closed_ciphertext_transport_prepared')
+          PY
+      - name: Upload encrypted part zero and original ticket
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: closed-v3-encrypted-part-0
+          path: ${{ runner.temp }}/encrypted-transport/part-0/
+          retention-days: 1
+          compression-level: 0
+          if-no-files-found: error
+      - name: Upload encrypted part one
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: closed-v3-encrypted-part-1
+          path: ${{ runner.temp }}/encrypted-transport/part-1/
+          retention-days: 1
+          compression-level: 0
+          if-no-files-found: error
+      - name: Upload encrypted part two
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: closed-v3-encrypted-part-2
+          path: ${{ runner.temp }}/encrypted-transport/part-2/
+          retention-days: 1
+          compression-level: 0
+          if-no-files-found: error
+      - name: Remove ciphertext scratch
+        if: ${{ always() }}
+        shell: bash
+        run: rm -rf -- "$RUNNER_TEMP/encrypted-transport"
