@@ -619,7 +619,7 @@ class GuidedWorkflow:
             state, label = 'running', 'Consultando fuentes'
             detail = f'{active} solicitudes en ejecución.'
         elif download_owner and not current['ready'] and (op.get('waiting') or current['pending']):
-            state, label = 'waiting', 'Esperando a las fuentes'
+            state, label = 'waiting', 'En espera programada'
             detail = 'No hay solicitudes en ejecución. El proceso conserva la cola y espera el próximo intento.'
         elif owner:
             state, label = 'preparing' if download_owner else 'running', 'Preparando consultas' if download_owner else 'Analizando información'

@@ -153,7 +153,7 @@ def main():
                     context.route('**/*', route)
                     page.goto(address, wait_until='networkidle')
                     expect(page.locator('[data-panel=news]')).to_be_visible()
-                    expect(page.locator('#workflow-download-card-title')).to_have_text('Esperando a las fuentes')
+                    expect(page.locator('#workflow-download-card-title')).to_have_text('En espera programada')
                     expect(page.locator('#workflow-entities-queried')).to_have_text('0 de 652')
                     expect(page.locator('#workflow-entities-bodies')).to_have_text('0 de 652')
                     expect(page.locator('#workflow-live-wait')).to_contain_text('Fuente de prueba')
@@ -200,7 +200,7 @@ def main():
                     page.locator('#workflow-inspection > summary').click()
                     mode = 'waiting'
                     page.evaluate('refresh(true)')
-                    expect(page.locator('#workflow-download-card-title')).to_have_text('Esperando a las fuentes')
+                    expect(page.locator('#workflow-download-card-title')).to_have_text('En espera programada')
                     page.locator('#workflow-targeted-recovery').click()
                     expect(page.locator('#workflow-download-card-title')).to_have_text('Buscando información')
                     checked('directed_recovery_waits_for_pause_before_configure_and_restart', [m['path'] for m in mutations] == ['stop', 'news-search', 'workflow-run'])

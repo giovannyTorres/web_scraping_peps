@@ -11,7 +11,7 @@ from peps.public_search import public_search_url
 
 SOURCE = {'id': 'fictional-public-api', 'kind': 'searxng', 'enabled': True,
           'terms_approved': True, 'robots_required': True, 'min_interval_seconds': 0,
-          'search_url': 'https://search.example/search', 'allowed_hosts': ['search.example'],
+          'search_url': 'https://search.example/search?engines=fixture_backend', 'allowed_hosts': ['search.example'],
           'documented_api_permission': {'scope': 'public_json_search_api', 'method': 'GET',
              'reviewed': True, 'endpoint': 'https://search.example/search',
              'operator_documentation_url': 'https://search.example/info/en/about',
@@ -37,7 +37,7 @@ class DocumentedApiTests(unittest.TestCase):
             if url.endswith('/robots.txt'):
                 return 200, {'content-type': 'text/plain'}, b'User-agent: *\nDisallow: /*?*q=*\n'
             self.assertEqual(url, self.url)
-            return response or (200, {'content-type': 'application/json'}, b'{"results":[]}')
+            return response or (200, {'content-type': 'application/json'}, b'{"results":[],"unresponsive_engines":[]}')
         self.fetcher._transport = call
 
     def fetch_ready(self, source=SOURCE):

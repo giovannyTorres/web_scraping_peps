@@ -130,12 +130,24 @@ def _body_selection(title, summary, candidate, url=''):
                              r'lo mas (?:leido|destacado)|noticias del dia)\b', folded_title))
     video = bool(re.search(r'\b(?:video|enterate|en vivo|podcast)\b', folded_title)
                  or '/multimedia/' in str(url))
+    try:
+        profile_path = bool(re.search(r'/(?:perfil(?:es)?|profiles?|directorios?|director(?:y|ies))(?:/|$)',
+                                      urlsplit(str(url)).path.lower()))
+    except ValueError:
+        profile_path = False
+    # This is a reading hint, not a page classification. Retain the reference
+    # and permit its body; spend a limited body quota on other reporting first.
+    # A profile containing procedural metadata remains equally eligible for
+    # priority reading, including denials, victim accounts and exonerations.
+    profile_deprioritized = profile_path and not signal
     rank = int((candidate or {}).get('rank') or 0)
     priority = signal * 1000 + rank * 2 + min(20, len(summary) // 30)
     priority -= 1200 if roundup else 0
     priority -= 500 if video else 0
+    priority -= 800 if profile_deprioritized else 0
     return {'priority': priority, 'procedural_metadata': bool(signal), 'roundup': roundup, 'multimedia': video,
-            'policy': 'reading-priority-1', 'identity_verified': False, 'score_effect': 'none'}
+            'profile_path_hint': profile_path, 'profile_deprioritized': profile_deprioritized,
+            'policy': 'reading-priority-2', 'identity_verified': False, 'score_effect': 'none'}
 
 
 def source_policy(source):
@@ -902,7 +914,7 @@ class NewsAcquirer:
                                     self._epoch(result.get('retry_at')),
                                     consume_attempt=result.get('error_code') not in (
                                         'host_interval', 'robots_pending', 'session_limit', 'session_cancelled',
-                                        'local_cache_miss'))
+                                        'local_cache_miss', 'archive_session_limit'))
         if not changed:
             return True
         with self.store.connection() as con:
@@ -2443,6 +2455,15 @@ class NewsAcquirer:
         self.settle_legacy_insufficient_articles()
         check_preparation()
         self.store.reconcile_jobs('news_')
+        # Resume only a prior local archive budget, never a source-imposed wait.
+        # The fetcher's durable host/backend restrictions still apply normally.
+        from .archive_text_search import SESSION_LIMIT as ARCHIVE_SESSION_LIMIT
+        with self.store.connection() as con:
+            resumed = con.execute("UPDATE jobs SET due=MIN(due,?),updated_at=? WHERE kind='news_query' "
+                "AND status='deferred' AND error=? AND COALESCE(lease_until,0)<=?",
+                (time.time(), now(), ARCHIVE_SESSION_LIMIT, time.time())).rowcount
+            if resumed:
+                self.store._audit(con, 'news_archive_local_budget_resumed', {'jobs': resumed})
         _emit_progress(progress, 'download', 0, None, 'tareas', 'Preparando la reanudación y las fuentes autorizadas.',
                        event='start', processed=0, **self._runtime_queue())
         entities, bank_revision = self._entity_snapshot(preparation_stopped)
@@ -2540,6 +2561,8 @@ class NewsAcquirer:
             # snapshot. Pair it with the completion count from the same sample.
             finished = completed[0] if summary.get('queue_snapshot_exact') else observed_completed[0]
             return finished + summary['pending'] + summary['failed'] + summary['unreported_completed']
+        from .archive_text_search import SessionBudget as ArchiveSessionBudget
+        archive_budget = ArchiveSessionBudget(seconds, deadline)
         class SessionFetcher:
             def record_access_challenge(_, url, source, result):
                 return fetcher.record_access_challenge(url, source, result) \
@@ -2566,10 +2589,26 @@ class NewsAcquirer:
                 try:
                     # One session budget includes robots and redirect hops, not
                     # a fresh timeout allowance for every network request.
-                    remaining = max(.001, deadline - time.monotonic())
+                    request_deadline = deadline
+                    request_cache_mode = cache_mode
+                    archive_expired = False
+                    if source.get('kind') == 'arquivo_fulltext' and cache_mode != 'local':
+                        archive_deadline = archive_budget.deadline()
+                        archive_expired = time.monotonic() >= archive_deadline
+                        if archive_expired:
+                            # Existing metadata stays usable without allowing
+                            # DNS, robots refresh or a request after the cap.
+                            request_cache_mode = 'local'
+                        else:
+                            request_deadline = min(deadline, archive_deadline)
+                    remaining = max(.001, request_deadline - time.monotonic())
                     request_source = dict(source, timeout_seconds=min(float(source.get('timeout_seconds', 20)), remaining),
-                                          _deadline_monotonic=deadline, _cache_mode=cache_mode)
+                                          _deadline_monotonic=request_deadline, _cache_mode=request_cache_mode)
                     result = fetcher.fetch(url, request_source)
+                    if archive_expired and result.get('error_code') == 'local_cache_miss':
+                        result = dict(result, status='deferred', error_code='archive_session_limit',
+                            retry_at=time.time() + max(1., deadline - time.monotonic()),
+                            error=ARCHIVE_SESSION_LIMIT, retry_class='local_session_budget')
                     self._defer_host_pending(fetcher, result, cache_mode=cache_mode)
                     self._session.note(network_requests=result.get('network_requests'),
                         http_cache_hits=int(bool(result.get('from_cache') or result.get('cache_status') in ('fresh', 'local', 'revalidated'))))

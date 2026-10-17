@@ -144,9 +144,9 @@ function renderAcquisitionCoverage(section,coverage){
     if(search.start&&search.end)block.append(el('p',`Periodo solicitado: ${search.start} a ${search.end}. Es un rango de búsqueda; no acredita cobertura completa de todos esos años.`,'muted'));
     else block.append(el('p','El período de las descargas anteriores no quedó registrado. No se les atribuye el rango de búsqueda configurado después.','muted'));
     const multimedia=Number(coverage.multimedia_reference_articles||0),profiles=Number(coverage.profile_reference_articles||0),duplicates=Number(coverage.duplicate_reference_articles||0),pending=Number(coverage.pending_text_articles??Math.max(0,Number(coverage.metadata_only_articles||0)-multimedia-profiles-duplicates));
-    const references=[`${coverage.full_articles??0} textos útiles`,`${pending} referencias pendientes de texto`];
+    const references=[`${coverage.full_articles??0} textos disponibles`,`${pending} referencias pendientes de texto`];
     if(multimedia)references.push(`${multimedia} referencias de audio/vídeo sin transcripción`);if(profiles)references.push(`${profiles} perfiles o directorios`);if(duplicates)references.push(`${duplicates} réplicas de textos ya conservados`);
-    block.append(el('p',`${coverage.articles??0} referencias de esta lista: ${references.join(' · ')}. Las referencias sin texto útil no puntúan como evidencia del artículo.`,'muted'));
+    block.append(el('p',`${coverage.articles??0} referencias de esta lista: ${references.join(' · ')}. Las referencias sin texto disponible no puntúan como evidencia del artículo.`,'muted'));
   }
   const observed=coverage.observed;
   if(observed)block.append(el('p',`Cobertura observada de la lista: ${observed.entities_queried??0} de ${observed.entities_total??0} entidades consultadas; ${observed.entities_with_bodies??0} con texto conservado. Las consultas planeadas no cuentan como ejecutadas.`,'muted'));
@@ -368,7 +368,7 @@ async function loadNews(includeSources=true){
       if(duplicate)row.append(el('p','La procedencia se conserva para auditoría. El texto se cuenta una sola vez y no duplica evidencias ni puntuación.','muted'));
       row.append(sourceLink(article.canonical_url,'Abrir fuente original'));articles.append(row);
     }
-    if(!data.articles.length)articles.append(el('p','No hay referencias pertinentes para la lista actual. Los documentos de búsquedas anteriores se conservan en el banco.','muted'));
+    if(!data.articles.length)articles.append(el('p','No hay referencias coincidentes para la lista actual. Los documentos de búsquedas anteriores se conservan en el banco.','muted'));
   }
   if(!includeSources)return;
   const container=$('news-sources');container.replaceChildren();

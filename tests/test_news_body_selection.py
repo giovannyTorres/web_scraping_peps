@@ -45,6 +45,36 @@ class ReadingPriorityTests(unittest.TestCase):
         self.assertLess(self.priority('Enrique Peña Nieto recibe una denuncia (Video).'), report)
         self.assertLess(self.priority('Enrique Peña Nieto recibe una denuncia en primeras planas.'), report)
 
+    def test_profile_path_is_a_reading_hint_without_changing_relevance(self):
+        title = 'Enrique Peña Nieto presentó su agenda.'
+        candidate = RelevanceIndex([self.ENTITY]).rank(title, '')
+        baseline = _body_selection(title, '', candidate, 'https://example.org/agenda')
+        for path in ('perfiles', 'perfil', 'profile', 'profiles', 'directorio',
+                     'directorios', 'directory', 'directories'):
+            with self.subTest(path=path):
+                selected = _body_selection(title, '', candidate, f'https://example.org/{path}/persona')
+                self.assertLess(selected['priority'], baseline['priority'])
+                self.assertTrue(selected['profile_deprioritized'])
+                self.assertTrue(candidate['relevant'])
+                self.assertFalse(selected['identity_verified'])
+                self.assertEqual(selected['score_effect'], 'none')
+        # Keywords in a query, hostname or unrelated path segment are not hints.
+        for url in ('https://profiles.example.org/agenda', 'https://example.org/agenda?profile=x',
+                    'https://example.org/un-perfil-de-gobierno'):
+            with self.subTest(url=url):
+                self.assertEqual(_body_selection(title, '', candidate, url)['priority'], baseline['priority'])
+
+    def test_profile_path_does_not_penalize_relevant_procedural_context(self):
+        for title in ('Enrique Peña Nieto negó la acusación de fraude.',
+                      'Enrique Peña Nieto fue víctima de fraude.',
+                      'Enrique Peña Nieto fue absuelto.'):
+            candidate = RelevanceIndex([self.ENTITY]).rank(title, '')
+            with self.subTest(title=title):
+                plain = _body_selection(title, '', candidate, 'https://example.org/nota')
+                profile = _body_selection(title, '', candidate, 'https://example.org/perfiles/persona')
+                self.assertEqual(profile['priority'], plain['priority'])
+                self.assertFalse(profile['profile_deprioritized'])
+
 
 class StoredSelectionTests(unittest.TestCase):
     def setUp(self):
@@ -103,6 +133,21 @@ class StoredSelectionTests(unittest.TestCase):
                 self.assertEqual(better['status'], 'body_budget_limited')
                 old = next(job for job in self.body_jobs() if job['payload']['article_id'] == first['id'])
                 self.assertEqual((old['status'], old['attempts']), (state, attempts))
+
+    def test_profile_reference_remains_a_candidate_when_body_quota_prefers_a_report(self):
+        budget = _BodyBudget(maximum=1, per_entity=1)
+        profile = self.observe('directorio/pemex', 'Pemex presenta su informe anual.', budget)
+        report = self.observe('informe', 'Pemex presenta su informe anual.', budget)
+        self.assertEqual(profile['status'], 'article_queued')
+        self.assertEqual(report['status'], 'article_queued')
+        jobs = {job['payload']['article_id']: job for job in self.body_jobs()}
+        old, new = jobs[profile['id']], jobs[report['id']]
+        self.assertEqual((old['status'], old['error']), ('cancelled', REPLACED_BODY))
+        self.assertEqual(new['status'], 'queued')
+        self.assertEqual(new['payload']['body_selection']['policy'], 'reading-priority-2')
+        self.assertEqual(self.news.stats()['articles'], 2)
+        self.assertEqual(self.news.stats()['observations'], 2)
+        self.assertTrue(self.store.verify_audit()['ok'])
 
     def test_resume_selects_best_stored_metadata_for_each_entity_without_discovery(self):
         self.source['article_terms_approved'] = False

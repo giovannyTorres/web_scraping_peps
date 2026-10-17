@@ -15,7 +15,7 @@ from xml.etree import ElementTree
 
 from .identity import COMPANY_KINDS, _fold
 
-PUBLIC_SEARCH_KINDS = frozenset({'mwmbl', 'duckduckgo_html', 'duckduckgo_lite', 'searxng', 'lemmy_search', 'bing_news_rss'})
+PUBLIC_SEARCH_KINDS = frozenset({'mwmbl', 'duckduckgo_html', 'duckduckgo_lite', 'searxng', 'lemmy_search', 'bing_news_rss', 'arquivo_fulltext'})
 DEFAULT_ENDPOINTS = {
     'mwmbl': 'https://mwmbl.org/api/v2/search/',
     'duckduckgo_html': 'https://html.duckduckgo.com/html/',
@@ -80,6 +80,9 @@ def safe_result_url(value, base=''):
 def public_search_url(query, source):
     query = _query(query)
     kind = source.get('kind')
+    if kind == 'arquivo_fulltext':
+        from .archive_text_search import search_url
+        return search_url(query, source)
     if kind == 'lemmy_search':
         from .social_discovery import build_lemmy_search_url
         return build_lemmy_search_url(query, source, limit=min(50, max(1, int(source.get('max_records', 10)))))
@@ -323,7 +326,10 @@ def parse_public_results(fetch_result, source):
     kind = source.get('kind')
     limit = min(100, max(1, int(source.get('max_records', 50))))
     base = fetch_result.get('final_url') or fetch_result.get('url') or source.get('url', '')
-    if kind == 'bing_news_rss':
+    if kind == 'arquivo_fulltext':
+        from .archive_text_search import records as archive_records
+        records = archive_records(fetch_result, source)
+    elif kind == 'bing_news_rss':
         records = _bing_news_records(body)
     elif kind in {'duckduckgo_html', 'duckduckgo_lite'}:
         parser = _DuckResults(base)
@@ -383,11 +389,15 @@ def parse_public_results(fetch_result, source):
             result[-1]['metadata'].update(provider_link=record['provider_link'],
                 provider_publication_date=record['provider_publication_date'],
                 provider_date_unverified=True, explicit_destination_unwrapped=True)
+        if kind == 'arquivo_fulltext':
+            result[-1]['metadata'].update(record['archive_metadata'])
     fetch_result['parse_metadata'] = {'observed_entries': len(records), 'truncated': len(seen) > limit,
         'excluded_unsafe_or_non_https_urls': rejected, 'scope': 'public_web_top_results',
         'publication_dates': 'unknown', 'complete_archive': False, 'discovery_only': True}
     if kind == 'searxng':
         fetch_result['parse_metadata']['partial_upstream_response'] = bool(payload.get('unresponsive_engines'))
+    if kind == 'arquivo_fulltext':
+        fetch_result['parse_metadata'].update(fetch_result.pop('_archive_parse_metadata', {}))
     return result
 
 

@@ -1066,6 +1066,34 @@
       "permission_scope": "Autorización explícita del usuario para investigación personal local de originales públicos pertinentes ya descubiertos. No se afirman términos revisados individualmente de cada editor ni licencia comercial o de redistribución. Se respetan robots, TLS, DNS público, bloqueos, cuotas y presupuesto finito de cuerpos. Sin cuentas, pagos, redes sociales, mercados ni ampliación de redirecciones.",
       "license": "Derechos del editor conservados. No se presume licencia comercial o de redistribución.",
       "review_note": "Política opcional de sesión, desactivada por omisión cuando discover_public_article_hosts falta o es False. El perfil fijo no consulta su URL: cada permiso de lectura se deriva del host y la ruta exactos de un candidato vigente y su observación de búsqueda revisada. Exige un presupuesto global explícito y finito al ejecutar. source.enabled y terms_approved autorizan investigación personal, no certifican términos editoriales universales."
+    },
+    {
+      "id": "arquivo_historical_metadata",
+      "source_name": "Arquivo.pt: descubrimiento histórico (complemento)",
+      "kind": "arquivo_fulltext",
+      "url": "https://arquivo.pt/textsearch",
+      "base_url": "https://arquivo.pt/",
+      "allowed_hosts": [
+        "arquivo.pt"
+      ],
+      "terms_url": "https://github.com/arquivo/pwa-technologies/wiki/Arquivo.pt-API",
+      "enabled": false,
+      "terms_approved": false,
+      "robots_required": true,
+      "discovery": true,
+      "discovery_only": true,
+      "download_articles": false,
+      "article_terms_approved": false,
+      "body_terms_approved": false,
+      "document_kind": "discovery",
+      "min_interval_seconds": 5,
+      "max_bytes": 2000000,
+      "parse_max_chars": 2000000,
+      "timeout_seconds": 15,
+      "max_records": 50,
+      "historical_coverage": "archive_url_metadata_capture_dates_not_publication",
+      "permission_scope": "Sólo enlaces originales, títulos y extractos. No autoriza cuerpos originales o archivados, replays ni endpoints de texto. La fecha de captura no acredita la publicación.",
+      "review_note": "API pública sin cuenta ni claves y robots comprobados el 17-10-2026 con una consulta real. Fuente complementaria desactivada: ventana máxima del 10 % de la sesión, después del barrido nominal. Su pausa observada de 5 s no permite prometer 300 consultas en pocos minutos. El contenido de los editores requiere sus permisos separados; no se usa el archivo para eludir restricciones de los originales. Cobertura masiva no validada."
     }
   ]
 }

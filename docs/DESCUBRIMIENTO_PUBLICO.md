@@ -44,6 +44,23 @@ acreditan una conducta, no garantizan resultados pertinentes y no generan puntos
 | **DuckDuckGo HTML / Lite** | Interfaces oficiales sin JavaScript; extracción de tarjetas orgánicas y enlaces del resultado. | Integración experimental, sin contrato de API ni capacidad masiva garantizada. Se selecciona un solo formato por plan. Ante CAPTCHA, bloqueo o HTML desconocido se informa un error; no se cambia de endpoint para sortearlo. |
 | **Lemmy** | Consulta nominal a una instancia pública, sin cuenta de desarrollador; candidatos con enlaces externos. | Sólo conoce los posts de esa instancia/federación. Un extracto de usuario es una pista. La fecha del post no se convierte en fecha editorial. La instancia verificada exige 60 s entre solicitudes. Véase [fuentes sociales](FUENTES_SOCIALES_PUBLICAS.md). |
 | **SearXNG propio** | Adaptador JSON opcional a un endpoint HTTPS operado por el usuario. | Requiere habilitar JSON y mantener el servidor. Depende de sus motores; tener software libre no garantiza acceso ilimitado a ellos. No se seleccionan ni rotan instancias públicas automáticamente. |
+| **Arquivo.pt** | API pública de búsqueda textual histórica, sin cuenta ni claves; conserva sólo metadatos y URL originales. | Complemento desactivado por defecto. La ventana de red ocupa como máximo el 10 % de la sesión y sigue al primer barrido de los otros proveedores. Respeta la pausa de 5 s; las consultas pendientes se guardan. La fecha de captura no acredita la publicación. |
+
+Arquivo.pt busca en su propio archivo con la [API documentada](https://github.com/arquivo/pwa-technologies/wiki/Arquivo.pt-API).
+La consulta real de viabilidad del 17-10-2026 devolvió 83 capturas y 54 URL
+originales para un nombre; 19 URL tenían el nombre completo en título o
+extracto. Incluía feeds e índices: no son 19 noticias verificadas ni una prueba
+de cobertura masiva. El adaptador conserva y deduplica las capturas por URL,
+descarta destinos inseguros y mantiene las fechas de captura separadas de la
+fecha editorial. No sigue enlaces de replay, cuerpos archivados ni extracción
+de texto. Cada original sigue sujeto a sus permisos y restricciones.
+
+La consulta inicial no se multiplica por años ni supone soporte de OR o lotes.
+Los metadatos locales pueden reutilizarse después de agotar la ventana de red.
+El siguiente inicio de sesión libera sólo ese límite local; los bloqueos,
+robots y pausas de las fuentes permanecen vigentes. Este complemento amplía
+el descubrimiento histórico disponible y no garantiza recuperar noticias para
+cada nombre.
 
 Mwmbl documenta la búsqueda anónima en su
 [implementación oficial de la API](https://github.com/mwmbl/mwmbl/blob/main/mwmbl/tinysearchengine/search.py).

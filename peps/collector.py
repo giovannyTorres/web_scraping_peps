@@ -73,6 +73,10 @@ class _APIEndpointScopeError(CollectionError):
     """A documented JSON API request or redirect left its granted scope."""
 
 
+class _ArchiveEndpointScopeError(CollectionError):
+    """An archive discovery request left its exact metadata-only operation."""
+
+
 class _DeadlineReader(io.RawIOBase):
     """Enforce one wall-clock budget on every underlying socket receive."""
     def __init__(self, sock, deadline: float):
@@ -271,6 +275,24 @@ class SafeFetcher:
                     prefix_sha256 TEXT NOT NULL, prefix_bytes INTEGER NOT NULL,
                     prefix_path TEXT, receipt TEXT NOT NULL
                 );
+                CREATE TABLE IF NOT EXISTS api_backend_observations (
+                    endpoint TEXT NOT NULL, requested_engines TEXT NOT NULL,
+                    response_sha256 TEXT NOT NULL, observed_at REAL NOT NULL,
+                    content_type TEXT NOT NULL, body BLOB NOT NULL,
+                    reported_engines TEXT NOT NULL, diagnostics TEXT NOT NULL,
+                    PRIMARY KEY(endpoint,requested_engines,response_sha256)
+                );
+                CREATE TABLE IF NOT EXISTS api_backend_restrictions (
+                    endpoint TEXT NOT NULL, engine TEXT NOT NULL,
+                    reason TEXT NOT NULL, first_seen REAL NOT NULL, last_seen REAL NOT NULL,
+                    pending_review INTEGER NOT NULL DEFAULT 1,
+                    evidence_sha256 TEXT NOT NULL, PRIMARY KEY(endpoint,engine)
+                );
+                CREATE TABLE IF NOT EXISTS api_route_restrictions (
+                    endpoint TEXT NOT NULL, requested_engines TEXT NOT NULL,
+                    reason TEXT NOT NULL, first_seen REAL NOT NULL, last_seen REAL NOT NULL,
+                    evidence_sha256 TEXT NOT NULL, PRIMARY KEY(endpoint,requested_engines)
+                );
             """)
             db.execute("BEGIN IMMEDIATE")
             if "last_at" not in {row[1] for row in db.execute("PRAGMA table_info(hosts)")}:
@@ -302,7 +324,7 @@ class SafeFetcher:
                        "WHEN next_at>0 THEN 'legacy_unclassified' ELSE '' END,retry_state_version=1 "
                        "WHERE retry_state_version=0")
             cache_columns = {row[1] for row in db.execute("PRAGMA table_info(http_cache)")}
-            for column in ("cache_control", "cache_expires", "final_url", "pagination_headers", "validation_error"):
+            for column in ("cache_control", "cache_expires", "final_url", "pagination_headers", "validation_error", "api_backend_metadata"):
                 if column not in cache_columns:
                     db.execute(f"ALTER TABLE http_cache ADD COLUMN {column} TEXT NOT NULL DEFAULT ''")
 
@@ -505,6 +527,16 @@ class SafeFetcher:
         allowed = {self._hostname(item) for item in source.get("allowed_hosts", [])}
         if host not in allowed:
             raise CollectionError("Host is not in the source allowlist: " + host)
+        if source.get('kind') == 'arquivo_fulltext':
+            from .archive_text_search import search_url
+            try:
+                if url != 'https://arquivo.pt/robots.txt':
+                    query = parse_qs(parts.query, keep_blank_values=True, strict_parsing=True, max_num_fields=3)
+                    expected = search_url(query.get('q', [None])[0], source)
+                    if url != expected or source.get('_arquivo_request_url') not in (None, url):
+                        raise ValueError('URL differs from the exact metadata search operation')
+            except (ValueError, TypeError, IndexError) as exc:
+                raise _ArchiveEndpointScopeError('Arquivo permits only its exact metadata search or robots.txt') from exc
         if source.get('_documented_api_scope'):
             from .api_permissions import documented_search_api
             if not documented_search_api(url, source):
@@ -726,9 +758,14 @@ class SafeFetcher:
                 return 'deferred', due, reason
         return None, None, ''
 
-    def _reserve(self, host: str, interval: float) -> tuple[str | None, float | None, str]:
+    def _reserve(self, host: str, interval: float, *, api_operation=None) -> tuple[str | None, float | None, str]:
         with self._db() as db:
             db.execute('BEGIN IMMEDIATE')
+            self._local.api_restriction = None
+            if api_operation is not None:
+                self._local.api_restriction = self._api_policy_from_db(db, api_operation)
+                if self._local.api_restriction:
+                    return 'blocked', None, self._local.api_restriction['error']
             now = self._clock()
             db.execute('INSERT OR IGNORE INTO hosts(host,retry_state_version) VALUES (?,1)', (host,))
             row = db.execute('SELECT * FROM hosts WHERE host=?', (host,)).fetchone()
@@ -925,15 +962,27 @@ class SafeFetcher:
                 # Syntax and source scope are checked before reading state.
                 # Resolve DNS only if this host may actually be requested.
                 normalized, host, _ = self._validate_url(current, source, resolve=False)
+                api_operation = None
+                if request_kind != 'robots':
+                    policy = self._api_policy_error(normalized, source)
+                    if policy:
+                        return policy, normalized, None, {}, b''
+                    api_operation = self._api_operation(normalized, source)
                 if normalized in seen:
                     raise CollectionError("Redirect loop")
                 seen.add(normalized)
                 with self._db() as db:
                     redirect = db.execute("SELECT target FROM redirects WHERE url=? AND expires_at>?", (normalized, self._clock())).fetchone()
                 if redirect:
+                    if source.get('kind') == 'arquivo_fulltext':
+                        raise _ArchiveEndpointScopeError('Arquivo metadata searches cannot follow redirects')
                     # Preserve validation of both ends of a cached redirect.
                     self._validate_url(normalized, source)
                     target = redirect["target"]
+                    self._validate_url(target, source, resolve=False)
+                    policy = self._api_policy_error(target, source) if request_kind != 'robots' else None
+                    if policy:
+                        return policy, target, None, {}, b''
                     self._validate_url(target, source)
                     if check_redirect_robots and source.get("robots_required", True):
                         denied_redirect = self._robots_allowed(target, source)
@@ -961,9 +1010,12 @@ class SafeFetcher:
                     if remaining <= 0:
                         return exhausted()
                     request_timeout = min(timeout, remaining)
+                reserve_args = {'api_operation': api_operation} if api_operation is not None else {}
                 denied, transport_retry, reason = self._reserve(
-                    host, float(source.get("min_interval_seconds", 2)))
+                    host, float(source.get("min_interval_seconds", 2)), **reserve_args)
                 if denied:
+                    if api_operation is not None and self._local.api_restriction:
+                        return self._local.api_restriction, normalized, None, {}, b''
                     return self._result(url, denied, error=reason, retry_at=_iso(transport_retry),
                                         error_code="host_interval" if denied == "deferred" else "host_circuit",
                                         admission_host=host, retry_class=self._local.retry_class,
@@ -974,10 +1026,16 @@ class SafeFetcher:
                 if len(data) > max_bytes:
                     raise CollectionError("Response exceeds max_bytes")
                 if status in (301, 302, 303, 307, 308):
+                    if source.get('kind') == 'arquivo_fulltext':
+                        raise _ArchiveEndpointScopeError('Arquivo metadata searches cannot follow redirects')
                     location = response_headers.get("location")
                     if not location:
                         raise CollectionError("Redirect without Location")
                     target = urljoin(normalized, location)
+                    self._validate_url(target, source, resolve=False)
+                    policy = self._api_policy_error(target, source) if request_kind != 'robots' else None
+                    if policy:
+                        return policy, target, None, {}, b''
                     # Validate before the next request, including non-public DNS.
                     self._validate_url(target, source)
                     with self._db() as db:
@@ -1015,6 +1073,8 @@ class SafeFetcher:
                 retry = self._backoff(host, reason="Transient network failure", kind="client_network", generation=locals().get("attempt_generation"))
                 return self._result(url, "deferred", error="Transient network failure: " + type(exc).__name__, retry_at=_iso(retry), error_code="network_failure", retry_class=self._local.retry_class, admission_host=host, request_attempted=True), current, None, {}, b""
             return self._result(url, "error", error=type(exc).__name__), current, None, {}, b""
+        except _ArchiveEndpointScopeError as exc:
+            return self._result(url, 'blocked', error=str(exc), error_code='archive_discovery_scope'), current, None, {}, b''
         except _APIEndpointScopeError as exc:
             return self._result(url, 'blocked', error=str(exc), error_code='documented_api_scope'), current, None, {}, b''
         except _ArticlePathScopeError as exc:
@@ -1099,6 +1159,234 @@ class SafeFetcher:
     def _captcha(body: str) -> bool:
         lower = body[:100_000].lower()
         return any(marker in lower for marker in ("<title>just a moment", "<title>access denied", "cf-chl-", "id=\"captcha\"", "id='captcha'", "class=\"g-recaptcha\"", "class='g-recaptcha'", "verify you are human", "unusual traffic from your computer", "id=\"anomaly-modal\"", "id='anomaly-modal'", "class=\"anomaly-modal", "class='anomaly-modal", "action=\"/anomaly.js", "action='/anomaly.js"))
+
+    @staticmethod
+    def _api_json(body):
+        def unique_object(items):
+            result = {}
+            for key, value in items:
+                if key in result:
+                    raise ValueError('Duplicate JSON key')
+                result[key] = value
+            return result
+
+        def reject_constant(_value):
+            raise ValueError('Invalid JSON constant')
+        return json.loads(body, object_pairs_hook=unique_object, parse_constant=reject_constant)
+
+    @staticmethod
+    def _api_engine(value):
+        if (not isinstance(value, str) or not value.strip() or len(value) > 128
+                or ',' in value or any(ord(char) < 32 or ord(char) > 126 for char in value)):
+            raise CollectionError('Ambiguous API engine identifier')
+        return ' '.join(value.casefold().split())
+
+    def _api_operation(self, url, source):
+        """Canonical GET endpoint and explicit set, independent of profile/query."""
+        def selected(values):
+            if 'categories' in values or len(values.get('engines', [])) != 1:
+                raise CollectionError('Documented API requests require explicit engines without categories')
+            engines = tuple(sorted({self._api_engine(value) for value in values['engines'][0].split(',')}))
+            if not engines or len(engines) > 32:
+                raise CollectionError('Ambiguous API engine selection')
+            return engines
+        def canonical_endpoint(parts):
+            host = self._hostname(parts.hostname)
+            if ':' in host:
+                host = '[' + host + ']'
+            return 'https://' + host + parts.path
+        parts = urlsplit(url)
+        if source.get('documented_api_permission') is None:
+            # Existing negative policy is endpoint-scoped, not a grant tied to
+            # a source ID/kind. Dropping a grant cannot remove a known denial.
+            # An unobserved generic /search remains governed by normal policy.
+            if parts.path != '/search':
+                return None
+            try:
+                engines = selected(parse_qs(parts.query, keep_blank_values=True, strict_parsing=True,
+                                            max_num_fields=12))
+            except (CollectionError, ValueError):
+                engines = None
+            return {'endpoint': canonical_endpoint(parts), 'engines': engines,
+                    'selection': json.dumps(engines, separators=(',', ':')), 'url': url}
+        from .api_permissions import documented_search_api
+        if not documented_search_api(url, source):
+            raise CollectionError('URL is outside the documented JSON API operation')
+        params = parse_qs(parts.query, keep_blank_values=True, max_num_fields=12)
+        configured = parse_qs(urlsplit(source.get('search_url') or source.get('api_url') or source.get('url')).query,
+                              keep_blank_values=True, max_num_fields=12)
+        engines = selected(params)
+        if engines != selected(configured):
+            raise CollectionError('Requested API engines differ from the configured engine set')
+        expected_url = source.get('_documented_api_request_url')
+        if expected_url:
+            expected = parse_qs(urlsplit(expected_url).query, keep_blank_values=True, max_num_fields=12)
+            current = dict(params, engines=list(engines))
+            expected['engines'] = list(selected(expected))
+            if current != expected:
+                raise CollectionError('Redirect changed the requested API query or parameters')
+        endpoint = urlsplit(source['documented_api_permission']['endpoint'])
+        return {'endpoint': canonical_endpoint(endpoint), 'engines': engines,
+                'selection': json.dumps(engines, separators=(',', ':')), 'url': url}
+
+    def _api_policy_from_db(self, db, operation):
+        endpoint, selection = operation['endpoint'], operation['selection']
+        if operation['engines'] is None:
+            known = db.execute('SELECT 1 FROM api_route_restrictions WHERE endpoint=? UNION ALL '
+                               'SELECT 1 FROM api_backend_restrictions WHERE endpoint=? LIMIT 1',
+                               (endpoint, endpoint)).fetchone()
+            if known:
+                return self._result(operation['url'], 'blocked',
+                    error='Known API backend restrictions require an explicit unambiguous engine set',
+                    error_code='documented_api_backend_scope', backend_policy='pending_review',
+                    api_endpoint=endpoint)
+            return None
+        route = db.execute('SELECT reason,evidence_sha256 FROM api_route_restrictions '
+                           'WHERE endpoint=? AND requested_engines=?', (endpoint, selection)).fetchone()
+        if route:
+            return self._result(operation['url'], 'blocked',
+                error='Documented API engine provenance requires manual review for this engine set',
+                error_code='discovery_backend_provenance_mismatch', backend_policy='pending_review',
+                api_endpoint=endpoint, requested_engines=list(operation['engines']),
+                policy_evidence_sha256=route['evidence_sha256'])
+        marks = ','.join('?' for _ in operation['engines'])
+        rows = db.execute('SELECT engine,evidence_sha256 FROM api_backend_restrictions '
+                          'WHERE endpoint=? AND engine IN (' + marks + ')',
+                          (endpoint, *operation['engines'])).fetchall()
+        if rows:
+            return self._result(operation['url'], 'blocked',
+                error='Documented API backend requires manual review: ' + ', '.join(sorted(row['engine'] for row in rows)),
+                error_code='discovery_backend_restricted', backend_policy='pending_review',
+                api_endpoint=endpoint, requested_engines=list(operation['engines']),
+                restricted_engines=sorted(row['engine'] for row in rows))
+        return None
+
+    def _api_policy_error(self, url, source):
+        try:
+            operation = self._api_operation(url, source)
+        except (CollectionError, ValueError, TypeError):
+            return self._result(url, 'blocked', error='Documented API engine selection or query is outside its explicit scope',
+                                error_code='documented_api_backend_scope')
+        if operation is None:
+            return None
+        with self._db() as db:
+            return self._api_policy_from_db(db, operation)
+
+    @classmethod
+    def _api_backend_denial(cls, message):
+        return bool(cls._captcha(message) or re.search(
+            r'\b(?:401|403|407|429|451)\b|suspend(?:ed|sion)?|'
+            r'access[ _-]*denied|too[ _-]*many[ _-]*requests|rate[ _-]*limit|ratelimit|'
+            r'captcha|challenge|verif(?:y|ication)[^\n]{0,60}human|human[ _-]*verification|'
+            r'unusual[ _-]*traffic|forbidden|\bdenied\b|\bblocked\b|\bblocking\b|\bbanned\b|'
+            r'cf-chl-|anomaly-modal|/anomaly\.js|just[ _-]*a[ _-]*moment|'
+            r'are[ _-]*you[ _-]*(?:a[ _-]*)?(?:robot|human)|robot[ _-]*check|'
+            r'bot[ _-]*(?:detection|detected|protection)|automated[ _-]*(?:queries|requests)', message, re.I))
+
+    def _api_response_policy(self, body, raw, source, url, final_url, mime, content_type):
+        """Record facts before enforcing policy; never grant an alternate engine.
+
+        SearXNG reports result provenance as engine, engines (a nonempty list),
+        or both consistently. Backend diagnostics are two-string lists. Only
+        access restrictions create pending-review rows; a plain Timeout/OSError
+        remains an observed transient error. No expiry is inferred from text.
+        """
+        if source.get('documented_api_permission') is None or mime != 'application/json':
+            return {}, None
+        try:
+            self._api_operation(url, source)
+            operation = self._api_operation(final_url, dict(source, _documented_api_request_url=url))
+        except (CollectionError, ValueError, TypeError):
+            return {}, self._result(url, 'blocked', error='API response left the exact requested query operation',
+                                    error_code='documented_api_backend_scope')
+        try:
+            payload = self._api_json(body)
+        except (ValueError, RecursionError):
+            return {}, None  # Original CAPTCHA and adapter validation still apply.
+        if not isinstance(payload, dict):
+            return {}, None
+        results = payload.get('results')
+        malformed = not isinstance(results, list)
+        if malformed:
+            results = []
+        reported, diagnostics = set(), []
+        errors = payload.get('unresponsive_engines')
+        if not isinstance(errors, list):
+            errors, malformed = [], True
+        for item in errors:
+            if not isinstance(item, list) or len(item) != 2 or not all(isinstance(value, str) for value in item):
+                malformed = True
+                continue
+            try:
+                engine = self._api_engine(item[0])
+            except CollectionError:
+                malformed = True
+                continue
+            diagnostics.append((engine, item[1]))
+            reported.add(engine)
+        for record in results:
+            try:
+                if not isinstance(record, dict) or not ({'engine', 'engines'} & set(record)):
+                    raise CollectionError('Missing result engine provenance')
+                primary = self._api_engine(record['engine']) if 'engine' in record else None
+                engines = record.get('engines')
+                if 'engines' in record and (not isinstance(engines, list) or not engines):
+                    raise CollectionError('Invalid result engines')
+                names = {self._api_engine(value) for value in engines} if engines is not None else {primary}
+                if primary is not None and primary not in names:
+                    raise CollectionError('Inconsistent result engine provenance')
+                reported.update(names)
+            except (CollectionError, TypeError):
+                malformed = True
+        mismatch = malformed or bool(reported - set(operation['engines']))
+        metadata = {'backend_provenance': 'invalid' if mismatch else 'reported' if reported else 'unobserved',
+                    'reported_engines': sorted(reported), 'backend_diagnostics_count': len(diagnostics)}
+        if diagnostics or mismatch:
+            sha = hashlib.sha256(raw).hexdigest()
+            stamp = self._clock()
+            with self._db() as db:
+                db.execute('BEGIN IMMEDIATE')
+                db.execute('INSERT OR IGNORE INTO api_backend_observations VALUES(?,?,?,?,?,?,?,?)',
+                    (operation['endpoint'], operation['selection'], sha, stamp, content_type, raw,
+                     json.dumps(sorted(reported)), json.dumps(diagnostics, ensure_ascii=False)))
+                for engine, message in diagnostics:
+                    if self._api_backend_denial(message):
+                        db.execute('''INSERT INTO api_backend_restrictions VALUES(?,?,?,?,?,1,?)
+                            ON CONFLICT(endpoint,engine) DO UPDATE SET last_seen=MAX(last_seen,excluded.last_seen)''',
+                            (operation['endpoint'], engine, message[:2000], stamp, stamp, sha))
+                if mismatch:
+                    db.execute('''INSERT INTO api_route_restrictions VALUES(?,?,?,?,?,?)
+                        ON CONFLICT(endpoint,requested_engines) DO UPDATE SET last_seen=MAX(last_seen,excluded.last_seen)''',
+                        (operation['endpoint'], operation['selection'], 'Reported API engines differ from explicit request or have invalid provenance',
+                         stamp, stamp, sha))
+                failure = self._api_policy_from_db(db, operation)
+            return metadata, failure
+        with self._db() as db:
+            return metadata, self._api_policy_from_db(db, operation)
+
+    def _response_captcha(self, body: str, source: dict, url: str, final_url: str, mime: str) -> bool:
+        if not self._captcha(body):
+            return False
+        from .api_permissions import documented_search_api
+        if (mime != 'application/json' or not documented_search_api(url, source)
+                or not documented_search_api(final_url, source)):
+            return True
+
+        try:
+            payload = self._api_json(body)
+            if (not isinstance(payload, dict) or not isinstance(payload.get('results'), list)
+                    or not isinstance(payload.get('unresponsive_engines'), list)
+                    or any(not isinstance(item, list) or len(item) != 2
+                           or any(not isinstance(value, str) for value in item)
+                           for item in payload['unresponsive_engines'])):
+                return True
+            # Backend diagnostics are not a challenge issued by the API host.
+            # Inspect every other field, including global errors and results;
+            # keep the original body/bytes for the adapter, cache and receipt.
+            host_response = {key: value for key, value in payload.items() if key != 'unresponsive_engines'}
+            return self._captcha(json.dumps(host_response, ensure_ascii=False))
+        except (ValueError, RecursionError):
+            return True
 
     def _cache_policy(self, headers: dict, source: dict) -> tuple[float, bool]:
         ttl = max(0.0, min(float(source.get("cache_ttl_seconds", self.config.get("cache_ttl_seconds", 900))), 86400))
@@ -1238,13 +1526,21 @@ class SafeFetcher:
         if not source.get('enabled') or not source.get('terms_approved'):
             return self._result(url, 'blocked', error='Source must be enabled and terms must be reviewed explicitly')
         if source.get('documented_api_permission') is not None:
-            source = dict(source, _documented_api_scope=True)
+            source = dict(source, _documented_api_scope=True, _documented_api_request_url=url)
+        if source.get('kind') == 'arquivo_fulltext':
+            source = dict(source, _arquivo_request_url=url)
         final_url = final_url or self.cached_response_url(url)
+        if source.get('kind') == 'arquivo_fulltext' and final_url not in (None, url):
+            return self._result(url, 'blocked', error='Cached Arquivo search left its exact requested operation',
+                                error_code='archive_discovery_scope')
         for target in dict.fromkeys((url, final_url or url)):
             try:
                 normalized, _, _ = self._validate_url(target, source, resolve=False)
             except (CollectionError, ValueError, TypeError) as exc:
                 return self._result(url, 'blocked', error='Cached response is outside the current source scope: ' + str(exc))
+            policy = self._api_policy_error(normalized, source)
+            if policy:
+                return policy
             if source.get('robots_required', True):
                 origin = 'https://' + urlsplit(normalized).netloc
                 with self._db() as db:
@@ -1273,16 +1569,30 @@ class SafeFetcher:
             normalized, host, _ = self._validate_url(url, source, resolve=False)
         except _APIEndpointScopeError as exc:
             return self._result(url, 'blocked', error=str(exc), error_code='documented_api_scope')
+        except _ArchiveEndpointScopeError as exc:
+            return self._result(url, 'blocked', error=str(exc), error_code='archive_discovery_scope')
         except _ArticlePathScopeError as exc:
             return self._result(url, 'blocked', error=str(exc), error_code='article_path_scope')
         except (CollectionError, ValueError, TypeError) as exc:
             return self._result(url, "error", error=str(exc)[:500])
+        if source.get('documented_api_permission') is not None:
+            source['_documented_api_request_url'] = normalized
+        if source.get('kind') == 'arquivo_fulltext':
+            source['_arquivo_request_url'] = normalized
+        policy = self._api_policy_error(normalized, source)
+        if policy:
+            return policy
         now = self._clock()
         with self._db() as db:
             cached = db.execute("SELECT * FROM http_cache WHERE url=?", (normalized,)).fetchone()
+        # Legacy receipts cannot prove that the requested engines were used.
+        # Require a full representation; a 304 cannot establish provenance.
+        legacy_api_cache = (cached is not None and source.get('documented_api_permission') is not None
+                            and not cached['api_backend_metadata'])
         # Older cache rows have no response URL; revalidate before resolving
         # relative links against a base that may have redirected elsewhere.
-        fresh = cached and cached['expires_at'] > now and cached['final_url'] and not cached['validation_error']
+        fresh = (cached and cached['expires_at'] > now and cached['final_url']
+                 and not cached['validation_error'] and not legacy_api_cache)
         if cached and ((mode == 'reuse' and fresh) or mode == 'local'):
             decision = self.cached_policy_error(normalized, source, cached['final_url'])
             if decision:
@@ -1291,11 +1601,16 @@ class SafeFetcher:
                 return self._result(normalized, 'error', error='Cached response failed source validation',
                                     error_code='invalid_cached_response', sha256=cached['sha256'],
                                     cache_status='invalidated', local_reuse_only=mode == 'local')
+            if legacy_api_cache:
+                return self._result(normalized, 'blocked', error='Cached API backend provenance needs full revalidation',
+                                    error_code='documented_api_backend_scope', local_reuse_only=True)
             cache_status = 'local' if mode == 'local' else 'fresh'
             self._record_event(normalized, "content", network_requests=0, outcome="cache_hit", cache_status=cache_status)
             result = self._result(normalized, "not_modified", body=cached["body"], content_type=cached["content_type"], retrieved_at=cached["retrieved_at"], sha256=cached["sha256"], etag=cached["etag"], last_modified=cached["last_modified"], final_url=cached["final_url"] or normalized, from_cache=True, cache_status=cache_status, cache_valid_until=_iso(cached["expires_at"]), validated_at=_iso(cached['fetched_at']), local_reuse_only=mode == 'local', cache_stale=not bool(fresh))
             if cached['pagination_headers']:
                 result['pagination_headers'] = json.loads(cached['pagination_headers'])
+            if cached['api_backend_metadata']:
+                result.update(json.loads(cached['api_backend_metadata']))
             return result
         if mode == 'local':
             return self._result(normalized, 'cache_miss', error_code='local_cache_miss',
@@ -1306,7 +1621,7 @@ class SafeFetcher:
             if decision:
                 return decision
         headers = {}
-        if cached and not cached['validation_error']:
+        if cached and not cached['validation_error'] and not legacy_api_cache:
             if cached["etag"]:
                 headers["If-None-Match"] = cached["etag"]
             if cached["last_modified"]:
@@ -1332,14 +1647,27 @@ class SafeFetcher:
                 return self._result(normalized, 'error', http_status=304,
                                     error='304 cannot validate a semantically invalid representation',
                                     error_code='invalid_cache_revalidation')
+            if legacy_api_cache:
+                return self._result(normalized, 'blocked', http_status=304,
+                                    error='304 cannot establish API backend provenance',
+                                    error_code='documented_api_backend_scope')
+            policy = self._api_policy_error(final_url, source)
+            if policy:
+                return policy
             with self._db() as db:
+                operation = self._api_operation(final_url, source)
+                if operation is not None:
+                    db.execute('BEGIN IMMEDIATE')
+                    policy = self._api_policy_from_db(db, operation)
+                    if policy:
+                        return policy
                 if store_cache:
                     db.execute("UPDATE http_cache SET fetched_at=?,expires_at=?,final_url=?,pagination_headers=? WHERE url=?", (now, now + ttl, final_url, json.dumps(pagination_headers), normalized))
                 else:
                     db.execute("DELETE FROM http_cache WHERE url=?", (normalized,))
             self._content_success(urlsplit(final_url).hostname)
             self._record_event(normalized, "content", network_requests=0, outcome="cache_revalidated", cache_status="revalidated")
-            return self._result(normalized, "not_modified", http_status=304, body=cached["body"], content_type=cached["content_type"], retrieved_at=cached["retrieved_at"], sha256=cached["sha256"], etag=cached["etag"], last_modified=cached["last_modified"], final_url=final_url, validated_at=_iso(now), from_cache=True, cache_status="revalidated", cache_valid_until=_iso(now + ttl), original_retrieved_at=cached["retrieved_at"], pagination_headers=pagination_headers)
+            return self._result(normalized, "not_modified", http_status=304, body=cached["body"], content_type=cached["content_type"], retrieved_at=cached["retrieved_at"], sha256=cached["sha256"], etag=cached["etag"], last_modified=cached["last_modified"], final_url=final_url, validated_at=_iso(now), from_cache=True, cache_status="revalidated", cache_valid_until=_iso(now + ttl), original_retrieved_at=cached["retrieved_at"], pagination_headers=pagination_headers, **json.loads(cached['api_backend_metadata'] or '{}'))
         # Without X-WP-TotalPages a full page implies a tentative next page.
         # WordPress reports the end with a specific 400 envelope. Only that
         # inferred continuation at the configured posts endpoint becomes an
@@ -1423,17 +1751,29 @@ class SafeFetcher:
             body = raw.decode(charset, errors="replace")
         except (LookupError, UnicodeError):
             body = raw.decode("utf-8", errors="replace")
-        if self._captcha(body):
+        backend_metadata, backend_failure = self._api_response_policy(
+            body, raw, source, normalized, final_url, mime, content_type)
+        if self._response_captcha(body, source, normalized, final_url, mime):
             final_host = urlsplit(final_url).hostname
             retry = self._backoff(final_host, response_headers, True, "CAPTCHA or access challenge")
             return self._result(normalized, "blocked", http_status=status, error="CAPTCHA or access challenge; manual review required", retry_at=_iso(retry), error_code="access_challenge", retry_class=self._local.retry_class, admission_host=final_host)
+        if backend_failure:
+            return dict(backend_failure, http_status=status, body=body, content_type=content_type,
+                        sha256=hashlib.sha256(raw).hexdigest(), final_url=final_url, **backend_metadata)
         self._content_success(urlsplit(final_url).hostname)
         digest = hashlib.sha256(raw).hexdigest()
         retrieved = _iso(self._clock())
         etag, modified = response_headers.get("etag"), response_headers.get("last-modified")
         with self._db() as db:
+            operation = self._api_operation(final_url, source)
+            if operation is not None:
+                db.execute('BEGIN IMMEDIATE')
+                policy = self._api_policy_from_db(db, operation)
+                if policy:
+                    return dict(policy, http_status=status, body=body, content_type=content_type,
+                                sha256=digest, final_url=final_url, **backend_metadata)
             if store_cache:
-                db.execute("INSERT OR REPLACE INTO http_cache(url,body,content_type,etag,last_modified,sha256,retrieved_at,fetched_at,expires_at,cache_control,cache_expires,final_url,pagination_headers) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)", (normalized, body, content_type, etag, modified, digest, retrieved, now, now + ttl, response_headers.get("cache-control", ""), response_headers.get("expires", ""), final_url, json.dumps(pagination_headers)))
+                db.execute("INSERT OR REPLACE INTO http_cache(url,body,content_type,etag,last_modified,sha256,retrieved_at,fetched_at,expires_at,cache_control,cache_expires,final_url,pagination_headers,api_backend_metadata) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)", (normalized, body, content_type, etag, modified, digest, retrieved, now, now + ttl, response_headers.get("cache-control", ""), response_headers.get("expires", ""), final_url, json.dumps(pagination_headers), json.dumps(backend_metadata) if backend_metadata else ''))
             else:
                 db.execute("DELETE FROM http_cache WHERE url=?", (normalized,))
-        return self._result(normalized, "ok", http_status=status, body=body, content_type=content_type, retrieved_at=retrieved, sha256=digest, etag=etag, last_modified=modified, final_url=final_url, cache_status="refreshed" if cached else "miss", pagination_headers=pagination_headers, cache_valid_until=_iso(now + ttl if store_cache else now), validated_at=_iso(now))
+        return self._result(normalized, "ok", http_status=status, body=body, content_type=content_type, retrieved_at=retrieved, sha256=digest, etag=etag, last_modified=modified, final_url=final_url, cache_status="refreshed" if cached else "miss", pagination_headers=pagination_headers, cache_valid_until=_iso(now + ttl if store_cache else now), validated_at=_iso(now), **backend_metadata)

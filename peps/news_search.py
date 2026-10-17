@@ -528,6 +528,11 @@ def build_search_plan(entities, sources, config=None, *, start=None, end=None, n
                 'historical': False, 'complete_archive': False, 'date_filter_supported': False,
                 'start': first.isoformat(), 'end_exclusive': last.isoformat(), 'windows': 1,
                 'window_unit': 'unfiltered_search', 'max_records_per_response': min(100, int(source.get('max_records', 50)))})
+            if source['kind'] == 'arquivo_fulltext':
+                plan['sources'][-1].update(scope='historical_archive_url_metadata', historical=True,
+                    date_filter_supported=False, archive_capture_is_not_publication=True,
+                    session_budget_fraction=.1, complementary=True)
+                plan['warnings'].append(source['id'] + ': complemento histórico de metadatos, limitado al 10 % de la sesión. Se consulta después del barrido nominal; las fechas de captura no son fechas de publicación. Las consultas restantes se conservan para reanudar. No se descargan cuerpos archivados.')
             plan['warnings'].append(source['id'] + ': búsqueda pública nominal sin clave; no garantiza archivo, actualidad ni fechas de publicación. El rango se comprobará sólo cuando exista fecha editorial verificable. Títulos y extractos son descubrimiento, no evidencia puntuable.')
             if source['kind'] == 'bing_news_rss':
                 plan['warnings'].append(source['id'] + ': el RSS de Bing limita el uso a un agregador RSS personal y no comercial; otros usos requieren permiso escrito de Microsoft. No habilite esta fuente sin revisar esa condición. Los enlaces explícitos se leen sin solicitar el redireccionador HTTP; cada editor conserva sus permisos separados.')
@@ -654,6 +659,11 @@ def build_search_plan(entities, sources, config=None, *, start=None, end=None, n
                 else:
                     queries = entity_queries(entity, config, max(1, max_chars - len(source_suffix)))
                 for rank, query in enumerate(checked(queries)):
+                    if source.get('kind') == 'arquivo_fulltext' and any(
+                            other.get('kind') != 'arquivo_fulltext' for other, _ in prepared):
+                        # A supplementary archive must not take a person's
+                        # place in the primary nominal sweep of other sources.
+                        rank += 10
                     if source.get('kind') == 'gdelt':
                         if query['query_type'] in ('identity', 'focus'):
                             continue  # Canonical requests were batched above.
