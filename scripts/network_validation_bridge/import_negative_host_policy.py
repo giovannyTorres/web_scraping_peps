@@ -16,7 +16,8 @@ import sqlite3
 
 ROOT = Path(__file__).resolve().parents[2]
 FORBIDDEN_V1 = ROOT / "runtime/recovery-redesign-2026-10-16/bank-cold-v1/network.sqlite3"
-EMPTY_TABLES = ("http_cache", "robots", "robots_refresh", "redirects", "request_history")
+EMPTY_TABLES = ("http_cache", "robots", "robots_refresh", "redirects", "request_history",
+                "http_error_diagnostics", "api_backend_observations")
 
 
 def sha(path):
@@ -34,9 +35,11 @@ def main():
         raise ValueError("Active V1 is read-only for this task; never import into it")
     if not args.network_db.is_file() or args.receipt.exists():
         raise ValueError("Require an initialized future network database and a new receipt path")
-    if not re.fullmatch(r"[a-f0-9]{64}", args.registry_sha256) or sha(args.registry) != args.registry_sha256:
+    raw = args.registry.read_bytes()
+    if (not re.fullmatch(r"[a-f0-9]{64}", args.registry_sha256)
+            or hashlib.sha256(raw).hexdigest() != args.registry_sha256):
         raise ValueError("Registry differs from its frozen prelaunch hash")
-    registry = json.loads(args.registry.read_text())
+    registry = json.loads(raw.decode('utf-8'))
     if registry.get("schema_version") != 1:
         raise ValueError("Unsupported host policy registry schema")
     now = datetime.now(timezone.utc)
