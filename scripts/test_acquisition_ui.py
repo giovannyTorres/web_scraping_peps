@@ -166,7 +166,8 @@ def main():
                             expect(page.locator('#workflow-time-budget')).to_have_value('900')
                             checked('legacy_900_second_budget_is_preserved')
                             before = permissions(page)
-                            expect(page.locator('#workflow-permission-summary')).to_contain_text('0 con texto autorizado')
+                            expect(page.locator('#workflow-permission-summary')).to_contain_text('sólo referencias')
+                            expect(page.locator('#workflow-permission-summary')).to_have_attribute('data-body-ready', 'false')
                             source = page.locator('#news-sources .source').filter(has_text='Archivo enteramente sintético de pruebas')
                             expect(source.locator('input[type=checkbox]').nth(1)).not_to_be_checked()
                             assert source.locator('input[type=checkbox]').count() == 2

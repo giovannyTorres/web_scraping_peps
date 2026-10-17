@@ -11,3 +11,6 @@ docs/benchmarks/*.patch -whitespace
 # Preserve the upstream OFL license text, including its original line endings/spaces.
 peps/licenses/LATO_OFL.txt text eol=lf whitespace=-blank-at-eol
 peps/licenses/SOURCE_SERIF_4_OFL.txt text eol=lf whitespace=-blank-at-eol
+
+# Upstream reStructuredText license headings contain seven equals signs.
+peps/licenses/EXTRACTION_DEPENDENCIES.txt conflict-marker-size=32

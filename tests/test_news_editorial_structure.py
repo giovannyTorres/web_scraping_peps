@@ -213,6 +213,19 @@ class EditorialVersionMigrationTests(unittest.TestCase):
         self.assertEqual(hashlib.sha256(snapshot.read_bytes()).hexdigest(), raw_hash)
         self.assertTrue(self.engine.store.verify_audit()['ok'])
 
+    def test_version_eight_snapshot_gets_current_receipt_without_changing_usable_body(self):
+        old = self.legacy(self.neutral.strip(), version='article-main-8')
+        with patch('peps.collector.SafeFetcher', side_effect=AssertionError('No network during local migration')):
+            self.assertEqual(self.news.reextract_snapshots(), {'unchanged': 1, 'examined': 1})
+            self.assertEqual(self.news.reextract_snapshots(), {'examined': 0})
+        with self.engine.store.connection() as con:
+            current = dict(con.execute('SELECT * FROM documents WHERE id=?', (old['id'],)).fetchone())
+            receipt = dict(con.execute('SELECT * FROM news_extraction_receipts').fetchone())
+        self.assertEqual(current['text'], old['text'])
+        self.assertEqual(json.loads(current['metadata']), old['metadata'])
+        self.assertEqual(receipt['version'], ARTICLE_EXTRACTION_VERSION)
+        self.assertTrue(self.engine.store.verify_audit()['ok'])
+
 
 if __name__=='__main__':
     unittest.main()

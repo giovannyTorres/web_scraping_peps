@@ -9,6 +9,9 @@ Entity aliases and context are bank assertions, not facts learned from news.
 All optional input fields and string aliases are unverified hints by default.
 Structured entries can record ``name``, ``verified``/``status``, ``source`` and
 validity dates. Explicit verification AND provenance are required for anchors.
+Checked ``documented_fields`` from a captured public directory are a separate
+documentary assertion with no human review. Without a stated appointment
+interval they corroborate only publications on the observation date.
 ``context.verified_fields`` and ``context.verified_aliases`` support reviewed
 bank attributes; unverified hints cannot establish a match. Update the bank
 and rebuild the resolver to apply corrections. Instances are read-only after
@@ -26,7 +29,9 @@ from dataclasses import dataclass
 from datetime import date
 from typing import Any, Iterable
 
-MODEL_VERSION = "es-mx-identity-indexed-1.0.0"
+from .profile_anchors import METHOD as DOCUMENTED_PROFILE_METHOD, SCHEMA_VERSION as DOCUMENTED_PROFILE_SCHEMA
+
+MODEL_VERSION = "es-mx-identity-indexed-1.0.1"
 CONFIDENCE_KIND = "deterministic_heuristic_not_probability"
 MAX_ALIAS_TOKENS = 32
 MAX_COMPETITOR_IDS = 100
@@ -63,7 +68,15 @@ GROUP_KEYS = {
     "organization": ("organization", "organizations", "employer", "agency"),
     "birth_date": ("birth_date", "date_of_birth", "fecha_nacimiento"),
     "age": ("age", "edad"),
+    # A notarial office is not a personal identifier. It can discriminate
+    # between otherwise corroborated homonyms, never replace role/location.
+    "professional_registry": ("notary_number", "numero_notaria"),
 }
+NOTARY_ROLE_FORMS = (("notario",), ("notaria",), ("notario", "publico"), ("notaria", "publica"))
+NOTARY_LINK_WORDS = frozenset({"publico", "publica", "titular", "notario", "notaria", "numero",
+                              "num", "n", "municipio", "distrito", "registral"})
+NOTARY_NUMBER_LABELS = frozenset({"numero", "num", "no", "n"})
+NOTARY_NUMBER_PATTERN = re.compile(r"^\s*(\d{1,5})(?:\s+([\wÁÉÍÓÚÑáéíóúñ][\wÁÉÍÓÚÑáéíóúñ -]{2,100}))?\s*$")
 RULES_HASH = hashlib.sha256(json.dumps({"version": MODEL_VERSION,
     "groups": GROUP_KEYS, "suffixes": LEGAL_SUFFIXES, "radius": CONTEXT_RADIUS,
     "confidence_kind": CONFIDENCE_KIND, "barriers": CONTEXT_BARRIERS.pattern,
@@ -71,7 +84,13 @@ RULES_HASH = hashlib.sha256(json.dumps({"version": MODEL_VERSION,
     "rfc_pattern": RFC_PATTERN.pattern, "max_alias_tokens": MAX_ALIAS_TOKENS,
     "link_words": sorted(LINK_WORDS),
     "max_competitor_ids": MAX_COMPETITOR_IDS, "verified_policy": "explicit_with_provenance",
-    "context_groups_required": 2, "rfc_label_required": True, "body_anchor_required": True},
+    "context_groups_required": 2, "rfc_label_required": True, "body_anchor_required": True,
+    "notary_role_forms": NOTARY_ROLE_FORMS, "notary_link_words": sorted(NOTARY_LINK_WORDS),
+    "notary_number_pattern": NOTARY_NUMBER_PATTERN.pattern,
+    "notary_number_labels": sorted(NOTARY_NUMBER_LABELS),
+    "notary_policy": "direct_nominal_office_binding_discriminates_only_never_personal_identifier_1",
+    "documented_profile_method": DOCUMENTED_PROFILE_METHOD, "documented_profile_schema": DOCUMENTED_PROFILE_SCHEMA,
+    "documented_profile_policy": "checked_literal_directory_record_observation_date_only_not_human_review_1"},
     sort_keys=True).encode()).hexdigest()
 
 
@@ -159,8 +178,8 @@ def _trusted(value: dict[str, Any]) -> bool:
 
 
 def _verification(context: dict[str, Any], key: str, details: dict[str, Any] | None = None,
-                  explicit: bool = False) -> dict[str, Any]:
-    """Verification is an explicit reviewed assertion with recorded provenance.
+                  explicit: bool = False, documented_entity: dict[str, Any] | None = None) -> dict[str, Any]:
+    """Verification is an explicit bank assertion with recorded provenance.
 
     A bare true, RFC syntax, search query, publisher name, or list of field
     names is insufficient. Provenance is recorded, not fetched or certified.
@@ -186,8 +205,30 @@ def _verification(context: dict[str, Any], key: str, details: dict[str, Any] | N
     source_valid = ((isinstance(source, str) and len(source.strip()) >= 3) or
         (isinstance(source, dict) and any(source.get(k) for k in
             ("url", "uri", "id", "reference", "record", "file", "sha256", "review_id", "source_id", "source"))))
+    if documented_entity is not None and not (verified and source_valid):
+        from .profile_anchors import validate_documented_field
+        documented = context.get("documented_fields") or {}
+        if isinstance(documented, dict) and key in documented:
+            proof = validate_documented_field(documented_entity, key, context.get(key), documented[key])
+            if proof and _trusted(entry):
+                return {"verified": True, "source": copy.deepcopy(proof),
+                        "verification_method": DOCUMENTED_PROFILE_METHOD, "human_review": False,
+                        "temporal_scope": copy.deepcopy(proof["temporal_scope"])}
     return {"verified": bool(verified and source_valid and _trusted(entry)),
             "source": copy.deepcopy(source) if source_valid else None}
+
+
+def _verification_at(verification: dict[str, Any], details: dict[str, Any], published: str | None) -> bool:
+    if not verification["verified"] or _dated_without_reference(details, published):
+        return False
+    scope = verification.get("temporal_scope") or {}
+    return scope.get("kind") != "source_listing_at_observation_only" or published == scope.get("observed_date")
+
+
+def _verification_needs_date_review(verification: dict[str, Any], details: dict[str, Any], published: str | None) -> bool:
+    scope = verification.get("temporal_scope") or {}
+    return (_dated_without_reference(details, published) or
+            (scope.get("kind") == "source_listing_at_observation_only" and published != scope.get("observed_date")))
 
 
 def entity_signature(entity: dict[str, Any]) -> str:
@@ -310,13 +351,31 @@ class IdentityResolver:
                 for raw in _values(context.get(key)):
                     details = raw if isinstance(raw, dict) else {}
                     value = (details.get("name") or details.get("value") or details.get("title")
-                             or details.get("role")) if details else raw
+                             or details.get("role") or (details.get("number") if group == "professional_registry" else None)) if details else raw
                     if value and _trusted(details):
+                        if group == "professional_registry":
+                            match = NOTARY_NUMBER_PATTERN.fullmatch(str(value))
+                            if match:
+                                number = str(int(match.group(1)))
+                                profile.append({"group": group, "key": key, "value": str(value),
+                                                "sequence": (number,), "number": number, "details": details,
+                                                "verification": _verification(context, key, details, documented_entity=entity)})
+                                # Legacy imports sometimes include the plaza in
+                                # this field ("126 Guadalajara"). Preserve that
+                                # literal sourced location rather than discard it.
+                                place = details.get("jurisdiction") or match.group(2)
+                                if isinstance(place, str) and _sequence(place):
+                                    profile.append({"group": "geography", "key": key + ".jurisdiction", "value": place,
+                                                    "sequence": _sequence(place), "details": details,
+                                                    "verification": _verification(context, key, details, documented_entity=entity)})
+                            continue
                         seq = _sequence(str(value))
                         if seq and " ".join(seq) not in GENERIC_CONTEXT and (len("".join(seq)) >= 4 or group == "age"):
-                            profile.append({"group": group, "key": key, "value": str(value),
-                                            "sequence": seq, "details": details,
-                                            "verification": _verification(context, key, details)})
+                            forms = NOTARY_ROLE_FORMS if group == "role" and seq in NOTARY_ROLE_FORMS else (seq,)
+                            for form in forms:
+                                profile.append({"group": group, "key": key, "value": str(value),
+                                                "sequence": form, "details": details,
+                                                "verification": _verification(context, key, details, documented_entity=entity)})
                     if group == "role" and details:
                         for nested, nested_group in (("organization", "organization"),
                                                       ("jurisdiction", "geography")):
@@ -443,6 +502,15 @@ class IdentityResolver:
         values, attributes, expired = [t.value for t in window], [], []
         link_words = set(LINK_WORDS)
         link_words.update(token for expected in self._profiles[hit["entity_id"]] for token in expected["sequence"])
+        notary_profiles = [p for p in self._profiles[hit["entity_id"]] if p["group"] == "professional_registry"]
+        notary_numbers = {p["number"] for p in notary_profiles}
+        notarial_role = any(p["group"] == "role" and p["sequence"] in NOTARY_ROLE_FORMS
+                           for p in self._profiles[hit["entity_id"]])
+        if notarial_role:
+            # These words are safe only inside a directly attached notarial
+            # nominal phrase. They must not broaden arbitrary role/employer
+            # relations or allow a predicate to borrow another person's office.
+            link_words.update(NOTARY_LINK_WORDS)
         if _fold(self._entities[hit["entity_id"]].get("kind", "person")) in COMPANY_KINDS:
             link_words.update(token for suffix in LEGAL_SUFFIXES for token in suffix)
         def linked(begin: int, end: int) -> bool:
@@ -452,9 +520,13 @@ class IdentityResolver:
             # Only a directly attached nominal/copular identity phrase can
             # donate anchors. Arbitrary predicates and another subject's
             # attributes are refused without needing a catalogue of verbs.
-            return (not CONTEXT_BARRIERS.search(_fold(between)) and
-                    all(t.value in link_words for t in _tokens(between)))
+            return (not CONTEXT_BARRIERS.search(_fold(between))
+                    and not (notarial_role and re.search(r"\bcon\b", _fold(between))) and
+                    all(t.value in link_words or (notarial_role and re.fullmatch(r"\d{1,5}", t.value)
+                        and str(int(t.value)) in notary_numbers) for t in _tokens(between)))
         for expected in self._profiles[hit["entity_id"]]:
+            if expected["group"] == "professional_registry":
+                continue
             seq = expected["sequence"]
             for i in range(len(values) - len(seq) + 1):
                 if tuple(values[i:i + len(seq)]) != seq:
@@ -477,11 +549,44 @@ class IdentityResolver:
                              "value": expected["value"], "start": begin, "end": end,
                              "text": text[begin:end], "part": hit["part"],
                              "date_compatible": _validity(expected["details"], published),
-                             "verified": expected["verification"]["verified"] and not _dated_without_reference(expected["details"], published),
-                             "date_requires_review": _dated_without_reference(expected["details"], published),
+                             "verified": _verification_at(expected["verification"], expected["details"], published),
+                             "date_requires_review": _verification_needs_date_review(expected["verification"], expected["details"], published),
                              "provenance": expected["verification"]["source"]}
                 (expired if attribute["date_compatible"] is False else attributes).append(attribute)
                 break
+        local_notary_numbers = set()
+        for i, token in enumerate(window):
+            if token.value not in {"notario", "notaria"}:
+                continue
+            j = i + 1
+            while j < len(window) and values[j] in {"publico", "publica", "titular"}:
+                j += 1
+            if j < len(window) and values[j] in NOTARY_NUMBER_LABELS:
+                j += 1
+            if j >= len(window) or not re.fullmatch(r"\d{1,5}", values[j]):
+                continue
+            begin, end = a + token.start, a + window[j].end
+            if not linked(begin, end):
+                continue
+            actual = str(int(values[j]))
+            local_notary_numbers.add(actual)
+            for expected in notary_profiles:
+                if expected["number"] != actual:
+                    continue
+                attribute = {"group": "professional_registry", "key": expected["key"],
+                             "value": expected["value"], "start": a + window[j].start,
+                             "end": end, "text": text[a + window[j].start:end], "part": hit["part"],
+                             "date_compatible": _validity(expected["details"], published),
+                             "verified": _verification_at(expected["verification"], expected["details"], published),
+                             "date_requires_review": _verification_needs_date_review(expected["verification"], expected["details"], published),
+                             "provenance": expected["verification"]["source"]}
+                (expired if attribute["date_compatible"] is False else attributes).append(attribute)
+        active_notary_profiles = [p for p in notary_profiles if _validity(p["details"], published) is not False]
+        expected_notary_numbers = {p["number"] for p in active_notary_profiles}
+        conflicting_notary_numbers = sorted(local_notary_numbers - expected_notary_numbers) if active_notary_profiles else []
+        verified_notary_conflict = bool(conflicting_notary_numbers and any(
+            _verification_at(p["verification"], p["details"], published)
+            and _validity(p["details"], published) is not False for p in notary_profiles))
         local_rfcs = set()
         for match in RFC_PATTERN.finditer(text[a:b]):
             begin, end = a + match.start(), a + match.end()
@@ -500,8 +605,11 @@ class IdentityResolver:
         short = len(meaningful) < 2 or len("".join(meaningful)) <= 4
         alias_validity = _validity(variant.details, published)
         trusted = variant.trusted and alias_validity is not False and not _dated_without_reference(variant.details, published)
-        groups = sorted({item["group"] for item in attributes})
-        verified_groups = sorted({item["group"] for item in attributes if item["verified"]})
+        # An office number can be shared by successors and is reused across
+        # plazas. It never supplies the second required identity context group.
+        groups = sorted({item["group"] for item in attributes if item["group"] != "professional_registry"})
+        verified_groups = sorted({item["group"] for item in attributes
+                                  if item["verified"] and item["group"] != "professional_registry"})
         # A geographic keyword alone (e.g. a place visited) is never sufficient.
         contextual = len(groups) >= 2 and ("role" in groups or "organization" in groups)
         company = _fold(self._entities[hit["entity_id"]].get("kind", "person")) in COMPANY_KINDS
@@ -510,10 +618,14 @@ class IdentityResolver:
         canonical_reference = variant.source == "canonical_name" or variant.verification["verified"]
         identity_negated = bool(re.search(r"\b(?:no (?:es|fue)|no se trata de|distint[oa] de|homonim[oa] de)\s*$",
                                          _fold(text[max(a, hit["start"] - 45):hit["start"]])))
-        strong = trusted and canonical_reference and not identity_negated and not conflicting_rfcs and (bool(verified_rfcs) or verified_context)
+        strong = (trusted and canonical_reference and not identity_negated and not conflicting_rfcs
+                  and not conflicting_notary_numbers and (bool(verified_rfcs) or verified_context))
         return {"hit": hit, "groups": groups, "attributes": attributes, "expired_attributes": expired,
                 "matched_rfcs": matched_rfcs, "conflicting_rfcs": conflicting_rfcs,
                 "verified_rfcs": verified_rfcs, "verified_rfc_conflict": verified_rfc_conflict,
+                "matched_notary_numbers": sorted(local_notary_numbers & expected_notary_numbers),
+                "conflicting_notary_numbers": conflicting_notary_numbers,
+                "verified_notary_conflict": verified_notary_conflict,
                 "identifier_attributes": [{"type": "rfc", "value": r,
                     "verified": self._rfc_verifications[hit["entity_id"]][r]["verified"],
                     "provenance": self._rfc_verifications[hit["entity_id"]][r]["source"],
@@ -585,9 +697,9 @@ class IdentityResolver:
             if strong_items:
                 status, confidence = "matched", .97 if any(i["verified_rfcs"] for i in strong_items) else .90
                 reasons = ["Nombre/alias del cuerpo y anclas explícitamente verificadas con procedencia concuerdan localmente."]
-            elif items and all(i["verified_rfc_conflict"] for i in items):
+            elif items and all(i["verified_rfc_conflict"] or i["verified_notary_conflict"] for i in items):
                 status, confidence = "rejected", .05
-                reasons = ["Atributos locales identifican un homónimo o el RFC contradice el registro."]
+                reasons = ["Atributos locales identifican un homónimo o el RFC/número de notaría contradice el registro vigente."]
             elif competing_count:
                 hint_rank = max((.10 * len(i["groups"]) + .15 * bool(i["matched_rfcs"])
                                  - .10 * bool(i["conflicting_rfcs"]) for i in items), default=0)
@@ -607,6 +719,8 @@ class IdentityResolver:
                 reasons.append("Se excluyeron cargos/atributos incompatibles con la fecha de publicación.")
             if any(i["conflicting_rfcs"] and not i["verified_rfc_conflict"] for i in items):
                 reasons.append("RFC del artículo difiere de una pista no verificada; no se presupone correcto el dato de entrada.")
+            if any(i["conflicting_notary_numbers"] and not i["verified_notary_conflict"] for i in items):
+                reasons.append("El número de notaría difiere de una pista no verificada; requiere comprobar plaza y vigencia.")
             if identifier_only.get(entity_id):
                 reasons.append("RFC del banco presente, pero sin nombre/alias corroborado en el fragmento.")
             entity = self._entities[entity_id]

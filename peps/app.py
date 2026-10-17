@@ -35,9 +35,9 @@ def _cache_options(data):
     return mode, online
 
 
-def create_server(engine, port=0):
+def create_server(engine, port=0, *, merge_source_defaults=True):
     from .news import NewsAcquirer
-    news = NewsAcquirer(engine)
+    news = NewsAcquirer(engine, merge_defaults=merge_source_defaults)
     token = secrets.token_urlsafe(32)
     web = Path(__file__).parent / 'web'
     tracker = OperationTracker(store=engine.store)
@@ -145,6 +145,8 @@ def create_server(engine, port=0):
                 'scope': 'current_bank', 'articles': observed['relevant_articles'], 'full_articles': observed['body_articles'],
                 'metadata_only_articles': observed['metadata_only_articles'],
                 'multimedia_reference_articles': observed['multimedia_reference_articles'],
+                'profile_reference_articles': observed['profile_reference_articles'],
+                'duplicate_reference_articles': observed['duplicate_reference_articles'],
                 'pending_text_articles': observed['pending_text_articles'],
                 'local_documents': observed['local_documents'],
                 'archived_articles': counts['articles'], 'archived_documents': counts['documents'],
@@ -228,19 +230,40 @@ def create_server(engine, port=0):
         workflow.mark_analysis(details=result)
         return result
 
+    def explanation_response(bundle, *, historical):
+        """Format already verified inputs identically for single and batch reads."""
+        run = bundle['run']
+        if not run:
+            raise WorkflowError('Completa el paso «Analizar y calcular» para obtener el scoring.', 409)
+        from .document_review import document_review
+        return {'entity': run['entity_snapshot'], 'result': run['result'],
+                'document_review': document_review(run['entity_snapshot'], bundle['evidence']),
+                'explanation': run['result'].get('explainability', {}),
+                'run': {'id': run['id'], 'created_at': run['created_at'], 'historical': historical},
+                'history': bundle['history'], 'evidence_count': len(run['evidence_manifest']),
+                'assessment': run['result'].get('explainability', {}).get('assessment') or assessment_summary(run['result'])}
+
     def stored_explanation(entity_id, run_id=None):
         """HTTP reads never launch scoring; computation belongs to step four."""
         if not run_id:
             workflow.require('view_results', tracker.snapshot())
-        bundle = engine.store.score_run_bundle(entity_id, run_id=run_id)
-        run = bundle['run']
-        if not run:
-            raise WorkflowError('Completa el paso «Analizar y calcular» para obtener el scoring.', 409)
-        return {'entity': run['entity_snapshot'], 'result': run['result'],
-                'explanation': run['result'].get('explainability', {}),
-                'run': {'id': run['id'], 'created_at': run['created_at'], 'historical': bool(run_id)},
-                'history': bundle['history'], 'evidence_count': len(run['evidence_manifest']),
-                'assessment': run['result'].get('explainability', {}).get('assessment') or assessment_summary(run['result'])}
+        bundle = engine.store.score_run_bundle(entity_id, run_id=run_id, include_evidence=True)
+        return explanation_response(bundle, historical=bool(run_id))
+
+    def stored_explanations(run_ids):
+        """Read explicit historical selections in one bounded verified snapshot."""
+        if (not isinstance(run_ids, list) or not 1 <= len(run_ids) <= 50
+                or any(not isinstance(value, str) or not value for value in run_ids)
+                or len(set(run_ids)) != len(run_ids)):
+            raise ValueError('El lote requiere entre 1 y 50 evaluaciones distintas identificadas')
+        # Explicit IDs have the same historical access as GET with run_id,
+        # even while the current workflow is busy or its results are stale.
+        # All integrity checks and document reuse belong to this one Store
+        # transaction; no validation cache escapes it and no rescore occurs.
+        bundles = engine.store.score_run_batch(run_ids)
+        if any(not bundle['entity_exists'] for bundle in bundles):
+            raise WorkflowError('Entidad inexistente', 404)
+        return {'items': [explanation_response(bundle, historical=True) for bundle in bundles]}
 
     def prune_imports(reserve_slot=False):
         cutoff = time.monotonic() - import_ttl
@@ -518,6 +541,9 @@ def create_server(engine, port=0):
                     from .importing import preview_import
                     workflow.require('import', tracker.snapshot())
                     self.reply(preview_import(engine.store, data))
+                    return
+                elif self.path == '/api/explanations':
+                    self.reply(stored_explanations(data.get('run_ids')))
                     return
                 elif self.path == '/api/import-confirm':
                     self.reply({'operation_id': queue_import(data)}, 202)

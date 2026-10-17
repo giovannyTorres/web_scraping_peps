@@ -1,5 +1,6 @@
 """Independent acquisition integration review; fixtures never access the network."""
 import json
+import gzip
 import contextlib
 import io
 import sys
@@ -67,6 +68,35 @@ class NewsIntegrationReview(unittest.TestCase):
         self.assertIsNotNone(job)
         return job
 
+    def assert_one_body_with_all_captures(self, rows):
+        """Every publisher URL keeps its own capture without another evidence body."""
+        full = [row for row in rows if row['scope'] == 'full_article']
+        copies = [row for row in rows if row['scope'] == 'duplicate_reference']
+        self.assertEqual(len(full), 1)
+        self.assertEqual(len(copies), len(rows) - 1)
+        self.assertTrue(all(row['document_id'] is None for row in copies))
+        canonical_id = full[0]['document_id']
+        with self.engine.store.connection() as con:
+            document = dict(con.execute('SELECT * FROM documents WHERE id=?', (canonical_id,)).fetchone())
+            aliases = {row['article_id']: dict(row) for row in con.execute('SELECT * FROM news_body_aliases')}
+            self.assertEqual(con.execute('SELECT count(*) FROM documents').fetchone()[0], 1)
+            self.assertEqual(con.execute('SELECT count(*) FROM evidence').fetchone()[0], 0)
+            self.assertEqual(len(aliases), len(copies))
+        self.assertEqual(digest(document['text']), document['content_hash'])
+        captures = [json.loads(document['metadata'])]
+        for copy in copies:
+            receipt = aliases[copy['id']]
+            self.assertEqual(receipt['canonical_document_id'], canonical_id)
+            self.assertEqual(receipt['body_sha256'], document['content_hash'])
+            self.assertEqual(receipt['observed_url'], copy['canonical_url'])
+            self.assertEqual(json.loads(receipt['source_policy'])['id'], copy['source_id'])
+            captures.append(receipt)
+        for receipt in captures:
+            html = gzip.decompress((self.engine.data_dir / receipt['raw_snapshot_path']).read_bytes()).decode('utf-8')
+            self.assertEqual(digest(html), receipt['raw_snapshot_sha256'])
+            self.assertEqual(article_text(html), document['text'])
+        self.assertTrue(self.engine.store.verify_audit()['ok'])
+
     def test_canonical_tracking_duplicates_create_one_article_and_one_job(self):
         self.observe('https://one.example/nota?utm_source=feed&a=1#comentarios')
         self.observe('https://ONE.example/nota?a=1&fbclid=tracking')
@@ -95,8 +125,7 @@ class NewsIntegrationReview(unittest.TestCase):
             self.news.execute(self.claimed(), fetcher)
         rows = self.news.articles()
         self.assertEqual(len(rows), 2)
-        self.assertEqual(len({row['document_id'] for row in rows}), 1)
-        self.assertEqual(self.engine.store.stats()['documents'], 1)
+        self.assert_one_body_with_all_captures(rows)
         self.assertEqual(self.news.stats()['observations'], 2)
 
     def test_concurrent_same_publisher_duplicate_bodies_are_atomic(self):
@@ -107,9 +136,9 @@ class NewsIntegrationReview(unittest.TestCase):
         fetcher = FixtureFetcher(self.html(), threading.Barrier(count))
         with ThreadPoolExecutor(count) as pool:
             list(pool.map(lambda job: self.news.execute(job, fetcher), jobs))
-        self.assertEqual(self.news.stats()['status'], {'fetched': count})
-        self.assertEqual(self.engine.store.stats()['documents'], 1)
-        self.assertEqual(len({row['document_id'] for row in self.news.articles()}), 1)
+        self.assertEqual(self.news.stats()['status'], {'fetched': 1, 'duplicate_reference': count - 1})
+        self.assert_one_body_with_all_captures(self.news.articles())
+        self.assertEqual(self.engine.store.stats()['jobs'], {'done': count})
 
     def test_cross_publisher_syndication_is_retained_with_shared_cluster(self):
         fetcher = FixtureFetcher(self.html())
@@ -117,12 +146,33 @@ class NewsIntegrationReview(unittest.TestCase):
             self.observe('https://' + source['id'] + '.example/nota', source)
             self.news.execute(self.claimed(), fetcher)
         rows = self.news.articles()
-        self.assertEqual(len({row['document_id'] for row in rows}), 2)
+        self.assert_one_body_with_all_captures(rows)
         self.assertEqual(len({row['publisher_id'] for row in rows}), 2)
         self.assertEqual(len({row['content_cluster'] for row in rows}), 1)
         self.assertEqual(len({row['topic_id'] for row in rows}), 1)
-        self.assertEqual(self.engine.store.stats()['documents'], 2)
+        self.assertIsNotNone(rows[0]['topic_id'])
         self.assertEqual(self.news.stats()['observations'], 2)
+
+    def test_load_capture_audit_rejects_wrong_alias_source_and_body_version(self):
+        from scripts.benchmark_news_load import audit_url_captures
+        fetcher = FixtureFetcher(self.html())
+        for source in (self.one, self.two):
+            self.observe('https://' + source['id'] + '.example/nota', source)
+            self.news.execute(self.claimed(), fetcher)
+        good = audit_url_captures(self.engine, [self.one, self.two])
+        self.assertEqual(good['verified_url_captures'], 2)
+        with self.engine.store.connection() as con:
+            original = dict(con.execute('SELECT * FROM news_body_aliases').fetchone())
+            con.execute('UPDATE news_body_aliases SET source_policy=?', ('{"id":"wrong-source"}',))
+        wrong_source = audit_url_captures(self.engine, [self.one, self.two])
+        self.assertFalse(wrong_source['effective_source_provenance_valid'])
+        self.assertEqual(wrong_source['verified_url_captures'], 1)
+        with self.engine.store.connection() as con:
+            con.execute('UPDATE news_body_aliases SET source_policy=?,body_sha256=?',
+                        (original['source_policy'], digest('Un cuerpo diferente de la captura')))
+        wrong_version = audit_url_captures(self.engine, [self.one, self.two])
+        self.assertFalse(wrong_version['immutable_body_versions_valid'])
+        self.assertEqual(wrong_version['verified_url_captures'], 1)
 
     def test_body_authorization_is_checked_again_at_execution(self):
         self.observe('https://one.example/nota')
@@ -426,8 +476,12 @@ class SyntheticLoadHarnessReview(unittest.TestCase):
         self.assertEqual(result['cold']['article_requests'], 20)
         self.assertEqual(result['warm']['simulated_http_requests'], 0)
         self.assertEqual(result['bank']['articles'], 20)
-        self.assertEqual(result['documents'], 4)
+        self.assertEqual(result['documents'], 2)
         self.assertEqual(result['bank']['content_clusters'], 2)
+        self.assertEqual(result['capture_audit']['canonical_bodies'], 2)
+        self.assertEqual(result['capture_audit']['alias_captures'], 18)
+        self.assertEqual(result['capture_audit']['verified_url_captures'], 20)
+        self.assertEqual(result['capture_audit']['publisher_ids'], ['publisher-0', 'publisher-1'])
 
     def test_virtual_clock_advances_without_fetch_and_incomplete_phases_cannot_pass(self):
         from scripts.benchmark_news_load import VirtualClock, run_case

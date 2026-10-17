@@ -54,6 +54,29 @@ class AcquisitionCoverageTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.news.articles(scope='untrusted_sql')
 
+    def test_terminal_profiles_and_duplicates_do_not_appear_as_pending_text(self):
+        body = self.article(self.document(), 'full_article')
+        self.observe(body, ['one', 'two'])
+        profiles = self.article(scope='profile_reference')
+        duplicate = self.article(scope='duplicate_reference')
+        pending = self.article()
+        for article in (profiles, duplicate, pending):
+            self.observe(article, ['one', 'two'])
+        for json_sql in (True, False):
+            with self.subTest(json_sql=json_sql):
+                self.store._audit_json = json_sql
+                self.store._news_acquisition_coverage_cache = None
+                actual = acquisition_coverage(self.store, self.sources)
+                self.assertEqual(actual['relevant_articles'], 4)
+                self.assertEqual(actual['body_articles'], 1)
+                self.assertEqual(actual['metadata_only_articles'], 3)
+                self.assertEqual(actual['profile_reference_articles'], 1)
+                self.assertEqual(actual['duplicate_reference_articles'], 1)
+                self.assertEqual(actual['pending_text_articles'], 1)
+        self.store._audit_json = True
+        self.assertEqual({row['id'] for row in self.news.articles(scope='profile_reference')}, {profiles})
+        self.assertEqual({row['id'] for row in self.news.articles(scope='duplicate_reference')}, {duplicate})
+
     def article(self, document_id=None, scope='feed_metadata_only'):
         self.serial += 1
         article_id = 'article-' + str(self.serial)
@@ -163,7 +186,43 @@ class AcquisitionCoverageTests(unittest.TestCase):
 
     def test_source_permissions_are_separate_from_source_and_body_counts(self):
         value = acquisition_coverage(self.store, self.sources)
-        self.assertEqual(value['permissions'], {'prepared_sources': 2, 'body_authorized_sources': 1, 'discovery_only_sources': 1})
+        self.assertEqual(value['permissions'], {'prepared_sources': 2, 'body_authorized_sources': 1,
+            'discovery_only_sources': 1, 'discovery_sources': 2, 'publisher_body_sources': 1,
+            'public_body_profiles': 0})
+
+    def test_public_search_cannot_be_counted_as_editorial_permission_even_without_discovery_flag(self):
+        for kind in ('mwmbl', 'duckduckgo_html', 'duckduckgo_lite', 'searxng', 'lemmy_search', 'bing_news_rss', 'gdelt'):
+            source = {'kind': kind, 'enabled': True, 'terms_approved': True,
+                      'download_articles': True, 'article_terms_approved': True}
+            with self.subTest(kind=kind):
+                actual = acquisition_coverage(self.store, [source])['permissions']
+                self.assertEqual(actual['prepared_sources'], 1)
+                self.assertEqual(actual['discovery_sources'], 1)
+                self.assertEqual(actual['body_authorized_sources'], 0)
+                self.assertEqual(actual['discovery_only_sources'], 1)
+
+    def test_reading_only_permission_does_not_invent_a_search_capability_or_publisher_license(self):
+        policy = {'kind': 'rss', 'discover_public_article_hosts': True,
+                  'public_research_scope': 'personal_local_research', 'discovery': False,
+                  'automated_search': False, 'robots_required': True, 'allowed_hosts': [],
+                  'enabled': True, 'terms_approved': True, 'download_articles': True,
+                  'article_terms_approved': True}
+        actual = acquisition_coverage(self.store, [policy])['permissions']
+        self.assertEqual(actual, {'prepared_sources': 1, 'body_authorized_sources': 1,
+            'discovery_only_sources': 0, 'discovery_sources': 0, 'publisher_body_sources': 0,
+            'public_body_profiles': 1})
+        for revoked in ('enabled', 'terms_approved', 'download_articles', 'article_terms_approved', 'robots_required'):
+            with self.subTest(revoked=revoked):
+                value = acquisition_coverage(self.store, [{**policy, revoked: False}])['permissions']
+                self.assertEqual(value['body_authorized_sources'], 0)
+                self.assertEqual(value['public_body_profiles'], 0)
+        publisher = {'kind': 'rss', 'automated_search': False, 'enabled': True,
+                     'terms_approved': True, 'download_articles': True, 'article_terms_approved': True,
+                     'allowed_hosts': ['example.org']}
+        value = acquisition_coverage(self.store, [publisher])['permissions']
+        self.assertEqual(value['discovery_sources'], 0)
+        self.assertEqual(value['publisher_body_sources'], 1)
+        self.assertEqual(value['public_body_profiles'], 0)
 
     def test_shared_scan_reports_300_local_checks_without_inventing_directed_queries_or_evidence(self):
         additional = [{'id': f'bank-{index}', 'name': f'Persona Sintética {index}'} for index in range(298)]

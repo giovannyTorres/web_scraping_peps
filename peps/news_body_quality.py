@@ -4,16 +4,21 @@ A playable native media element inside the editorial body, paired with only
 a short invitation/introduction, is an archived multimedia reference. This
 does not transcribe, fetch or evaluate the media and does not reject ordinary
 short factual reporting, or developed stories that also carry an audio player.
+Explicit professional profiles are references; exact copies retain separate
+capture provenance while pointing at one immutable canonical body version.
 """
 from collections import Counter
+from contextlib import nullcontext
 import gzip
 from html.parser import HTMLParser
 import json
 import re
+from urllib.parse import urlsplit
 
 from .store import canonical, digest, now
 
-BODY_QUALITY_VERSION = 'editorial-body-quality-1'
+BODY_QUALITY_VERSION = 'editorial-body-quality-2'
+REFERENCE_SCOPES = frozenset({'multimedia_reference', 'profile_reference', 'duplicate_reference'})
 _VOID = {'area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link',
          'meta', 'param', 'source', 'track', 'wbr'}
 _EDITORIAL = {'entry-content', 'post-content', 'article-content', 'article-body',
@@ -24,6 +29,86 @@ _INTRO = re.compile(r'\b(?:nos\s+(?:habla|cuenta|comenta)\s+(?:sobre|acerca\s+de
                     r'(?:audio|v[ií]deo|entrevista)\s+(?:complet[oa]|disponible))\b', re.I)
 _REASON = ('Referencia multimedia sin transcripción: el texto conservado sólo '
            'presenta el contenido del reproductor y no acredita un cuerpo informativo.')
+_PROFILE_REASON = ('Ficha de perfil o directorio: se conserva su procedencia, '
+                   'pero no se cuenta como una noticia ni como evidencia de un incidente.')
+
+
+class _PageKind(HTMLParser):
+    """Read page-level declarations, never author/sidebar Person objects."""
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.profile = self.news = False
+        self.structured_types, self.signals = set(), set()
+        self._json = None
+
+    def handle_starttag(self, tag, attrs):
+        attrs = {key: value or '' for key, value in attrs}
+        if tag == 'script' and attrs.get('type', '').split(';', 1)[0].lower() == 'application/ld+json':
+            self._json = []
+        if tag == 'body':
+            classes = set(attrs.get('class', '').lower().split())
+            if classes & {'single-perfil', 'single-profile', 'single-directory',
+                          'perfil-template-default', 'profile-template-default'}:
+                self.signals.add('page_profile_post_type')
+        if tag == 'meta' and attrs.get('property', '').lower() == 'og:type':
+            if attrs.get('content', '').lower() == 'profile':
+                self.signals.add('open_graph_profile')
+            if attrs.get('content', '').lower() == 'newsarticle':
+                self.news = True
+
+    def handle_data(self, data):
+        if self._json is not None:
+            self._json.append(data)
+
+    def handle_endtag(self, tag):
+        if tag != 'script' or self._json is None:
+            return
+        raw, self._json = ''.join(self._json), None
+        if len(raw) > 1_000_000:
+            return
+        try:
+            value = json.loads(raw)
+        except (ValueError, TypeError):
+            return
+        # Only top-level graph nodes describe the page. Descending into author,
+        # publisher, mentions or related links would mistake ordinary reporting
+        # for the professional biography of its author or subject.
+        nodes = value if isinstance(value, list) else [value]
+        for node in list(nodes):
+            if isinstance(node, dict) and isinstance(node.get('@graph'), list):
+                nodes.extend(node['@graph'])
+        for node in nodes:
+            if not isinstance(node, dict):
+                continue
+            kinds = node.get('@type') or []
+            kinds = [kinds] if isinstance(kinds, str) else kinds
+            if not isinstance(kinds, list):
+                continue
+            kinds = {str(kind).rsplit('/', 1)[-1] for kind in kinds}
+            self.structured_types.update(kinds)
+            self.news |= bool(kinds & {'NewsArticle', 'ReportageNewsArticle',
+                                        'AnalysisNewsArticle', 'OpinionNewsArticle'})
+            main = node.get('mainEntity')
+            if 'ProfilePage' in kinds and isinstance(main, dict):
+                main_kinds = main.get('@type', [])
+                main_kinds = [main_kinds] if isinstance(main_kinds, str) else main_kinds
+                if isinstance(main_kinds, list) and any(str(kind).rsplit('/', 1)[-1] in
+                                                       ('Person', 'Organization') for kind in main_kinds):
+                    self.profile = True
+                    self.signals.add('profile_page_main_entity')
+
+
+def profile_page_signals(html, url=''):
+    """Conservative structural separation; names and allegation polarity unused."""
+    parser = _PageKind()
+    parser.feed(html)
+    if parser.news:
+        return []
+    profile_path = bool(re.search(r'/(?:perfil|perfiles|profile|profiles|directorio|directory)/',
+                                  urlsplit(str(url)).path.lower()))
+    if parser.profile or profile_path and parser.signals:
+        return sorted(parser.signals)
+    return []
 
 
 def _prose(text):
@@ -96,11 +181,16 @@ class _EditorialMedia(HTMLParser):
                 return
 
 
-def classify_body(html, text):
-    """Check only multimedia introductions; the caller enforces its text minimum."""
+def classify_body(html, text, url=''):
+    """Separate explicitly declared profiles and untranscribed introductions."""
     result = {'version': BODY_QUALITY_VERSION, 'status': 'full_article',
               'body_usable': True, 'text_chars': len(text), 'media_types': [],
               'reason': None}
+    signals = profile_page_signals(html, url)
+    if signals:
+        result.update(status='profile_reference', body_usable=False,
+                      structural_signals=signals, reason=_PROFILE_REASON)
+        return result
     if not potential_multimedia_intro(text):
         return result
     parser = _EditorialMedia()
@@ -113,17 +203,26 @@ def classify_body(html, text):
     return result
 
 
-def quarantine_reference(news, article_id, quality, snapshot, *, expected_document_id):
+def quarantine_reference(news, article_id, quality, snapshot, *, expected_document_id, connection=None):
     """Detach current evidence atomically; preserve documents, bytes and history."""
-    with news.store.connection() as con:
-        con.execute('BEGIN IMMEDIATE')
+    with (nullcontext(connection) if connection is not None else news.store.connection()) as con:
+        if not con.in_transaction:
+            con.execute('BEGIN IMMEDIATE')
         row = con.execute('SELECT document_id,scope FROM news_articles WHERE id=?', (article_id,)).fetchone()
         if row is None or row['document_id'] != expected_document_id:
             return {'status': 'concurrent_skip'}
-        con.execute("UPDATE news_articles SET document_id=NULL,scope='multimedia_reference',"
-                    "status='multimedia_reference',error=?,attributed_signature=NULL,"
-                    'retrieved_at=COALESCE(?,retrieved_at),validated_at=COALESCE(?,validated_at) WHERE id=?',
-                    (quality['reason'], snapshot.get('retrieved_at'), snapshot.get('retrieved_at'), article_id))
+        status = quality.get('status', 'multimedia_reference')
+        if status not in REFERENCE_SCOPES:
+            raise ValueError('Invalid body reference classification')
+        if status == 'duplicate_reference':
+            _record_body_alias(con, article_id, quality, snapshot)
+        con.execute("UPDATE news_articles SET document_id=NULL,scope=?,"
+                    "status=?,error=?,attributed_signature=NULL,"
+                    'retrieved_at=COALESCE(?,retrieved_at),validated_at=COALESCE(?,validated_at),'
+                    'fingerprint=COALESCE(?,fingerprint),content_cluster=COALESCE(?,content_cluster),'
+                    'topic_id=COALESCE(?,topic_id) WHERE id=?',
+                    (status, status, quality['reason'], snapshot.get('retrieved_at'), snapshot.get('retrieved_at'),
+                     quality.get('fingerprint'), quality.get('fingerprint'), quality.get('topic_id'), article_id))
         con.execute('INSERT INTO news_body_quality_receipts VALUES(?,?,?,?,?,?,?) '
                     'ON CONFLICT(article_id) DO UPDATE SET previous_document_id=excluded.previous_document_id,'
                     'version=excluded.version,raw_snapshot_sha256=excluded.raw_snapshot_sha256,'
@@ -137,10 +236,30 @@ def quarantine_reference(news, article_id, quality, snapshot, *, expected_docume
         # The retired body may be the only place a current name appeared.
         con.execute("DELETE FROM meta WHERE key='news_projection_ready'")
         con.execute("UPDATE meta SET value=CAST(value AS INTEGER)+1 WHERE key='news_data_revision'")
-        news.store._audit(con, 'news_multimedia_reference_quarantined',
+        action = ('news_multimedia_reference_quarantined' if status == 'multimedia_reference'
+                  else 'news_' + status + '_conserved')
+        news.store._audit(con, action,
                           dict(article_id=article_id, previous_document_id=expected_document_id,
                                quality=quality, **snapshot))
-    return {'status': 'multimedia_reference'}
+    return {'status': status}
+
+
+def _record_body_alias(con, article_id, quality, snapshot):
+    """Append capture provenance tied to an immutable document *version*."""
+    con.execute('CREATE TABLE IF NOT EXISTS news_body_aliases('
+                'id TEXT PRIMARY KEY,article_id TEXT NOT NULL REFERENCES news_articles(id),'
+                'canonical_document_id TEXT NOT NULL REFERENCES documents(id),body_sha256 TEXT NOT NULL,'
+                'raw_snapshot_sha256 TEXT NOT NULL,raw_snapshot_path TEXT NOT NULL,'
+                'observed_url TEXT NOT NULL,retrieved_at TEXT,source_policy TEXT NOT NULL,'
+                'classification TEXT NOT NULL,created_at TEXT NOT NULL)')
+    identity = digest(canonical([article_id, quality['canonical_document_id'], snapshot]))
+    classification = dict(quality, capture_metadata={key: value for key, value in snapshot.items()
+        if key not in ('raw_snapshot_sha256', 'raw_snapshot_path', 'source_policy', 'observed_url', 'retrieved_at')})
+    con.execute('INSERT OR IGNORE INTO news_body_aliases VALUES(?,?,?,?,?,?,?,?,?,?,?)',
+                (identity, article_id, quality['canonical_document_id'], quality['body_sha256'],
+                 snapshot['raw_snapshot_sha256'], snapshot['raw_snapshot_path'], snapshot['observed_url'],
+                 snapshot.get('retrieved_at'), canonical(snapshot.get('source_policy') or {}),
+                 canonical(classification), now()))
 
 
 def quarantine_existing_references(news):

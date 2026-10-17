@@ -62,16 +62,16 @@ def normalize_search_config(value=None, now=None):
     if result['execution_mode'] not in ('quick', 'extended'):
         raise ValueError('execution_mode debe ser quick o extended')
     seconds = result['session_seconds']
-    if type(seconds) is not int or seconds not in ((120,) if result['execution_mode'] == 'quick' else (900, 1800, 3600, 7200)):
-        raise ValueError('session_seconds requiere 120 para quick o 900, 1800, 3600, 7200 para extended')
+    if type(seconds) is not int or seconds not in ((120,) if result['execution_mode'] == 'quick' else (600, 900, 1800, 3600, 7200)):
+        raise ValueError('session_seconds requiere 120 para quick o 600, 900, 1800, 3600, 7200 para extended')
     if result['strategy'] not in ('targeted', 'shared', 'feeds', 'public'):
         raise ValueError('strategy debe ser targeted, shared, feeds o public')
     if result['preset'] not in PRESETS:
         raise ValueError('preset debe ser identity, public_role o adverse')
     if result['window'] not in ('auto', 'year', 'month'):
         raise ValueError('window debe ser auto, year o month')
-    if type(result['max_queries']) is not int or not 1 <= result['max_queries'] <= 10000:
-        raise ValueError('max_queries requiere entre 1 y 10000 consultas')
+    if type(result['max_queries']) is not int or not 1 <= result['max_queries'] <= 20000:
+        raise ValueError('max_queries requiere entre 1 y 20000 consultas')
     for key in ('include_aliases', 'use_context'):
         if type(result[key]) is not bool:
             raise ValueError(key + ' debe ser booleano')
@@ -226,7 +226,37 @@ def _bound(value, end=False):
     return datetime.combine(parsed + timedelta(days=1 if end else 0), time.min, timezone.utc)
 
 
-def wordpress_queries(entity, config, *, variants=None):
+def _personal_terminal_phrase(name):
+    """A weaker retrieval lead, never a verified alias or a name correction.
+
+    Spanish professional names often omit a second given name in reporting.
+    Retain two terminal name words and their intervening/leading connectors;
+    the original canonical name still governs identity validation downstream.
+    Compound given names cannot be reliably parsed here, so this intentionally
+    carries no assertion that the selected words are verified surnames.
+    """
+    name = _phrase(name)
+    words = list(re.finditer(r'\S+', name))
+    if any(not all(char.isalpha() or char in "-'’" for char in word.group())
+           for word in words):
+        return None
+    connectors = {'de', 'del', 'la', 'las', 'los', 'el', 'y', 'e',
+                  'da', 'das', 'do', 'dos', 'van', 'von'}
+    meaningful = [index for index, word in enumerate(words)
+                  if _fold(word.group()) not in connectors]
+    if len(meaningful) < 3:
+        return None
+    final = [words[index].group() for index in meaningful[-2:]]
+    if sum(char.isalpha() for word in final for char in word) < 6:
+        return None
+    start = meaningful[-2]
+    while start > 1 and _fold(words[start - 1].group()) in connectors:
+        start -= 1
+    phrase = name[words[start].start():].strip()
+    return phrase if phrase and _fold(phrase) != _fold(name) else None
+
+
+def wordpress_queries(entity, config, *, variants=None, personal_fallbacks=False):
     variants = _variants(entity, config['include_aliases']) if variants is None else variants
     context = entity.get('context') or {}
     hints = [_phrase(context.get(key)) for key in ('state', 'municipality', 'role', 'position')
@@ -249,6 +279,26 @@ def wordpress_queries(entity, config, *, variants=None):
                 text = phrase + ' ' + ' '.join('"' + _phrase(value) + '"' for value in contextual['context_hints'])
                 if len(text) <= 500:
                     queries.append({'query': text, 'query_type': 'context', 'context_hint': hint})
+    # Explicit source capability: existing saved profiles and other adapters
+    # keep their original query budget. These are retrieval variants only;
+    # never append them to entity.aliases or to the names used for attribution.
+    if personal_fallbacks is True and not _is_company(entity) and variants:
+        terminal = _personal_terminal_phrase(entity.get('name'))
+        if terminal:
+            given = _phrase(entity.get('name')).split()[0]
+            # Two surnames alone fetched other people with the same family
+            # names in real publisher probes. Require the first given name as
+            # well; dropped middle names still become recoverable.
+            query = '"' + given + '" "' + terminal + '"'
+            if hints:
+                query += ' "' + hints[0] + '"'
+            if all(item['query'] != query for item in queries):
+                queries.append({'query': query, 'query_type': 'retrieval_fallback',
+                                'retrieval_variant': 'given_and_terminal_phrase',
+                                'retrieval_origin': 'canonical_name',
+                                'retrieval_given_name': given,
+                                'retrieval_phrase': terminal,
+                                'identity_confirmation': False})
     return queries
 
 
@@ -598,7 +648,9 @@ def build_search_plan(entities, sources, config=None, *, start=None, end=None, n
                 elif source.get('search_kind') in ('wordpress_rss', 'wordpress_api_search') or source.get('kind') == 'gdelt':
                     # GDELT rejects nested OR groups. Separate exact-phrase
                     # requests also keep short aliases bound to a context hint.
-                    queries = wordpress_queries(entity, config, variants=variants)
+                    queries = wordpress_queries(entity, config, variants=variants,
+                                                personal_fallbacks=(wordpress_api
+                                                    and source.get('personal_name_fallbacks') is True))
                 else:
                     queries = entity_queries(entity, config, max(1, max_chars - len(source_suffix)))
                 for rank, query in enumerate(checked(queries)):

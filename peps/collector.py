@@ -15,12 +15,14 @@ import http.client
 import ipaddress
 import io
 import json
+import os
 import re
 import socket
 import sqlite3
 import ssl
 import threading
 import time
+import tempfile
 import zlib
 from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
@@ -38,6 +40,17 @@ from .robots_policy import robots_allowed
 # within Python datetime's range, without passing infinity or year 10000 into
 # datetime/SQLite. _iso uses UTC arithmetic to avoid Windows CRT date limits.
 _MAX_RETRY_TIMESTAMP = 253402214400.0
+_ERROR_PREFIX_LIMIT = 4096
+_ENVOY_CONNECT_PREFIX = b'upstream connect error or disconnect/reset before headers'
+
+
+def classify_http_error_prefix(headers, prefix):
+    """A narrow diagnostic signature, never a permission or routing decision."""
+    server = str(headers.get('server', '')).strip().casefold().split('/', 1)[0]
+    encoding = str(headers.get('content-encoding', 'identity')).strip().casefold()
+    return ('envoy_upstream_connect_error' if server == 'envoy'
+            and encoding in ('', 'identity') and prefix.startswith(_ENVOY_CONNECT_PREFIX)
+            else 'unknown_http_5xx')
 
 
 def _iso(timestamp: float | None = None) -> str:
@@ -54,6 +67,10 @@ class CollectionError(Exception):
 
 class _ArticlePathScopeError(CollectionError):
     """An article or redirect left its configured path scope."""
+
+
+class _APIEndpointScopeError(CollectionError):
+    """A documented JSON API request or redirect left its granted scope."""
 
 
 class _DeadlineReader(io.RawIOBase):
@@ -248,12 +265,44 @@ class SafeFetcher:
                     cache_status TEXT NOT NULL DEFAULT 'none', reused_connection INTEGER NOT NULL DEFAULT 0
                 );
                 CREATE INDEX IF NOT EXISTS request_history_time ON request_history(occurred_at);
+                CREATE TABLE IF NOT EXISTS http_error_diagnostics (
+                    id INTEGER PRIMARY KEY, occurred_at TEXT NOT NULL, url TEXT NOT NULL,
+                    source_id TEXT, request_kind TEXT NOT NULL, http_status INTEGER NOT NULL,
+                    prefix_sha256 TEXT NOT NULL, prefix_bytes INTEGER NOT NULL,
+                    prefix_path TEXT, receipt TEXT NOT NULL
+                );
             """)
             db.execute("BEGIN IMMEDIATE")
             if "last_at" not in {row[1] for row in db.execute("PRAGMA table_info(hosts)")}:
                 db.execute("ALTER TABLE hosts ADD COLUMN last_at REAL NOT NULL DEFAULT 0")
+            host_columns = {row[1] for row in db.execute("PRAGMA table_info(hosts)")}
+            retry_columns = {
+                'retry_state_version': 'INTEGER NOT NULL DEFAULT 0',
+                'courtesy_until': 'REAL NOT NULL DEFAULT 0',
+                'legacy_retry_until': 'REAL NOT NULL DEFAULT 0',
+                'legacy_reason': "TEXT NOT NULL DEFAULT ''",
+                'client_retry_until': 'REAL NOT NULL DEFAULT 0',
+                'client_failures': 'INTEGER NOT NULL DEFAULT 0',
+                'client_generation': 'INTEGER NOT NULL DEFAULT 0',
+                'server_retry_until': 'REAL NOT NULL DEFAULT 0',
+                'server_failures': 'INTEGER NOT NULL DEFAULT 0',
+                'server_generation': 'INTEGER NOT NULL DEFAULT 0',
+                'server_reason': "TEXT NOT NULL DEFAULT ''",
+                'access_reason': "TEXT NOT NULL DEFAULT ''",
+                'retry_class': "TEXT NOT NULL DEFAULT ''",
+            }
+            for column, declaration in retry_columns.items():
+                if column not in host_columns:
+                    db.execute(f'ALTER TABLE hosts ADD COLUMN {column} {declaration}')
+            # Old next_at combines courtesy, network and server waits. Do not
+            # guess its provenance or silently shorten an operator restriction.
+            db.execute("UPDATE hosts SET legacy_retry_until=next_at,legacy_reason=reason,"
+                       "access_reason=CASE WHEN blocked_until>0 THEN reason ELSE '' END,"
+                       "retry_class=CASE WHEN blocked_until>0 AND blocked_until>=next_at THEN 'operator_access' "
+                       "WHEN next_at>0 THEN 'legacy_unclassified' ELSE '' END,retry_state_version=1 "
+                       "WHERE retry_state_version=0")
             cache_columns = {row[1] for row in db.execute("PRAGMA table_info(http_cache)")}
-            for column in ("cache_control", "cache_expires", "final_url", "pagination_headers"):
+            for column in ("cache_control", "cache_expires", "final_url", "pagination_headers", "validation_error"):
                 if column not in cache_columns:
                     db.execute(f"ALTER TABLE http_cache ADD COLUMN {column} TEXT NOT NULL DEFAULT ''")
 
@@ -456,12 +505,19 @@ class SafeFetcher:
         allowed = {self._hostname(item) for item in source.get("allowed_hosts", [])}
         if host not in allowed:
             raise CollectionError("Host is not in the source allowlist: " + host)
+        if source.get('_documented_api_scope'):
+            from .api_permissions import documented_search_api
+            if not documented_search_api(url, source):
+                raise _APIEndpointScopeError('Request is outside the reviewed JSON search API operation')
         from .article_paths import ARTICLE_PATH_SCOPE_FLAG, article_path_allowed
         if source.get(ARTICLE_PATH_SCOPE_FLAG) and not article_path_allowed(url, source):
             raise _ArticlePathScopeError('Article URL path is outside the configured source scope')
         if host in {"localhost", "metadata.google.internal"} or host.endswith((".local", ".internal", ".localhost")):
             raise CollectionError("Private hostnames are forbidden")
         normalized = urlunsplit(("https", host, parts.path or "/", parts.query, ""))
+        exact_article = source.get('_public_article_exact_url')
+        if exact_article is not None and normalized != exact_article:
+            raise _ArticlePathScopeError('Public article request left the exact observed URL')
         if not resolve:
             return normalized, host, []
         try:
@@ -503,8 +559,56 @@ class SafeFetcher:
             response = connection.getresponse()
             response_headers = {key.lower(): value for key, value in response.getheaders()}
             metric["http_status"] = response.status
+            if 500 <= response.status <= 599:
+                # A diagnostic prefix is never fed to article/discovery parsing.
+                # Keep the original response deadline and both byte ceilings;
+                # no second request or extra connection is made for diagnostics.
+                limit = min(_ERROR_PREFIX_LIMIT, max_bytes, max_wire)
+                # Error inspection is optional: at most one second of the
+                # original request budget, including low-level socket receives.
+                diagnostic_seconds = min(1., max(0., deadline - time.monotonic()))
+                deadline = min(deadline, time.monotonic() + diagnostic_seconds)
+                reader = getattr(getattr(response, 'fp', None), 'raw', None)
+                if isinstance(reader, _DeadlineReader):
+                    reader.deadline = min(reader.deadline, deadline)
+                chunks, captured, eof, read_error = [], 0, False, None
+                try:
+                    while captured < limit:
+                        remaining = deadline - time.monotonic()
+                        if remaining <= 0:
+                            raise TimeoutError('Diagnostic response deadline exceeded')
+                        if connection.sock is not None:
+                            connection.sock.settimeout(remaining)
+                        chunk = response.read1(limit - captured)
+                        if not chunk:
+                            eof = True
+                            break
+                        chunks.append(chunk)
+                        captured += len(chunk)
+                except (OSError, http.client.HTTPException, CollectionError) as exc:
+                    # Receiving 503 headers already establishes its unchanged
+                    # backoff policy. An optional prefix read cannot turn that
+                    # response into a client failure or erase its restriction.
+                    read_error = type(exc).__name__
+                prefix = b''.join(chunks)[:limit]
+                declared = response_headers.get('content-length', '').strip()
+                known_length = int(declared) if re.fullmatch(r'[0-9]{1,20}', declared) else None
+                complete = (read_error is None and
+                            (len(prefix) == known_length if known_length is not None
+                             else eof or response.isclosed() is True))
+                metric.update(wire_bytes=len(prefix), decoded_bytes=(len(prefix) if
+                    response_headers.get('content-encoding', 'identity').strip().lower() in ('', 'identity') else 0))
+                metric['error_response_capture'] = {
+                    'scope': 'http_error_prefix', 'limit_bytes': limit, 'captured_bytes': len(prefix),
+                    'read_budget_seconds': diagnostic_seconds,
+                    'sha256': hashlib.sha256(prefix).hexdigest(), 'complete': complete,
+                    'truncated': not complete, 'read_error': read_error,
+                    'content_encoding': response_headers.get('content-encoding', 'identity'),
+                    'classification': classify_http_error_prefix(response_headers, prefix),
+                    'truncation_meaning': 'Response not confirmed complete; no byte beyond the prefix cap is probed.'}
+                return response.status, response_headers, prefix
             # No body is consumed for redirects or explicit collection restrictions.
-            if response.status in (301, 302, 303, 307, 308, 304, 403, 429, 451, 503):
+            if response.status in (301, 302, 303, 307, 308, 304, 403, 429, 451):
                 reusable = response.status == 304 and not response.will_close
                 return response.status, response_headers, b""
             length = response_headers.get("content-length")
@@ -563,53 +667,155 @@ class SafeFetcher:
                 response.close()
             self._release_connection(parts.hostname, connection, reusable)
 
-    def _reserve(self, host: str, interval: float) -> tuple[str | None, float | None, str]:
+    @staticmethod
+    def _retry_deadline(row, interval=0):
+        """Read the effective host deadline without losing its policy class."""
+        legacy = row['legacy_retry_until']
+        if row['retry_state_version'] == 0:
+            legacy = max(legacy, row['next_at'])
+        options = [
+            (max(row['courtesy_until'], row['last_at'] + max(0., interval)), 0,
+             'courtesy', 'Per-host collection interval'),
+            (row['client_retry_until'], 1, 'client_network', 'Client network retry'),
+            (legacy, 2, 'legacy_unclassified', row['legacy_reason'] or row['reason']),
+            (row['server_retry_until'], 3, 'server_backoff', row['server_reason'] or 'Scheduled HTTP retry'),
+            (row['blocked_until'], 4, 'operator_access', row['access_reason'] or row['reason']),
+        ]
+        due, _, retry_class, reason = max(options)
+        return due, retry_class, reason
+
+    def _remember_retry(self, row, interval=0, *, materialized=True):
+        due, retry_class, reason = self._retry_deadline(row, interval)
+        if materialized and row['next_at'] > due:
+            # State written by an older process or external operator remains a
+            # restriction until its provenance can be reviewed explicitly.
+            due, retry_class, reason = row['next_at'], 'legacy_unclassified', row['reason']
+        self._local.retry_class = retry_class if due > self._clock() else 'none'
+        self._local.retry_generation = (row['client_generation'], row['server_generation'])
+        return due, retry_class, reason
+
+    def _preserve_legacy_retry(self, db, row):
+        known_due = self._retry_deadline(row)[0]
+        if row['retry_state_version'] == 0 or row['next_at'] > known_due:
+            db.execute('UPDATE hosts SET legacy_retry_until=MAX(legacy_retry_until,next_at),'
+                       'legacy_reason=reason,retry_state_version=1 WHERE host=?', (row['host'],))
+            return db.execute('SELECT * FROM hosts WHERE host=?', (row['host'],)).fetchone()
+        return row
+
+    def _publish_retry(self, db, host):
+        row = db.execute('SELECT * FROM hosts WHERE host=?', (host,)).fetchone()
+        due, retry_class, reason = self._remember_retry(row, materialized=False)
+        db.execute('UPDATE hosts SET next_at=?,retry_class=?,reason=?,failures=? WHERE host=?',
+                   (due, self._local.retry_class, reason,
+                    max(row['client_failures'], row['server_failures']), host))
+        return due
+
+    def _host_readiness(self, host: str, interval: float) -> tuple[str | None, float | None, str]:
+        """Avoid DNS for known waits without reserving a future transport."""
         now = self._clock()
         with self._db() as db:
-            db.execute("BEGIN IMMEDIATE")
-            db.execute("INSERT OR IGNORE INTO hosts(host) VALUES (?)", (host,))
-            row = db.execute("SELECT * FROM hosts WHERE host=?", (host,)).fetchone()
-            if row["blocked_until"] > now:
-                return "blocked", row["blocked_until"], row["reason"]
-            due = max(row["next_at"], row["last_at"] + max(0.0, interval))
+            row = db.execute('SELECT * FROM hosts WHERE host=?', (host,)).fetchone()
+        self._local.retry_generation = (0, 0)
+        self._local.retry_class = 'none'
+        if row is not None:
+            due, _, reason = self._remember_retry(row, interval)
+            if row['blocked_until'] > now:
+                self._local.retry_class = 'operator_access'
+                return 'blocked', max(due, row['blocked_until']), row['access_reason'] or row['reason']
             if due > now:
-                return "deferred", due, "Per-host collection interval"
-            db.execute("UPDATE hosts SET next_at=?,last_at=? WHERE host=?", (now + max(0.0, interval), now, host))
-        return None, None, ""
+                return 'deferred', due, reason
+        return None, None, ''
+
+    def _reserve(self, host: str, interval: float) -> tuple[str | None, float | None, str]:
+        with self._db() as db:
+            db.execute('BEGIN IMMEDIATE')
+            now = self._clock()
+            db.execute('INSERT OR IGNORE INTO hosts(host,retry_state_version) VALUES (?,1)', (host,))
+            row = db.execute('SELECT * FROM hosts WHERE host=?', (host,)).fetchone()
+            row = self._preserve_legacy_retry(db, row)
+            due, _, reason = self._remember_retry(row, interval)
+            if row['blocked_until'] > now:
+                self._local.retry_class = 'operator_access'
+                return 'blocked', max(due, row['blocked_until']), row['access_reason'] or row['reason']
+            if due > now:
+                return 'deferred', due, reason
+            db.execute('UPDATE hosts SET courtesy_until=?,last_at=? WHERE host=?',
+                       (now + max(0., interval), now, host))
+            self._publish_retry(db, host)
+        return None, None, ''
+
+    def _retry_after_delay(self, headers, now):
+        value = (headers or {}).get('retry-after')
+        if not value:
+            return 0.
+        value = str(value).strip()
+        if re.fullmatch(r'[0-9]+', value):
+            return min(float(value), max(0., _MAX_RETRY_TIMESTAMP - now))
+        try:
+            parsed = parsedate_to_datetime(value)
+            if parsed.tzinfo is None:
+                parsed = parsed.replace(tzinfo=timezone.utc)
+            return max(0., parsed.timestamp() - now)
+        except (TypeError, ValueError, OverflowError):
+            return 0.
 
     def _backoff(self, host: str, headers: dict | None = None, blocked: bool = False,
-                 reason: str = "HTTP backoff") -> float:
-        now = self._clock()
+                 reason: str = 'HTTP backoff', *, kind='server_backoff', generation=None) -> float:
+        """Coalesce admitted failures; client recovery cannot clear server policy."""
         with self._db() as db:
-            db.execute("BEGIN IMMEDIATE")
-            db.execute("INSERT OR IGNORE INTO hosts(host) VALUES (?)", (host,))
-            row = db.execute("SELECT failures FROM hosts WHERE host=?", (host,)).fetchone()
-            failures = min(row["failures"] + 1, 12)
-            delay = float(self.config.get("circuit_seconds", 86400)) if blocked else min(3600, 30 * 2 ** (failures - 1))
-            value = (headers or {}).get("retry-after")
-            if value:
-                value = str(value).strip()
-                # RFC 9110 permits a nonnegative decimal integer or HTTP date.
-                # float() alone also accepts Infinity/NaN/exponents, and a
-                # sufficiently long valid decimal overflows to infinity.
-                if re.fullmatch(r"[0-9]+", value):
-                    delay = max(delay, min(float(value), max(0.0, _MAX_RETRY_TIMESTAMP - now)))
-                else:
-                    try:
-                        parsed = parsedate_to_datetime(value)
-                        if parsed.tzinfo is None:
-                            parsed = parsed.replace(tzinfo=timezone.utc)
-                        delay = max(delay, parsed.timestamp() - now)
-                    except (TypeError, ValueError, OverflowError):
-                        pass
-            retry = min(_MAX_RETRY_TIMESTAMP, now + max(1.0, delay))
-            if blocked:
-                db.execute("UPDATE hosts SET blocked_until=?, next_at=MAX(next_at,?), reason=?, failures=? WHERE host=?",
-                           (retry, retry, reason, failures, host))
+            db.execute('BEGIN IMMEDIATE')
+            now = self._clock()
+            db.execute('INSERT OR IGNORE INTO hosts(host,retry_state_version) VALUES (?,1)', (host,))
+            row = db.execute('SELECT * FROM hosts WHERE host=?', (host,)).fetchone()
+            row = self._preserve_legacy_retry(db, row)
+            if kind == 'client_network' and not blocked:
+                # Every request admitted before this episode has the old token.
+                # Once success invalidates that token, late timeouts cannot
+                # reopen the client pause or multiply its exponential counter.
+                if generation is None or generation[0] == row['client_generation']:
+                    failures = min(row['client_failures'] + 1, 12)
+                    base = max(1., min(float(self.config.get('client_backoff_seconds', 5)), 120.))
+                    ceiling = max(base, min(float(self.config.get('client_backoff_max_seconds', 60)), 120.))
+                    retry = min(_MAX_RETRY_TIMESTAMP, now + min(ceiling, base * 2 ** (failures - 1)))
+                    db.execute('UPDATE hosts SET client_retry_until=MAX(client_retry_until,?),'
+                               'client_failures=?,client_generation=client_generation+1 WHERE host=?',
+                               (retry, failures, host))
             else:
-                db.execute("UPDATE hosts SET next_at=MAX(next_at,?), reason=?, failures=? WHERE host=?",
-                           (retry, reason, failures, host))
-        return retry
+                fresh = generation is None or generation[1] == row['server_generation']
+                failures = min(row['server_failures'] + int(fresh), 12)
+                delay = (float(self.config.get('circuit_seconds', 86400)) if blocked
+                         else min(3600., 30 * 2 ** (max(1, failures) - 1)))
+                delay = max(delay, self._retry_after_delay(headers, now))
+                retry = min(_MAX_RETRY_TIMESTAMP, now + max(1., delay))
+                db.execute('UPDATE hosts SET server_retry_until=MAX(server_retry_until,?),'
+                           'server_failures=?,server_generation=server_generation+?,server_reason=? WHERE host=?',
+                           (retry, failures, int(fresh), reason, host))
+                if blocked:
+                    db.execute('UPDATE hosts SET blocked_until=MAX(blocked_until,?),access_reason=? WHERE host=?',
+                               (retry, reason, host))
+            due = self._publish_retry(db, host)
+        return max(now, due)
+
+    def _content_success(self, host):
+        """A decoded HTTP response without a challenge recovers client transport.
+
+        Adapter schema validation remains a separate step; this proves HTTP
+        connectivity, not that a search envelope contains usable results.
+        """
+        with self._db() as db:
+            db.execute('BEGIN IMMEDIATE')
+            row = db.execute('SELECT * FROM hosts WHERE host=?', (host,)).fetchone()
+            if not row:
+                return
+            row = self._preserve_legacy_retry(db, row)
+            # Server deadlines and access circuits remain immutable here. A
+            # counter can reset after its delay has already elapsed, never
+            # because an older in-flight HTTP response happened to succeed.
+            reset_server = row['server_retry_until'] <= self._clock() and row['blocked_until'] <= self._clock()
+            db.execute('UPDATE hosts SET client_retry_until=0,client_failures=0,'
+                       'client_generation=client_generation+1,server_failures=CASE WHEN ? THEN 0 ELSE server_failures END '
+                       'WHERE host=?', (reset_server, host))
+            self._publish_retry(db, host)
 
     def _network_request(self, url: str, headers: dict, timeout: float,
                          max_bytes: int, addresses: list[tuple], kind: str):
@@ -636,6 +842,68 @@ class SafeFetcher:
                                elapsed_seconds=time.monotonic() - started,
                                http_status=status if status is not None else metric.get("http_status"),
                                outcome=outcome, reused_connection=metric.get("reused_connection", False))
+
+    def _record_http_error_prefix(self, url, source, status, headers, data, request_kind):
+        """Store bounded private diagnostics, outside HTTP cache and evidence.
+
+        Only transport metadata and immutable binary prefix references leave
+        this method. Diagnostic text is never returned as a fetch result body.
+        Recording failure must not undo the already persisted retry policy.
+        """
+        limit = max(1, min(_ERROR_PREFIX_LIMIT, int(source.get('max_bytes', 2_000_000)),
+                           int(source.get('max_wire_bytes', source.get('max_bytes', 2_000_000)))))
+        prefix = data[:limit]
+        metric = getattr(self._local, 'transport_metric', {}) or {}
+        captured = metric.get('error_response_capture')
+        info = dict(captured) if isinstance(captured, dict) else {
+            'scope': 'http_error_prefix', 'limit_bytes': limit,
+            'complete': False, 'truncated': True, 'read_error': None,
+            'content_encoding': headers.get('content-encoding', 'identity'),
+            'truncation_meaning': 'Custom transport returned bytes; complete response framing is not certified.'}
+        info.update(version='http-error-prefix-1', sha256=hashlib.sha256(prefix).hexdigest(),
+                    captured_bytes=len(prefix), classification=classify_http_error_prefix(headers, prefix),
+                    documentary_evidence=False, body_returned_to_ui=False, persisted=False)
+        allowed = ('server', 'content-type', 'retry-after', 'date', 'via',
+                   'x-envoy-upstream-service-time', 'x-envoy-overloaded')
+        info['response_headers'] = {key: str(headers[key])[:512] for key in allowed if key in headers}
+        info['response_headers_truncated'] = [key for key in allowed if key in headers and len(str(headers[key])) > 512]
+        relative = Path('http_error_diagnostics') / info['sha256'][:2] / (info['sha256'] + '.prefix.bin')
+        path = self.db_path.parent / relative
+        try:
+            private_root = self.db_path.parent / 'http_error_diagnostics'
+            private_root.mkdir(exist_ok=True, mode=0o700)
+            if private_root.is_symlink() or path.parent.is_symlink():
+                raise OSError('Diagnostic directories must not be symlinks')
+            path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+            if (private_root.is_symlink() or not path.parent.resolve().is_relative_to(private_root.resolve())
+                    or path.is_symlink()):
+                raise OSError('Diagnostic path must not be a symlink')
+            if not path.exists():
+                with tempfile.NamedTemporaryFile(dir=path.parent, delete=False) as output:
+                    temporary = Path(output.name)
+                    output.write(prefix)
+                    output.flush()
+                    os.fsync(output.fileno())
+                try:
+                    os.link(temporary, path)
+                except FileExistsError:
+                    pass
+                finally:
+                    temporary.unlink(missing_ok=True)
+            with path.open('rb') as saved:
+                if saved.read(_ERROR_PREFIX_LIMIT + 1) != prefix:
+                    raise OSError('Diagnostic prefix hash mismatch')
+            info.update(prefix_path=str(relative), persisted=True)
+            serialized = json.dumps(info, ensure_ascii=False, sort_keys=True, separators=(',', ':'))
+            with self._db() as db:
+                cursor = db.execute('INSERT INTO http_error_diagnostics('
+                    'occurred_at,url,source_id,request_kind,http_status,prefix_sha256,prefix_bytes,prefix_path,receipt) '
+                    'VALUES(?,?,?,?,?,?,?,?,?)', (_iso(self._clock()), url, source.get('id'), request_kind,
+                        status, info['sha256'], len(prefix), str(relative), serialized))
+                info['receipt_id'] = cursor.lastrowid
+        except (OSError, sqlite3.Error):
+            info.update(persisted=False, storage_error='diagnostic_receipt_not_persisted')
+        return info
 
     def _request(self, url: str, source: dict, headers: dict | None = None,
                  check_redirect_robots: bool = False, request_kind: str = "content") -> tuple[dict | None, str, int | None, dict, bytes]:
@@ -675,14 +943,16 @@ class SafeFetcher:
                     request_headers.pop("If-Modified-Since", None)
                     current = target
                     continue
-                denied, retry, reason = self._reserve(host, float(source.get("min_interval_seconds", 2)))
+                denied, retry, reason = self._host_readiness(host, float(source.get("min_interval_seconds", 2)))
                 if denied:
                     return self._result(url, denied, error=reason, retry_at=_iso(retry),
                                         error_code="host_interval" if denied == "deferred" else "host_circuit",
-                                        admission_host=host,
+                                        admission_host=host, retry_class=self._local.retry_class,
                                         request_attempted=False), normalized, None, {}, b""
-                # The atomic host reservation is still mandatory. Pin the
-                # following transport to the freshly validated public answer.
+                attempt_generation = self._local.retry_generation
+                # DNS can be slow or concurrent work can change host policy.
+                # Pin the answer, then reserve atomically immediately before
+                # transport so DNS latency cannot consume the courtesy pause.
                 normalized, host, addresses = self._validate_url(normalized, source)
                 self._local.max_wire_bytes = max(1, min(int(source.get("max_wire_bytes", max_bytes)), max_bytes))
                 request_timeout = timeout
@@ -691,6 +961,14 @@ class SafeFetcher:
                     if remaining <= 0:
                         return exhausted()
                     request_timeout = min(timeout, remaining)
+                denied, transport_retry, reason = self._reserve(
+                    host, float(source.get("min_interval_seconds", 2)))
+                if denied:
+                    return self._result(url, denied, error=reason, retry_at=_iso(transport_retry),
+                                        error_code="host_interval" if denied == "deferred" else "host_circuit",
+                                        admission_host=host, retry_class=self._local.retry_class,
+                                        request_attempted=False), normalized, None, {}, b""
+                attempt_generation = self._local.retry_generation
                 status, response_headers, data = self._network_request(normalized, request_headers, request_timeout, max_bytes, addresses, request_kind)
                 response_headers = {str(key).lower(): str(value) for key, value in response_headers.items()}
                 if len(data) > max_bytes:
@@ -713,16 +991,19 @@ class SafeFetcher:
                     current = target
                     continue
                 if status in (403, 451):
-                    retry = self._backoff(host, response_headers, True, "HTTP access restriction")
-                    return self._result(url, "blocked", http_status=status, error="HTTP access restriction; manual review required", retry_at=_iso(retry)), normalized, status, response_headers, data
+                    retry = self._backoff(host, response_headers, True, "HTTP access restriction", generation=attempt_generation)
+                    return self._result(url, "blocked", http_status=status, error="HTTP access restriction; manual review required", retry_at=_iso(retry), retry_class=self._local.retry_class, admission_host=host), normalized, status, response_headers, data
                 if status in (429, 503):
-                    retry = self._backoff(host, response_headers)
-                    return self._result(url, "deferred", http_status=status, error="Server requested backoff", retry_at=_iso(retry), error_code="server_backoff", request_attempted=True), normalized, status, response_headers, data
+                    retry = self._backoff(host, response_headers, generation=attempt_generation)
+                    diagnostic = (self._record_http_error_prefix(normalized, source, status,
+                                  response_headers, data, request_kind) if status == 503 else None)
+                    return self._result(url, "deferred", http_status=status, error="Retry scheduled after HTTP " + str(status), retry_at=_iso(retry), error_code="server_backoff", retry_class=self._local.retry_class, admission_host=host, request_attempted=True,
+                                        error_diagnostic=diagnostic), normalized, status, response_headers, b""
                 if status >= 500:
-                    retry = self._backoff(host, response_headers)
-                    return self._result(url, "deferred", http_status=status, error="Transient server failure", retry_at=_iso(retry), error_code="server_failure", request_attempted=True), normalized, status, response_headers, data
-                with self._db() as db:
-                    db.execute("UPDATE hosts SET failures=0 WHERE host=?", (host,))
+                    retry = self._backoff(host, response_headers, generation=attempt_generation)
+                    diagnostic = self._record_http_error_prefix(normalized, source, status, response_headers, data, request_kind)
+                    return self._result(url, "deferred", http_status=status, error="Transient server failure", retry_at=_iso(retry), error_code="server_failure", retry_class=self._local.retry_class, admission_host=host, request_attempted=True,
+                                        error_diagnostic=diagnostic), normalized, status, response_headers, b""
                 return None, normalized, status, response_headers, data
             raise CollectionError("Redirect limit exceeded")
         except (OSError, http.client.HTTPException) as exc:
@@ -731,9 +1012,11 @@ class SafeFetcher:
                 # failure and must not create a new host penalty/backoff.
                 return exhausted()
             if "host" in locals():
-                retry = self._backoff(host, reason="Transient network failure")
-                return self._result(url, "deferred", error="Transient network failure: " + type(exc).__name__, retry_at=_iso(retry), error_code="network_failure", request_attempted=True), current, None, {}, b""
+                retry = self._backoff(host, reason="Transient network failure", kind="client_network", generation=locals().get("attempt_generation"))
+                return self._result(url, "deferred", error="Transient network failure: " + type(exc).__name__, retry_at=_iso(retry), error_code="network_failure", retry_class=self._local.retry_class, admission_host=host, request_attempted=True), current, None, {}, b""
             return self._result(url, "error", error=type(exc).__name__), current, None, {}, b""
+        except _APIEndpointScopeError as exc:
+            return self._result(url, 'blocked', error=str(exc), error_code='documented_api_scope'), current, None, {}, b''
         except _ArticlePathScopeError as exc:
             return self._result(url, 'blocked', error=str(exc), error_code='article_path_scope'), current, None, {}, b''
         except (CollectionError, ValueError, UnicodeError) as exc:
@@ -771,7 +1054,12 @@ class SafeFetcher:
         parser = RobotFileParser(origin + "/robots.txt")
         parser.parse(body.splitlines())
         if not robots_allowed(body, self.user_agent, url):
-            return self._result(url, "robots_denied", error="robots.txt disallows this URL")
+            from .api_permissions import documented_search_api
+            if not documented_search_api(url, source):
+                return self._result(url, "robots_denied", error="robots.txt disallows this URL")
+            source['min_interval_seconds'] = max(1., float(source.get('min_interval_seconds', 2)))
+            self._record_event(url, 'documented_api_permission', network_requests=0,
+                               outcome='reviewed_json_api_operation')
         # Honor explicit crawl-delay in addition to configured politeness.
         delay = parser.crawl_delay(self.user_agent) or parser.crawl_delay("*")
         request_rate = parser.request_rate(self.user_agent) or parser.request_rate("*")
@@ -785,10 +1073,12 @@ class SafeFetcher:
         robot_source = dict(source, max_bytes=min(int(source.get("max_bytes", 2_000_000)), 512_000))
         from .article_paths import ARTICLE_PATH_SCOPE_FLAG
         robot_source.pop(ARTICLE_PATH_SCOPE_FLAG, None)  # robots has its own bounded policy, not article paths
+        robot_source.pop('_public_article_exact_url', None)
+        robot_source.pop('_documented_api_scope', None)  # robots is not a JSON search request
         failure, _, status, headers, raw = self._request(origin + "/robots.txt", robot_source, request_kind="robots")
         if failure:
             if failure["status"] in ("blocked", "deferred"):
-                return self._result(url, failure["status"], http_status=failure["http_status"], error="robots.txt: " + str(failure["error"]), retry_at=failure["retry_at"], error_code=failure.get("error_code"), admission_host=failure.get("admission_host")), ""
+                return self._result(url, failure["status"], http_status=failure["http_status"], error="robots.txt: " + str(failure["error"]), retry_at=failure["retry_at"], error_code=failure.get("error_code"), admission_host=failure.get("admission_host"), retry_class=failure.get("retry_class"), error_diagnostic=failure.get('error_diagnostic')), ""
             return self._result(url, "robots_denied", error="robots.txt unavailable; fail closed"), ""
         if status in (404, 410):
             body = "User-agent: *\nAllow: /\n"
@@ -857,6 +1147,67 @@ class SafeFetcher:
             row = db.execute('SELECT final_url FROM http_cache WHERE url=?', (url,)).fetchone()
         return (row['final_url'] or None) if row else None
 
+    def record_access_challenge(self, url: str, source: dict, fetch_result: dict) -> dict:
+        """Persist an adapter-recognized restriction without requesting a URL.
+
+        Adapters may understand challenge markup beyond the transport detector.
+        Restrict the host of the response they actually parsed, never a form
+        action or other URL found inside its body. Validate the requested URL
+        and response URL against the same current scope before any state write.
+        Cached/local responses can add a restriction but cannot authorize HTTP.
+        """
+        if (not source.get('enabled') or not source.get('terms_approved')
+                or not isinstance(fetch_result, dict)
+                or fetch_result.get('status') not in ('ok', 'not_modified')
+                or not isinstance(fetch_result.get('body'), str)):
+            return self._result(url, 'blocked', error='Invalid access challenge report',
+                                error_code='invalid_challenge_report', challenge_recorded=False)
+        scoped_source = dict(source)
+        if scoped_source.get('documented_api_permission') is not None:
+            scoped_source['_documented_api_scope'] = True
+        try:
+            requested, _, _ = self._validate_url(url, scoped_source, resolve=False)
+            reported, _, _ = self._validate_url(fetch_result.get('url') or url, scoped_source, resolve=False)
+            if requested != reported:
+                raise CollectionError('Challenge response does not belong to the requested URL')
+            response_url, host, _ = self._validate_url(
+                fetch_result.get('final_url') or reported, scoped_source, resolve=False)
+        except (CollectionError, ValueError, TypeError) as exc:
+            return self._result(url, 'blocked', error=str(exc),
+                                error_code='challenge_report_scope', challenge_recorded=False)
+        retry = self._backoff(host, blocked=True, reason='Adapter recognized access challenge')
+        self._record_event(response_url, 'source_validation', network_requests=0,
+                           http_status=fetch_result.get('http_status'),
+                           outcome='adapter_access_challenge', cache_status=fetch_result.get('cache_status', 'none'))
+        return self._result(requested, 'blocked', error='Access challenge; manual review required',
+                            error_code='access_challenge', retry_at=_iso(retry),
+                            retry_class='operator_access', admission_host=host,
+                            challenge_recorded=True)
+
+    def expire_cached_response(self, url: str, expected_sha256=None, reason='discovery_parse_invalid') -> bool:
+        """Expire one semantically invalid envelope while retaining its receipt.
+
+        This is not a retry permission. Robots, courtesy, server delays and
+        access circuits remain mandatory. A compare-hash prevents an older
+        parser result from invalidating a newer representation.
+        """
+        if not isinstance(reason, str) or not re.fullmatch(r'[a-z0-9_]{1,64}', reason):
+            raise ValueError('Cache validation reason must be a bounded code')
+        if expected_sha256 is not None and (not isinstance(expected_sha256, str)
+                or not re.fullmatch(r'[0-9a-f]{64}', expected_sha256)):
+            raise ValueError('Expected response SHA256 must be a hexadecimal digest')
+        with self._db() as db:
+            db.execute('BEGIN IMMEDIATE')
+            row = db.execute('SELECT sha256,expires_at,validation_error FROM http_cache WHERE url=?', (url,)).fetchone()
+            if (not row or (expected_sha256 is not None and row['sha256'] != expected_sha256)
+                    or (row['expires_at'] <= self._clock() and row['validation_error'] == reason)):
+                return False
+            db.execute('UPDATE http_cache SET expires_at=MIN(expires_at,?),validation_error=? WHERE url=?',
+                       (self._clock(), reason, url))
+        self._record_event(url, 'cache_validation', network_requests=0,
+                           outcome=reason, cache_status='invalidated')
+        return True
+
     def admission_uncached_urls(self, urls) -> set[str]:
         """Scheduling hint only: never postpone a URL with any saved response.
 
@@ -886,6 +1237,8 @@ class SafeFetcher:
         """
         if not source.get('enabled') or not source.get('terms_approved'):
             return self._result(url, 'blocked', error='Source must be enabled and terms must be reviewed explicitly')
+        if source.get('documented_api_permission') is not None:
+            source = dict(source, _documented_api_scope=True)
         final_url = final_url or self.cached_response_url(url)
         for target in dict.fromkeys((url, final_url or url)):
             try:
@@ -898,7 +1251,9 @@ class SafeFetcher:
                     known = db.execute('SELECT body FROM robots WHERE origin=? AND expires_at>?',
                                        (origin, self._clock())).fetchone()
                 if known and not robots_allowed(known['body'], self.user_agent, normalized):
-                    return self._result(url, 'robots_denied', error='Current cached robots policy disallows this URL')
+                    from .api_permissions import documented_search_api
+                    if not documented_search_api(normalized, source):
+                        return self._result(url, 'robots_denied', error='Current cached robots policy disallows this URL')
         return None
 
     def _fetch(self, url: str, source: dict) -> dict:
@@ -912,8 +1267,12 @@ class SafeFetcher:
         if not source.get("enabled", False) or not source.get("terms_approved", False):
             return self._result(url, "blocked", error="Source must be enabled and terms must be reviewed explicitly")
         source = dict(source)
+        if source.get('documented_api_permission') is not None:
+            source['_documented_api_scope'] = True
         try:
             normalized, host, _ = self._validate_url(url, source, resolve=False)
+        except _APIEndpointScopeError as exc:
+            return self._result(url, 'blocked', error=str(exc), error_code='documented_api_scope')
         except _ArticlePathScopeError as exc:
             return self._result(url, 'blocked', error=str(exc), error_code='article_path_scope')
         except (CollectionError, ValueError, TypeError) as exc:
@@ -923,11 +1282,15 @@ class SafeFetcher:
             cached = db.execute("SELECT * FROM http_cache WHERE url=?", (normalized,)).fetchone()
         # Older cache rows have no response URL; revalidate before resolving
         # relative links against a base that may have redirected elsewhere.
-        fresh = cached and cached['expires_at'] > now and cached['final_url']
+        fresh = cached and cached['expires_at'] > now and cached['final_url'] and not cached['validation_error']
         if cached and ((mode == 'reuse' and fresh) or mode == 'local'):
             decision = self.cached_policy_error(normalized, source, cached['final_url'])
             if decision:
                 return decision
+            if cached['validation_error']:
+                return self._result(normalized, 'error', error='Cached response failed source validation',
+                                    error_code='invalid_cached_response', sha256=cached['sha256'],
+                                    cache_status='invalidated', local_reuse_only=mode == 'local')
             cache_status = 'local' if mode == 'local' else 'fresh'
             self._record_event(normalized, "content", network_requests=0, outcome="cache_hit", cache_status=cache_status)
             result = self._result(normalized, "not_modified", body=cached["body"], content_type=cached["content_type"], retrieved_at=cached["retrieved_at"], sha256=cached["sha256"], etag=cached["etag"], last_modified=cached["last_modified"], final_url=cached["final_url"] or normalized, from_cache=True, cache_status=cache_status, cache_valid_until=_iso(cached["expires_at"]), validated_at=_iso(cached['fetched_at']), local_reuse_only=mode == 'local', cache_stale=not bool(fresh))
@@ -943,7 +1306,7 @@ class SafeFetcher:
             if decision:
                 return decision
         headers = {}
-        if cached:
+        if cached and not cached['validation_error']:
             if cached["etag"]:
                 headers["If-None-Match"] = cached["etag"]
             if cached["last_modified"]:
@@ -965,11 +1328,16 @@ class SafeFetcher:
         if status == 304:
             if not cached:
                 return self._result(normalized, "error", http_status=304, error="304 without a cached representation")
+            if cached['validation_error']:
+                return self._result(normalized, 'error', http_status=304,
+                                    error='304 cannot validate a semantically invalid representation',
+                                    error_code='invalid_cache_revalidation')
             with self._db() as db:
                 if store_cache:
                     db.execute("UPDATE http_cache SET fetched_at=?,expires_at=?,final_url=?,pagination_headers=? WHERE url=?", (now, now + ttl, final_url, json.dumps(pagination_headers), normalized))
                 else:
                     db.execute("DELETE FROM http_cache WHERE url=?", (normalized,))
+            self._content_success(urlsplit(final_url).hostname)
             self._record_event(normalized, "content", network_requests=0, outcome="cache_revalidated", cache_status="revalidated")
             return self._result(normalized, "not_modified", http_status=304, body=cached["body"], content_type=cached["content_type"], retrieved_at=cached["retrieved_at"], sha256=cached["sha256"], etag=cached["etag"], last_modified=cached["last_modified"], final_url=final_url, validated_at=_iso(now), from_cache=True, cache_status="revalidated", cache_valid_until=_iso(now + ttl), original_retrieved_at=cached["retrieved_at"], pagination_headers=pagination_headers)
         # Without X-WP-TotalPages a full page implies a tentative next page.
@@ -1017,7 +1385,8 @@ class SafeFetcher:
                 retry = self._backoff(final_host, response_headers, True, "CAPTCHA or access challenge")
                 return self._result(normalized, "blocked", http_status=status,
                                     error="CAPTCHA or access challenge; manual review required",
-                                    error_code="access_challenge", retry_at=_iso(retry), final_url=final_url)
+                                    error_code="access_challenge", retry_at=_iso(retry), final_url=final_url,
+                                    retry_class=self._local.retry_class, admission_host=final_host)
             return self._result(normalized, "error", http_status=status, error="Unexpected HTTP status")
         content_type = response_headers.get("content-type", "text/plain")
         mime = content_type.split(";", 1)[0].strip().lower()
@@ -1044,7 +1413,8 @@ class SafeFetcher:
         if sitemap_gzip:
             accepted_mimes.update({"application/gzip", "application/x-gzip", "application/octet-stream"})
         if mime not in accepted_mimes:
-            return self._result(normalized, "error", http_status=status, content_type=content_type, error="Unsupported content type")
+            return self._result(normalized, "blocked", http_status=status, content_type=content_type,
+                                error="Unsupported content type", error_code="unsupported_content_type", final_url=final_url)
         charset = "utf-8"
         for item in content_type.split(";")[1:]:
             if item.strip().lower().startswith("charset="):
@@ -1056,7 +1426,8 @@ class SafeFetcher:
         if self._captcha(body):
             final_host = urlsplit(final_url).hostname
             retry = self._backoff(final_host, response_headers, True, "CAPTCHA or access challenge")
-            return self._result(normalized, "blocked", http_status=status, error="CAPTCHA or access challenge; manual review required", retry_at=_iso(retry))
+            return self._result(normalized, "blocked", http_status=status, error="CAPTCHA or access challenge; manual review required", retry_at=_iso(retry), error_code="access_challenge", retry_class=self._local.retry_class, admission_host=final_host)
+        self._content_success(urlsplit(final_url).hostname)
         digest = hashlib.sha256(raw).hexdigest()
         retrieved = _iso(self._clock())
         etag, modified = response_headers.get("etag"), response_headers.get("last-modified")

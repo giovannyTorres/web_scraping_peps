@@ -143,7 +143,8 @@ def main():
                             checked('non_index_sources_stay_visible_with_scope_and_text_enrichment_explanation',
                                     omitted.count() == len(catalogue) - shared_count and
                                     omitted.first.locator('input[type=checkbox]').first.is_visible())
-                            expect(page.locator('#workflow-shared-source-summary')).to_contain_text('sus permisos de texto siguen disponibles')
+                            expect(page.locator('#workflow-shared-source-summary')).to_contain_text('La lectura de originales se configura por separado')
+                            expect(page.locator('#workflow-shared-source-summary')).to_contain_text('no amplía el índice')
                             expect(page.locator('#workflow-shared-strategy-note')).to_contain_text('neutrales o adversas')
                             expect(page.locator('#workflow-budget-preview')).to_contain_text('Cada página se contrasta con toda la lista')
                             checked('shared_strategy_explains_neutral_preservation_and_disables_query_preset')
@@ -227,7 +228,7 @@ def main():
                             expect(page.locator('#workflow-shared-strategy-note')).to_be_hidden()
                             checked('returning_to_directed_strategy_restores_query_preset')
                             checked('restoring_catalogue_order_reuses_same_source_cards_and_permission_inputs', page.evaluate('''()=>window.sharedSourceNodeFixture.every(({row,inputs})=>row.isConnected&&inputs.every(input=>input.isConnected&&row.contains(input)))'''))
-                            checked('targeted_strategy_restores_original_catalogue_order', rows.evaluate_all('rows=>rows.every((row,index)=>Number(row.dataset.catalogueOrder)===index)'))
+                            checked('targeted_strategy_prioritizes_recommended_pair_then_preserves_catalogue_order', rows.evaluate_all('rows=>rows.slice(0,2).map(row=>row.dataset.sourceId).join(",")==="lumy_general_v1,public_research_articles"&&rows.slice(2).every((row,index,rest)=>index===0||Number(rest[index-1].dataset.catalogueOrder)<Number(row.dataset.catalogueOrder))'))
                             expect(omitted.first.locator('.source-shared-omitted')).to_be_hidden()
                             # A strategy change moves existing DOM nodes even while
                             # one source's permission POST is waiting for its reply.

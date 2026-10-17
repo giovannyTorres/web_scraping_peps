@@ -36,13 +36,15 @@ La condición PEP, un parentesco, un cargo o un contrato público no son conduct
 
 El paquete portable usa la carpeta completa `WebScope`, con `WebScope.exe`, `WebScope-CLI.exe` y la carpeta auxiliar `_internal`. Abra `WebScope.exe` con doble clic: inicia un servidor en `127.0.0.1` y abre el navegador predeterminado sin mostrar una consola. No requiere instalar Python en la máquina de destino. Mantenga juntos ambos ejecutables y `_internal`; distribuir únicamente un `.exe` no funciona. El paquete no es un instalador ni un servicio de Windows.
 
-Desde el código fuente se requiere Python 3.10 o posterior. La instalación base utiliza únicamente la biblioteca estándar en ejecución: no necesita Hugging Face, claves de un modelo ni servicios de IA.
+Desde el código fuente se requiere Python 3.10 o posterior y las dependencias fijadas de extracción HTML. Instale `python -m pip install -r requirements-extraction.lock.txt` antes de ejecutar desde el repositorio; `pip install .` también instala trafilatura 2.3.1. El portable incluye estas bibliotecas. No necesita Hugging Face, claves de un modelo ni servicios de IA. El recuperador local sólo se usa cuando el parser editorial produce menos de 220 caracteres; conserva cuerpos válidos y no sustituye un cuerpo editorial explícitamente vacío con recomendaciones.
 
 La sección **«¿Por qué obtuvo este score?»** conecta cada resultado con sus eventos, multiplicadores reales, notas originales y fragmentos resaltados. Conserva evaluaciones históricas en la misma SQLite y permite reproducir el cálculo. El clasificador contextual incluido (1.43 MB, CPU, sin dependencias adicionales) sólo propone papeles auxiliares y puede abstenerse: no agrega ni elimina puntos. NER y dependencias de spaCy son opcionales, con instalación explícita desde GitHub. Consulte [EXPLICABILIDAD.md](docs/EXPLICABILIDAD.md) para usarlo y [el benchmark comparativo](docs/BENCHMARK_EXPLICABILIDAD.md) para sus limitaciones medidas, incluida la baja cobertura de acusaciones. La investigación y prueba real de Laya se completaron antes de spaCy.
 
 ```powershell
 python -m peps --data-dir .\runtime ui
 ```
+
+Para revisar un HTML ya descargado sin abrir el banco ni conectar a internet, ejecute `python -m peps extract-html archivo.html`. En el portable use `.\WebScope-CLI.exe extract-html archivo.html`. El resultado JSON incluye texto, hash de entrada, versión del extractor y comprobante de la dependencia local.
 
 Ejecute los comandos desde la raíz del proyecto. En el bundle sustituya `python -m peps` por la ruta a `WebScope-CLI.exe`, que conserva salida y errores de consola. Desde la carpeta portable, para diagnóstico de apertura use `.\WebScope-CLI.exe --data-dir .\runtime ui --no-browser`; muestra la URL local. `WebScope.exe` está destinado al doble clic. Para conservar los datos en una ubicación explícita, utilice siempre el mismo `--data-dir`; sin esa opción, Windows conserva `%LOCALAPPDATA%\PEPS-MX` para abrir el banco existente. El paquete Python `peps-mx` y el módulo `peps` mantienen su nombre por compatibilidad; la instalación también ofrece el comando `webscope`.
 
@@ -125,6 +127,6 @@ python -m pip install -r requirements-build.lock.txt
 
 El script ejecuta las pruebas y construye las variantes gráfica y de consola, colocando `WebScope-CLI.exe` junto a `WebScope.exe` para compartir `_internal`. Comprueba los recursos compartidos y prueba el paquete final desde una carpeta ajena al repositorio: importación, cálculo, explicación, historial, replay, auditoría, exportación, respaldo y servidor local, incluidas las fuentes tipográficas locales. Distribuya `dist\WebScope` completo. El entorno de destino debe permitir ejecución de aplicaciones locales, apertura de navegador y escritura en el directorio de datos; políticas corporativas pueden impedirlo.
 
-La CI verifica además el wheel instalado en un entorno limpio, sin dependencias de ejecución, en Windows/Linux con Python 3.10/3.12. `scripts/validate_distribution.py` admite `--output` para guardar el comprobante y `--executable` para probar la CLI de un paquete portable.
+La CI verifica además el wheel con las dependencias de extracción fijadas en un entorno limpio, en Windows/Linux con Python 3.10/3.12. `scripts/validate_distribution.py` admite `--output` para guardar el comprobante y `--executable` para probar la CLI de un paquete portable, incluida la extracción local dentro del ejecutable.
 
 Para finalidad, retención, rectificación, restricciones de acceso y fuentes primarias consulte [PRIVACIDAD_Y_FUENTES.md](docs/PRIVACIDAD_Y_FUENTES.md). El software incorpora controles técnicos; su uso legal depende de la finalidad, organización, fuentes y régimen aplicable.

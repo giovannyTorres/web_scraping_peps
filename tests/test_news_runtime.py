@@ -488,7 +488,8 @@ class NewsRuntimeTests(unittest.TestCase):
         self.assertEqual(result['pending'], 1)
         self.assertEqual(result['stop_reason'], 'backoff')
         self.assertEqual(result['next_retry_at'], due)
-        self.assertIn('fuente exige esperar', result['message'])
+        self.assertIn('reintento programado', result['message'])
+        self.assertIn('Próximo intento permitido:', result['message'])
         with self.store.connection() as con:
             row = con.execute('SELECT attempts,due FROM jobs WHERE id=?', (job_id,)).fetchone()
         self.assertEqual(row['attempts'], 1)

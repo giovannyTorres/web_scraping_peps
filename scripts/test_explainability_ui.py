@@ -30,10 +30,10 @@ parser.add_argument('--output',type=Path,help='Optional report destination; defa
 args=parser.parse_args()
 artifacts=root/'runtime'/'ui-validation'
 artifacts.mkdir(parents=True,exist_ok=True)
-results={'kind':'synthetic_offline_browser_validation','processed_at':datetime.now(timezone.utc).isoformat(),'browser':'Chromium','playwright_version':importlib.metadata.version('playwright'),'fixtures':'211 synthetic documents, 4 synthetic entities; no real notes','checks':{},'screenshots':[]}
+results={'kind':'synthetic_offline_browser_validation','processed_at':datetime.now(timezone.utc).isoformat(),'browser':'Chromium','playwright_version':importlib.metadata.version('playwright'),'fixtures':'223 synthetic documents, 5 synthetic entities; no real notes. Functional UI controls only; not a retrieval or scoring benchmark.','checks':{},'screenshots':[]}
 with tempfile.TemporaryDirectory() as tmp:
     engine=Engine(tmp)
-    engine.store.import_entities([{'id':'aurora','name':'Entidad Sintética Aurora','kind':'company'}, {'id':'low','name':'Empresa Sintética Serena','kind':'company'}, {'id':'emoji','name':'Empresa Sintética Águila','kind':'company'}, {'id':'identity','name':'Empresa Sintética Identidad','kind':'company'}])
+    engine.store.import_entities([{'id':'aurora','name':'Entidad Sintética Aurora','kind':'company'}, {'id':'low','name':'Empresa Sintética Serena','kind':'company'}, {'id':'emoji','name':'Empresa Sintética Águila','kind':'company'}, {'id':'identity','name':'Empresa Sintética Identidad','kind':'company'}, {'id':'mixed','name':'Entidad Sintética Mixta','kind':'company'}])
     now=time.strftime('%Y-%m-%d',time.gmtime())
     engine.import_documents([
         {'url':'https://fixture.invalid/a','title':'<img src=x onerror="window.injected=1"> · Documento sintético','source_kind':'official','entity_ids':['aurora'],'text':'🦅 Boletín sintético de prueba. '+'Información introductoria. '*100+'Entidad Sintética Aurora fue condenada por fraude.','published_at':now},
@@ -44,6 +44,14 @@ with tempfile.TemporaryDirectory() as tmp:
         {'url':'https://fixture.invalid/identity','title':'Selección de identidad sintética','source_kind':'news','entity_ids':['identity'],'text':'Empresa Sintética Identidad fue acusada de fraude.','published_at':now}
     ])
     engine.import_documents([{'url':f'https://fixture.invalid/bulk-{i}','title':f'Nota incidental sintética {i}','source_kind':'official','entity_ids':['aurora'],'text':f'Comunicado sintético número {i}, sin mención nominal de la entidad.','published_at':now} for i in range(205)])
+    engine.import_documents([
+        {'url':'https://fixture.invalid/mixed','title':'Acusación y absolución sintéticas',
+         'source_kind':'official','entity_ids':['mixed'],'published_at':now,
+         'text':'🦅 Entidad Sintética Mixta fue acusada de fraude.\nEntidad Sintética Mixta fue absuelta de fraude.'},
+        *[{'url':f'https://fixture.invalid/lead-{i}','title':f'Fragmento documental sintético {i}',
+           'source_kind':'official','entity_ids':['mixed'],'published_at':now,
+           'text':f'Entidad Sintética Mixta fue acusada de fraude en el caso sintético {i}.'} for i in range(11)]
+    ])
     engine.rescore()
     workflow=GuidedWorkflow(engine.store,sources_provider=NewsAcquirer(engine).sources)
     workflow.set_mode('local')
@@ -63,6 +71,19 @@ with tempfile.TemporaryDirectory() as tmp:
         started=time.perf_counter();page.get_by_role('row',name='Consultar Entidad Sintética Aurora').click()
         page.get_by_role('heading',name='¿Por qué obtuvo este score?').wait_for()
         results['entity_open_latency_ms']=(time.perf_counter()-started)*1000
+        documentary=page.locator('.document-review')
+        assert not documentary.evaluate('element=>element.open')
+        assert documentary.locator('.document-review-count').inner_text()=='3'
+        assert documentary.bounding_box()['height']<=96
+        assert documentary.locator('.document-lead').count()==0
+        results['checks']['document_review_compact_counter_visible_before_open']=True
+        documentary.locator(':scope>summary').focus();page.keyboard.press('Enter')
+        documentary.locator('.document-lead').first.wait_for()
+        assert documentary.locator('.document-lead').count()==3
+        assert documentary.get_by_text('Fragmentos documentales para revisión.',exact=False).count()==1
+        documentary.locator(':scope>summary').focus();page.keyboard.press('Enter')
+        assert not documentary.evaluate('element=>element.open')
+        results['checks']['document_review_one_keyboard_action_opens_all_first_page_fragments']=True
         assert page.locator('.score-number strong').inner_text()==str(engine.explanation('aurora')['result']['score'])
         results['checks']['actual_score_and_scale']=True
         assert page.locator('.score-number strong').inner_text()!='0'
@@ -167,6 +188,13 @@ with tempfile.TemporaryDirectory() as tmp:
         assert page.locator('.score-number strong').inner_text()=='—'
         assert 'Identidad pendiente' in page.locator('.score-summary').inner_text()
         results['checks']['explicit_empty_identity_selection_stays_unchecked_after_save']=True
+        documentary=page.locator('.document-review')
+        assert documentary.locator('.document-review-count').inner_text()=='1'
+        documentary.locator(':scope>summary').click()
+        documentary.locator('.document-lead').first.wait_for()
+        assert 'Empresa Sintética Identidad fue acusada de fraude.' in documentary.locator('blockquote').first.inner_text()
+        assert page.locator('.score-number strong').inner_text()=='—'
+        results['checks']['documentary_lead_visible_while_personal_identity_score_is_pending']=True
         original_latest_score_run=engine.store.latest_score_run
         def delayed_latest_score_run(entity_id):
             if entity_id=='low':time.sleep(.25)
@@ -176,6 +204,36 @@ with tempfile.TemporaryDirectory() as tmp:
         assert page.locator('#detail>h2').inner_text()=='Empresa Sintética Águila'
         results['checks']['entity_selection_race_does_not_replace_latest']=True
         engine.store.latest_score_run=original_latest_score_run
+        page.get_by_role('row',name='Consultar Entidad Sintética Mixta').click()
+        page.get_by_role('heading',name='¿Por qué obtuvo este score?').wait_for()
+        documentary=page.locator('.document-review')
+        assert documentary.locator('.document-review-count').inner_text()=='12'
+        documentary.locator(':scope>summary').click()
+        documentary.locator('.document-lead').first.wait_for()
+        assert documentary.locator('.document-lead').count()==10
+        documentary.get_by_role('button',name='Mostrar más fragmentos',exact=True).click()
+        assert documentary.locator('.document-lead').count()==12
+        assert not documentary.get_by_role('button',name='Mostrar más fragmentos',exact=True).is_visible()
+        results['checks']['document_review_renders_ten_leads_then_explicit_pagination']=True
+        mixed=documentary.locator('.document-lead-resolution')
+        assert mixed.count()==1
+        assert mixed.get_by_text('Acusación y resolución · cronología por revisar',exact=True).count()==1
+        assert mixed.get_by_text('Lee ambas citas antes de interpretar esta nota.',exact=False).count()==1
+        quotes=mixed.locator('blockquote').all_inner_texts()
+        assert quotes==['🦅 Entidad Sintética Mixta fue acusada de fraude.','Entidad Sintética Mixta fue absuelta de fraude.']
+        results['checks']['mixed_document_shows_accusation_and_resolution_without_adverse_conclusion']=True
+        mixed.get_by_role('button',name='Revisar resolución en el original',exact=True).click()
+        page.locator('.note[open] mark.active-evidence').first.wait_for()
+        assert ''.join(page.locator('.note[open] mark.active-evidence').all_inner_texts())==quotes[1]
+        assert page.locator('.note[open] .note-body').inner_text().startswith('🦅')
+        results['checks']['document_resolution_original_citation_preserves_unicode_offsets']=True
+        page.set_viewport_size({'width':390,'height':844})
+        assert page.evaluate('document.documentElement.scrollWidth<=window.innerWidth')
+        documentary.locator(':scope>summary').focus();page.keyboard.press('Enter')
+        assert not documentary.evaluate('element=>element.open')
+        assert documentary.bounding_box()['width']<=390
+        results['checks']['document_review_mobile_keyboard_and_no_horizontal_overflow']=True
+        page.set_viewport_size({'width':1512,'height':1100})
         page.get_by_role('row',name='Consultar Entidad Sintética Aurora').click()
         page.get_by_role('heading',name='¿Por qué obtuvo este score?').wait_for()
         page.set_viewport_size({'width':390,'height':844})

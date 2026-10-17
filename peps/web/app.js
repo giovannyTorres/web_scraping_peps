@@ -50,10 +50,41 @@ async function showDetail(item,runId=null){
     if(request!==detailRequest)return;
     const state={data,request,notes:new Map(),noteRequests:new Map(),shownEvidence:0};detailState=state;
     card.replaceChildren(el('p','EXPEDIENTE','eyebrow'),el('h2',data.entity.name),el('p',`${kinds[data.entity.kind]||data.entity.kind} · ID ${data.entity.id}`,'muted'));
-    renderHistory(card,state);renderPublicSearch(card,state);renderExplanation(card,state);renderAuxiliary(card,state);renderEvidenceIndex(card,state);renderTechnical(card,state);
+    renderHistory(card,state);renderPublicSearch(card,state);renderDocumentReview(card,state);renderExplanation(card,state);renderAuxiliary(card,state);renderEvidenceIndex(card,state);renderTechnical(card,state);
     const row=entities.find(entity=>entity.id===item.id);if(row&&!runId){row.score=data.result;row.assessment=data.assessment;renderEntities();}
   }catch(error){if(request===detailRequest){card.replaceChildren(el('h2','No se pudo abrir la evaluación'),el('p',error.message,'error'));message(error.message,true);}}
   finally{if(request===detailRequest)card.removeAttribute('aria-busy');}
+}
+function renderDocumentReview(card,state){
+  const review=state.data.document_review;if(!review)return;
+  const details=el('details',undefined,'document-review');details.setAttribute('aria-label','Señales documentales para revisión');
+  const count=Number(review.documents_with_leads||0),total=Number(review.total_leads||0);
+  const summary=el('summary',undefined,'document-review-summary'),overview=el('span',undefined,'document-review-overview');
+  overview.append(el('span','Lectura documental','document-review-label'),el('span',`${count} ${count===1?'nota':'notas'} · ${total} ${total===1?'fragmento':'fragmentos'} para revisar`,'document-review-caption'));
+  const toggle=el('span','Ver fragmentos','document-review-toggle');summary.append(el('span',String(count),'document-review-count'),overview,toggle);details.append(summary);
+  const content=el('div',undefined,'document-review-content');content.append(el('p',review.note,'notice'));
+  if(review.reanalyze_required)content.append(el('p',`${review.reanalyze_required} documentos requieren volver a analizarse con las reglas actuales. La evaluación histórica permanece conservada.`,'muted'));
+  const items=Array.isArray(review.items)?review.items:[],rows=el('div',undefined,'document-review-rows');
+  const pagination=el('div',undefined,'document-review-pagination'),position=el('p','','muted'),more=el('button','Mostrar más fragmentos','secondary');more.type='button';position.setAttribute('aria-live','polite');pagination.append(position,more);let shown=0;
+  function append(){
+    for(const item of items.slice(shown,shown+10)){
+      const resolutions=Array.isArray(item.resolution_context)?item.resolution_context:[];
+      const mixed=item.adverse_alert===false||item.chronology_state==='mixed_requires_review'||resolutions.length>0;
+      const row=el('article',undefined,'document-lead'+(mixed?' document-lead-resolution':''));
+      row.append(el('h4',item.title),el('p',`${item.category_label} · ${item.stage_label}${item.uncertain?' · formulación incierta':''}`,'citation-label'));
+      if(mixed)row.append(el('p','Acusación y resolución · cronología por revisar','document-chronology-label'),el('p','Lee ambas citas antes de interpretar esta nota. No se presenta como una alerta adversa concluyente.','muted'));
+      row.append(el('blockquote',item.quote));
+      const actions=el('div',undefined,'document-lead-actions');actions.append(citationButton(state,item.evidence_id,item,'Revisar fragmento en el original'),sourceLink(item.source_url,'Consultar fuente'));row.append(actions);
+      for(const resolution of resolutions){const block=el('div',undefined,'document-resolution');block.append(el('p',`Resolución reportada · ${resolution.stage_label}`,'citation-label'),el('blockquote',resolution.quote),citationButton(state,item.evidence_id,resolution,'Revisar resolución en el original'));row.append(block);}
+      row.append(el('p',`${item.published_at||'Sin fecha'} · Identidad: ${{matched:'corroboración documental',candidate:'pendiente de resolver',rejected:'vínculo rechazado'}[item.identity_status]||'pendiente de resolver'}`,'document-lead-meta'));
+      rows.append(row);
+    }
+    shown=Math.min(shown+10,items.length);position.textContent=`${shown} de ${total} fragmentos${review.truncated?' · vista limitada':''}`;more.hidden=shown>=items.length;
+  }
+  more.onclick=append;content.append(rows,pagination);
+  if(!items.length){content.append(el('p','No hay fragmentos adversos directos admisibles en esta lectura. Consulta la cobertura y los textos; este estado no acredita ausencia de incidentes.','muted'));pagination.hidden=true;}
+  if(review.truncated)content.append(el('p',`Esta vista contiene ${items.length} de ${total} fragmentos. Consulta el expediente completo para revisar el resto.`,'muted'));
+  details.append(content);details.ontoggle=()=>{toggle.textContent=details.open?'Cerrar':'Ver fragmentos';if(details.open&&!shown&&items.length)append();};card.append(details);
 }
 function renderPublicSearch(card,state){
   const details=el('details',undefined,'public-search-links');details.append(el('summary','Ampliar búsqueda en la web y redes públicas'));
@@ -112,8 +143,10 @@ function renderAcquisitionCoverage(section,coverage){
     const search=coverage.search||{};
     if(search.start&&search.end)block.append(el('p',`Periodo solicitado: ${search.start} a ${search.end}. Es un rango de búsqueda; no acredita cobertura completa de todos esos años.`,'muted'));
     else block.append(el('p','El período de las descargas anteriores no quedó registrado. No se les atribuye el rango de búsqueda configurado después.','muted'));
-    const multimedia=Number(coverage.multimedia_reference_articles||0),pending=Number(coverage.pending_text_articles??Math.max(0,Number(coverage.metadata_only_articles||0)-multimedia));
-    block.append(el('p',`${coverage.articles??0} referencias de esta lista: ${coverage.full_articles??0} textos útiles, ${pending} referencias pendientes de texto${multimedia?` y ${multimedia} referencias de audio/vídeo sin transcripción`:''}. Las referencias sin texto útil no puntúan como evidencia del artículo.`,'muted'));
+    const multimedia=Number(coverage.multimedia_reference_articles||0),profiles=Number(coverage.profile_reference_articles||0),duplicates=Number(coverage.duplicate_reference_articles||0),pending=Number(coverage.pending_text_articles??Math.max(0,Number(coverage.metadata_only_articles||0)-multimedia-profiles-duplicates));
+    const references=[`${coverage.full_articles??0} textos útiles`,`${pending} referencias pendientes de texto`];
+    if(multimedia)references.push(`${multimedia} referencias de audio/vídeo sin transcripción`);if(profiles)references.push(`${profiles} perfiles o directorios`);if(duplicates)references.push(`${duplicates} réplicas de textos ya conservados`);
+    block.append(el('p',`${coverage.articles??0} referencias de esta lista: ${references.join(' · ')}. Las referencias sin texto útil no puntúan como evidencia del artículo.`,'muted'));
   }
   const observed=coverage.observed;
   if(observed)block.append(el('p',`Cobertura observada de la lista: ${observed.entities_queried??0} de ${observed.entities_total??0} entidades consultadas; ${observed.entities_with_bodies??0} con texto conservado. Las consultas planeadas no cuentan como ejecutadas.`,'muted'));
@@ -288,17 +321,33 @@ function orderNewsSources(){
   const container=$('news-sources'),shared=$('workflow-search-strategy')?.value==='shared';
   const rows=Array.from(container.children),ordered=rows.slice().sort((a,b)=>
     (shared?Number(b.dataset.sharedIndex==='true')-Number(a.dataset.sharedIndex==='true'):0)||
+    Number(a.dataset.setupPriority)-Number(b.dataset.setupPriority)||
     Number(a.dataset.catalogueOrder)-Number(b.dataset.catalogueOrder));
   for(const row of rows){const note=row.querySelector('.source-shared-omitted');if(note)note.hidden=!shared;}
   if(ordered.some((row,index)=>container.children[index]!==row))container.append(...ordered);
+  const setupRows=['lumy_general_v1','public_research_articles'].map(id=>rows.find(row=>row.dataset.sourceId===id));
+  $('public-source-setup').hidden=$('workflow-search-strategy')?.value!=='targeted'||setupRows.some(row=>!row)||setupRows.every(row=>row.dataset.selected==='true');
   const summary=$('workflow-shared-source-summary');summary.hidden=!shared;
-  if(shared){const count=rows.filter(row=>row.dataset.sharedIndex==='true').length,text='Primero aparecen '+count+' fuentes con índice compartido. Las demás no aportan consultas ni feeds en este modo; sus permisos de texto siguen disponibles para enriquecer enlaces encontrados. Habilita y autoriza expresamente las fuentes que quieras utilizar.';if(summary.textContent!==text)summary.textContent=text;}
+  if(shared){const count=rows.filter(row=>row.dataset.sharedIndex==='true').length,text='Primero aparecen '+count+' fuentes con índice compartido. Las demás no generan consultas en este modo. La lectura de originales se configura por separado y no amplía el índice. Habilita y autoriza expresamente las fuentes que quieras utilizar.';if(summary.textContent!==text)summary.textContent=text;}
+  filterNewsSources();
 }
 window.pepsOrderNewsSources=orderNewsSources;
+action('prepare-public-sources',async()=>{
+  const fields=Array.from(document.querySelectorAll('[data-source-id="lumy_general_v1"] input,[data-source-id="public_research_articles"] input'));
+  for(const field of fields){field.disabled=true;field.dataset.permissionSaving='true';}
+  const task=(async()=>{
+    await api('news-source',{id:'lumy_general_v1',enabled:true,terms_approved:true,download_articles:false,article_terms_approved:false});
+    await api('news-source',{id:'public_research_articles',enabled:true,terms_approved:true,download_articles:true,article_terms_approved:true});
+  })();
+  sourceSaves.add(task);window.pepsWorkflow?.update(lastStats);
+  try{await task;message('Búsqueda API y lectura pública preparadas. Puedes revisar ambos permisos antes de iniciar.');}
+  finally{sourceSaves.delete(task);for(const field of fields)delete field.dataset.permissionSaving;await loadNews();await refresh(true);}
+});
 $('news-register-scope').onchange=()=>loadNews(false).catch(error=>message(error.message,true));
 function filterNewsSources(){
   const query=($('source-filter')?.value||'').trim().toLocaleLowerCase('es'),selectedOnly=!!$('source-selected-only')?.checked,showAll=!!$('source-show-all')?.checked;
-  let visible=0,total=0;for(const row of $('news-sources').children){total++;const selected=row.dataset.selected==='true';const show=(!query||row.dataset.searchText.includes(query))&&(!selectedOnly||selected)&&(!!query||showAll||selectedOnly||selected||row.dataset.recommended==='true');row.hidden=!show;if(show)visible++;}
+  const nominal=!['shared','feeds'].includes($('workflow-search-strategy')?.value);
+  let visible=0,total=0;for(const row of $('news-sources').children){total++;const selected=row.dataset.selected==='true',recommended=nominal?Number(row.dataset.setupPriority)<2:row.dataset.recommended==='true';const show=(!query||row.dataset.searchText.includes(query))&&(!selectedOnly||selected)&&(!!query||showAll||selectedOnly||selected||recommended);row.hidden=!show;if(show)visible++;}
   $('source-filter-count').textContent=visible+' de '+total+' fuentes';
 }
 async function loadNews(includeSources=true){
@@ -309,12 +358,14 @@ async function loadNews(includeSources=true){
   const articlesKey=JSON.stringify(data.articles||[]);
   if(articlesKey!==renderedNewsArticlesKey){renderedNewsArticlesKey=articlesKey;const articles=$('news-articles');articles.replaceChildren();
     for(const article of data.articles){
-      const multimedia=article.scope==='multimedia_reference'||article.status==='multimedia_reference',hasText=article.scope==='full_article'&&!!article.document_id;
+      const multimedia=article.scope==='multimedia_reference'||article.status==='multimedia_reference',profile=article.scope==='profile_reference',duplicate=article.scope==='duplicate_reference',hasText=article.scope==='full_article'&&!!article.document_id;
       const row=el('div',undefined,'evidence');row.dataset.articleScope=article.scope||'';row.dataset.hasText=String(hasText);
-      const scope=multimedia?'Referencia de audio/vídeo; falta transcripción':hasText?'Texto útil conservado':'Referencia sin cuerpo';
-      const status=multimedia?'Captura original conservada':({fetched:hasText?'Texto conservado':'Referencia conservada',discovered:'Pendiente de texto',failed:'Con error'}[article.status]||article.status);
+      const scope=profile?'Perfil o directorio; no es una noticia':duplicate?'Réplica de un texto ya conservado':multimedia?'Referencia de audio/vídeo; falta transcripción':hasText?'Texto útil conservado':'Referencia sin cuerpo';
+      const status=profile||duplicate||multimedia?'Captura original conservada':({fetched:hasText?'Texto conservado':'Referencia conservada',discovered:'Pendiente de texto',failed:'Con error'}[article.status]||article.status);
       row.append(el('strong',article.title||article.canonical_url),el('p',article.publisher_id,'muted'),el('span',scope,'badge'),el('p',status,'muted'));
       if(multimedia)row.append(el('p','El reproductor no aporta una transcripción. Esta referencia se conserva para revisión y no se utiliza como texto del artículo ni para el score.','muted'));
+      if(profile)row.append(el('p','Esta ficha se conserva como referencia. No cuenta como noticia ni queda pendiente de descarga.','muted'));
+      if(duplicate)row.append(el('p','La procedencia se conserva para auditoría. El texto se cuenta una sola vez y no duplica evidencias ni puntuación.','muted'));
       row.append(sourceLink(article.canonical_url,'Abrir fuente original'));articles.append(row);
     }
     if(!data.articles.length)articles.append(el('p','No hay referencias pertinentes para la lista actual. Los documentos de búsquedas anteriores se conservan en el banco.','muted'));
@@ -323,30 +374,39 @@ async function loadNews(includeSources=true){
   const container=$('news-sources');container.replaceChildren();
   for(const source of data.sources){
     const row=el('div',undefined,'source compact-source'),info=el('div',undefined,'compact-source-info'),controls=el('div',undefined,'compact-source-controls');
-    const name=source.source_name||source.id,aggregator=source.discovery_only===true||source.kind==='gdelt'||source.search_kind==='google_news_rss',sharedIndex=['wordpress_api','sitemap'].includes(source.kind);
-    row.dataset.recommended=String(['wordpress_api','mwmbl','duckduckgo_html'].includes(source.kind));row.dataset.sourceId=source.id;row.dataset.sharedIndex=String(sharedIndex);row.dataset.catalogueOrder=String(container.children.length);row.dataset.searchText=(name+' '+(source.url||source.base_url||'')).toLocaleLowerCase('es');
-    info.append(el('strong',name));if(sharedIndex)row.classList.add('shared-source');
+    const name=source.source_name||source.id,publicSearch=['mwmbl','duckduckgo_html','duckduckgo_lite','searxng','lemmy_search','bing_news_rss'].includes(source.kind);
+    const publicBodies=source.discover_public_article_hosts===true&&source.public_research_scope==='personal_local_research';
+    const aggregator=source.discovery_only===true||publicSearch||source.kind==='gdelt'||source.search_kind==='google_news_rss'||!!source.documented_api_permission,sharedIndex=['wordpress_api','sitemap'].includes(source.kind);
+    const sourceUrl=source.url||source.search_url||source.api_url||source.base_url||'';
+    const lumy=source.id==='lumy_general_v1';
+    row.dataset.recommended=String(publicBodies||['wordpress_api','mwmbl','duckduckgo_html','searxng'].includes(source.kind));row.dataset.sourceId=source.id;row.dataset.sharedIndex=String(sharedIndex);row.dataset.catalogueOrder=String(container.children.length);row.dataset.setupPriority=String(lumy?0:source.id==='public_research_articles'?1:2);row.dataset.searchText=(name+' '+sourceUrl).toLocaleLowerCase('es');
+    info.append(el('strong',lumy?'Búsqueda API · Lumy / Yandex':publicBodies?'Lectura de originales públicos':name));if(sharedIndex)row.classList.add('shared-source');
     const badge=el('span',undefined,'badge source-permission-badge');info.append(badge);
     const details=el('details',undefined,'source-conditions');details.append(el('summary','Alcance y condiciones'));
-    details.append(sourceLink(source.url||source.base_url||'',source.url||source.base_url||'Fuente'),el('p',source.review_note||'Revisa las condiciones públicas de esta fuente antes de autorizar su consulta o conservar su texto.'));
+    if(sourceUrl&&!publicBodies)details.append(sourceLink(sourceUrl,sourceUrl));
+    if(lumy){details.append(sourceLink(source.documented_api_permission?.operator_documentation_url,'Documentación pública del operador'),sourceLink(source.documented_api_permission?.api_documentation_url,'Contrato de la API JSON'));}
+    details.append(el('p',source.review_note||'Revisa las condiciones públicas de esta fuente antes de autorizar su consulta o conservar su texto.'));
     if(sharedIndex)details.append(el('p',source.search_kind==='wordpress_api_search'?'Búsqueda por nombre · también admite índice compartido':'Índice compartido · una página para toda la lista','source-shared-kind'));
     if(aggregator)details.append(el('p','Sólo enlaces y extractos. El texto se obtiene de editores autorizados por separado.'));
-    if(!sharedIndex){const note=el('p','En índice compartido no genera consultas. Puede aportar texto autorizado de los enlaces encontrados.','source-shared-omitted');note.hidden=true;details.append(note);}
+    if(publicSearch)info.append(el('p',lumy?'Busca cada nombre con Yandex mediante la API JSON de Lumy. Conserva enlaces y extractos; el permiso de consulta no autoriza el texto de los editores.':'Busca los nombres y conserva referencias. Su permiso de consulta no autoriza el contenido de los editores.','muted'));
+    if(publicBodies)info.append(el('p','Lee originales públicos de enlaces pertinentes ya encontrados. Uso personal local, con robots y sin iniciar sesión ni superar suscripciones. No concede derechos comerciales del editor.','muted'));
+    if(!sharedIndex){const note=el('p',publicBodies?'Esta modalidad lee originales ya encontrados; no busca nombres ni recorre índices.':aggregator?'En índice compartido este buscador no genera consultas. La lectura de sus enlaces se autoriza por separado.':'En índice compartido no genera consultas. Puede aportar texto autorizado de los enlaces encontrados.','source-shared-omitted');note.hidden=true;details.append(note);}
     info.append(details);
     let saved={enabled:!!source.enabled,terms_approved:!!source.terms_approved,download_articles:!!source.download_articles,article_terms_approved:!!(source.article_terms_approved||source.body_terms_approved)};
     const consult=el('input'),body=el('input');consult.type=body.type='checkbox';consult.checked=saved.enabled&&saved.terms_approved;body.checked=saved.download_articles&&saved.article_terms_approved;
     consult.setAttribute('aria-label','Consultar '+name+'; condiciones revisadas');body.setAttribute('aria-label','Conservar texto de '+name+'; uso revisado');
     const choice=(input,label)=>{const field=el('label',undefined,'source-consent');field.append(input,document.createTextNode(label));controls.append(field);};
-    choice(consult,'Consultar · condiciones revisadas');if(!aggregator)choice(body,'Conservar texto · uso revisado');
-    const update=()=>{const active=saved.enabled&&saved.terms_approved,text=active&&!aggregator&&saved.download_articles&&saved.article_terms_approved;row.dataset.selected=String(active);badge.textContent=source.automated_search===false?'Consulta manual':text?'Con texto autorizado':active?'Sólo referencias':'Sin seleccionar';row.classList.toggle('source-selected',active);filterNewsSources();};
+    if(publicBodies)choice(body,'Conservar originales públicos · uso personal local');else{choice(consult,'Consultar · condiciones revisadas');if(!aggregator)choice(body,'Conservar texto · uso revisado');}
+    body.setAttribute('aria-label',publicBodies?'Conservar originales públicos de enlaces encontrados; uso personal local':'Conservar texto de '+name+'; uso revisado');
+    const update=()=>{const active=saved.enabled&&saved.terms_approved,text=active&&!aggregator&&saved.download_articles&&saved.article_terms_approved;row.dataset.selected=String(active);badge.textContent=publicBodies?(text?'Lectura pública activada':'Lectura pública sin activar'):source.automated_search===false?'Consulta manual':text?'Con texto autorizado':active?'Sólo referencias':'Sin seleccionar';row.classList.toggle('source-selected',active);filterNewsSources();};
     const save=async()=>{
-      const fields=aggregator?[consult]:[consult,body],values={enabled:consult.checked,terms_approved:consult.checked,download_articles:!aggregator&&body.checked,article_terms_approved:!aggregator&&body.checked};
+      const fields=publicBodies?[body]:aggregator?[consult]:[consult,body],values={enabled:publicBodies?body.checked:consult.checked,terms_approved:publicBodies?body.checked:consult.checked,download_articles:!aggregator&&body.checked,article_terms_approved:!aggregator&&body.checked};
       for(const field of fields){field.disabled=true;field.dataset.permissionSaving='true';}
       const task=(async()=>{try{await api('news-source',{id:source.id,...values});saved=values;update();await refresh(true);}catch(error){consult.checked=saved.enabled&&saved.terms_approved;body.checked=saved.download_articles&&saved.article_terms_approved;message(error.message,true);}})();
       sourceSaves.add(task);window.pepsWorkflow?.update(lastStats);
       try{await task;}finally{sourceSaves.delete(task);for(const field of fields){delete field.dataset.permissionSaving;field.disabled=false;}window.pepsWorkflow?.update(lastStats);}
     };
-    consult.onchange=save;body.onchange=save;if(source.automated_search===false)controls.replaceChildren(el('p','Consulta manual disponible en los expedientes.','muted'));row.append(info,controls);container.append(row);update();
+    consult.onchange=save;body.onchange=save;if(source.automated_search===false&&!publicBodies)controls.replaceChildren(el('p','Consulta manual disponible en los expedientes.','muted'));row.append(info,controls);container.append(row);update();
   }
   orderNewsSources();filterNewsSources();
 }

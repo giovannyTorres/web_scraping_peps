@@ -690,7 +690,7 @@ class Store:
                 model_version=result.get('model_version'), current=run['id'] == current_id))
         return history
 
-    def score_run_bundle(self, entity_id, run_id=None, history_limit=50):
+    def score_run_bundle(self, entity_id, run_id=None, history_limit=50, *, include_evidence=False):
         """Open result and history in one verified SQLite read snapshot.
 
         The selected run is decoded once, including when listed in history.
@@ -711,7 +711,10 @@ class Store:
                     raise ValueError('Puntero de evaluación actual inválido')
             history = self._score_history(con, entity_id, history_limit, current_id,
                                           {run['id']: run} if run else {}) if history_limit else []
-            return {'run': run, 'history': history, 'entity_exists': entity_exists}
+            bundle = {'run': run, 'history': history, 'entity_exists': entity_exists}
+            if include_evidence:
+                bundle['evidence'] = self._score_run_inputs(con, run) if run else []
+            return bundle
 
     def score_history(self, entity_id, limit=50):
         """Bounded summaries; full document validation occurs on opening a run."""
@@ -1026,7 +1029,9 @@ class Store:
                 yield dict(self._decode_score_run(row), record_type='score_run')
             available = {row[0] for row in con.execute("SELECT name FROM sqlite_master WHERE type='table'")}
             for table, record_type in [('news_articles', 'news_article'), ('news_observations', 'news_observation'),
-                                       ('news_discovery_runs', 'news_discovery_run'), ('news_query_windows', 'news_query_window')]:
+                                       ('news_discovery_runs', 'news_discovery_run'), ('news_query_windows', 'news_query_window'),
+                                       ('news_body_aliases', 'news_body_alias'),
+                                       ('news_body_quality_receipts', 'news_body_quality_receipt')]:
                 if table in available:
                     for row in con.execute('SELECT * FROM ' + table):
                         yield dict(row, record_type=record_type)

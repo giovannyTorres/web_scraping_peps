@@ -89,6 +89,9 @@ def main():
     parser.add_argument('--online', action='store_true', help='Permite sólo fuentes habilitadas y autorizadas')
     sub = parser.add_subparsers(dest='command')
     sub.add_parser('ui').add_argument('--no-browser', action='store_true')
+    html_parser = sub.add_parser('extract-html', help='Extrae un HTML local de hasta 2 MB; no conecta a la red ni abre un banco')
+    html_parser.add_argument('file', type=Path)
+    html_parser.add_argument('--encoding', choices=('utf-8-sig', 'cp1252', 'latin-1'), default='utf-8-sig')
     for command in ('import-entities', 'import-documents', 'import-legacy'):
         sub.add_parser(command).add_argument('file', type=Path)
     official = sub.add_parser('import-official', help='Valida completamente una copia oficial local antes de importarla')
@@ -141,6 +144,28 @@ def main():
     args = parser.parse_args()
     if args.command == 'capacity':
         print(json.dumps(capacity(args.entities), ensure_ascii=False, indent=2))
+        return
+    if args.command == 'extract-html':
+        import hashlib
+        from .article_fallback import MAXIMUM_HTML_BYTES, runtime_details
+        from .news import ARTICLE_EXTRACTION_VERSION, article_text
+        try:
+            if not args.file.is_file():
+                raise ValueError('Se requiere un archivo HTML local regular.')
+            with args.file.open('rb') as source:
+                raw = source.read(MAXIMUM_HTML_BYTES + 1)
+            if len(raw) > MAXIMUM_HTML_BYTES:
+                raise ValueError('El HTML supera el límite de 2 MB.')
+            html = raw.decode(args.encoding)
+            details = runtime_details()
+            if not details['available']:
+                raise RuntimeError('Falta la dependencia fijada del extractor; revise requirements-extraction.lock.txt.')
+            result = {'text': article_text(html), 'extraction_version': ARTICLE_EXTRACTION_VERSION,
+                      'runtime': details, 'input_bytes': len(raw), 'input_sha256': hashlib.sha256(raw).hexdigest(),
+                      'encoding': args.encoding, 'network': False, 'bank_opened': False}
+        except (OSError, UnicodeError, ValueError, RuntimeError, LookupError) as exc:
+            parser.error(str(exc))
+        print(json.dumps(result, ensure_ascii=False, indent=2))
         return
     engine = Engine(args.data_dir, args.config, args.online)
     command = args.command or 'ui'

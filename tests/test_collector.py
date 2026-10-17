@@ -600,7 +600,9 @@ class SafeFetcherTests(unittest.TestCase):
 
     def test_unsupported_binary_type(self):
         self.transport({self.url: [(200, {"content-type": "application/pdf"}, b"%PDF")]})
-        self.assertEqual(self.fetcher.fetch(self.url, self.source)["status"], "error")
+        result = self.fetcher.fetch(self.url, self.source)
+        self.assertEqual(result["status"], "blocked")
+        self.assertEqual(result['error_code'], 'unsupported_content_type')
 
     def test_missing_search_resource_is_manual_review_not_empty_feed_or_host_penalty(self):
         from peps.news import NewsAcquirer
@@ -708,7 +710,8 @@ class SafeFetcherTests(unittest.TestCase):
         wire = gzip.compress(body)
         self.transport({self.url: [(200, {'content-type': 'application/gzip'}, wire)]})
         result = self.fetcher.fetch(self.url, self.source)
-        self.assertEqual(result['status'], 'error')
+        self.assertEqual(result['status'], 'blocked')
+        self.assertEqual(result['error_code'], 'unsupported_content_type')
         self.assertEqual(result['error'], 'Unsupported content type')
         url = 'https://news.example/plain.xml.gz'
         self.transport({url: [(200, {'content-type': 'application/xml'}, body)]})

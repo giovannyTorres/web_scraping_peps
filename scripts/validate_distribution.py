@@ -28,6 +28,12 @@ RESOURCES = (
     "web/fonts/Lato-Regular.woff2", "web/fonts/Lato-Bold.woff2",
     "web/fonts/SourceSerif4-Roman.woff2",
     "licenses/LATO_OFL.txt", "licenses/SOURCE_SERIF_4_OFL.txt", "licenses/FONT_SOURCES.txt",
+    "licenses/EXTRACTION_DEPENDENCIES.txt",
+)
+
+EXTRACTION_RESOURCES = (
+    "trafilatura/settings.cfg", "justext/stoplists/Spanish.txt", "babel/global.dat",
+    "babel/locale-data/es.dat", "tld/res/effective_tld_names.dat.txt", "certifi/cacert.pem",
 )
 
 
@@ -59,6 +65,15 @@ def validate(executable=None):
                 "Archivo WOFF2 inválido: " + name)
         resources[name] = {"bytes": len(raw), "sha256": hashlib.sha256(raw).hexdigest()}
 
+    extraction_resources = {}
+    for name in EXTRACTION_RESOURCES + (("tzdata/zoneinfo/America/Mexico_City",) if os.name == 'nt' else ()):
+        raw = (package_dir.parent / name).read_bytes()
+        require(bool(raw), 'Recurso del extractor ausente o vacío: ' + name)
+        extraction_resources[name] = {"bytes": len(raw), "sha256": hashlib.sha256(raw).hexdigest()}
+    if kind == 'frozen':
+        for name in ('tld/__init__.py', 'tld/utils.py', 'certifi/__init__.py', 'certifi/core.py'):
+            require((package_dir.parent / name).is_file(), 'Falta el código fuente cubierto por MPL: ' + name)
+
     env = dict(os.environ)
     for name in ("PYTHONPATH", "PYTHONHOME"):
         env.pop(name, None)
@@ -82,6 +97,30 @@ def validate(executable=None):
                 capture_output=True, encoding='utf-8', timeout=60, check=True)
             require('import-entities' in legacy.stdout, 'La CLI anterior dejó de funcionar.')
             commands.append('peps --help')
+        # Exercise the actual fallback inside the installed/frozen executable,
+        # from a local file outside the checkout, before any bank exists.
+        local_html = cwd / 'local-extraction.html'
+        first_paragraph = ('El archivo local describe una revisión técnica de documentos ficticios. '
+            'El equipo conserva la procedencia de cada página y explica las limitaciones de su lectura. '
+            'MARCADOR_PRIMER_PARRAFO permite comprobar que llegó el primer párrafo completo al resultado.')
+        second_paragraph = ('La segunda parte documenta los controles de acceso, el avance observado y las tareas pendientes. '
+            'Cada conclusión debe apoyarse en un texto conservado y no en un encabezado aislado. '
+            'MARCADOR_SEGUNDO_PARRAFO confirma la recuperación del segundo párrafo del mismo documento.')
+        local_html.write_text('<html><head><title>Informe público del archivo documental local</title></head>'
+            '<body><div class="main right-sidebar"><h1>Informe público del archivo documental local</h1>'
+            '<article><div class="entry-content"><p>' + first_paragraph + '</p><p>' + second_paragraph +
+            '</p></div></article></div></body></html>', encoding='utf-8')
+        require(not data_dir.exists(), 'El diagnóstico requiere un banco todavía inexistente.')
+        extraction = command('extract-html', local_html)
+        require(not data_dir.exists(), 'El diagnóstico local abrió o creó un banco.')
+        require(all(marker in extraction['text'] for marker in
+            ('MARCADOR_PRIMER_PARRAFO', 'MARCADOR_SEGUNDO_PARRAFO')), 'El extractor instalado perdió el cuerpo local.')
+        require(extraction['runtime']['available'] and extraction['runtime']['dependency_version'] == '2.3.1',
+                'La distribución no contiene trafilatura==2.3.1 funcional.')
+        require(not extraction['runtime']['network'] and not extraction['runtime']['models_downloaded']
+                and not extraction['network'] and not extraction['bank_opened'], 'El diagnóstico excedió su alcance local.')
+        require(re.fullmatch('[a-f0-9]{64}', extraction['runtime']['config_sha256']),
+                'Falta la huella de configuración del extractor.')
         entities = cwd / "entities.csv"
         entities.write_text("id,name,kind\ndistribution,Entidad Sintética Aurora,company\n", encoding="utf-8")
         require(command("import-entities", entities)["imported"] == 1, "Importación CLI fallida.")
@@ -210,7 +249,9 @@ def validate(executable=None):
             process.stdout.close()
 
     return {"ok": True, "kind": kind, "executable": str(executable), "package_dir": str(package_dir),
-        "resources": resources, "commands": commands, "context_method": method,
+        "resources": resources, "extraction_resources": extraction_resources,
+        "local_extraction": {key: value for key, value in extraction.items() if key != 'text'},
+        "commands": commands, "context_method": method,
         "network_mode": "closed; disabled sources; HTTP smoke only on 127.0.0.1",
         "offline_socket_and_dns_guard": offline_guard,
         "limits": ["Synthetic fixture; no live acquisition or predictive quality measurement.",

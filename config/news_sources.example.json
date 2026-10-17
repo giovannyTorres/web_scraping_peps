@@ -1005,6 +1005,67 @@
       "index_ttl_seconds": 900,
       "max_query_chars": 500,
       "min_window_seconds": 86400
+    },
+    {
+      "id": "lumy_general_v1",
+      "source_name": "Lumy SearXNG documented JSON API",
+      "kind": "searxng",
+      "enabled": false,
+      "terms_approved": false,
+      "robots_required": true,
+      "download_articles": false,
+      "article_terms_approved": false,
+      "search_url": "https://search.lumy.live/search?engines=yandex",
+      "allowed_hosts": [
+        "search.lumy.live"
+      ],
+      "min_interval_seconds": 1,
+      "timeout_seconds": 25,
+      "max_bytes": 1500000,
+      "max_records": 30,
+      "public_search_quote": false,
+      "public_search_language": "es-MX",
+      "public_search_page": 1,
+      "documented_api_permission": {
+        "scope": "public_json_search_api",
+        "method": "GET",
+        "reviewed": true,
+        "endpoint": "https://search.lumy.live/search",
+        "operator_documentation_url": "https://search.lumy.live/info/en/about",
+        "api_documentation_url": "https://docs.searxng.org/dev/search_api.html",
+        "review_receipt_sha256": "bfd752831c2dfdfde287d0079d7770b3cad54be42b4a5c5d5f8f6243eb72f110"
+      },
+      "discovery_only": true,
+      "body_terms_approved": false
+    },
+    {
+      "id": "public_research_articles",
+      "source_name": "Lectura de originales públicos relevantes",
+      "kind": "rss",
+      "url": "https://public-research-policy.invalid/",
+      "base_url": "https://public-research-policy.invalid/",
+      "allowed_hosts": [],
+      "article_allowed_hosts": [],
+      "enabled": false,
+      "terms_approved": false,
+      "discovery": false,
+      "automated_search": false,
+      "download_articles": false,
+      "article_terms_approved": false,
+      "body_terms_approved": false,
+      "robots_required": true,
+      "discover_public_article_hosts": true,
+      "public_research_scope": "personal_local_research",
+      "article_denied_hosts": [],
+      "min_interval_seconds": 1,
+      "minimum_article_chars": 200,
+      "max_bytes": 2000000,
+      "timeout_seconds": 15,
+      "max_records": 1,
+      "document_kind": "news",
+      "permission_scope": "Autorización explícita del usuario para investigación personal local de originales públicos pertinentes ya descubiertos. No se afirman términos revisados individualmente de cada editor ni licencia comercial o de redistribución. Se respetan robots, TLS, DNS público, bloqueos, cuotas y presupuesto finito de cuerpos. Sin cuentas, pagos, redes sociales, mercados ni ampliación de redirecciones.",
+      "license": "Derechos del editor conservados. No se presume licencia comercial o de redistribución.",
+      "review_note": "Política opcional de sesión, desactivada por omisión cuando discover_public_article_hosts falta o es False. El perfil fijo no consulta su URL: cada permiso de lectura se deriva del host y la ruta exactos de un candidato vigente y su observación de búsqueda revisada. Exige un presupuesto global explícito y finito al ejecutar. source.enabled y terms_approved autorizan investigación personal, no certifican términos editoriales universales."
     }
   ]
 }

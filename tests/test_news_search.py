@@ -572,7 +572,7 @@ class SearchPlanTests(unittest.TestCase):
         self.assertFalse(plan['sources'][0]['historical'])
 
     def test_invalid_ranges_boolean_strings_and_excessive_budgets_are_rejected(self):
-        for settings in ({'start': '2027-01-01'}, {'end': '2027-01-01'}, {'max_queries': 10001},
+        for settings in ({'start': '2027-01-01'}, {'end': '2027-01-01'}, {'max_queries': 20001},
                          {'include_aliases': 'false'}, {'preset': 'invented'}, {'start': '2026-02-30'}):
             with self.subTest(settings=settings), self.assertRaises(ValueError):
                 normalize_search_config(settings, NOW)

@@ -1,7 +1,8 @@
-# Sólo construcción. La aplicación no requiere paquetes pip en ejecución.
+# Extracción y construcción fijadas. El portable no requiere pip en ejecución.
 altgraph==0.17.5
 packaging==26.3
 pefile==2024.8.26
 pyinstaller==6.22.0
 pyinstaller-hooks-contrib==2026.8
 pywin32-ctypes==0.2.3
+-r requirements-extraction.lock.txt

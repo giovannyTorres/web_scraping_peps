@@ -1,0 +1,73 @@
+name: Private network validation candidate
+
+on:
+  push:
+    branches: [verification/network-validation]
+    paths: [.github/workflows/network-validation.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: private-network-validation-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  network-validation:
+    if: github.repository == 'giovannyTorres/web_scraping_peps' && github.ref == 'refs/heads/verification/network-validation'
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout candidate commit only
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Python distribution runtime
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - name: Build local distribution without a dataset
+        run: |
+          set -euo pipefail
+          umask 077
+          python -m venv "$RUNNER_TEMP/ws-net-venv"
+          "$RUNNER_TEMP/ws-net-venv/bin/python" -m pip install --disable-pip-version-check -r requirements-extraction.lock.txt -r scripts/network_validation_bridge/requirements-bridge.lock.txt
+          "$RUNNER_TEMP/ws-net-venv/bin/python" -m pip install --disable-pip-version-check --no-deps .
+      - name: Create ephemeral runner key and public session ticket
+        env:
+          ROOT_SIGN_PUBLIC_PEM_B64: '@@ROOT_SIGN_PUBLIC_PEM_B64@@'
+          ROOT_ENCRYPT_PUBLIC_PEM_B64: '@@ROOT_ENCRYPT_PUBLIC_PEM_B64@@'
+        run: '"$RUNNER_TEMP/ws-net-venv/bin/python" scripts/network_validation_bridge/remote_job.py prepare'
+      - name: Publish runner public key FIRST
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: runner-public-key-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/ws-net-public-key/handshake.json
+            ${{ runner.temp }}/ws-net-public-key/runner-public.pem
+          retention-days: 3
+          if-no-files-found: error
+      - name: Wait for signed ciphertext and execute privately
+        env:
+          GH_READ_TOKEN: ${{ github.token }}
+        run: '"$RUNNER_TEMP/ws-net-venv/bin/python" scripts/network_validation_bridge/remote_job.py run'
+      - name: Publish encrypted result only
+        if: ${{ always() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: encrypted-result-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/ws-net-encrypted-result/result.pepsenc
+            ${{ runner.temp }}/ws-net-encrypted-result/result.ticket.json
+          retention-days: 3
+          if-no-files-found: error
+          compression-level: 0
+      - name: Delete private scratch and ephemeral private key
+        if: ${{ always() }}
+        run: '"$RUNNER_TEMP/ws-net-venv/bin/python" scripts/network_validation_bridge/remote_job.py cleanup'

@@ -43,10 +43,29 @@ from scripts.validate_real_people import (
 
 SCHEMA_VERSION = 1
 WINDOW = 'live-e2e-frozen-nominal-plan-v1'
+OBSERVED_RESPONSE_HEADERS = frozenset({'server', 'via', 'retry-after', 'date', 'content-type',
+    'x-envoy-upstream-service-time', 'x-envoy-ratelimited', 'x-cache'})
+OBSERVED_HEADER_VALUE_LIMIT = 512
 
 
 def sha256(value):
     return hashlib.sha256(value).hexdigest()
+
+
+def observed_response_headers(headers):
+    """Retain bounded diagnostic headers without cookies or credentials."""
+    values, truncated = {}, []
+    for key, value in headers.items():
+        if not isinstance(key, str) or not isinstance(value, str):
+            continue
+        normalized = key.lower()
+        if normalized not in OBSERVED_RESPONSE_HEADERS:
+            continue
+        values[normalized] = value[:OBSERVED_HEADER_VALUE_LIMIT]
+        if len(value) > OBSERVED_HEADER_VALUE_LIMIT:
+            truncated.append(normalized)
+    return {'response_headers': values, 'response_headers_truncated': sorted(truncated),
+            'response_header_value_limit_chars': OBSERVED_HEADER_VALUE_LIMIT}
 
 
 def measured_hashes():
@@ -218,7 +237,19 @@ def observed_fetcher(engine, budget, journal, directory, fetches):
                 path = capture_dir / f"{event['request_id']:06d}-{body_hash}.response.bin"
                 path.write_bytes(body)
                 event.update(http_status=status, response_bytes=len(body), response_sha256=body_hash,
-                             response_capture_path=str(path.relative_to(directory)))
+                             response_capture_path=str(path.relative_to(directory)),
+                             **observed_response_headers(response_headers))
+                metric = getattr(self._local, 'transport_metric', None) or {}
+                error_capture = metric.get('error_response_capture')
+                if isinstance(error_capture, dict):
+                    event.update(error_response_capture=dict(error_capture),
+                                 response_capture_scope='http_error_prefix',
+                                 response_body_complete=bool(error_capture.get('complete')),
+                                 response_body_truncated=bool(error_capture.get('truncated')))
+                else:
+                    event.update(response_capture_scope='response_body' if status < 400 else 'unread_error_response',
+                                 response_body_complete=status < 400,
+                                 response_body_truncated=None)
                 return status, response_headers, body
             except Exception as exc:
                 event['error_type'] = type(exc).__name__
@@ -509,7 +540,7 @@ def source_results(config, queries, events, fetches, store):
     return rows
 
 
-def run(args):
+def run(args, *, initialize_network_policy=None):
     people, cases, roster, config, plan, frozen = prepare_inputs(args)
     directory, output = args.data_dir.resolve(), args.output.resolve()
     if output == directory or directory in output.parents:
@@ -536,6 +567,13 @@ def run(args):
     hashes = measured_hashes()
     if not engine.store.verify_audit()['ok']:
         raise ValueError('La auditoría del banco falla. No se inicia ni reanuda la prueba.')
+    if initialize_network_policy is not None:
+        if args.resume:
+            raise ValueError('La importación explícita de restricciones sólo corresponde a un banco frío nuevo.')
+        # The recovery wrapper may import a pre-frozen negative host policy
+        # into an otherwise empty network database. This never provides search
+        # content, robots documents, request history, labels or article seeds.
+        initialize_network_policy(engine, config, attempt)
     if not args.resume:
         write_json(directory / 'frozen_inputs.json', {'hashes': frozen, 'roster': roster, 'people': people, 'cases': cases,
                    'config': config, 'plan': plan})

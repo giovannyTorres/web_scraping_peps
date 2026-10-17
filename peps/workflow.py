@@ -705,6 +705,8 @@ class GuidedWorkflow:
             'analyzable_documents': observed['body_articles'] + observed['local_documents'],
             'relevant_articles': observed['relevant_articles'],
             'multimedia_reference_articles': observed['multimedia_reference_articles'],
+            'profile_reference_articles': observed['profile_reference_articles'],
+            'duplicate_reference_articles': observed['duplicate_reference_articles'],
             'pending_text_articles': observed['pending_text_articles'],
             'archived_articles': counts['articles'], 'archived_documents': counts['documents']}
         counts['current_documents'] = material['analyzable_documents']

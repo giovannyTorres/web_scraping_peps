@@ -149,6 +149,15 @@ class HostAdmissionQueueTests(unittest.TestCase):
         self.assertTrue(self.store.verify_audit()['ok'])
         self.assert_no_network()
 
+    def test_ephemeral_client_wait_is_not_copied_to_other_pending_jobs(self):
+        identifier = self.enqueue('client-wait')
+        before = self.row(identifier)
+        self.assertEqual(self.news._defer_host_pending(
+            self.fetcher, self.result(retry_class='client_network')), 0)
+        self.assertEqual(self.row(identifier), before)
+        self.assertEqual(self.events(), [])
+        self.assert_no_network()
+
     def test_session_fetcher_bulk_wait_hook_reaches_other_host_with_four_task_budget(self):
         with self.store.connection() as con:
             for index in range(300):

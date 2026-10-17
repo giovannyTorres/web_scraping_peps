@@ -1,7 +1,7 @@
 """News acquisition is independent of offline identity attribution.
 
 Acquire feeds once, batch historical discovery, fetch each canonical URL once
-per refresh window. Preserve distinct publishers even for identical syndication.
+per refresh window. Preserve publisher provenance without multiplying identical bodies.
 Identity decisions and adverse conduct remain separate, auditable operations.
 """
 from __future__ import annotations
@@ -9,6 +9,7 @@ from __future__ import annotations
 import gzip
 import hashlib
 import heapq
+import ipaddress
 import json
 import math
 import re
@@ -33,7 +34,7 @@ from .store import canonical, digest, now
 TRACKING = {'fbclid', 'gclid', 'dclid', 'msclkid', 'mc_cid', 'mc_eid', '_ga', 'igshid'}
 UNRESERVED = frozenset('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~')
 SUPERSEDED_PLAN = 'Plan sustituido (superseded_news_plan): '
-ARTICLE_EXTRACTION_VERSION = 'article-main-7'
+ARTICLE_EXTRACTION_VERSION = 'article-main-9+trafilatura-2.3.1-v1'
 _ARTICLE_LINK_START = '\ufff0editorial-link-start\ufff1'
 _ARTICLE_LINK_END = '\ufff0editorial-link-end\ufff1'
 _ARTICLE_LINK_MARKERS = frozenset((_ARTICLE_LINK_START, _ARTICLE_LINK_END))
@@ -141,8 +142,122 @@ def source_policy(source):
     """Public acquisition policy at observation time; omit transport secrets."""
     fields = ('id', 'publisher_id', 'kind', 'url', 'base_url', 'allowed_hosts', 'article_allowed_hosts',
               'enabled', 'terms_approved', 'download_articles', 'article_terms_approved', 'body_terms_approved',
-              'terms_url', 'license', 'review_note', 'min_interval_seconds', 'refresh_seconds')
+              'terms_url', 'license', 'review_note', 'min_interval_seconds', 'refresh_seconds',
+              'robots_required', 'discovery', 'automated_search', 'article_path_globs',
+              'article_excluded_path_globs', 'discover_public_article_hosts', 'public_research_scope',
+              'article_denied_hosts', 'public_article_download_denied', 'public_article_admission')
     return {key: source[key] for key in fields if key in source}
+
+
+_PUBLIC_RESEARCH_BLOCKED_DOMAINS = frozenset({
+    'facebook.com', 'instagram.com', 'twitter.com', 'x.com', 'tiktok.com',
+    'youtube.com', 'youtu.be', 't.me', 'telegram.me', 'reddit.com', 'linkedin.com',
+    'dailymotion.com', 'rutube.ru', 'vimeo.com', 'spotify.com', 'podcasts.apple.com',
+    'mercadolibre.com', 'mercadolibre.com.mx', 'amazon.com', 'amazon.com.mx',
+    'ebay.com', 'walmart.com', 'pinterest.com', 'jstor.org', 'academia.edu',
+    'vlex.com', 'vlex.com.mx', 'elnorte.com', 'reforma.com',
+    'google.com', 'google.com.mx', 'bing.com', 'yandex.com', 'yandex.ru',
+    'duckduckgo.com', 'bit.ly', 'tinyurl.com', 't.co',
+})
+
+
+def _public_research_profile(source):
+    """An explicit personal-research grant, never a publisher/editorial license."""
+    return (source.get('discover_public_article_hosts') is True
+            and source.get('public_research_scope') == 'personal_local_research'
+            and source.get('kind') == 'rss' and source.get('discovery') is False
+            and source.get('automated_search') is False and not source.get('discovery_only')
+            and source.get('enabled') is True and source.get('terms_approved') is True
+            and source.get('download_articles') is True
+            and (source.get('article_terms_approved') is True or source.get('body_terms_approved') is True)
+            and source.get('robots_required') is True
+            and not source.get('allowed_hosts') and not source.get('article_allowed_hosts')
+            and not source.get('documented_api_permission') and not source.get('_documented_api_scope'))
+
+
+def _public_research_url(url):
+    """Syntactic checks only. SafeFetcher still resolves and validates every hop."""
+    from .shared_discovery import _public_https
+    from .article_paths import article_path_allowed
+    if not isinstance(url, str) or len(url) > 2048:
+        return None
+    normalized = _public_https(url)
+    if normalized is None:
+        return None
+    parts = urlsplit(normalized)
+    host = parts.hostname
+    try:
+        ipaddress.ip_address(host)
+    except ValueError:
+        pass
+    else:
+        return None  # Even public literal IPs are outside the publisher policy.
+    if (not re.search('[a-z]', host) or host.endswith(('.onion', '.invalid', '.test'))
+            or any(host == item or host.endswith('.' + item) for item in _PUBLIC_RESEARCH_BLOCKED_DOMAINS)):
+        return None
+    from urllib.parse import unquote
+    try:
+        path = unquote(parts.path, encoding='utf-8', errors='strict')
+    except (ValueError, UnicodeError):
+        return None
+    if (len(path) > 240 or any(c in path for c in '*?[]')
+            or not article_path_allowed(normalized, {'article_path_globs': ['/*']})
+            or path == '/' or re.search(r'/(?:tag|tags|author|authors|autor|autores|category|categoria|categorias|'
+                r'search|buscar|busqueda|buscador|feed|feeds|api|wp-json|wp-admin|login|signin|sign-in|'
+                r'register|registro|suscribirse|subscribe|checkout|cart|watch|video|videos|podcast|podcasts)(?:/|$)', path, re.I)
+            or re.search(r'\.(?:pdf|xml|json|txt|zip|exe|js|css|jpg|jpeg|png|gif|mp3|mp4|m3u8)(?:$|/)', path, re.I)):
+        return None
+    try:
+        query = parse_qsl(parts.query, keep_blank_values=True, max_num_fields=32)
+    except ValueError:
+        return None
+    if any(key.casefold() in {'q', 's', 'search', 'query', 'url', 'target', 'redirect',
+                             'redirect_url', 'return', 'continue', 'callback', 'rest_route', 'feed',
+                             'token', 'access_token', 'api_key', 'apikey', 'auth', 'authorization',
+                             'password', 'session', 'sessionid', 'signature'}
+           or key.casefold().startswith('x-amz-')
+           for key, _value in query):
+        return None
+    return normalized, host, path
+
+
+def _public_article_denied(host, sources):
+    """Explicit denies apply before both specific and generic body permissions."""
+    for source in sources:
+        denied = source.get('article_denied_hosts', [])
+        if not isinstance(denied, list):
+            return True
+        for value in denied:
+            if not isinstance(value, str) or not re.fullmatch(r'[A-Za-z0-9.-]+', value):
+                return True
+            value = value.rstrip('.').casefold()
+            if host == value or host.endswith('.' + value):
+                return True
+        scoped = source.get('article_allowed_hosts') or source.get('allowed_hosts', [])
+        if source.get('public_article_download_denied') is True and host in scoped:
+            return True
+    return False
+
+
+def _article_access_error(result, *, html_required=False):
+    """A host approval never grants subscription content or a different format."""
+    if result.get('status') not in ('ok', 'not_modified') or not result.get('body'):
+        return None
+    mime = str(result.get('content_type') or '').split(';', 1)[0].lower().strip()
+    accepted = ('text/html', 'application/xhtml+xml') if html_required else (
+        '', 'text/html', 'application/xhtml+xml', 'text/plain')
+    if mime not in accepted:
+        return 'Original response is not an admitted article format'
+    body = str(result['body'])
+    if re.search(r'["\']isAccessibleForFree["\']\s*:\s*(?:false|["\']false["\'])', body, re.I):
+        return 'Subscription restriction: publisher marks this original as inaccessible for free'
+    from .sources import extract_text
+    visible = extract_text(body)
+    if re.search(r'(?:para (?:seguir|continuar) leyendo.{0,80}(?:suscr|sesi[oó]n)|'
+                 r'contenido exclusivo para suscriptores|subscribe to (?:continue|read)|'
+                 r'sign in to continue reading)', visible, re.I):
+        return 'Subscription restriction: public page contains a paid or authenticated reading gate'
+    return None
 
 
 def canonical_url(url):
@@ -213,10 +328,14 @@ class _ArticleText(HTMLParser):
         card = card or (tag == 'article' and 'elementor-grid-item' in classes)
         card = card or (tag == 'article' and any(re.fullmatch(r'et_pb_blog_item_\d+_\d+', name)
                                                for name in classes))
+        # Quadratín puts the editorial paragraphs in q-content__info and uses
+        # semantic <article> only for a separate list of recommendation cards.
+        # q-content alone is a wider layout wrapper, so it is not a body signal.
         explicit = ('articleBody' in attrs.get('itemprop', '').split()
                     or bool(classes & {'entry-content', 'post-content', 'article-content',
                                        'article-body', 'story-body', 'td-post-content',
-                                       'elementor-widget-theme-post-content', 'et_pb_post_content'})
+                                       'elementor-widget-theme-post-content', 'et_pb_post_content',
+                                       'q-content__info'})
                     or attrs.get('data-widget_type', '').split('.', 1)[0] == 'theme-post-content')
         hidden = hidden or (card and not explicit)
         parent = self.stack[-1][1] if self.stack else (False, False, None, None, False)
@@ -347,15 +466,25 @@ def article_text(html):
     # back to related cards would silently attach another article's body.
     if parser.editorial:
         chosen = max(parser.editorial, key=_editorial_size)
-        return _editorial_text(chosen)
+        result = _editorial_text(chosen)
+        # An explicitly empty/paywalled editorial container is authoritative.
+        # Never replace it with dense recommendation cards elsewhere in HTML.
+        if not result or len(result) >= 220:
+            return result
+        from .article_fallback import recover_article_text
+        return recover_article_text(html, expected_editorial=result) or result
     # A tiny <article> card is not sufficient to discard the actual main text.
     article = max(parser.article, key=_editorial_size, default=[])
     chosen = article if _editorial_size(article) >= 100 else parser.main if parser.main else parser.all
-    return _editorial_text(chosen)
+    result = _editorial_text(chosen)
+    if len(result) >= 220:
+        return result
+    from .article_fallback import recover_article_text
+    return recover_article_text(html) or result
 
 
 def news_fingerprint(text):
-    """Exact normalized text fingerprint; cross-publisher content is retained."""
+    """Normalized text cluster; only exact body hashes may share evidence."""
     import unicodedata
     value = unicodedata.normalize('NFC', text).casefold()
     return digest(' '.join(re.findall(r'\w+', value)))
@@ -766,7 +895,8 @@ class NewsAcquirer:
     def _failure(self, job, result):
         if result.get('status') in ('ok', 'not_modified') and result.get('body'):
             return False
-        deferred = result.get('status') in ('deferred', 'error', 'not_modified')
+        deferred = (result.get('status') in ('deferred', 'error', 'not_modified')
+                    and result.get('error_code') != 'unsupported_content_type')
         state = 'deferred' if deferred else 'blocked'
         changed = self.store.finish(job, state, result.get('error') or result.get('status', 'error'),
                                     self._epoch(result.get('retry_at')),
@@ -795,6 +925,7 @@ class NewsAcquirer:
         from .collector import CollectionError
         if (cache_mode == 'local' or self.engine.stop_event.is_set()
                 or result.get('error_code') != 'host_interval'
+                or result.get('retry_class') == 'client_network'
                 or result.get('request_attempted') is not False
                 or not hasattr(fetcher, 'admission_uncached_urls')
                 or not hasattr(fetcher, '_validate_url')):
@@ -885,16 +1016,110 @@ class NewsAcquirer:
                                    'attempts_and_leases_preserved': True})
             return len(changed)
 
-    def _source_for_article(self, url, originating_source=None, all_sources=None):
+    def _source_for_article(self, url, originating_source=None, all_sources=None, *, connection=None):
         from .public_search import PUBLIC_SEARCH_KINDS
         from .article_paths import article_path_allowed
-        host = (urlsplit(url).hostname or '').lower()
-        sources = ([originating_source] if originating_source else []) + (all_sources if all_sources is not None else self.sources())
-        return next((s for s in sources if s and s.get('kind') not in PUBLIC_SEARCH_KINDS
+        try:
+            host = (urlsplit(url).hostname or '').lower()
+        except (ValueError, TypeError):
+            return None
+        configured = all_sources if all_sources is not None else self.sources()
+        sources = list({s['id']: s for s in ([originating_source] if originating_source else []) + configured}.values())
+        if _public_article_denied(host, sources):
+            return None
+        specific = next((s for s in sources if s and s.get('kind') not in PUBLIC_SEARCH_KINDS
+                     and not s.get('discover_public_article_hosts')
                      and not s.get('discovery_only') and s.get('enabled') and s.get('terms_approved')
                      and s.get('download_articles') and (s.get('article_terms_approved') or s.get('body_terms_approved'))
                      and host in (s.get('article_allowed_hosts') or s.get('allowed_hosts', []))
                      and article_path_allowed(url, s)), None)
+        if specific:
+            return specific
+        profiles = [s for s in sources if _public_research_profile(s)]
+        checked = _public_research_url(url) if profiles else None
+        if checked is None:
+            return None
+        normalized, host, path = checked
+        with (nullcontext(connection) if connection is not None else self.store.connection()) as con:
+            # API permissions never become editorial permissions. A specific
+            # reviewed restriction also cannot be widened by the generic grant.
+            for item in sources:
+                if item.get('discover_public_article_hosts'):
+                    continue
+                if host not in (item.get('article_allowed_hosts') or item.get('allowed_hosts', [])):
+                    continue
+                if (item.get('kind') in PUBLIC_SEARCH_KINDS or item.get('documented_api_permission')
+                        or item.get('enabled') or item.get('terms_approved') or item.get('download_articles')
+                        or con.execute("SELECT 1 FROM audit WHERE action='news_source_configured' "
+                            "AND json_extract(payload,'$.id')=? AND json_extract(payload,'$.config_hash')=? LIMIT 1",
+                            (item.get('id'), digest(canonical(item)))).fetchone()):
+                    return None
+            from .news_projection import projection_signature
+            signature = projection_signature(con)
+            article = con.execute('SELECT id,canonical_url FROM news_articles WHERE canonical_url=?',
+                                  (canonical_url(normalized),)).fetchone()
+            if article is None:
+                return None
+            current_ids = {r[0] for r in con.execute('SELECT c.entity_id FROM news_current_candidates c '
+                'JOIN entities e ON e.id=c.entity_id WHERE c.article_id=? AND c.bank_revision=? AND c.relevance_version=?',
+                (article['id'], signature['bank_revision'], signature['relevance_version']))}
+            if not current_ids:
+                return None
+            origins = {s['id']: s for s in configured if s.get('enabled') and s.get('terms_approved')
+                       and s.get('discovery') is not False and not s.get('discover_public_article_hosts')}
+            origin_proof = None
+            for observation in con.execute('SELECT id,source_id,discovery_url,discovery_hash,details '
+                                           'FROM news_observations WHERE article_id=? ORDER BY id', (article['id'],)):
+                origin = origins.get(observation['source_id'])
+                if (origin is None or not re.fullmatch(r'[0-9a-f]{64}', str(observation['discovery_hash'] or ''))
+                        or len(observation['details']) > 2_000_000):
+                    continue
+                try:
+                    detail = json.loads(observation['details'])
+                    ranked = detail.get('retrieval_relevance', {})
+                    origin_url = urlsplit(observation['discovery_url'])
+                    valid = (detail.get('source_config_hash') == digest(canonical(origin))
+                             and origin_url.scheme == 'https' and not origin_url.username and not origin_url.password
+                             and origin_url.hostname in origin.get('allowed_hosts', [])
+                             and ranked.get('relevant') is True
+                             and str(ranked.get('bank_revision')) == signature['bank_revision']
+                             and bool(current_ids.intersection(str(v) for v in ranked.get('entity_ids', []))))
+                except (ValueError, TypeError, AttributeError):
+                    continue
+                if valid:
+                    origin_proof = {'observation_id': observation['id'], 'source_id': origin['id'],
+                                    'discovery_url': observation['discovery_url'],
+                                    'response_sha256': observation['discovery_hash'],
+                                    'source_config_hash': detail['source_config_hash']}
+                    break
+            if origin_proof is None:
+                return None
+            for profile in profiles:
+                if not article_path_allowed(normalized, profile):
+                    continue
+                try:
+                    interval = max(1, float(profile.get('min_interval_seconds', 1)))
+                    minimum = max(200, int(profile.get('minimum_article_chars', 200)))
+                    if not math.isfinite(interval) or not 200 <= minimum <= 2_000_000:
+                        continue
+                except (ValueError, TypeError, OverflowError):
+                    continue
+                effective = dict(profile, allowed_hosts=[host], article_allowed_hosts=[host],
+                                 article_path_globs=[path], robots_required=True,
+                                 min_interval_seconds=interval, minimum_article_chars=minimum,
+                                 _public_article_exact_url=normalized)
+                effective.pop('documented_api_permission', None)
+                effective.pop('_documented_api_scope', None)
+                effective['public_article_admission'] = {
+                    'version': 'public-research-1', 'policy_source_id': profile['id'],
+                    'policy_source_hash': digest(canonical(profile)), 'article_id': article['id'],
+                    'bank_revision': signature['bank_revision'], 'candidate_entity_ids': sorted(current_ids),
+                    'exact_url': normalized, 'exact_host': host, 'exact_path': path, 'discovery': origin_proof,
+                    'scope': 'personal_local_research', 'publisher_terms_individually_reviewed': False,
+                    'commercial_rights_granted': False, 'identity_verified': False, 'score_effect': 'none',
+                    'robots_enforced_by': 'SafeFetcher', 'redirect_host_expansion': False}
+                return effective
+        return None
 
     def _stored_candidate(self, row, relevance, connection=None, *, should_stop=None):
         def check():
@@ -1113,20 +1338,26 @@ class NewsAcquirer:
         candidate_count = len(retrieval_ids)
         eligible = download_all or (candidate['relevant'] if candidate is not None else
                                     any(r['status'] != 'rejected' for r in candidates)) or bool(publisher_lead)
-        body_source = self._source_for_article(url, source, all_sources)
+        body_source = self._source_for_article(url, source, all_sources, connection=connection)
         checked = row['validated_at'] or row['retrieved_at']
         mode = getattr(self, '_active_cache_mode', 'reuse')
-        if row['scope'] == 'multimedia_reference' and mode != 'revalidate':
-            return {'status': 'multimedia_reference', 'id': article_id, 'candidates': candidate_count}
+        from .news_body_quality import REFERENCE_SCOPES
+        if row['scope'] in REFERENCE_SCOPES and mode != 'revalidate':
+            return {'status': row['scope'], 'id': article_id, 'candidates': candidate_count}
         fresh = checked and (mode == 'local' or (mode != 'revalidate' and
                 time.time() - self._epoch(checked) < float((body_source or {}).get('refresh_seconds', 86400))))
         if fresh and session:
             session.body(article_id)
         if eligible and body_source and not fresh:
+            if body_source.get('public_article_admission') and (body_budget is None
+                    or type(body_budget.maximum) is not int or body_budget.maximum <= 0):
+                return {'status': 'body_budget_limited', 'id': article_id, 'candidates': candidate_count}
             candidate_ids = retrieval_ids
             period = int(time.time() // max(60, float(body_source.get('refresh_seconds', 86400))))
             body_payload = {'article_id': article_id, 'source_id': body_source['id'], 'url': url,
                             'reading_priority': selection['priority'], 'body_selection': selection}
+            if body_source.get('public_article_admission'):
+                body_payload['public_research_policy'] = True
             if candidate is not None:
                 body_payload.update(candidate_entity_ids=candidate_ids, relevance_rank=candidate['rank'])
             captured_revision = (candidate.get('bank_revision') if candidate is not None else None)
@@ -1330,6 +1561,58 @@ class NewsAcquirer:
                 result['queued'] += 1
         return result
 
+    def _capture_failed_discovery(self, url, source, result, reason):
+        """Preserve a failed search representation outside documentary evidence."""
+        body = result.get('body')
+        if not isinstance(body, str):
+            body = ''
+        decoded = body.encode('utf-8', errors='surrogatepass')
+        original_hash = result.get('sha256')
+        if not isinstance(original_hash, str) or not re.fullmatch(r'[0-9a-f]{64}', original_hash):
+            original_hash = None
+        charset = 'utf-8'
+        for field in str(result.get('content_type') or '').split(';')[1:]:
+            if field.strip().lower().startswith('charset='):
+                charset = field.split('=', 1)[1].strip(' \"\'')
+        raw_verified, stored, encoding = False, decoded, 'utf-8/surrogatepass'
+        for candidate_encoding in dict.fromkeys((charset, 'utf-8')):
+            try:
+                candidate = body.encode(candidate_encoding)
+            except (LookupError, UnicodeError):
+                continue
+            if original_hash and hashlib.sha256(candidate).hexdigest() == original_hash:
+                raw_verified, stored, encoding = True, candidate, candidate_encoding
+                break
+        snapshot_hash = hashlib.sha256(stored).hexdigest()
+        folder = self.engine.data_dir / 'news_discovery_failures' / snapshot_hash[:2]
+        folder.mkdir(parents=True, exist_ok=True)
+        snapshot = folder / (snapshot_hash + '.response.gz')
+        if not snapshot.exists():
+            with tempfile.NamedTemporaryFile(dir=folder, delete=False) as stream:
+                temporary = Path(stream.name)
+                stream.write(gzip.compress(stored, mtime=0))
+                stream.flush()
+                os.fsync(stream.fileno())
+            try:
+                os.link(temporary, snapshot)
+            except FileExistsError:
+                pass
+            finally:
+                temporary.unlink(missing_ok=True)
+        with gzip.open(snapshot, 'rb') as stream:
+            if stream.read(len(stored) + 1) != stored:
+                raise ValueError('Failed discovery snapshot does not match its immutable content hash')
+        return {'snapshot_path': str(snapshot.relative_to(self.engine.data_dir)),
+                'snapshot_sha256': snapshot_hash, 'snapshot_bytes': len(stored),
+                'snapshot_encoding': encoding, 'original_response_sha256': original_hash,
+                'original_response_bytes_verified': raw_verified,
+                'decoded_body_sha256': hashlib.sha256(decoded).hexdigest(),
+                'response_url': result.get('final_url') or url,
+                'requested_url': url, 'retrieved_at': result.get('retrieved_at'),
+                'content_type': result.get('content_type'), 'reason': reason,
+                'source_id': source['id'], 'source_config_hash': digest(canonical(source)),
+                'documentary_evidence': False, 'score_effect': 'none'}
+
     def execute(self, job, fetcher, resolver=None, download_all=False, relevance=None, body_budget=None):
         from .sources import parse_results
         payload = job['payload']
@@ -1340,6 +1623,31 @@ class NewsAcquirer:
         if job['kind'] == 'news_article' and not (source.get('download_articles') and (source.get('article_terms_approved') or source.get('body_terms_approved'))):
             self.store.finish(job, 'blocked', 'No se ha autorizado conservar el cuerpo editorial')
             return
+        if job['kind'] == 'news_article' and _public_article_denied(
+                urlsplit(payload.get('url', '')).hostname or '', self.sources()):
+            self._failure(job, {'status': 'blocked', 'error_code': 'article_host_denied',
+                                'error': 'Current configuration explicitly denies this article host'})
+            return
+        public_research = job['kind'] == 'news_article' and (
+            source.get('discover_public_article_hosts') is True or payload.get('public_research_policy') is True)
+        if public_research:
+            effective = self._source_for_article(payload.get('url'), all_sources=self.sources())
+            admission = (effective or {}).get('public_article_admission')
+            if (not admission or effective['id'] != source['id']
+                    or admission['article_id'] != payload.get('article_id')):
+                self._failure(job, {'status': 'blocked', 'error_code': 'public_research_not_authorized',
+                                    'error': 'Public article policy no longer authorizes this observed bank candidate'})
+                return
+            source = effective
+            if relevance is None:
+                from .relevance import RelevanceIndex
+                entities, revision = self._entity_snapshot()
+                relevance = RelevanceIndex(entities)
+                relevance.bank_revision = revision
+            if body_budget is None or type(body_budget.maximum) is not int or body_budget.maximum <= 0:
+                self._failure(job, {'status': 'blocked', 'error_code': 'public_research_budget_required',
+                                    'error': 'Public article research requires an explicit finite positive body budget'})
+                return
         if job['kind'] == 'news_article' and relevance is not None:
             with self.store.connection() as con:
                 stored = con.execute('SELECT id,title,summary FROM news_articles WHERE id=?', (payload['article_id'],)).fetchone()
@@ -1362,9 +1670,42 @@ class NewsAcquirer:
                 result, parsed = self._shared_page(source, payload, fetcher)
             else:
                 result, parsed = fetcher.fetch(url, source), None
-            if self._failure(job, result):
+            from .public_search import PUBLIC_SEARCH_KINDS, PublicSearchParseError
+            if result.get('local_reuse_only') and result.get('error_code') == 'invalid_cached_response':
+                self._failure(job, dict(result, status='blocked',
+                    error='La copia local contiene una respuesta de búsqueda inválida; revalide la fuente para continuar.'))
                 return
-            records = parsed['records'] if shared else parse_results(result, source)
+            public_success = (source.get('kind') in PUBLIC_SEARCH_KINDS
+                              and result.get('status') in ('ok', 'not_modified'))
+            if not public_success and self._failure(job, result):
+                return
+            try:
+                records = parsed['records'] if shared else parse_results(result, source)
+            except PublicSearchParseError as exc:
+                restriction = None
+                if exc.category == 'access_challenge' and hasattr(fetcher, 'record_access_challenge'):
+                    restriction = fetcher.record_access_challenge(url, source, result)
+                snapshot = self._capture_failed_discovery(url, source, result, exc.code)
+                expired = False
+                if (exc.invalidate_cache and snapshot['original_response_sha256']
+                        and hasattr(fetcher, 'expire_cached_response')):
+                    expired = fetcher.expire_cached_response(url,
+                        expected_sha256=snapshot['original_response_sha256'], reason=exc.code)
+                local_only = (getattr(self, '_active_cache_mode', 'reuse') == 'local'
+                              or bool(result.get('local_reuse_only')))
+                self.store.audit('news_discovery_response_invalid', {
+                    'job_id': job['id'], 'source_id': source['id'], 'code': exc.code,
+                    'category': exc.category, 'retryable': exc.retryable,
+                    'local_only': local_only, 'cache_freshness_expired': bool(expired),
+                    'host_restriction': restriction,
+                    'snapshot': snapshot, 'identity_verified': False, 'score_effect': 'none'})
+                failure = dict(status='deferred' if exc.retryable and not local_only else 'blocked',
+                    error_code=exc.code, error=str(exc),
+                    retry_at=(restriction or {}).get('retry_at')
+                             or time.time() + min(3600, 30 * 2 ** min(16, job.get('attempts', 1))))
+                self._failure(job, failure)
+                return {'discovery_parse_error': exc.code, 'cache_freshness_expired': bool(expired),
+                        'failed_response_snapshot': snapshot['snapshot_path']}
             statuses = Counter()
             sources = self.sources()
             filtering = shared or job['kind'] == 'news_query' or relevance is not None
@@ -1483,9 +1824,44 @@ class NewsAcquirer:
             self._failure(job, {'status': 'blocked', 'error_code': 'article_path_scope',
                                 'error': 'Article URL path is outside the configured source scope'})
             return
-        article_source = dict(source, allowed_hosts=source.get('article_allowed_hosts') or source.get('allowed_hosts', []))
+        configured_sources = self.sources()
+        article_hosts = source.get('article_allowed_hosts') or source.get('allowed_hosts', [])
+        # Carry current global denials into every redirect and cached final URL,
+        # including jobs queued under a specific publisher before the denial.
+        article_source = dict(source, allowed_hosts=[host for host in article_hosts
+            if not _public_article_denied(host.rstrip('.').casefold(), configured_sources)])
         article_source[ARTICLE_PATH_SCOPE_FLAG] = True
+        if public_research:
+            with self.store.connection() as con:
+                stored = con.execute('SELECT id,title,summary FROM news_articles WHERE id=?',
+                                     (payload['article_id'],)).fetchone()
+            current = self._stored_candidate(stored, relevance) if stored is not None else None
+            if (not current or not current['relevant']
+                    or not body_budget.reserve(payload['article_id'], current['entity_ids'])):
+                self._failure(job, {'status': 'blocked', 'error_code': 'public_research_candidate_or_budget',
+                                    'error': 'Current bank relevance or the body budget does not admit this original'})
+                return
+            self.store.audit('news_public_article_admission', {
+                'article_id': payload['article_id'], 'source_policy': source_policy(source),
+                'effective_source_hash': digest(canonical(source)),
+                'candidate_entity_ids': current['entity_ids'], 'body_budget': body_budget.maximum,
+                'catalogue_unchanged': True, 'identity_verified': False})
         result = fetcher.fetch(payload['url'], article_source)
+        access_error = _article_access_error(result, html_required=bool(public_research))
+        if access_error:
+            result = dict(result, status='blocked', body='', error_code='article_access_restricted',
+                          error=access_error + '; no alternate endpoint or hidden payload is used')
+            self.store.audit('news_article_access_restricted', {
+                'article_id': payload['article_id'], 'source_id': source['id'],
+                'source_policy': source_policy(source), 'fetch_sha256': result.get('sha256'),
+                'reason': access_error, 'identity_verified': False})
+        if public_research:
+            self.store.audit('news_public_article_fetch_result', {
+                'article_id': payload['article_id'], 'source_id': source['id'],
+                'admission': source['public_article_admission'],
+                **{key: result.get(key) for key in ('status', 'http_status', 'error_code', 'sha256',
+                                                    'final_url', 'cache_status', 'network_requests')},
+                'identity_verified': False})
         if self._failure(job, result):
             return
         conserved = self._conserve_article(payload, source, result, relevance=relevance)
@@ -1526,12 +1902,19 @@ class NewsAcquirer:
             finally:
                 temporary.unlink(missing_ok=True)
         from .news_body_quality import classify_body, quarantine_reference
-        quality = classify_body(result['body'], body)
+        reference_snapshot = {
+            'raw_snapshot_sha256': snapshot_hash,
+            'raw_snapshot_path': str(snapshot.relative_to(self.engine.data_dir)),
+            'retrieved_at': result.get('retrieved_at') or now(),
+            'observed_url': url, 'source_policy': source_policy(source),
+            'source_config_hash': digest(canonical(source)), 'fetch_sha256': result.get('sha256'),
+            'title': page.get('title') or row['title'],
+            'published_at': page.get('published_at') or row['published_at'],
+            'extraction_version': ARTICLE_EXTRACTION_VERSION,
+            'etag': result.get('etag'), 'last_modified': result.get('last_modified')}
+        quality = classify_body(result['body'], body, url)
         if not quality['body_usable']:
-            return quarantine_reference(self, row['id'], quality,
-                {'raw_snapshot_sha256': snapshot_hash,
-                 'raw_snapshot_path': str(snapshot.relative_to(self.engine.data_dir)),
-                 'retrieved_at': result.get('retrieved_at') or now()},
+            return quarantine_reference(self, row['id'], quality, reference_snapshot,
                 expected_document_id=row['document_id'])
         metadata = {'news_module': True, 'article_id': row['id'], 'publisher_id': row['publisher_id'],
                     'content_cluster': fingerprint, 'scope': 'full_article', 'source_config_hash': digest(canonical(source)),
@@ -1539,6 +1922,8 @@ class NewsAcquirer:
                     'raw_snapshot_path': str(snapshot.relative_to(self.engine.data_dir)),
                     'fetch_sha256': result.get('sha256'), 'extraction_version': ARTICLE_EXTRACTION_VERSION,
                     'etag': result.get('etag'), 'last_modified': result.get('last_modified')}
+        if source.get('public_article_admission'):
+            metadata['public_article_admission'] = source['public_article_admission']
         if reextraction is not None:
             metadata = dict(reextraction['metadata'], extraction_version=ARTICLE_EXTRACTION_VERSION,
                 content_cluster=fingerprint, reextracted_at=now(),
@@ -1549,6 +1934,22 @@ class NewsAcquirer:
                                             (row['id'],)).fetchone()[0]
             if reextraction is not None and previous_document != reextraction['id']:
                 return {'status': 'concurrent_skip'}
+            # Syndicated/reposted text has one immutable evidence body globally.
+            # The other URL retains its own captured HTML and source policy as
+            # an alias of this exact version, never of a mutable article row.
+            con.execute('CREATE INDEX IF NOT EXISTS news_document_body_hash ON documents(content_hash)')
+            duplicate = con.execute('SELECT n.id,n.topic_id,d.id AS document_id FROM news_articles n '
+                                    'JOIN documents d ON d.id=n.document_id '
+                                    "WHERE n.scope='full_article' AND d.content_hash=? AND d.text=? AND n.id!=? "
+                                    'ORDER BY n.discovered_at,n.id LIMIT 1',
+                                    (digest(body), body, row['id'])).fetchone()
+            if duplicate is not None:
+                alias_quality = dict(quality, status='duplicate_reference', body_usable=False,
+                    canonical_document_id=duplicate['document_id'], canonical_article_id=duplicate['id'],
+                    body_sha256=digest(body), fingerprint=fingerprint, topic_id=duplicate['topic_id'],
+                    reason='Cuerpo idéntico ya conservado: esta URL mantiene su captura y procedencia sin duplicar noticias ni evidencia.')
+                return quarantine_reference(self, row['id'], alias_quality, reference_snapshot,
+                    expected_document_id=previous_document, connection=con)
             existing = con.execute('SELECT p.document_id,d.content_hash FROM news_publisher_content p '
                                    'JOIN documents d ON d.id=p.document_id WHERE p.publisher_id=? AND p.fingerprint=?',
                                    (row['publisher_id'], fingerprint)).fetchone()
@@ -1625,7 +2026,7 @@ class NewsAcquirer:
                 "JOIN documents d ON d.id=n.document_id LEFT JOIN news_extraction_receipts r "
                 "ON r.article_id=n.id AND r.document_id=n.document_id WHERE n.scope='full_article' "
                 "AND COALESCE(r.version,json_extract(d.metadata,'$.extraction_version'),'') "
-                "IN ('article-main-1','article-main-2','article-main-3','article-main-4','article-main-5','article-main-6') ORDER BY n.id LIMIT ?",
+                "IN ('article-main-1','article-main-2','article-main-3','article-main-4','article-main-5','article-main-6','article-main-7','article-main-8') ORDER BY n.id LIMIT ?",
                 (-1 if maximum is None else maximum,)).fetchall()
         total = len(rows)
         if total:
@@ -1670,7 +2071,8 @@ class NewsAcquirer:
                     counts['insufficient' if self._invalidate_snapshot_body(row, reason) else 'concurrent_skip'] += 1
             _emit_progress(progress, 'attribution', index + 1, total, 'artículos',
                            f'{index + 1} de {total} capturas comprobadas, sin solicitudes de red.')
-        counts['examined'] = sum(counts[key] for key in ('upgraded','unchanged','concurrent_skip','insufficient','multimedia_reference','unavailable_or_invalid_snapshot'))
+        counts['examined'] = sum(counts[key] for key in ('upgraded','unchanged','concurrent_skip','insufficient',
+            'multimedia_reference','profile_reference','duplicate_reference','unavailable_or_invalid_snapshot'))
         if total:
             _emit_progress(progress, 'attribution', counts['examined'], total, 'artículos',
                            'Comprobación de capturas finalizada.', event='finish', **counts)
@@ -1793,12 +2195,16 @@ class NewsAcquirer:
               for row in rows(reader):
                 if stopped():
                     return
-                source = self._source_for_article(row['canonical_url'], source_ids.get(row['source_id']), sources)
+                source = self._source_for_article(row['canonical_url'], source_ids.get(row['source_id']), sources,
+                                                  connection=reader)
                 if not source:
+                    continue
+                if source.get('public_article_admission') and (type(budget.maximum) is not int or budget.maximum <= 0):
                     continue
                 checked = row['validated_at'] or row['retrieved_at']
                 mode = getattr(self, '_active_cache_mode', 'reuse')
-                if row['scope'] == 'multimedia_reference' and mode != 'revalidate':
+                from .news_body_quality import REFERENCE_SCOPES
+                if row['scope'] in REFERENCE_SCOPES and mode != 'revalidate':
                     continue
                 fresh = checked and (mode == 'local' or (mode != 'revalidate' and
                         time.time() - self._epoch(checked) < float(source.get('refresh_seconds', 86400))))
@@ -1856,6 +2262,8 @@ class NewsAcquirer:
                 payload = {'article_id': row['id'], 'source_id': source['id'], 'url': row['canonical_url'],
                            'candidate_entity_ids': candidate['body_candidate_entity_ids'], 'relevance_rank': candidate['rank'],
                            'reading_priority': selection['priority'], 'body_selection': selection}
+                if source.get('public_article_admission'):
+                    payload['public_research_policy'] = True
                 if getattr(relevance, 'bank_revision', None) is not None:
                     payload['bank_revision'] = str(relevance.bank_revision)
                 with self.store.connection() as con:
@@ -2133,6 +2541,14 @@ class NewsAcquirer:
             finished = completed[0] if summary.get('queue_snapshot_exact') else observed_completed[0]
             return finished + summary['pending'] + summary['failed'] + summary['unreported_completed']
         class SessionFetcher:
+            def record_access_challenge(_, url, source, result):
+                return fetcher.record_access_challenge(url, source, result) \
+                    if hasattr(fetcher, 'record_access_challenge') else None
+
+            def expire_cached_response(_, url, expected_sha256=None, reason='discovery_parse_invalid'):
+                return fetcher.expire_cached_response(url, expected_sha256=expected_sha256, reason=reason) \
+                    if hasattr(fetcher, 'expire_cached_response') else False
+
             def cached_response_url(_, url):
                 return fetcher.cached_response_url(url) if hasattr(fetcher, 'cached_response_url') else url
 
@@ -2331,7 +2747,7 @@ class NewsAcquirer:
             'cancelled': 'Pausa solicitada. Las tareas pendientes se conservan para reanudar.',
             'job_limit': 'Se alcanzó el límite de tareas del lote. Puede reanudar sin repetir la búsqueda.',
             'time_limit': 'Se alcanzó el tiempo del lote; las solicitudes en curso terminaron con su timeout de transporte. Puede reanudar.',
-            'backoff': 'La fuente exige esperar antes de reintentar; no se omitió su pausa.',
+            'backoff': 'Hay un reintento programado; se respetan las pausas aplicables.',
             'scheduled': 'Quedan tareas con ejecución programada para más adelante.',
             'external_lease': 'Otro proceso conserva tareas activas; se reanudarán al finalizar o vencer su reserva.',
         }
@@ -2393,8 +2809,9 @@ class NewsAcquirer:
         for row in pending_rows():
             if cancelable and self.engine.stop_event.is_set():
                 break
-            multimedia = row['scope'] == 'multimedia_reference'
-            if multimedia or (row['scope'] != 'full_article' and row['source_id'] in metadata_only_sources):
+            from .news_body_quality import REFERENCE_SCOPES
+            reference = row['scope'] in REFERENCE_SCOPES
+            if reference or (row['scope'] != 'full_article' and row['source_id'] in metadata_only_sources):
                 with self.store.connection() as con:
                     con.execute('BEGIN IMMEDIATE')
                     con.execute('UPDATE news_articles SET document_id=NULL,attributed_signature=? WHERE id=?',
@@ -2404,7 +2821,7 @@ class NewsAcquirer:
                     self.store._audit(con, 'news_discovery_metadata_not_evidence',
                                       {'article_id': row['id'], 'source_id': row['source_id'],
                                        'scope': row['scope'], 'reason': 'Discovery excerpts are leads, never article evidence.'})
-                counts['multimedia_reference' if multimedia else 'discovery_metadata_only'] += 1
+                counts[row['scope'] if reference else 'discovery_metadata_only'] += 1
                 processed += 1
                 _emit_progress(progress, 'attribution', processed, total, 'artículos',
                                'Pista de descubrimiento conservada; falta el cuerpo editorial.', article_id=row['id'])
@@ -2532,7 +2949,8 @@ class NewsAcquirer:
                 relevant = ''
                 arguments = ()
             if scope is not None:
-                if scope not in ('full_article', 'multimedia_reference'):
+                from .news_body_quality import REFERENCE_SCOPES
+                if scope != 'full_article' and scope not in REFERENCE_SCOPES:
                     raise ValueError('Invalid news article scope filter')
                 relevant = ('WHERE (' + relevant[6:] + ') AND n.scope=? ' if relevant else 'WHERE n.scope=? ')
                 arguments = (*arguments, scope)

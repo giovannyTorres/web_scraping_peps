@@ -64,9 +64,9 @@ try {
         & $Python -m unittest discover -s tests
         if ($LASTEXITCODE -ne 0) { throw 'Pruebas fallidas; no se construye el ejecutable.' }
     }
-    & $Python -m PyInstaller --noconfirm --clean --onedir --contents-directory _internal --name WebScope --windowed --python-option 'X utf8' --noupx --collect-data peps --collect-submodules peps --distpath $Destination launcher.py
+    & $Python -m PyInstaller --noconfirm --clean --onedir --contents-directory _internal --name WebScope --windowed --python-option 'X utf8' --noupx --additional-hooks-dir scripts/pyinstaller_hooks --collect-data peps --collect-submodules peps --distpath $Destination launcher.py
     if ($LASTEXITCODE -ne 0) { throw 'Falló PyInstaller' }
-    & $Python -m PyInstaller --noconfirm --onedir --contents-directory _internal --name WebScope-CLI --console --python-option 'X utf8' --noupx --collect-data peps --collect-submodules peps --distpath $Destination launcher.py
+    & $Python -m PyInstaller --noconfirm --onedir --contents-directory _internal --name WebScope-CLI --console --python-option 'X utf8' --noupx --additional-hooks-dir scripts/pyinstaller_hooks --collect-data peps --collect-submodules peps --distpath $Destination launcher.py
     if ($LASTEXITCODE -ne 0) { throw 'Falló CLI PyInstaller' }
     Merge-SharedRuntime -Source (Join-Path $Destination 'WebScope-CLI/_internal') -Target (Join-Path $Destination 'WebScope/_internal')
     $PortableCLI = Join-Path $Destination 'WebScope/WebScope-CLI.exe'

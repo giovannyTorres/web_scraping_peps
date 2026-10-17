@@ -81,19 +81,27 @@ class NewsRefreshTests(_NewsFixture):
         self.assertTrue(self.engine.replay_score(run_id)['matched'])
         self.assertTrue(self.store.verify_audit()['ok'])
 
-    def test_shared_duplicate_keeps_old_evidence_until_last_article_refreshes(self):
+    def test_duplicate_alias_preserves_original_version_without_reusing_old_review(self):
         first, second = 'https://example.org/first', 'https://example.org/second'
         previous = self.download(first, self.adverse)
-        self.assertEqual(self.download(second, self.adverse), previous)
-        self.review_original()
+        self.assertIsNone(self.download(second, self.adverse))
+        _, run_id = self.review_original()
         current = self.download(first, self.neutral)
-        self.assertEqual(self.store.evidence('example')[0]['document_id'], previous)
-        with self.store.connection() as con:
-            self.assertEqual(con.execute('SELECT count(*) FROM news_identity_history').fetchone()[0], 0)
-        self.assertEqual(self.download(second, self.neutral), current)
         self.assertEqual(self.store.evidence('example'), [])
         with self.store.connection() as con:
+            alias = dict(con.execute('SELECT * FROM news_body_aliases').fetchone())
+            self.assertEqual(alias['canonical_document_id'], previous)
+            self.assertEqual(con.execute('SELECT text FROM documents WHERE id=?', (previous,)).fetchone()[0], self.adverse.strip())
             self.assertEqual(con.execute('SELECT count(*) FROM news_identity_history').fetchone()[0], 1)
+        self.assertIsNone(self.download(second, self.neutral))
+        self.news.attribute(rescore=False)
+        self.assertEqual(self.store.evidence('example')[0]['document_id'], current)
+        self.assertEqual(self.store.evidence('example')[0]['review'], {})
+        with self.store.connection() as con:
+            self.assertEqual(con.execute('SELECT count(*) FROM news_identity_history').fetchone()[0], 1)
+            self.assertEqual(con.execute('SELECT count(*) FROM news_body_aliases').fetchone()[0], 2)
+            self.assertEqual(con.execute("SELECT count(*) FROM news_articles WHERE scope='full_article'").fetchone()[0], 1)
+        self.assertTrue(self.engine.replay_score(run_id)['matched'])
         self.assertTrue(self.store.verify_audit()['ok'])
 
     def test_identical_refresh_preserves_current_review(self):

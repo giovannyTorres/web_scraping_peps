@@ -26,6 +26,18 @@ FOCUS_TERMS = {'adverse': ('corrupción', 'sanción'),
                'public_role': ('contrato', 'nombramiento')}
 
 
+class PublicSearchParseError(ValueError):
+    """A response failure, distinct from an invalid source configuration."""
+    def __init__(self, message, *, category='malformed_response'):
+        super().__init__(message)
+        self.category = category
+        self.retryable = category != 'access_challenge'
+        self.invalidate_cache = self.retryable
+        self.code = {'malformed_response': 'discovery_parse_invalid',
+                     'upstream_unavailable': 'discovery_upstream_unavailable',
+                     'access_challenge': 'discovery_access_challenge'}[category]
+
+
 def _query(value):
     value = value.get('name', '') if isinstance(value, dict) else value
     if not isinstance(value, str):
@@ -77,7 +89,15 @@ def public_search_url(query, source):
     if kind in {'mwmbl', 'duckduckgo_html', 'duckduckgo_lite'}:
         args = {'q': query}
     elif kind == 'searxng':
-        args = {'q': query, 'format': 'json', 'language': 'es', 'pageno': 1}
+        if source.get('public_search_quote') is True:
+            query = '"' + query.replace('"', ' ') + '"'
+        page = source.get('public_search_page', 1)
+        if type(page) is not int or not 1 <= page <= 10:
+            raise ValueError('La página pública requiere un entero entre 1 y 10')
+        language = source.get('public_search_language', 'es')
+        if not isinstance(language, str) or not re.fullmatch(r'[a-z]{2}(?:-[A-Z]{2})?', language):
+            raise ValueError('Idioma público no válido')
+        args = {'q': query, 'format': 'json', 'language': language, 'pageno': page}
     elif kind == 'bing_news_rss':
         parts = urlsplit(endpoint)
         if (parts.scheme != 'https' or parts.netloc != 'www.bing.com'
@@ -199,21 +219,21 @@ def _bing_news_url(value):
 
 def _bing_news_records(body):
     if body.lstrip('\ufeff \t\r\n').lower().startswith(('<!doctype html', '<html')):
-        raise ValueError('Bing News RSS devolvió HTML; formato no compatible, búsqueda no completada')
+        raise PublicSearchParseError('Bing News RSS devolvió HTML; formato no compatible, búsqueda no completada')
     if '<!DOCTYPE' in body.upper() or '<!ENTITY' in body.upper():
-        raise ValueError('Bing News RSS no admite declaraciones ni entidades XML')
+        raise PublicSearchParseError('Bing News RSS no admite declaraciones ni entidades XML')
     try:
         root = ElementTree.fromstring(body)
     except (ElementTree.ParseError, ValueError) as exc:
-        raise ValueError('Bing News RSS devolvió XML inválido; búsqueda no completada') from exc
+        raise PublicSearchParseError('Bing News RSS devolvió XML inválido; búsqueda no completada') from exc
     channels = root.findall('channel')
     if root.tag != 'rss' or root.attrib.get('version') != '2.0' or len(channels) != 1:
-        raise ValueError('Bing News RSS devolvió un formato no reconocido; no equivale a cero resultados')
+        raise PublicSearchParseError('Bing News RSS devolvió un formato no reconocido; no equivale a cero resultados')
     records = []
     for item in channels[0].findall('item'):
         title, wrapper = item.findtext('title'), item.findtext('link')
         if not isinstance(title, str) or not isinstance(wrapper, str):
-            raise ValueError('Bing News RSS devolvió una noticia sin título o enlace')
+            raise PublicSearchParseError('Bing News RSS devolvió una noticia sin título o enlace')
         records.append({'url': _bing_news_url(wrapper), 'title': title,
                         'text': item.findtext('description') or '',
                         'provider_link': wrapper,
@@ -299,7 +319,7 @@ def parse_public_results(fetch_result, source):
         return []
     body = fetch_result.get('body')
     if not isinstance(body, str) or not body.strip() or len(body) > 2_000_000:
-        raise ValueError('Respuesta pública vacía o demasiado grande; descubrimiento no completado')
+        raise PublicSearchParseError('Respuesta pública vacía o demasiado grande; descubrimiento no completado')
     kind = source.get('kind')
     limit = min(100, max(1, int(source.get('max_records', 50))))
     base = fetch_result.get('final_url') or fetch_result.get('url') or source.get('url', '')
@@ -310,30 +330,34 @@ def parse_public_results(fetch_result, source):
         parser.feed(body)
         parser.close()
         if parser.challenge:
-            raise ValueError('El buscador devolvió una verificación; no se elude ni se alterna el endpoint')
+            raise PublicSearchParseError('El buscador devolvió una verificación; no se elude ni se alterna el endpoint',
+                                         category='access_challenge')
         if not parser.records and not (parser.structure and parser.no_results):
-            raise ValueError('HTML no reconocido como resultados; no se presenta como búsqueda vacía')
+            raise PublicSearchParseError('HTML no reconocido como resultados; no se presenta como búsqueda vacía')
         records = parser.records
     else:
         try:
             payload = json.loads(body)
         except (ValueError, RecursionError) as exc:
-            raise ValueError('El buscador devolvió JSON inválido') from exc
-        if (not isinstance(payload, dict) or payload.get('error') or payload.get('errors')
-                or payload.get('success') is False or str(payload.get('status', '')).lower() in {'error', 'failed'}
-                or not isinstance(payload.get('results'), list)):
-            raise ValueError('El buscador no devolvió una lista de resultados válida')
+            raise PublicSearchParseError('El buscador devolvió JSON inválido') from exc
+        if isinstance(payload, dict) and (payload.get('error') or payload.get('errors')
+                or payload.get('success') is False or str(payload.get('status', '')).lower() in {'error', 'failed'}):
+            raise PublicSearchParseError('El buscador informó una falla al consultar sus resultados',
+                                         category='upstream_unavailable')
+        if not isinstance(payload, dict) or not isinstance(payload.get('results'), list):
+            raise PublicSearchParseError('El buscador no devolvió una lista de resultados válida')
         records = payload['results']
         if kind == 'mwmbl' and (not isinstance(payload.get('query'), str)
                                or type(payload.get('number_of_results')) is not int
                                or payload['number_of_results'] != len(records)):
-            raise ValueError('Respuesta Mwmbl incompatible o incompleta')
+            raise PublicSearchParseError('Respuesta Mwmbl incompatible o incompleta')
         if kind == 'searxng' and payload.get('unresponsive_engines') and not records:
-            raise ValueError('SearXNG no pudo consultar sus motores; no equivale a cero resultados')
+            raise PublicSearchParseError('SearXNG no pudo consultar sus motores; no equivale a cero resultados',
+                                         category='upstream_unavailable')
     result, seen, rejected = [], set(), 0
     for record in records:
         if not isinstance(record, dict) or not isinstance(record.get('title'), str):
-            raise ValueError('Registro de buscador inválido')
+            raise PublicSearchParseError('Registro de buscador inválido')
         url = safe_result_url(record.get('url'))
         if not url:
             rejected += 1
@@ -345,12 +369,12 @@ def parse_public_results(fetch_result, source):
             continue
         excerpt = record.get('text', record.get('content', ''))
         if not isinstance(excerpt, str):
-            raise ValueError('Extracto de buscador inválido')
+            raise PublicSearchParseError('Extracto de buscador inválido')
         try:
             record['title'].encode('utf-8')
             excerpt.encode('utf-8')
         except UnicodeError as exc:
-            raise ValueError('El buscador devolvió texto Unicode inválido') from exc
+            raise PublicSearchParseError('El buscador devolvió texto Unicode inválido') from exc
         result.append({'url': url, 'title': record['title'][:2000], 'text': excerpt[:2000],
             'published_at': None, 'source_kind': 'discovery', 'source_id': source.get('id', kind),
             'metadata': {'discovery_only': True, 'public_web_search': True, 'search_provider': kind,

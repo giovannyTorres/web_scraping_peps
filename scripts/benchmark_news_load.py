@@ -24,17 +24,18 @@ from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
 from unittest.mock import patch
+from urllib.parse import urlsplit
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from peps.collector import SafeFetcher
 from peps.engine import Engine
-from peps.news import NewsAcquirer
-from peps.store import digest
+from peps.news import NewsAcquirer, article_text
+from peps.store import canonical, digest
 
 PUBLIC_DNS = [(socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_TCP, '', ('93.184.216.34', 443))]
 REAL_TIME = time.time
 SOURCE_HASHES = {name: digest((Path(__file__).resolve().parents[1] / 'peps' / (name + '.py')).read_text(encoding='utf-8'))
-                 for name in ('collector', 'news', 'store', 'identity', 'sources', 'engine', 'scoring')}
+                 for name in ('collector', 'news', 'news_body_quality', 'store', 'identity', 'sources', 'engine', 'scoring')}
 SCRIPT_HASH = digest(Path(__file__).read_text(encoding='utf-8'))
 
 
@@ -164,6 +165,109 @@ def difference(after, before, key):
     return after.get(key, 0) - before.get(key, 0)
 
 
+def audit_url_captures(engine, sources):
+    """Verify every URL's local original and version-bound alias provenance.
+
+    One snapshot file may encode identical HTML at several publishers; the
+    separate URL receipts must still exist, identify the effective source and
+    resolve to exactly the original Unicode body, rather than another version.
+    This verification uses captured bytes only and is outside timed phases.
+    """
+    with engine.store.connection() as con:
+        rows = [dict(row) for row in con.execute('SELECT * FROM news_articles')]
+        documents = {row['id']: dict(row) for row in con.execute('SELECT * FROM documents')}
+        quality_receipts = {row['article_id']: dict(row) for row in con.execute('SELECT * FROM news_body_quality_receipts')}
+        extraction_receipts = {row['article_id']: dict(row) for row in con.execute('SELECT * FROM news_extraction_receipts')}
+        has_aliases = con.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='news_body_aliases'").fetchone()
+        aliases = [dict(row) for row in con.execute('SELECT * FROM news_body_aliases')] if has_aliases else []
+    by_article = {}
+    for alias in aliases:
+        by_article.setdefault(alias['article_id'], []).append(alias)
+    source_by_id = {source['id']: source for source in sources}
+    valid, resolved, publisher_clusters = 0, {}, {}
+    raw_root = (engine.data_dir / 'news_snapshots').resolve()
+    provenance_ok = versions_ok = receipts_ok = True
+    for row in rows:
+        if row['scope'] == 'full_article' and row['document_id'] in documents:
+            doc = documents[row['document_id']]
+            receipt = json.loads(doc['metadata'])
+            policy = receipt.get('source_policy', {})
+            capture = receipt
+            extraction = extraction_receipts.get(row['id'])
+            if (extraction is None or extraction['document_id'] != doc['id']
+                    or extraction['raw_snapshot_sha256'] != receipt.get('raw_snapshot_sha256')
+                    or extraction['version'] != receipt.get('extraction_version')):
+                receipts_ok = False
+                continue
+        elif row['scope'] == 'duplicate_reference' and row['document_id'] is None:
+            captures = by_article.get(row['id'], [])
+            if len(captures) != 1:
+                provenance_ok = False
+                continue
+            receipt = captures[0]
+            doc = documents.get(receipt['canonical_document_id'])
+            if doc is None:
+                versions_ok = False
+                continue
+            classification = json.loads(receipt['classification'])
+            policy = json.loads(receipt['source_policy'])
+            capture = classification.get('capture_metadata', {})
+            quality = quality_receipts.get(row['id'])
+            if (quality is None or quality['raw_snapshot_sha256'] != receipt['raw_snapshot_sha256']
+                    or quality['raw_snapshot_path'] != receipt['raw_snapshot_path']):
+                receipts_ok = False
+                continue
+            quality_classification = json.loads(quality['classification'])
+            if (quality_classification.get('status') != 'duplicate_reference'
+                    or quality_classification.get('canonical_document_id') != doc['id']
+                    or quality_classification.get('body_sha256') != doc['content_hash']):
+                receipts_ok = False
+                continue
+            if (receipt['body_sha256'] != doc['content_hash']
+                    or classification.get('body_sha256') != doc['content_hash']
+                    or classification.get('canonical_document_id') != doc['id']):
+                versions_ok = False
+                continue
+            if receipt['observed_url'] != row['canonical_url']:
+                provenance_ok = False
+                continue
+        else:
+            provenance_ok = False
+            continue
+        expected_source = source_by_id.get(row['source_id'])
+        if (expected_source is None or policy.get('id') != row['source_id']
+                or policy.get('publisher_id') != row['publisher_id']
+                or urlsplit(row['canonical_url']).hostname not in expected_source.get('allowed_hosts', [])
+                or policy.get('article_terms_approved') is not True
+                or capture.get('source_config_hash') != digest(canonical(expected_source))):
+            provenance_ok = False
+            continue
+        if digest(doc['text']) != doc['content_hash']:
+            versions_ok = False
+            continue
+        try:
+            path = (engine.data_dir / receipt['raw_snapshot_path']).resolve()
+            if not path.is_relative_to(raw_root) or path.name != receipt['raw_snapshot_sha256'] + '.html.gz':
+                raise ValueError('Captured HTML path outside snapshot root')
+            html = gzip.decompress(path.read_bytes()).decode('utf-8')
+            if digest(html) != receipt['raw_snapshot_sha256'] or article_text(html) != doc['text']:
+                raise ValueError('Captured original does not match its canonical body version')
+        except (OSError, ValueError, EOFError, UnicodeError):
+            provenance_ok = False
+            continue
+        valid += 1
+        resolved[row['canonical_url']] = doc['id']
+        publisher_clusters.setdefault((row['publisher_id'], row['content_cluster']), set()).add(doc['id'])
+    return {'verified_url_captures': valid, 'canonical_bodies': sum(row['scope'] == 'full_article' for row in rows),
+            'alias_captures': len(aliases), 'publisher_ids': sorted({row['publisher_id'] for row in rows}),
+            'resolved_url_documents': resolved,
+            'effective_source_provenance_valid': provenance_ok,
+            'conservation_receipts_valid': receipts_ok,
+            'immutable_body_versions_valid': versions_ok,
+            'same_publisher_cluster_has_one_canonical_body': all(len(ids) == 1 for ids in publisher_clusters.values()),
+            'all_document_hashes_unique': len(documents) == len({doc['content_hash'] for doc in documents.values()})}
+
+
 def run_case(size, workers, bank_size=40000, feed_size=400, seconds=1800):
     clock, events, created = VirtualClock(), [], []
     with tempfile.TemporaryDirectory(prefix='peps-news-load-') as directory:
@@ -212,8 +316,9 @@ def run_case(size, workers, bank_size=40000, feed_size=400, seconds=1800):
         stats = news.stats()
         durable = engine.store.stats()
         expected_clusters = (size + 9) // 10
-        expected_documents = sum(len({i % 2 for i in range(start, min(start + 10, size))})
-                                 for start in range(0, size, 10))
+        expected_documents = expected_clusters
+        captures = audit_url_captures(engine, sources)
+        expected_urls = {f'https://publisher-{i % 2}.example/article/{i}' for i in range(size)}
         # An expired preparation budget can stop before any fetcher exists.
         # Keep that incomplete phase measurable instead of raising IndexError.
         all_metrics = created[-1].metrics_snapshot() if created else {
@@ -230,10 +335,17 @@ def run_case(size, workers, bank_size=40000, feed_size=400, seconds=1800):
                     and not pending and not result.get('failed') and not result.get('cancelled'))
         cold_complete = phase_completed(cold, cold_jobs)
         warm_complete = phase_completed(warm, warm_jobs)
-        checks = {'all_distinct_urls_retained': stats['articles'] == size,
-                  'all_full_articles_fetched': stats['status'] == {'fetched': size},
-                  'same_publisher_content_deduplicated': durable['documents'] == expected_documents,
-                  'cross_publisher_documents_preserved': durable['documents'] == expected_documents,
+        checks = {'all_distinct_urls_retained': stats['articles'] == size and set(captures['resolved_url_documents']) == expected_urls,
+                  'all_original_url_captures_verified': captures['verified_url_captures'] == size,
+                  'canonical_and_alias_counts_match': (captures['canonical_bodies'] == expected_documents
+                      and captures['alias_captures'] == size - expected_documents
+                      and stats['status'].get('fetched', 0) == expected_documents
+                      and stats['status'].get('duplicate_reference', 0) == size - expected_documents),
+                  'same_publisher_content_deduplicated': captures['same_publisher_cluster_has_one_canonical_body'],
+                  'global_exact_bodies_unique': durable['documents'] == expected_documents and captures['all_document_hashes_unique'],
+                  'cross_publisher_capture_provenance_preserved': captures['effective_source_provenance_valid'],
+                  'alias_document_versions_immutable': captures['immutable_body_versions_valid'],
+                  'all_url_conservation_receipts_valid': captures['conservation_receipts_valid'],
                   'shared_content_clusters': stats['content_clusters'] == expected_clusters,
                   'warm_downloads_zero': len(warm_events) == 0,
                   'cold_phase_completed': cold_complete,
@@ -264,6 +376,7 @@ def run_case(size, workers, bank_size=40000, feed_size=400, seconds=1800):
                 'cold': phase(cold, cold_wall, cold_events, cold_jobs, cold_complete),
                 'warm': phase(warm, warm_wall, warm_events, warm_jobs, warm_complete), 'bank': stats,
                 'documents': durable['documents'], 'expected_documents': expected_documents,
+                'capture_audit': {key: value for key, value in captures.items() if key != 'resolved_url_documents'},
                 'expected_content_clusters': expected_clusters,
                 'virtual_clock_elapsed_seconds': round(clock.now() - clock.start, 4),
                 'minimum_virtual_request_spacing_seconds': minimum_spacing,
@@ -298,7 +411,7 @@ def main():
                   'source_sha256_at_process_start': SOURCE_HASHES, 'script_sha256': SCRIPT_HASH,
                   'limitations': ['Synthetic fetch time removes network waiting; monotonic time still advances queued courtesy deadlines. Measured seconds only describe local ingestion.',
                                   'DNS/TLS endpoints and HTTP payloads are synthetic fixtures, not evidence of web throughput or coverage.',
-                                  'Distinct publisher copies survive; repeated normalized content within a publisher shares one document.',
+                                  'Every publisher URL retains captured HTML and effective source provenance; exact duplicate text shares one immutable body globally and other URLs remain explicit references.',
                                   'This run exercises acquisition only; identity attribution and reputational scoring are separate.']}
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding='utf-8')
