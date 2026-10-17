@@ -59,7 +59,7 @@ class BridgeOfflineTests(unittest.TestCase):
     def inputs(self):
         path = self.root / 'inputs'
         path.mkdir()
-        for name in bridge.INPUT_NAMES:
+        for name in bridge.INPUT_NAMES - {'negative-api-policy-registry.json', 'api-policy-handoff.json'}:
             (path / name).write_text('{}')
         (path / 'sources-config.json').write_bytes(bridge.canonical({'user_agent': 'SyntheticFixedUA/1'}))
         (path / 'negative-host-policy-registry.json').write_bytes(bridge.canonical({
@@ -84,6 +84,37 @@ class BridgeOfflineTests(unittest.TestCase):
             'restrictions_never_shortened': True}
         (path / 'policy-handoff.json').write_bytes(bridge.canonical(policy))
         return path
+
+    def api_policy(self, inputs):
+        registry = inputs / 'negative-api-policy-registry.json'
+        registry.write_bytes(bridge.canonical({'schema_version': 1, 'method': 'GET',
+            'api_backend_restrictions': [], 'api_route_restrictions': []}))
+        handoff = {'schema_version': 1, 'registry_sha256': bridge.sha_file(registry),
+            'importer_sha256': 'b' * 64, 'negative_policy_only': True,
+            'existing_restrictions_never_cleared': True}
+        (inputs / 'api-policy-handoff.json').write_bytes(bridge.canonical(handoff))
+        return handoff
+
+    def test_api_policy_is_an_optional_complete_hash_bound_pair(self):
+        inputs = self.inputs()
+        self.assertNotIn('negative_api_policy', bridge.validate_private_inputs(inputs))
+        handoff = self.api_policy(inputs)
+        self.assertEqual(bridge.validate_private_inputs(inputs)['negative_api_policy'], handoff)
+        (inputs / 'negative-api-policy-registry.json').unlink()
+        with self.assertRaisesRegex(ValueError, 'pair_incomplete'):
+            bridge.validate_private_inputs(inputs)
+
+    def test_api_policy_tampering_and_relaxing_flags_fail_closed(self):
+        inputs = self.inputs()
+        handoff = self.api_policy(inputs)
+        (inputs / 'negative-api-policy-registry.json').write_bytes(b'{}')
+        with self.assertRaisesRegex(ValueError, 'handoff_not_complete'):
+            bridge.validate_private_inputs(inputs)
+        self.api_policy(inputs)
+        handoff['existing_restrictions_never_cleared'] = False
+        (inputs / 'api-policy-handoff.json').write_bytes(bridge.canonical(handoff))
+        with self.assertRaisesRegex(ValueError, 'handoff_not_complete'):
+            bridge.validate_private_inputs(inputs)
 
     def seal_input(self, binding=None):
         inputs = self.inputs()

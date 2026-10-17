@@ -158,6 +158,9 @@ def assert_new_paths(args):
         inputs.append(args.api_transport_lock.resolve())
     if getattr(args, 'query_input_lock', None):
         inputs.append(args.query_input_lock.resolve())
+    for name in ('api_policy_registry', 'api_policy_importer'):
+        if getattr(args, name, None):
+            inputs.append(getattr(args, name).resolve())
     outputs = [args.output.resolve(), args.close_receipt.resolve(), args.api_export.resolve()]
     all_files = inputs + outputs + [args.launch_lock.resolve()]
     if bank == archive or bank in archive.parents or archive in bank.parents:
@@ -247,12 +250,34 @@ def expected_lock(args):
             'registry_sha256': file_hash(args.host_policy_registry), 'registry_host_rows': len(registry['hosts']),
             'importer_path': str(args.host_policy_importer.resolve()), 'importer_sha256': file_hash(args.host_policy_importer),
             'meaning': 'Permission restrictions only; no documents, query successes, cached responses, robots bodies, source URLs, labels or article seeds.'}
+    api_policy = None
+    api_registry = getattr(args, 'api_policy_registry', None)
+    api_importer = getattr(args, 'api_policy_importer', None)
+    if bool(api_registry) != bool(api_importer):
+        raise ValueError('La política negativa de API requiere registry e importer congelados.')
+    if api_registry:
+        from scripts.network_validation_bridge.import_negative_api_policy import check_row, strict_json
+        registry = strict_json(api_registry.read_bytes())
+        if (not isinstance(registry, dict) or registry.get('schema_version') != 1
+                or registry.get('method') != 'GET'):
+            raise ValueError('Registry negativo de API inválido.')
+        counts = {}
+        for kind, key in (('backend', 'api_backend_restrictions'), ('route', 'api_route_restrictions')):
+            rows = registry.get(key)
+            if not isinstance(rows, list) or len(rows) > 10000:
+                raise ValueError('Registry negativo de API sin filas acotadas.')
+            for row in rows:
+                check_row(row, kind)
+            counts[key] = len(rows)
+        api_policy = {'registry_path': str(api_registry.resolve()), 'registry_sha256': file_hash(api_registry),
+            'importer_path': str(api_importer.resolve()), 'importer_sha256': file_hash(api_importer), **counts}
     return {'schema_version': SCHEMA_VERSION, 'protocol_sha256': file_hash(args.protocol_lock),
         'utility_policy_sha256': file_hash(args.utility_lock) if policy else None,
         'census_extension_policy_sha256': file_hash(args.census_policy_lock) if census else None,
         'roster_sanitization_lock_sha256': file_hash(args.roster_sanitization_lock) if sanitization else None,
         'roster_sanitization_receipt': sanitization,
         'negative_host_policy': host_policy,
+        'negative_api_policy': api_policy,
         'api_export_contract': api_contract,
         'query_input_contract': query_contract,
         'frozen_inputs': frozen, 'source_hashes': source_hashes(), 'runtime': runtime_lock(),
@@ -546,7 +571,8 @@ def import_negative_host_policy(engine, config, attempt, frozen):
         raise ValueError('La importación negativa requiere una base de red recién inicializada, sin estado anterior.')
     fetcher = SafeFetcher(config, engine.data_dir, offline=True)
     fetcher.close()
-    empty_tables = ('http_cache', 'robots', 'robots_refresh', 'redirects', 'request_history')
+    empty_tables = ('http_cache', 'robots', 'robots_refresh', 'redirects', 'request_history',
+                    'http_error_diagnostics', 'api_backend_observations')
     with closing(sqlite3.connect(network.resolve().as_uri() + '?mode=ro', uri=True)) as con:
         before = {name: con.execute('SELECT count(*) FROM ' + name).fetchone()[0] for name in (*empty_tables, 'hosts')}
     with engine.store.connection() as con:
@@ -589,15 +615,77 @@ def import_negative_host_policy(engine, config, attempt, frozen):
     return outcome
 
 
+def import_negative_api_policy(engine, config, attempt, frozen):
+    """Carry reviewed backend/route denials into a cold run, never response data."""
+    registry_raw = Path(frozen['registry_path']).read_bytes()
+    if (hashlib.sha256(registry_raw).hexdigest() != frozen['registry_sha256']
+            or file_hash(frozen['importer_path']) != frozen['importer_sha256']):
+        raise ValueError('Registry o importer de API cambiaron después de congelar la corrida.')
+    registry = json.loads(registry_raw.decode('utf8'))
+    network = engine.data_dir / 'network.sqlite3'
+    if not network.exists():
+        SafeFetcher(config, engine.data_dir, offline=True).close()
+    with closing(sqlite3.connect(network.resolve().as_uri() + '?mode=ro', uri=True)) as con:
+        hosts_before = list(con.execute('SELECT * FROM hosts ORDER BY host'))
+    receipt_path = attempt / 'negative-api-policy-import-receipt.json'
+    command = [sys.executable, frozen['importer_path'], '--network-db', str(network),
+               '--facts', frozen['registry_path'], '--facts-sha256', frozen['registry_sha256'],
+               '--receipt', str(receipt_path)]
+    result = subprocess.run(command, capture_output=True, text=True, timeout=30, check=False)
+    (attempt / 'negative-api-policy-import.stdout').write_text(result.stdout, encoding='utf8')
+    (attempt / 'negative-api-policy-import.stderr').write_text(result.stderr, encoding='utf8')
+    if (file_hash(frozen['registry_path']) != frozen['registry_sha256']
+            or file_hash(frozen['importer_path']) != frozen['importer_sha256']):
+        raise ValueError('Registry o importer de API cambiaron durante la importación; no se inició HTTP.')
+    if result.returncode or not receipt_path.is_file():
+        raise ValueError('Falló el importer negativo de API; no se inició HTTP.')
+    receipt = json.loads(receipt_path.read_text(encoding='utf8'))
+    tables = ('http_cache', 'robots', 'robots_refresh', 'redirects', 'request_history',
+              'http_error_diagnostics', 'api_backend_observations')
+    with closing(sqlite3.connect(network.resolve().as_uri() + '?mode=ro', uri=True)) as con:
+        counts = {table: con.execute('SELECT count(*) FROM ' + table).fetchone()[0] for table in tables}
+        backends = con.execute('SELECT count(*) FROM api_backend_restrictions').fetchone()[0]
+        routes = con.execute('SELECT count(*) FROM api_route_restrictions').fetchone()[0]
+        hosts_after = list(con.execute('SELECT * FROM hosts ORDER BY host'))
+        backend_rows = {(row[0], row[1]): row for row in con.execute('SELECT * FROM api_backend_restrictions')}
+        route_rows = {(row[0], row[1]): row for row in con.execute('SELECT * FROM api_route_restrictions')}
+    imported_rows_verified = True
+    for key, actual in (('api_backend_restrictions', backend_rows), ('api_route_restrictions', route_rows)):
+        selected = 'engine' if key == 'api_backend_restrictions' else 'requested_engines'
+        for row in registry[key]:
+            observed = actual.get((row['endpoint'], row[selected]))
+            if (observed is None or observed[3] > row['first_seen'] or observed[4] < row['last_seen']
+                    or (selected == 'engine' and observed[5] != 1)):
+                imported_rows_verified = False
+    if (any(counts.values()) or receipt.get('negative_policy_sha256') != frozen['registry_sha256']
+            or receipt.get('network_requests') != 0 or receipt.get('host_policy_unchanged') is not True
+            or receipt.get('existing_negative_policy_monotonic') is not True
+            or backends < frozen['api_backend_restrictions'] or routes < frozen['api_route_restrictions']
+            or hosts_before != hosts_after or not imported_rows_verified):
+        raise ValueError('La importación de API no conservó el banco frío ni las restricciones negativas.')
+    outcome = {'import_receipt_path': str(receipt_path), 'import_receipt_sha256': file_hash(receipt_path),
+        'registry_sha256': frozen['registry_sha256'], 'importer_sha256': frozen['importer_sha256'],
+        'content_counts_after': counts, 'backend_rows_after': backends, 'route_rows_after': routes,
+        'host_rows_unchanged': hosts_before == hosts_after, 'imported_negative_rows_verified': imported_rows_verified,
+        'network_requests': 0, 'receipt': receipt}
+    engine.store.audit('cold_negative_api_policy_imported', outcome)
+    return outcome
+
+
 def run(args):
     launch = validate_launch(args)
     # Existing production runner captures real response bytes/status/errors and
     # maintains its original failed operational checks without reinterpretation.
     policy_receipt = None
+    api_policy_receipt = None
     def initialize_policy(engine, config, attempt):
-        nonlocal policy_receipt
-        policy_receipt = import_negative_host_policy(engine, config, attempt, launch['negative_host_policy'])
-    report = live.run(args, initialize_network_policy=initialize_policy if launch['negative_host_policy'] else None)
+        nonlocal policy_receipt, api_policy_receipt
+        if launch['negative_host_policy']:
+            policy_receipt = import_negative_host_policy(engine, config, attempt, launch['negative_host_policy'])
+        if launch['negative_api_policy']:
+            api_policy_receipt = import_negative_api_policy(engine, config, attempt, launch['negative_api_policy'])
+    report = live.run(args, initialize_network_policy=initialize_policy if (
+        launch['negative_host_policy'] or launch['negative_api_policy']) else None)
     api = export_actual_api(args.data_dir.resolve(), args.closed_bank.resolve(), args.api_export.resolve(),
                            workers=args.api_workers, timeout=args.api_timeout, batch_size=args.api_batch_size)
     searched = successful_searched_people(report)
@@ -620,6 +708,7 @@ def run(args):
         'source_modules_unchanged_since_launch': launch['source_hashes'] == source_hashes(),
         'runtime_after': runtime_lock(),
         'negative_host_policy_import': policy_receipt,
+        'negative_api_policy_import': api_policy_receipt,
         'sqlite_backups': api['sqlite_backups'], 'operational_checks': report['operational_checks'],
         'api_checks': api['checks'], 'operational_passed': report['operational_passed'] and api['passed'],
         'independent_quality_gate_not_evaluated_here': True,
@@ -647,6 +736,10 @@ def parser():
                        help='Pre-frozen negative host restrictions only, without cached content or successful queries.')
     value.add_argument('--host-policy-importer', type=Path,
                        help='Reviewed importer helper; exact code and registry hashes are locked before execution.')
+    value.add_argument('--api-policy-registry', type=Path,
+                       help='Frozen negative backend/route facts only; no responses, cache, queries or grants.')
+    value.add_argument('--api-policy-importer', type=Path,
+                       help='Reviewed cold importer for persistent API backend/route denials.')
     value.add_argument('--roster-sanitization-lock', type=Path,
                        help='Frozen correspondence receipt for the same 300 names after removing labels/reference URLs.')
     value.add_argument('--freeze-only', action='store_true', help='Write an immutable prelaunch lock without opening a bank or using the network.')

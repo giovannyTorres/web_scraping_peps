@@ -59,7 +59,8 @@ Cada intento crea una carpeta distinta junto al banco, con estos archivos:
   interrupción.
 - `http-started.jsonl`, `http-completed.jsonl`, `fetches.jsonl` y `progress.jsonl`:
   observaciones escritas durante el trabajo; permanecen aunque falle una fase.
-- `response_captures/`: bytes originales de cada transporte, con SHA-256.
+- `response_captures/`: cuerpo de cada respuesta entregado por el transporte,
+  después de la descompresión HTTP cuando corresponde, con SHA-256.
 - `score-replays.json`: comprobación del scoring contra sus entradas históricas.
 - `production-export-private.jsonl` e `individual-explanations-private.json`:
   salidas reales, completas y locales. Pueden contener textos y detalles
@@ -94,8 +95,8 @@ estados de producción `insufficient_evidence`, `insufficient_text`,
 El informe no calcula precisión, recall o accuracy sin revisión independiente de
 los textos originales y denominadores de referencia.
 
-La reproducción y las explicaciones usan la API de producción en lotes de hasta
-1.000 evaluaciones. Cada lote verifica la cadena de auditoría completa una vez
+La reproducción y las explicaciones usan la API de producción con el tamaño de
+lote congelado para esa ejecución. Cada lote verifica la cadena de auditoría completa una vez
 dentro de la misma transacción de lectura que valida todos los resultados y
 cuerpos. No recorta evaluaciones ni reutiliza una comprobación fuera de su
 snapshot; las explicaciones históricas completas permanecen en la salida local.
@@ -117,3 +118,26 @@ El proceso sale con código `1` ante una comprobación operacional fallida y `2`
 si las comprobaciones pasan pero la cobertura es parcial. Salir con `0` sólo
 significa que terminó el plan conocido y pasó la integridad, nunca que se agotó
 la web o se validó la identidad de cada persona.
+
+## Restricciones conservadas entre pruebas frías
+
+`scripts/validate_recovery_pipeline.py` congela el código, dependencias,
+presupuestos y contratos de evaluación antes de crear un banco nuevo. Las
+opciones `--host-policy-registry` y `--host-policy-importer` trasladan únicamente
+restricciones negativas de hosts. Las opciones `--api-policy-registry` y
+`--api-policy-importer` hacen lo mismo para los motores y rutas de una API de
+búsqueda. Cada pareja requiere sus huellas exactas; un cambio posterior detiene
+la ejecución antes de solicitar la web.
+
+Los importadores exigen que las tablas de caché, respuestas, observaciones y
+actividad HTTP estén vacías. Conservan las restricciones previas y sus fechas;
+el importador de API mantiene intacta la política de hosts. La ejecución verifica
+las filas efectivamente importadas y conserva los recibos. Una API que cambia el
+motor solicitado requiere revisión; cambiar el nombre de la fuente o crear otro
+banco conserva esa restricción en la siguiente prueba.
+
+El puente cifrado admite los archivos opcionales
+`negative-api-policy-registry.json` y `api-policy-handoff.json` como pareja
+completa. Vincula el registry y el importador revisado a sus SHA-256 antes de
+entregar el trabajo al runner. Los documentos, resultados de búsqueda y etiquetas
+del benchmark permanecen fuera de esos registros de restricciones.

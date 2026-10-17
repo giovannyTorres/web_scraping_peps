@@ -188,6 +188,12 @@ def execute_benchmark(checkout, inputs, results):
     for name in ('utility-lock', 'census-policy-lock', 'query-input-lock'):
         if (inputs / (name + '.json')).exists():
             args.extend(['--' + name, str(inputs / (name + '.json'))])
+    if 'negative_api_policy' in policy:
+        api_importer = checkout / 'scripts' / 'network_validation_bridge' / 'import_negative_api_policy.py'
+        if not api_importer.is_file() or sha_file(api_importer) != policy['negative_api_policy']['importer_sha256']:
+            raise ValueError('reviewed_api_policy_importer_missing_or_changed')
+        args.extend(['--api-policy-registry', str(inputs / 'negative-api-policy-registry.json'),
+                     '--api-policy-importer', str(api_importer)])
     for name, value in settings.items():
         if name != 'root_go':
             args.extend(['--' + name.replace('_', '-'), str(value)])

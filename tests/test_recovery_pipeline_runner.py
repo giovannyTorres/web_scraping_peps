@@ -1,8 +1,11 @@
 """Functional runner guards and genuine local API integration, not a benchmark."""
 from argparse import Namespace
+from contextlib import closing
 import hashlib
 import json
 from pathlib import Path
+import sqlite3
+import subprocess
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -11,12 +14,91 @@ from peps.engine import Engine
 from peps.news import NewsAcquirer
 from scripts.validate_recovery_pipeline import (
     assert_new_paths, database_fingerprints, export_actual_api,
-    file_hash, import_negative_host_policy, runtime_lock, source_hashes,
+    file_hash, import_negative_host_policy, import_negative_api_policy, runtime_lock, source_hashes,
     successful_searched_people, validate_launch, write_new_json,
 )
 
 
 class RecoveryRunnerGuardsTests(unittest.TestCase):
+    def test_backend_registry_mutation_after_child_cannot_receive_success_attestation(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            engine = Engine(root / 'bank', online=False)
+            registry = root / 'negative-api.json'
+            registry.write_text(json.dumps({'schema_version': 1, 'method': 'GET',
+                'api_backend_restrictions': [{'endpoint': 'https://search.example/search', 'engine': 'qwant',
+                    'reason': 'Observed suspension', 'first_seen': 10., 'last_seen': 20.,
+                    'pending_review': 1, 'evidence_sha256': 'a' * 64}],
+                'api_route_restrictions': []}), encoding='utf8')
+            helper = Path(__file__).resolve().parents[1] / 'scripts/network_validation_bridge/import_negative_api_policy.py'
+            frozen = {'registry_path': str(registry), 'registry_sha256': file_hash(registry),
+                'importer_path': str(helper), 'importer_sha256': file_hash(helper),
+                'api_backend_restrictions': 1, 'api_route_restrictions': 0}
+            attempt = root / 'attempt'
+            attempt.mkdir()
+            native_run = subprocess.run
+            def replace_after_child(*args, **kwargs):
+                result = native_run(*args, **kwargs)
+                self.assertEqual(result.returncode, 0)
+                registry.write_text(json.dumps({'schema_version': 1, 'method': 'GET',
+                    'api_backend_restrictions': [], 'api_route_restrictions': []}), encoding='utf8')
+                return result
+            with patch('scripts.validate_recovery_pipeline.subprocess.run', side_effect=replace_after_child):
+                with self.assertRaisesRegex(ValueError, 'cambiaron durante'):
+                    import_negative_api_policy(engine, {}, attempt, frozen)
+            with closing(sqlite3.connect(engine.data_dir / 'network.sqlite3')) as con:
+                self.assertEqual(con.execute('SELECT engine FROM api_backend_restrictions').fetchall(), [('qwant',)])
+                self.assertEqual(con.execute('SELECT count(*) FROM request_history').fetchone()[0], 0)
+
+    def test_backend_policy_survives_cold_runner_initialization_with_hosts_intact(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            engine = Engine(root / 'bank', online=False)
+            from peps.collector import SafeFetcher
+            SafeFetcher({}, engine.data_dir, offline=True).close()
+            with closing(sqlite3.connect(engine.data_dir / 'network.sqlite3')) as con:
+                con.execute('INSERT INTO hosts(host,next_at,blocked_until,reason) VALUES(?,?,?,?)',
+                            ('denied.example', 2000000000., 2000000001., 'Existing denial'))
+                con.commit()
+            registry = root / 'negative-api.json'
+            registry.write_text(json.dumps({'schema_version': 1, 'method': 'GET',
+                'api_backend_restrictions': [{'endpoint': 'https://search.example/search', 'engine': 'qwant',
+                    'reason': 'Observed suspension', 'first_seen': 10., 'last_seen': 20.,
+                    'pending_review': 1, 'evidence_sha256': 'a' * 64}],
+                'api_route_restrictions': []}), encoding='utf8')
+            helper = Path(__file__).resolve().parents[1] / 'scripts/network_validation_bridge/import_negative_api_policy.py'
+            frozen = {'registry_path': str(registry), 'registry_sha256': file_hash(registry),
+                'importer_path': str(helper), 'importer_sha256': file_hash(helper),
+                'api_backend_restrictions': 1, 'api_route_restrictions': 0}
+            attempt = root / 'attempt'
+            attempt.mkdir()
+            receipt = import_negative_api_policy(engine, {}, attempt, frozen)
+            self.assertTrue(receipt['host_rows_unchanged'])
+            self.assertTrue(receipt['imported_negative_rows_verified'])
+            self.assertTrue(all(value == 0 for value in receipt['content_counts_after'].values()))
+            fetcher = SafeFetcher({}, engine.data_dir)
+            self.addCleanup(fetcher.close)
+            fetcher._dns = lambda *_a, **_k: self.fail('Persisted backend denial reached DNS')
+            answer = fetcher.fetch('https://search.example/search?q=Fictional&engines=qwant',
+                {'id': 'new-profile', 'kind': 'searxng', 'url': 'https://search.example/search',
+                 'allowed_hosts': ['search.example'], 'enabled': True, 'terms_approved': True})
+            self.assertEqual(answer['error_code'], 'discovery_backend_restricted')
+            self.assertEqual(answer['network_requests'], 0)
+            fetcher.close()
+
+    def test_changed_backend_importer_is_rejected_before_initialization(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            engine = Engine(root / 'bank', online=False)
+            registry, helper = root / 'registry.json', root / 'helper.py'
+            registry.write_text('{}', encoding='utf8')
+            helper.write_text('raise AssertionError("Must never run")', encoding='utf8')
+            frozen = {'registry_path': str(registry), 'registry_sha256': file_hash(registry),
+                      'importer_path': str(helper), 'importer_sha256': '0' * 64}
+            with self.assertRaisesRegex(ValueError, 'cambiaron'):
+                import_negative_api_policy(engine, {}, root / 'attempt', frozen)
+            self.assertFalse((engine.data_dir / 'network.sqlite3').exists())
+
     def test_existing_empty_bank_is_rejected_without_altering_it(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

@@ -36,8 +36,10 @@ INPUT_NAMES = frozenset({
     'roster-sanitization-lock.json', 'utility-lock.json', 'census-policy-lock.json',
     'api-transport-lock.json', 'negative-host-policy-registry.json',
     'policy-handoff.json', 'launch-parameters.json', 'query-input-lock.json',
+    'negative-api-policy-registry.json', 'api-policy-handoff.json',
 })
-REQUIRED_INPUTS = INPUT_NAMES - {'utility-lock.json', 'census-policy-lock.json', 'query-input-lock.json'}
+REQUIRED_INPUTS = INPUT_NAMES - {'utility-lock.json', 'census-policy-lock.json', 'query-input-lock.json',
+                                'negative-api-policy-registry.json', 'api-policy-handoff.json'}
 BINDING_KEYS = frozenset({
     'protocol', 'repository', 'ref_name', 'run_id', 'run_attempt', 'candidate_sha',
     'session_nonce', 'runner_public_sha256', 'root_sign_public_sha256',
@@ -386,6 +388,22 @@ def validate_private_inputs(root):
                        for key in ('blocked_until', 'next_at'))):
             raise ValueError('invalid_negative_registry_host')
         seen_hosts.add(row['host'])
+    api_files = {'negative-api-policy-registry.json', 'api-policy-handoff.json'}
+    present = {path.name for path in root.iterdir()} & api_files
+    if present and present != api_files:
+        raise ValueError('negative_api_policy_pair_incomplete')
+    if present:
+        api_policy = strict_json((root / 'api-policy-handoff.json').read_bytes())
+        expected = {'schema_version', 'registry_sha256', 'importer_sha256',
+                    'negative_policy_only', 'existing_restrictions_never_cleared'}
+        if (not isinstance(api_policy, dict) or set(api_policy) != expected
+                or type(api_policy['schema_version']) is not int or api_policy['schema_version'] != 1
+                or api_policy['registry_sha256'] != sha_file(root / 'negative-api-policy-registry.json')
+                or not re.fullmatch(r'[0-9a-f]{64}', str(api_policy['importer_sha256']))
+                or api_policy['negative_policy_only'] is not True
+                or api_policy['existing_restrictions_never_cleared'] is not True):
+            raise ValueError('negative_api_policy_handoff_not_complete')
+        policy = dict(policy, negative_api_policy=api_policy)
     return policy
 
 
