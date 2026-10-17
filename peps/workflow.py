@@ -704,6 +704,8 @@ class GuidedWorkflow:
             'local_documents': observed['local_documents'],
             'analyzable_documents': observed['body_articles'] + observed['local_documents'],
             'relevant_articles': observed['relevant_articles'],
+            'multimedia_reference_articles': observed['multimedia_reference_articles'],
+            'pending_text_articles': observed['pending_text_articles'],
             'archived_articles': counts['articles'], 'archived_documents': counts['documents']}
         counts['current_documents'] = material['analyzable_documents']
         counts['current_articles'] = material['relevant_articles']
@@ -923,7 +925,57 @@ class GuidedWorkflow:
         """Close only the acquisition decision; do not delete or cancel jobs."""
         return self.accept_partial(operation)
 
-    def mark_analysis(self, status='completed', details=None):
+    @staticmethod
+    def _owned_attribution_corpus(con, baseline, current, receipts):
+        """Accept only exact local re-extraction events produced by this call.
+
+        The caller keeps receipts in memory; the HTTP client cannot supply them.
+        External discovery/acquisition, imports, deletions and interleaved local
+        re-extractions remain changes requiring a new analysis.
+        """
+        if baseline == current:
+            return True
+        if (not isinstance(baseline, list) or len(baseline) != 3
+                or not isinstance(current, list) or len(current) != 3
+                or not isinstance(receipts, list) or not receipts):
+            return False
+        proof = {}
+        for receipt in receipts:
+            if (not isinstance(receipt, dict) or type(receipt.get('seq')) is not int
+                    or receipt['seq'] <= baseline[0] or receipt['seq'] in proof
+                    or not isinstance(receipt.get('document_id'), str)
+                    or not isinstance(receipt.get('event_hash'), str)):
+                return False
+            proof[receipt['seq']] = receipt
+        owned_documents = set()
+        events = con.execute("SELECT seq,action,payload,event_hash FROM audit WHERE seq>? "
+                             "AND action IN ('news_article_acquired','news_discovery_completed') ORDER BY seq",
+                             (baseline[0],))
+        for event in events:
+            receipt = proof.pop(event['seq'], None)
+            if (event['action'] != 'news_article_acquired' or receipt is None
+                    or receipt['event_hash'] != event['event_hash']):
+                return False
+            try:
+                payload = json.loads(event['payload'])
+            except (ValueError, TypeError):
+                return False
+            if (not isinstance(payload, dict) or payload.get('local_reextraction') is not True
+                    or payload.get('document_id') != receipt['document_id']):
+                return False
+            owned_documents.add(receipt['document_id'])
+        if proof:
+            return False
+        # Counts/MAX alone could mask an unrelated import while our own upgrade
+        # adds a body. Every new non-discovery row must belong to an owned event;
+        # no baseline body may have disappeared.
+        new_bodies = con.execute("SELECT id,rowid FROM documents WHERE source_kind!='discovery' AND rowid>?",
+                                 (baseline[2],)).fetchall()
+        return (all(row['id'] in owned_documents for row in new_bodies)
+                and current[1] == baseline[1] + len(new_bodies)
+                and current[2] == max([baseline[2], *(row['rowid'] for row in new_bodies)]))
+
+    def mark_analysis(self, status='completed', details=None, *, attribution_receipts=None):
         if status not in ('running', 'scoring', 'completed'):
             raise WorkflowError('Estado de análisis inválido.', 400)
         with self.store.connection() as con:
@@ -932,10 +984,22 @@ class GuidedWorkflow:
             counts, signature, coverage, _ = self._read(con)
             if coverage['active_running']:
                 raise WorkflowError('Hay descargas en ejecución; el análisis no puede darse por terminado.')
-            if (state.get('mode') != 'local' and coverage['pending_downloads'] and
-                    not self._partial_current(state, signature, coverage)):
-                raise WorkflowError('Finalice explícitamente la descarga con cobertura parcial antes de analizar sus datos.')
             relevant = {key: signature[key] for key in ('bank', 'corpus', 'sources', 'review')}
+            baseline = state.get('analysis_in_progress') if status == 'scoring' else None
+            owned_corpus_change = False
+            if status == 'scoring':
+                if (baseline is None
+                        or any(baseline.get(key) != relevant[key] for key in ('bank', 'sources', 'review'))
+                        or not self._owned_attribution_corpus(con, baseline.get('corpus'), relevant['corpus'], attribution_receipts)):
+                    raise WorkflowError('Los datos cambiaron durante la atribución; vuelva a analizar el banco vigente.')
+                owned_corpus_change = baseline['corpus'] != relevant['corpus']
+            authorized = dict(signature, corpus=baseline['corpus']) if owned_corpus_change else signature
+            partial_matches = self._partial_current(state, authorized, coverage)
+            closed_partial = (state.get('download') or {}).get('status') == 'closed_partial'
+            if (state.get('mode') != 'local'
+                    and (coverage['pending_downloads'] or owned_corpus_change and closed_partial)
+                    and not partial_matches):
+                raise WorkflowError('Finalice explícitamente la descarga con cobertura parcial antes de analizar sus datos.')
             if status == 'running':
                 if not counts['entities']:
                     raise WorkflowError('Importe primero un banco de entidades.')
@@ -944,12 +1008,24 @@ class GuidedWorkflow:
                 self._save(con, state)
                 return True
             if status == 'scoring':
-                baseline = state.get('analysis_in_progress')
-                # Attribution may materialize source metadata. Accept its
-                # resulting corpus only after preserving the identity bank,
-                # permissions and human reviews that authorized the operation.
-                if baseline is None or any(baseline.get(key) != relevant[key] for key in ('bank', 'corpus', 'sources', 'review')):
-                    raise WorkflowError('Los datos cambiaron durante la atribución; vuelva a analizar el banco vigente.')
+                if owned_corpus_change:
+                    previous = self._acquisition_signature(baseline)
+                    updated = self._acquisition_signature(signature)
+                    rebound = False
+                    if (state.get('mode') != 'local'
+                            and (state.get('download') or {}).get('signature') == previous):
+                        state['download'] = dict(state['download'], signature=updated)
+                        if state.get('partial_signature') == previous:
+                            state['partial_signature'] = updated
+                        acceptance = state.get('partial_acceptance')
+                        if acceptance and partial_matches:
+                            state['partial_acceptance'] = dict(acceptance, signature=updated)
+                        rebound = True
+                    self.store._audit(con, 'workflow_owned_reextraction_accepted',
+                        {'previous_signature': previous, 'signature': updated,
+                         'queue_signature': coverage['queue_signature'], 'download_rebound': rebound,
+                         'partial_limits_preserved': bool(partial_matches),
+                         'reextraction_receipts': deepcopy(attribution_receipts)})
                 state['analysis_in_progress'] = relevant
                 self._save(con, state)
                 return True

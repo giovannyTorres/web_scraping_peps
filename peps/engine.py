@@ -216,6 +216,14 @@ class Engine:
         from .scoring import score_entity
         from .contextual import analyze_evidence, get_method_info
         from .explainability import explain_score, scoring_fingerprint
+        # Retire archived multimedia introductions before reading active evidence.
+        # Captures are verified locally; this preflight never requests a URL.
+        with self.store.connection() as con:
+            has_news = con.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='news_articles'").fetchone()
+        if has_news:
+            from .news import NewsAcquirer
+            from .news_body_quality import quarantine_existing_references
+            quarantine_existing_references(NewsAcquirer(self, merge_defaults=False))
         mode = self.context_mode()
         authority, context_method = scoring_fingerprint(), get_method_info(mode)
         count = 0
@@ -302,18 +310,28 @@ class Engine:
                 self.rescore(entity_id)
                 bundle = self.store.score_run_bundle(entity_id)
                 run = bundle['run']
+        return self._explanation_result(bundle, historical=bool(run_id))
+
+    @staticmethod
+    def _explanation_result(bundle, *, historical):
+        run = bundle['run']
         return {'entity': run['entity_snapshot'], 'result': run['result'],
                 'explanation': run['result'].get('explainability', {}),
-                'run': {'id': run['id'], 'created_at': run['created_at'], 'historical': bool(run_id)},
+                'run': {'id': run['id'], 'created_at': run['created_at'], 'historical': historical},
                 'history': bundle['history'],
                 'evidence_count': len(run['evidence_manifest'])}
 
     def replay_score(self, run_id):
-        from .explainability import scoring_fingerprint
-        from .scoring import score_entity
         run, evidence = self.store.score_run_evidence(run_id)
         if not run:
             raise ValueError('Evaluación inexistente')
+        return self._replay_score_result(run, evidence)
+
+    @staticmethod
+    def _replay_score_result(run, evidence):
+        from .explainability import scoring_fingerprint
+        from .scoring import score_entity
+        run_id = run['id']
         result = run['result']
         if result.get('provenance', {}).get('score_authority') != scoring_fingerprint():
             return {'status': 'unsupported', 'matched': False, 'run_id': run_id,
@@ -328,6 +346,19 @@ class Engine:
                                            if recorded.get(key) != replayed.get(key)),
                 'scope': 'authoritative_scoring_and_trace', 'auxiliary_replayed': False,
                 'reason': 'Se reprodujeron el scoring y su traza con entradas y fecha históricas. Los análisis auxiliares permanecen archivados; no se reinfirieron.'}
+
+    def replay_score_batch(self, run_ids, *, history_limit=50):
+        """Replay and explain existing runs after one complete snapshot check.
+
+        Explicit IDs retain historical results. All inputs are validated in
+        one SQLite read transaction, then replayed from those materialized
+        values. No scoring write, network request or auxiliary inference occurs.
+        """
+        bundles = self.store.score_run_batch(run_ids, history_limit=history_limit)
+        if any(not bundle['entity_exists'] for bundle in bundles):
+            raise ValueError('Entidad inexistente')
+        return {'replays': [self._replay_score_result(bundle['run'], bundle['evidence']) for bundle in bundles],
+                'explanations': [self._explanation_result(bundle, historical=True) for bundle in bundles]}
 
     def reanalyze(self):
         from .nlp import analyze

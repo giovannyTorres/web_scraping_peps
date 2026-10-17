@@ -466,7 +466,8 @@ def build_search_plan(entities, sources, config=None, *, start=None, end=None, n
         if public:
             if config['strategy'] not in ('public', 'targeted'):
                 continue
-            provider = 'duckduckgo' if source['kind'].startswith('duckduckgo_') else source['id']
+            provider = ('duckduckgo' if source['kind'].startswith('duckduckgo_') else
+                        'bing_news_rss' if source['kind'] == 'bing_news_rss' else source['id'])
             if provider in public_providers:
                 plan['warnings'].append(source['id'] + ': se usa un solo formato por motor; no se alternan endpoints ni se eluden bloqueos.')
                 continue
@@ -478,6 +479,8 @@ def build_search_plan(entities, sources, config=None, *, start=None, end=None, n
                 'start': first.isoformat(), 'end_exclusive': last.isoformat(), 'windows': 1,
                 'window_unit': 'unfiltered_search', 'max_records_per_response': min(100, int(source.get('max_records', 50)))})
             plan['warnings'].append(source['id'] + ': búsqueda pública nominal sin clave; no garantiza archivo, actualidad ni fechas de publicación. El rango se comprobará sólo cuando exista fecha editorial verificable. Títulos y extractos son descubrimiento, no evidencia puntuable.')
+            if source['kind'] == 'bing_news_rss':
+                plan['warnings'].append(source['id'] + ': el RSS de Bing limita el uso a un agregador RSS personal y no comercial; otros usos requieren permiso escrito de Microsoft. No habilite esta fuente sin revisar esa condición. Los enlaces explícitos se leen sin solicitar el redireccionador HTTP; cada editor conserva sus permisos separados.')
             if config['preset'] != 'identity':
                 plan['warnings'].append(source['id'] + ': tras el primer barrido nominal se añaden dos consultas con palabras del perfil, sin OR ni filtros temporales inventados. Esos términos orientan la búsqueda, no acreditan hallazgos ni generan puntos; los resultados pueden ser neutrales o parciales.')
             continue
@@ -586,7 +589,11 @@ def build_search_plan(entities, sources, config=None, *, start=None, end=None, n
                 plan['warnings'].append(source['id'] + ': nombres o términos que exceden el límite local de longitud no se pudieron incluir en lotes.')
             for entity in checked(ordered):
                 variants = _variants(entity, config['include_aliases'])
-                if source.get('kind') in PUBLIC_SEARCH_KINDS:
+                if source.get('kind') == 'bing_news_rss':
+                    # The captured public RSS queries use one quoted name,
+                    # without invented archive/date or Boolean parameters.
+                    queries = wordpress_queries(entity, config, variants=variants)
+                elif source.get('kind') in PUBLIC_SEARCH_KINDS:
                     queries = public_queries(entity, config, variants)
                 elif source.get('search_kind') in ('wordpress_rss', 'wordpress_api_search') or source.get('kind') == 'gdelt':
                     # GDELT rejects nested OR groups. Separate exact-phrase

@@ -100,6 +100,7 @@ def _fallback(con, tables, result, revision):
     article_rows = list(con.execute('SELECT id,document_id,scope FROM news_articles')) if 'news_articles' in tables else []
     articles = {row['id']: row['document_id'] for row in article_rows}
     full_articles = {row['id'] for row in article_rows if row['scope'] == 'full_article'}
+    multimedia_references = {row['id'] for row in article_rows if row['scope'] == 'multimedia_reference'}
     if 'news_discovery_runs' in tables:
         for row in con.execute('SELECT j.kind,j.payload,r.parser_metadata FROM news_discovery_runs r JOIN jobs j ON j.id=r.job_id'):
             payload = _json(row['payload'])
@@ -143,7 +144,10 @@ def _fallback(con, tables, result, revision):
     result.update(entities_queried=len(queried), entities_with_candidates=len({entity for _, entity in pairs}),
                   entities_with_bodies=len({entity for _, entity in body_pairs}),
                   relevant_articles=len(relevant_articles), body_articles=len({article for article, _ in body_pairs}),
-                  metadata_only_articles=len(relevant_articles - bodies), local_documents=len(local_documents),
+                  metadata_only_articles=len(relevant_articles - bodies),
+                  multimedia_reference_articles=len(relevant_articles & multimedia_references),
+                  pending_text_articles=len(relevant_articles - bodies - multimedia_references),
+                  local_documents=len(local_documents),
                   local_entities_with_bodies=len(local_entities))
     return result
 
@@ -151,7 +155,8 @@ def _fallback(con, tables, result, revision):
 def acquisition_coverage(store, sources):
     result = {'entities_total': 0, 'entities_queried': 0, 'entities_with_candidates': 0,
               'entities_with_bodies': 0, 'body_articles': 0, 'relevant_articles': 0,
-              'metadata_only_articles': 0, 'excluded_records': 0,
+              'metadata_only_articles': 0, 'multimedia_reference_articles': 0,
+              'pending_text_articles': 0, 'excluded_records': 0,
               'shared_pages_read': 0, 'shared_records_checked': 0, 'entities_checked_locally': 0,
               'shared_pages_pending': 0, 'shared_pages_limited': 0,
               'local_documents': 0, 'local_entities_with_bodies': 0, 'permissions': _permissions(sources),
@@ -197,12 +202,18 @@ def acquisition_coverage(store, sources):
                     "WHERE n.scope='full_article' AND d.source_kind NOT IN ('discovery','legacy') "
                     "AND NOT COALESCE(json_extract(d.metadata,'$.discovery_only'),0) "
                     "AND NOT COALESCE(json_extract(d.metadata,'$.requires_source_revalidation'),0)") if 'news_articles' in tables else "SELECT NULL AS article_id WHERE 0"
-        counts = con.execute('WITH pairs AS (' + observed + ' UNION ' + linked + '), bodies AS (' + body_sql + ') '
+        multimedia_sql = ("SELECT id AS article_id FROM news_articles WHERE scope='multimedia_reference'"
+                          if 'news_articles' in tables else 'SELECT NULL AS article_id WHERE 0')
+        counts = con.execute('WITH pairs AS (' + observed + ' UNION ' + linked + '), bodies AS (' + body_sql + '), '
+                             'multimedia AS (' + multimedia_sql + ') '
                              'SELECT count(DISTINCT p.entity_id),count(DISTINCT CASE WHEN b.article_id IS NOT NULL THEN p.entity_id END),'
-                             'count(DISTINCT p.article_id),count(DISTINCT b.article_id) FROM pairs p LEFT JOIN bodies b ON b.article_id=p.article_id',
+                             'count(DISTINCT p.article_id),count(DISTINCT b.article_id),count(DISTINCT m.article_id) '
+                             'FROM pairs p LEFT JOIN bodies b ON b.article_id=p.article_id '
+                             'LEFT JOIN multimedia m ON m.article_id=p.article_id',
                              (revision, signature['relevance_version'], revision)).fetchone()
         result.update(entities_with_candidates=counts[0], entities_with_bodies=counts[1],
-                      relevant_articles=counts[2], body_articles=counts[3], metadata_only_articles=counts[2] - counts[3])
+                      relevant_articles=counts[2], body_articles=counts[3], metadata_only_articles=counts[2] - counts[3],
+                      multimedia_reference_articles=counts[4], pending_text_articles=counts[2] - counts[3] - counts[4])
         if 'news_discovery_runs' in tables:
             # Normalize corrupt/scalar legacy payloads before any json_each or
             # json_extract. A malformed receipt never mutates the stored job.

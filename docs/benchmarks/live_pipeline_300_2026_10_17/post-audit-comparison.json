@@ -1,0 +1,297 @@
+{
+  "schema_version": 1,
+  "at": "2026-10-17T02:17:38.943796+00:00",
+  "headline": {
+    "retrospective": true,
+    "held_out": false,
+    "comparison": "Actual persisted NLP1.0.4 versus NLP1.0.5 after two development fixes selected from observed errors",
+    "probability_pairs": 143,
+    "known_positive_role_denominator": 44,
+    "recall_before": {
+      "numerator": 16,
+      "denominator": 44,
+      "value": 0.36363636363636365
+    },
+    "recall_after": {
+      "numerator": 18,
+      "denominator": 44,
+      "value": 0.4090909090909091
+    },
+    "accuracy_before": {
+      "numerator": 105,
+      "denominator": 137,
+      "value": 0.7664233576642335
+    },
+    "accuracy_after": {
+      "numerator": 107,
+      "denominator": 137,
+      "value": 0.781021897810219
+    },
+    "false_positives_before": 0,
+    "false_positives_after": 0,
+    "retrieval_reference_with_preverified_redirects": {
+      "numerator": 6,
+      "denominator": 97,
+      "value": 0.061855670103092786
+    }
+  },
+  "scope": "Retrospective development comparison after individual predictions were unsealed; two explicit patterns selected from observed false negatives. Same corpus and labels, no new search.",
+  "same_real_retrieved_corpus": {
+    "entities": 300,
+    "current_global_article_urls": 401,
+    "current_list_article_urls": 399,
+    "entities_with_text": 152,
+    "current_pair_frame": 535,
+    "probability_sample_pairs": 143,
+    "known_adverse_roles_in_probability_sample": 44,
+    "unknown_roles_in_probability_sample": 6,
+    "reviewed_pairs": 172
+  },
+  "locked_annotation_sha256": "a46bc260e1c40143d455dbd464387cf5ca8aa199363baf8d1b6f9d3869789afb",
+  "before": {
+    "observed_detector": {
+      "scope": "Descriptive observed sample counts; not prevalence of all people or independent news stories.",
+      "matrix": {
+        "tp": 16,
+        "fp": 0,
+        "fn": 27,
+        "tn": 89,
+        "positive_abstentions": 1,
+        "negative_abstentions": 4,
+        "unknown_truth": 6
+      },
+      "precision": {
+        "numerator": 16,
+        "denominator": 16,
+        "value": 1.0
+      },
+      "recall": {
+        "numerator": 16,
+        "denominator": 44,
+        "value": 0.36363636363636365
+      },
+      "accuracy_penalizing_abstention": {
+        "numerator": 105,
+        "denominator": 137,
+        "value": 0.7664233576642335
+      },
+      "answered_only_accuracy": {
+        "numerator": 105,
+        "denominator": 132,
+        "value": 0.7954545454545454
+      },
+      "f1": {
+        "numerator": 32,
+        "denominator": 60,
+        "value": 0.5333333333333333
+      },
+      "known_truth_weight_or_count": 137,
+      "no_role_label_created_from_scores": true
+    },
+    "stratified_population_detector_estimate": {
+      "scope": "Stratum-weighted estimates for the fixed pair sample; no binomial interval on fractional weights.",
+      "matrix": {
+        "tp": 32.566666666666656,
+        "fp": 0,
+        "fn": 55.116666666666674,
+        "tn": 398.5499999999997,
+        "positive_abstentions": 1.7166666666666666,
+        "negative_abstentions": 27.266666666666666,
+        "unknown_truth": 19.78333333333333
+      },
+      "precision": {
+        "numerator": 32.566666666666656,
+        "denominator": 32.566666666666656,
+        "value": 1.0
+      },
+      "recall": {
+        "numerator": 32.566666666666656,
+        "denominator": 89.4,
+        "value": 0.3642803877703205
+      },
+      "accuracy_penalizing_abstention": {
+        "numerator": 431.1166666666664,
+        "denominator": 515.2166666666664,
+        "value": 0.8367677029081616
+      },
+      "answered_only_accuracy": {
+        "numerator": 431.1166666666664,
+        "denominator": 486.23333333333306,
+        "value": 0.8866456433810926
+      },
+      "f1": {
+        "numerator": 65.13333333333331,
+        "denominator": 121.96666666666665,
+        "value": 0.5340256900792565
+      },
+      "known_truth_weight_or_count": 515.2166666666664,
+      "no_role_label_created_from_scores": true
+    },
+    "production_chain": {
+      "identity_status_by_reviewed_relevance": {
+        "candidate|relevance=yes": 137,
+        "candidate|relevance=unknown": 2,
+        "not_attributed|relevance=yes": 4
+      },
+      "scoring_exclusions": {
+        "identity_ambiguous_or_requires_selected_spans": 139
+      },
+      "known_adverse_documents_reaching_positive_provisional_component": {
+        "numerator": 0,
+        "denominator": 44,
+        "value": 0.0
+      },
+      "known_irrelevant_pairs_with_positive_provisional_contribution": 0,
+      "known_irrelevant_pairs_with_matched_identity": 0,
+      "meaning": "Workflow coverage through eligibility and selection for a positive provisional component after conservative event/content deduplication. An unselected duplicate is not counted as a separate contribution. This is not accuracy of a numeric score or legal identity certification."
+    }
+  },
+  "after": {
+    "observed_detector": {
+      "scope": "Descriptive observed sample counts; not prevalence of all people or independent news stories.",
+      "matrix": {
+        "tp": 18,
+        "fp": 0,
+        "fn": 25,
+        "tn": 89,
+        "positive_abstentions": 1,
+        "negative_abstentions": 4,
+        "unknown_truth": 6
+      },
+      "precision": {
+        "numerator": 18,
+        "denominator": 18,
+        "value": 1.0
+      },
+      "recall": {
+        "numerator": 18,
+        "denominator": 44,
+        "value": 0.4090909090909091
+      },
+      "accuracy_penalizing_abstention": {
+        "numerator": 107,
+        "denominator": 137,
+        "value": 0.781021897810219
+      },
+      "answered_only_accuracy": {
+        "numerator": 107,
+        "denominator": 132,
+        "value": 0.8106060606060606
+      },
+      "f1": {
+        "numerator": 36,
+        "denominator": 62,
+        "value": 0.5806451612903226
+      },
+      "known_truth_weight_or_count": 137,
+      "no_role_label_created_from_scores": true
+    },
+    "stratified_population_detector_estimate": {
+      "scope": "Stratum-weighted estimates for the fixed pair sample; no binomial interval on fractional weights.",
+      "matrix": {
+        "tp": 35.99999999999999,
+        "fp": 0,
+        "fn": 51.68333333333334,
+        "tn": 398.5499999999997,
+        "positive_abstentions": 1.7166666666666666,
+        "negative_abstentions": 27.266666666666666,
+        "unknown_truth": 19.78333333333333
+      },
+      "precision": {
+        "numerator": 35.99999999999999,
+        "denominator": 35.99999999999999,
+        "value": 1.0
+      },
+      "recall": {
+        "numerator": 35.99999999999999,
+        "denominator": 89.4,
+        "value": 0.4026845637583892
+      },
+      "accuracy_penalizing_abstention": {
+        "numerator": 434.5499999999997,
+        "denominator": 515.2166666666664,
+        "value": 0.8434315660078284
+      },
+      "answered_only_accuracy": {
+        "numerator": 434.5499999999997,
+        "denominator": 486.23333333333306,
+        "value": 0.8937067251662438
+      },
+      "f1": {
+        "numerator": 71.99999999999999,
+        "denominator": 125.39999999999999,
+        "value": 0.5741626794258372
+      },
+      "known_truth_weight_or_count": 515.2166666666664,
+      "no_role_label_created_from_scores": true
+    },
+    "production_chain": {
+      "identity_status_by_reviewed_relevance": {
+        "candidate|relevance=yes": 137,
+        "candidate|relevance=unknown": 2,
+        "not_attributed|relevance=yes": 4
+      },
+      "scoring_exclusions": {
+        "identity_ambiguous_or_requires_selected_spans": 139
+      },
+      "known_adverse_documents_reaching_positive_provisional_component": {
+        "numerator": 0,
+        "denominator": 44,
+        "value": 0.0
+      },
+      "known_irrelevant_pairs_with_positive_provisional_contribution": 0,
+      "known_irrelevant_pairs_with_matched_identity": 0,
+      "meaning": "Workflow coverage through eligibility and selection for a positive provisional component after conservative event/content deduplication. An unselected duplicate is not counted as a separate contribution. This is not accuracy of a numeric score or legal identity certification."
+    }
+  },
+  "model_version_counts_before": {
+    "null": 67,
+    "es-gazetteer-rules-1.0.4": 520
+  },
+  "model_version_counts_after": {
+    "null": 67,
+    "es-gazetteer-rules-1.0.5": 520
+  },
+  "paired_probability_transitions": {
+    "no|no->no": 89,
+    "unknown|no->no": 6,
+    "yes|no->no": 25,
+    "yes|yes->yes": 16,
+    "yes|abstain->abstain": 1,
+    "no|abstain->abstain": 4,
+    "yes|no->yes": 2
+  },
+  "reviewed_pair_predictions_changed": 2,
+  "independent_preservation_checks": {
+    "entities_unchanged": true,
+    "documents_unchanged": true,
+    "news_current_candidates_unchanged": true,
+    "article_bodies_unchanged": true,
+    "reviews_unchanged": true,
+    "identities_unchanged": true,
+    "network_store_logical_rows_unchanged": true,
+    "driver_all_43_operational_checks_passed": true
+  },
+  "processing_seconds": 35.258257,
+  "new_network_requests_or_articles": 0,
+  "unchanged_exact_reference_url_recall": {
+    "numerator": 2,
+    "denominator": 97,
+    "value": 0.020618556701030927
+  },
+  "human_confirmations": 0,
+  "positive_validated_scores": 0,
+  "numeric_score_accuracy": {
+    "value": null,
+    "reason": "No independent external numerical or categorical score target; do not infer correctness from its own findings."
+  },
+  "original_evaluation_sha256": "33878025c5954af74c7bdd14eddc9dacf76a0cd048e48e8ff2a110b4b344be7a",
+  "posthoc_evaluation_sha256": "ffcdb9b894db028b3c9586566a9e799f55740770ad97d02d665a3039bc2d0176",
+  "independent_preservation_receipt_sha256": "31ea54c09fa27f7b00315c3fe9d2a6bf2f1498fbcdb9141e37a40eb79d0edaec",
+  "original_three_public_supplements_retained_unchanged": true,
+  "limitations": [
+    "Observed role recall remains18/44;26 known positives remain missed or abstained.",
+    "No independent numerical-score or legal-identity target. Identity review remains required; zero does not mean incident-free.",
+    "Fitting to observed development errors cannot support out-of-sample efficacy."
+  ]
+}

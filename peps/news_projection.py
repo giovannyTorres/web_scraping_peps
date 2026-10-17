@@ -14,7 +14,7 @@ from . import relevance as relevance_model
 from .store import canonical
 
 _READY_KEY = 'news_projection_ready'
-PROJECTION_VERSION = 'all-history-body-2'
+PROJECTION_VERSION = 'all-history-body-3'
 
 
 class _IndexBuildStopped(Exception):

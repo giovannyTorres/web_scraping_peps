@@ -112,7 +112,8 @@ function renderAcquisitionCoverage(section,coverage){
     const search=coverage.search||{};
     if(search.start&&search.end)block.append(el('p',`Periodo solicitado: ${search.start} a ${search.end}. Es un rango de búsqueda; no acredita cobertura completa de todos esos años.`,'muted'));
     else block.append(el('p','El período de las descargas anteriores no quedó registrado. No se les atribuye el rango de búsqueda configurado después.','muted'));
-    block.append(el('p',`${coverage.articles??0} noticias en el banco: ${coverage.full_articles??0} con cuerpo conservado y ${coverage.metadata_only_articles??0} sólo con metadatos. Los resultados de búsqueda sin cuerpo no puntúan como evidencia del artículo.`,'muted'));
+    const multimedia=Number(coverage.multimedia_reference_articles||0),pending=Number(coverage.pending_text_articles??Math.max(0,Number(coverage.metadata_only_articles||0)-multimedia));
+    block.append(el('p',`${coverage.articles??0} referencias de esta lista: ${coverage.full_articles??0} textos útiles, ${pending} referencias pendientes de texto${multimedia?` y ${multimedia} referencias de audio/vídeo sin transcripción`:''}. Las referencias sin texto útil no puntúan como evidencia del artículo.`,'muted'));
   }
   const observed=coverage.observed;
   if(observed)block.append(el('p',`Cobertura observada de la lista: ${observed.entities_queried??0} de ${observed.entities_total??0} entidades consultadas; ${observed.entities_with_bodies??0} con texto conservado. Las consultas planeadas no cuentan como ejecutadas.`,'muted'));
@@ -294,17 +295,28 @@ function orderNewsSources(){
   if(shared){const count=rows.filter(row=>row.dataset.sharedIndex==='true').length,text='Primero aparecen '+count+' fuentes con índice compartido. Las demás no aportan consultas ni feeds en este modo; sus permisos de texto siguen disponibles para enriquecer enlaces encontrados. Habilita y autoriza expresamente las fuentes que quieras utilizar.';if(summary.textContent!==text)summary.textContent=text;}
 }
 window.pepsOrderNewsSources=orderNewsSources;
+$('news-register-scope').onchange=()=>loadNews(false).catch(error=>message(error.message,true));
 function filterNewsSources(){
   const query=($('source-filter')?.value||'').trim().toLocaleLowerCase('es'),selectedOnly=!!$('source-selected-only')?.checked,showAll=!!$('source-show-all')?.checked;
   let visible=0,total=0;for(const row of $('news-sources').children){total++;const selected=row.dataset.selected==='true';const show=(!query||row.dataset.searchText.includes(query))&&(!selectedOnly||selected)&&(!!query||showAll||selectedOnly||selected||row.dataset.recommended==='true');row.hidden=!show;if(show)visible++;}
   $('source-filter-count').textContent=visible+' de '+total+' fuentes';
 }
 async function loadNews(includeSources=true){
-  const data=await api(includeSources?'news?relevant=1':'news?summary=1&relevant=1');if(pollStopped)return;
+  const scope=$('news-register-scope').value,query='&scope='+encodeURIComponent(scope);
+  const data=await api((includeSources?'news?relevant=1':'news?summary=1&relevant=1')+query);if(pollStopped)return;
+  $('news-register-status').textContent=data.articles.length.toLocaleString('es-MX')+' referencias mostradas'+(data.articles.length===100?' · las 100 más recientes de este filtro':'')+'.';
   $('news-summary').textContent=JSON.stringify(data.stats,null,2);if(data.plan!==undefined)$('news-plan').textContent=JSON.stringify(data.plan,null,2);
   const articlesKey=JSON.stringify(data.articles||[]);
   if(articlesKey!==renderedNewsArticlesKey){renderedNewsArticlesKey=articlesKey;const articles=$('news-articles');articles.replaceChildren();
-    for(const article of data.articles){const row=el('div',undefined,'evidence');row.append(el('strong',article.title||article.canonical_url),el('p',`${article.publisher_id} · ${article.scope==='full_article'?'Cuerpo conservado':'Referencia sin cuerpo'} · ${{fetched:'Conservada',discovered:'Pendiente de texto',failed:'Con error'}[article.status]||article.status}`,'muted'),sourceLink(article.canonical_url));articles.append(row);}
+    for(const article of data.articles){
+      const multimedia=article.scope==='multimedia_reference'||article.status==='multimedia_reference',hasText=article.scope==='full_article'&&!!article.document_id;
+      const row=el('div',undefined,'evidence');row.dataset.articleScope=article.scope||'';row.dataset.hasText=String(hasText);
+      const scope=multimedia?'Referencia de audio/vídeo; falta transcripción':hasText?'Texto útil conservado':'Referencia sin cuerpo';
+      const status=multimedia?'Captura original conservada':({fetched:hasText?'Texto conservado':'Referencia conservada',discovered:'Pendiente de texto',failed:'Con error'}[article.status]||article.status);
+      row.append(el('strong',article.title||article.canonical_url),el('p',article.publisher_id,'muted'),el('span',scope,'badge'),el('p',status,'muted'));
+      if(multimedia)row.append(el('p','El reproductor no aporta una transcripción. Esta referencia se conserva para revisión y no se utiliza como texto del artículo ni para el score.','muted'));
+      row.append(sourceLink(article.canonical_url,'Abrir fuente original'));articles.append(row);
+    }
     if(!data.articles.length)articles.append(el('p','No hay referencias pertinentes para la lista actual. Los documentos de búsquedas anteriores se conservan en el banco.','muted'));
   }
   if(!includeSources)return;

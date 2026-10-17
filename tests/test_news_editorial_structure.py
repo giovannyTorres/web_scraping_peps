@@ -11,6 +11,43 @@ from peps.store import digest, now
 
 
 class EditorialStructureTests(unittest.TestCase):
+    def test_document_layout_classes_do_not_hide_the_editorial_body(self):
+        for root in ('html', 'body'):
+            with self.subTest(root=root):
+                html = (f'<{root} class="sidebar-right has-sidebar">'
+                        '<article class="container-wrapper post-content">'
+                        '<p>La persona presentó el informe.</p>'
+                        '<p>El documento original permanece disponible.</p>'
+                        f'</article></{root}>')
+                self.assertEqual(article_text(html), 'La persona presentó el informe.\n\n'
+                                 'El documento original permanece disponible.')
+
+    def test_layout_root_keeps_actual_sidebar_and_navigation_excluded(self):
+        html = ('<body class="sidebar-right has-sidebar"><article class="post-content">'
+                '<p>La persona negó las acusaciones.</p>'
+                '<div class="sidebar-right"><p>Otra persona fue acusada de fraude.</p></div>'
+                '<aside><p>Otra noticia ajena.</p></aside>'
+                '<nav><p>Menú de noticias.</p></nav>'
+                '<p>Su respuesta se conserva.</p></article></body>')
+        self.assertEqual(article_text(html), 'La persona negó las acusaciones.\n\n'
+                         'Su respuesta se conserva.')
+
+    def test_explicit_root_visibility_still_hides_content(self):
+        for attribute in ('hidden', 'aria-hidden="true"'):
+            for root in ('html', 'body'):
+                with self.subTest(attribute=attribute, root=root):
+                    html = (f'<{root} class="has-sidebar" {attribute}>'
+                            '<article class="post-content"><p>Texto invisible.</p></article>'
+                            f'</{root}>')
+                    self.assertEqual(article_text(html), '')
+
+    def test_layout_root_does_not_replace_empty_editorial_body_with_related_cards(self):
+        html = ('<body class="sidebar-right has-sidebar"><main>'
+                '<div class="entry-content"></div>'
+                '<div class="sidebar"><article><p>' + 'Noticia ajena ficticia. ' * 20 +
+                '</p></article></div></main></body>')
+        self.assertEqual(article_text(html), '')
+
     def test_milenio_recirculation_component_does_not_become_article_text(self):
         html = ('<article><p>La alcaldesa presentó el informe.</p>'
                 '<div class="nd-text-highlights-detail-bold" data-mrf-recirculation="Nota Recomendada">'
@@ -109,7 +146,7 @@ class EditorialVersionMigrationTests(unittest.TestCase):
         self.raw = ('<article><p>' + self.neutral + '</p><p>Seguir leyendo:</p>'
                     '<p><a href="/otra">Otra persona fue detenida por fraude.</a></p></article>')
 
-    def legacy(self, rendered):
+    def legacy(self, rendered, version='article-main-4'):
         url='https://example.org/editorial'
         article_id=digest(url)
         self.news._observe({'url':url,'title':'Persona Pública Ejemplo','text':'Resumen ficticio'},
@@ -118,7 +155,7 @@ class EditorialVersionMigrationTests(unittest.TestCase):
         class FixtureFetcher:
             def fetch(inner, requested, _source):
                 return {'status':'ok','url':requested,'body':self.raw,'retrieved_at':now(),'sha256':digest(self.raw)}
-        with patch('peps.news.ARTICLE_EXTRACTION_VERSION','article-main-4'), patch('peps.news.article_text',return_value=rendered):
+        with patch('peps.news.ARTICLE_EXTRACTION_VERSION',version), patch('peps.news.article_text',return_value=rendered):
             self.news.execute(self.engine.store.claim(kind_prefix='news_article'), FixtureFetcher())
         with self.engine.store.connection() as con:
             row=dict(con.execute('SELECT d.* FROM documents d JOIN news_articles n ON n.document_id=d.id').fetchone())
@@ -157,6 +194,23 @@ class EditorialVersionMigrationTests(unittest.TestCase):
         self.assertEqual(json.loads(current['metadata'])['extraction_version'],'article-main-4')
         self.assertEqual(receipt['version'],ARTICLE_EXTRACTION_VERSION)
         self.assertEqual(self.news.reextract_snapshots(),{'examined':0})
+        self.assertTrue(self.engine.store.verify_audit()['ok'])
+
+    def test_version_five_layout_snapshot_is_checked_once_without_network(self):
+        self.raw = '<body class="sidebar-right has-sidebar">' + self.raw + '</body>'
+        old = self.legacy(self.neutral.strip(), version='article-main-5')
+        snapshot = self.engine.data_dir / old['metadata']['raw_snapshot_path']
+        raw_hash = hashlib.sha256(snapshot.read_bytes()).hexdigest()
+        with patch('peps.collector.SafeFetcher', side_effect=AssertionError('No HTTP during local migration')):
+            self.assertEqual(self.news.reextract_snapshots(), {'unchanged': 1, 'examined': 1})
+            self.assertEqual(self.news.reextract_snapshots(), {'examined': 0})
+        with self.engine.store.connection() as con:
+            receipt = dict(con.execute('SELECT * FROM news_extraction_receipts').fetchone())
+            current = dict(con.execute('SELECT * FROM documents WHERE id=?', (old['id'],)).fetchone())
+        self.assertEqual(receipt['version'], ARTICLE_EXTRACTION_VERSION)
+        self.assertEqual(current['text'], old['text'])
+        self.assertEqual(json.loads(current['metadata']), old['metadata'])
+        self.assertEqual(hashlib.sha256(snapshot.read_bytes()).hexdigest(), raw_hash)
         self.assertTrue(self.engine.store.verify_audit()['ok'])
 
 

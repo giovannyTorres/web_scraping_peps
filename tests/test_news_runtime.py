@@ -440,6 +440,35 @@ class NewsRuntimeTests(unittest.TestCase):
         self.assertTrue(any(event['waiting'] and event['event'] == 'activity' for event in events))
         self.assertTrue(all(event['completed'] == 0 for event in events))
 
+    def test_idle_readers_share_one_queue_check_and_preserve_scheduled_due(self):
+        # This is a scheduling regression, not an Internet throughput claim.
+        due = time.time() + 1.5
+        job_id = self.store.enqueue('news_feed', {'source_id': 'fixture'}, due=due)
+        original_claim, empty, started = self.store.claim, [], []
+
+        def claim(*args, **kwargs):
+            job = original_claim(*args, **kwargs)
+            if job is None:
+                empty.append(time.monotonic())
+            return job
+
+        def execute(job, *_args, **_kwargs):
+            started.append(time.time())
+            self.store.finish(job)
+
+        with patch.object(self.store, 'claim', side_effect=claim), \
+                patch.object(self.news, 'execute', side_effect=execute):
+            result = self.run_fixture(seconds=5, workers=8, max_articles=1)
+        self.assertEqual(result['completed'], 1)
+        self.assertEqual(result['pending'], 0)
+        self.assertEqual(len(started), 1)
+        self.assertGreaterEqual(started[0], due)
+        self.assertLessEqual(len(empty), 3)
+        with self.store.connection() as con:
+            row = con.execute('SELECT status,attempts FROM jobs WHERE id=?', (job_id,)).fetchone()
+        self.assertEqual((row['status'], row['attempts']), ('done', 1))
+        self.assertTrue(self.store.verify_audit()['ok'])
+
     def test_expired_session_leaves_ready_jobs_with_explicit_reason(self):
         self.store.enqueue('news_feed', {'source_id': 'fixture'})
         result = self.run_fixture(seconds=0)

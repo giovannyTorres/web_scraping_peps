@@ -282,7 +282,13 @@ def main():
                             expect(page.locator('#m-jobs')).to_have_text('64')
                             expect(page.locator('#workflow-tasks-deferred')).to_have_text('64')
                             expect(page.locator('#workflow-tasks-retained')).to_have_text('64')
-                            expect(page.locator('#workflow-coverage-note')).to_contain_text('1 referencias pertinentes')
+                            expect(page.locator('#workflow-coverage-note')).to_have_text(
+                                '1 referencias pendientes de texto. Los totales históricos del banco '
+                                'no cuentan como resultados de esta lista.')
+                            expect(page.locator('#workflow-relevant-articles')).to_have_text(
+                                '1 referencias pertinentes · 0 textos útiles conservados · '
+                                '1 referencias pendientes de texto')
+                            checked('coverage_separates_current_relevance_pending_text_and_historical_totals')
                             expect(page.locator('#workflow-download-wait')).to_contain_text('Próximo intento permitido')
                             checked('metadata_references_do_not_enable_empty_analysis',
                                     api(page, 'workflow-analyze-available', {})['status'] == 409 and

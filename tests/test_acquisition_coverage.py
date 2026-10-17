@@ -25,6 +25,35 @@ class AcquisitionCoverageTests(unittest.TestCase):
                         {'enabled': True, 'terms_approved': True, 'automated_search': False},
                         {'enabled': True, 'terms_approved': False, 'download_articles': True, 'article_terms_approved': True}]
 
+    def test_multimedia_references_are_separate_from_usable_text_and_pending_references(self):
+        document = self.document()
+        body = self.article(document, 'full_article')
+        self.observe(body, ['one'])
+        media = self.article(scope='multimedia_reference')
+        pending = self.article()
+        unrelated = self.article(scope='multimedia_reference')
+        for article in (media, pending):
+            self.observe(article, ['one'])
+        self.observe(media, ['two'])
+        self.observe(unrelated, [], relevant=False)
+        for json_sql in (True, False):
+            with self.subTest(json_sql=json_sql):
+                self.store._audit_json = json_sql
+                self.store._news_acquisition_coverage_cache = None
+                actual = acquisition_coverage(self.store, self.sources)
+                self.assertEqual(actual['relevant_articles'], 3)
+                self.assertEqual(actual['body_articles'], 1)
+                self.assertEqual(actual['metadata_only_articles'], 2)
+                self.assertEqual(actual['multimedia_reference_articles'], 1)
+                self.assertEqual(actual['pending_text_articles'], 1)
+                self.assertEqual(actual['entities_with_bodies'], 1)
+        self.store._audit_json = True
+        self.assertEqual({row['id'] for row in self.news.articles(relevant_only=True, scope='multimedia_reference')}, {media})
+        self.assertEqual({row['id'] for row in self.news.articles(relevant_only=True, scope='full_article')}, {body})
+        self.assertEqual({row['id'] for row in self.news.articles(scope='multimedia_reference')}, {media, unrelated})
+        with self.assertRaises(ValueError):
+            self.news.articles(scope='untrusted_sql')
+
     def article(self, document_id=None, scope='feed_metadata_only'):
         self.serial += 1
         article_id = 'article-' + str(self.serial)

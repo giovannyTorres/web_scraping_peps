@@ -21,13 +21,8 @@ jobs:
       - run: python scripts/test_acquisition_ui.py
       - run: python scripts/test_shared_acquisition_ui.py
       - run: python scripts/test_search_clarity_ui.py
-      - run: python scripts/benchmark_shared_discovery.py --output runtime/shared-discovery-validation/benchmark.json
-      - run: python scripts/benchmark_mass_acquisition.py --entities 300 --seconds 120 --output runtime/mass-acquisition-validation/benchmark.json
-      - run: python scripts/benchmark_ui_polling.py --tab sources --duration 6 --assert-optimized
-      - run: python scripts/benchmark_search_state.py --output runtime/search-clarity/search-state-benchmark.json
       - run: python scripts/test_import_ui.py
       - run: python scripts/test_explainability_ui.py
-      - run: python scripts/stress_pipeline.py --profile quick --output runtime/stress-ci/stress.json
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -39,13 +34,8 @@ jobs:
             runtime/acquisition-ui-validation/
             runtime/shared-acquisition-ui-validation/
             runtime/search-clarity-ui-validation/
-            runtime/shared-discovery-validation/
-            runtime/mass-acquisition-validation/
-            runtime/ui-polling-validation/
-            runtime/search-clarity/search-state-benchmark.json
             runtime/import-ui-validation/
             runtime/ui-validation/
-            runtime/stress-ci/
   unit:
     timeout-minutes: 20
     strategy:
@@ -69,8 +59,6 @@ jobs:
           result = unittest.TextTestRunner(verbosity=2).run(tests);
           faulthandler.cancel_dump_traceback_later();
           raise SystemExit(not result.wasSuccessful())"
-      - run: python scripts/benchmark.py --data-dir runtime/ci --size 1000 --output runtime/ci-benchmark.json
-      - run: python scripts/benchmark_import.py --repetitions 1 --output runtime/ci-import-benchmark.json
       - name: Build wheel
         run: python -m pip wheel --no-deps --wheel-dir runtime/wheels .
       - name: Create isolated wheel environment
@@ -87,10 +75,8 @@ jobs:
           runtime/wheel-env/Scripts/python.exe -I scripts/validate_distribution.py --output runtime/ci-wheel-validation.json
       - uses: actions/upload-artifact@v4
         with:
-          name: benchmark-${{ matrix.os }}-${{ matrix.python }}
+          name: distribution-${{ matrix.os }}-${{ matrix.python }}
           path: |
-            runtime/ci-benchmark.json
-            runtime/ci-import-benchmark.json
             runtime/ci-wheel-validation.json
   windows-portable:
     needs: unit

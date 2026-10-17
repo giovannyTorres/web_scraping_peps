@@ -424,3 +424,29 @@ body[data-workflow-tab=news] .workflow-overview{display:none}
 .search-live>.zero-results{margin:0 0 21px}
 @media(max-width:720px){body[data-workflow-tab=news] .app-sidebar{padding:14px 18px 10px}body[data-workflow-tab=news] .app-sidebar .brand{font-size:27px}body[data-workflow-tab=news] .mobile-step-select{margin:9px 0 5px}body[data-workflow-tab=news] .sidebar-bottom{margin-top:8px}body[data-workflow-tab=news] .sidebar-bottom .utility-button,body[data-workflow-tab=news] .sidebar-bottom #shutdown.quiet{min-height:30px}body[data-workflow-tab=news] main{padding-top:21px}.acquisition-heading{margin-bottom:17px}.acquisition-heading h2{font-size:29px}.acquisition-heading>div>p:last-child{font-size:13px}.search-live>.zero-results{margin-bottom:18px}}
 .search-live>#workflow-network-consent{margin:17px 0 0;padding:12px 14px;border:1px solid #D4EDFC;border-radius:7px;background:#F7FBFD}.search-live>#workflow-network-consent .consent-check{margin:0;font-size:12px;line-height:1.7}.search-live>#workflow-network-consent:has(input:disabled){display:none}
+
+/* Keep the keyboard shortcut outside the page layout until focused. */
+.skip-link{position:fixed;top:12px;left:12px;z-index:1000;transform:translateY(calc(-100% - 16px));padding:12px 16px;border:2px solid #004481;border-radius:6px;background:#FFFFFF;color:#004481;font-weight:700;line-height:1.4;text-decoration:none;box-shadow:0 3px 12px #07214622}.skip-link:focus{transform:translateY(0);outline:3px solid #2DCCCD;outline-offset:2px}
+
+/* Keep the result list and its controls within reach of the evidence panel. */
+[data-panel="bank"] .workspace{min-width:0;align-items:start}
+[data-panel="bank"] .table-card{min-width:0;max-height:min(68vh,760px);overflow:auto;scrollbar-gutter:stable}
+[data-panel="bank"] .table-card thead th{position:sticky;top:0;z-index:2;box-shadow:0 1px 0 var(--line)}
+[data-panel="bank"] .table-card .pager{position:sticky;bottom:0;z-index:3;background:#FFFFFF;border-top:1px solid var(--line);min-height:62px}
+[data-panel="bank"] .entity-row{scroll-margin-block:96px}
+@media(max-width:720px){
+  [data-panel="bank"] .table-card{max-height:min(64vh,600px)}
+  [data-panel="bank"] .table-card table{min-width:0;table-layout:fixed}
+  [data-panel="bank"] .table-card th,[data-panel="bank"] .table-card td{padding:12px 8px;overflow-wrap:anywhere}
+  [data-panel="bank"] .table-card td{font-size:13px}
+  [data-panel="bank"] .table-card th{letter-spacing:0;line-height:1.4;text-transform:none;overflow-wrap:normal}
+  [data-panel="bank"] .table-card th:nth-child(1){width:28%}
+  [data-panel="bank"] .table-card th:nth-child(2){width:19%}
+  [data-panel="bank"] .table-card th:nth-child(3){width:20%}
+  [data-panel="bank"] .table-card th:nth-child(4){width:33%}
+  [data-panel="bank"] .table-card .badge{max-width:100%;white-space:normal;overflow-wrap:anywhere}
+}
+@media print{
+  [data-panel="bank"] .table-card{max-height:none;overflow:visible}
+  [data-panel="bank"] .table-card thead th,[data-panel="bank"] .table-card .pager{position:static}
+}

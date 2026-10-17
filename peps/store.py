@@ -749,15 +749,75 @@ class Store:
             stored = self._load_score_run(con, run_id, entity_id, validate_documents=False)
             if stored is None:
                 return None, []
-            result = []
-            for item in sorted(stored['evidence_manifest'], key=lambda entry: entry['input_index']):
-                row = con.execute('SELECT * FROM documents WHERE id=?', (item['document_id'],)).fetchone()
-                if row is None or self._document_record_hash(row) != item.get('document_record_hash'):
-                    raise ValueError('Documento histórico ausente o metadatos/cuerpo alterados')
-                value = {key: item[key] for key in _SCORE_INPUT_FIELDS if key in item}
-                value.update(text=row['text'], document_id=item['document_id'])
-                result.append(value)
-            return stored, result
+            return stored, self._score_run_inputs(con, stored)
+
+    def _score_run_inputs(self, con, stored, documents=None):
+        # A cache is local to the caller's existing read transaction. Every
+        # manifest still checks its own expected hash against the same row.
+        documents = {} if documents is None else documents
+        result = []
+        for item in sorted(stored['evidence_manifest'], key=lambda entry: entry['input_index']):
+            document_id = item['document_id']
+            if document_id not in documents:
+                row = con.execute('SELECT * FROM documents WHERE id=?', (document_id,)).fetchone()
+                documents[document_id] = (row, self._document_record_hash(row) if row else None)
+            row, actual = documents[document_id]
+            if row is None or actual != item.get('document_record_hash'):
+                raise ValueError('Documento histórico ausente o metadatos/cuerpo alterados')
+            value = {key: item[key] for key in _SCORE_INPUT_FIELDS if key in item}
+            value.update(text=row['text'], document_id=document_id)
+            result.append(value)
+        return result
+
+    def score_run_batch(self, run_ids, history_limit=50):
+        """Materialize a bounded historical batch in one verified snapshot.
+
+        This is an explicit read of existing evaluations, never a rescore.
+        Chain, announcements, manifests, original documents, current pointers
+        and histories are checked before the read transaction is closed.
+        No integrity decision or document cache survives this invocation.
+        """
+        if (not isinstance(run_ids, (list, tuple)) or len(run_ids) > 1000
+                or any(not isinstance(value, str) or not value for value in run_ids)
+                or len(set(run_ids)) != len(run_ids)):
+            raise ValueError('El lote requiere hasta 1000 evaluaciones distintas identificadas')
+        if type(history_limit) is not int or not 0 <= history_limit <= 200:
+            raise ValueError('El límite de historial debe ser un entero entre 0 y 200')
+        if not run_ids:
+            return []
+        with self.connection() as con:
+            con.execute('BEGIN')
+            self._assert_audit_chain(con)
+            documents, loaded, evidence = {}, {}, {}
+            by_entity = {}
+            for run_id in run_ids:
+                run = self._load_score_run(con, run_id, validate_documents=False, verify_chain=False)
+                if run is None:
+                    raise ValueError('Evaluación inexistente')
+                loaded[run_id] = run
+                evidence[run_id] = self._score_run_inputs(con, run, documents)
+                by_entity.setdefault(run['entity_id'], {})[run_id] = run
+            histories, exists = {}, {}
+            for entity_id, entity_runs in by_entity.items():
+                exists[entity_id] = con.execute('SELECT 1 FROM entities WHERE id=?', (entity_id,)).fetchone() is not None
+                current = con.execute('SELECT run_id,result FROM scores WHERE entity_id=?', (entity_id,)).fetchone()
+                current_id = current['run_id'] if current else None
+                if current:
+                    current_run = loaded.get(current_id)
+                    if current_run is None and current_id is not None:
+                        current_run = self._load_score_run(con, current_id, entity_id,
+                            validate_documents=False, verify_chain=False)
+                        if current_run is not None:
+                            self._score_run_inputs(con, current_run, documents)
+                    if (current_run is None or current_run['entity_id'] != entity_id
+                            or digest(current['result']) != digest(canonical(current_run['result']))):
+                        raise ValueError('Puntero de evaluación actual inválido')
+                    entity_runs[current_id] = current_run
+                histories[entity_id] = (self._score_history(con, entity_id, history_limit,
+                    current_id, entity_runs) if history_limit else [])
+            return [{'run': loaded[run_id], 'evidence': evidence[run_id],
+                     'history': [dict(entry) for entry in histories[loaded[run_id]['entity_id']]],
+                     'entity_exists': exists[loaded[run_id]['entity_id']]} for run_id in run_ids]
 
     def run_evidence(self, run_id, evidence_id):
         """Target one historical evidence regardless of current UI page limits."""

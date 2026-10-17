@@ -58,6 +58,88 @@ class NewsProjectionTests(unittest.TestCase):
     def rebuild(self):
         return ensure_projection(self.news, self.index())
 
+    def test_directed_query_projects_secondary_names_without_expanding_discovery_filter(self):
+        source = {'id': 'synthetic', 'kind': 'rss', 'enabled': True,
+                  'terms_approved': True, 'download_articles': False,
+                  'url': 'https://synthetic.invalid/feed', 'allowed_hosts': ['synthetic.invalid']}
+        self.news.config_path.write_text(json.dumps({'sources': [source]}))
+        self.rebuild()
+        title = 'Primera Persona Sintética se reunió con Segunda Persona Sintética.'
+        identifier = self.store.enqueue('news_query', {'source_id': 'synthetic',
+            'url': source['url'], 'entity_ids': ['one'], 'names': [self.entities[0]['name']]}, key='directed')
+        job = self.store.claim(kind_prefix='news_query')
+        class LocalResponse:
+            def fetch(self, url, requested_source):
+                return {'status': 'ok', 'url': url, 'body': '<rss/>',
+                        'sha256': 'a' * 64, 'retrieved_at': now(), 'parse_metadata': {'truncated': False}}
+        records = [{'url': 'https://synthetic.invalid/article', 'title': title, 'text': ''},
+                   {'url': 'https://synthetic.invalid/secondary-only',
+                    'title': 'Segunda Persona Sintética presentó un informe.', 'text': ''}]
+        index = self.index()
+        with self.store.connection() as con:
+            index.bank_revision = con.execute("SELECT value FROM meta WHERE key='news_identity_revision'").fetchone()[0]
+        with patch('peps.sources.parse_results', return_value=records), \
+             patch.object(self.news, '_query_url', return_value=source['url']):
+            self.news.execute(job, LocalResponse(), relevance=index)
+        with self.store.connection() as con:
+            self.assertEqual(con.execute('SELECT status FROM jobs WHERE id=?', (identifier,)).fetchone()[0], 'done')
+            self.assertEqual(con.execute('SELECT count(*) FROM news_articles').fetchone()[0], 1)
+            self.assertEqual({row[0] for row in con.execute('SELECT entity_id FROM news_current_candidates')}, {'one', 'two'})
+            observed = json.loads(con.execute('SELECT details FROM news_observations').fetchone()[0])
+            self.assertEqual(observed['retrieval_relevance']['entity_ids'], ['one'])
+            self.assertTrue(projection_ready(con))
+
+    def test_attribution_publishes_invalidated_projection_and_remains_locally_idempotent(self):
+        article = self.article('Primera Persona Sintética con Segunda Persona Sintética.')
+        self.observe(article, 'Primera Persona Sintética con Segunda Persona Sintética.', ids=['one'])
+        with self.store.connection() as con:
+            con.execute("DELETE FROM meta WHERE key='news_projection_ready'")
+        self.news.attribute(rescore=False)
+        with self.store.connection() as con:
+            self.assertTrue(projection_ready(con))
+            before = [tuple(row) for row in con.execute('SELECT * FROM news_current_candidates ORDER BY article_id,entity_id')]
+            self.assertEqual({row[1] for row in before}, {'one', 'two'})
+        self.news.attribute(rescore=False)
+        with self.store.connection() as con:
+            self.assertEqual([tuple(row) for row in con.execute('SELECT * FROM news_current_candidates ORDER BY article_id,entity_id')], before)
+        self.assertTrue(self.store.verify_audit()['ok'])
+
+    def test_cancelled_attribution_never_stamps_partial_projection_as_ready(self):
+        article = self.article()
+        self.observe(article, 'Primera Persona Sintética compareció.')
+        with self.store.connection() as con:
+            con.execute("DELETE FROM meta WHERE key='news_projection_ready'")
+        self.engine.stop_event.set()
+        self.news.attribute(rescore=False, cancelable=True)
+        with self.store.connection() as con:
+            self.assertFalse(projection_ready(con))
+
+    def test_retiring_original_body_invalidates_body_only_candidate_projection(self):
+        from peps.news_body_quality import quarantine_reference
+        for quarantine in (False, True):
+            article = self.article('Boletín general sin nombre.')
+            document = self.store.add_document({'url': 'https://synthetic.invalid/' + article,
+                'title': 'Boletín', 'text': 'Primera Persona Sintética compareció.',
+                'source_kind': 'news', 'source_id': 'synthetic'}, [], lambda *_: {})
+            with self.store.connection() as con:
+                con.execute("UPDATE news_articles SET scope='full_article',document_id=? WHERE id=?", (document, article))
+                con.execute("DELETE FROM meta WHERE key='news_projection_ready'")
+            self.rebuild()
+            with self.store.connection() as con:
+                self.assertEqual(con.execute('SELECT count(*) FROM news_current_candidates WHERE article_id=?', (article,)).fetchone()[0], 1)
+            if quarantine:
+                quarantine_reference(self.news, article, {'reason': 'Ficha de audio sin transcripción.'},
+                    {'raw_snapshot_sha256': 'a' * 64, 'raw_snapshot_path': 'news_snapshots/example.html.gz'},
+                    expected_document_id=document)
+            else:
+                self.news._invalidate_snapshot_body({'article_id': article, 'document_id': document}, 'Texto insuficiente')
+            with self.store.connection() as con:
+                self.assertFalse(projection_ready(con))
+            self.rebuild()
+            with self.store.connection() as con:
+                self.assertEqual(con.execute('SELECT count(*) FROM news_current_candidates WHERE article_id=?', (article,)).fetchone()[0], 0)
+                self.assertIsNotNone(con.execute('SELECT 1 FROM documents WHERE id=?', (document,)).fetchone())
+
     def test_unbuilt_projection_does_not_trust_old_observation_entity_ids(self):
         article = self.article('Nota general sin nombre actual.')
         self.observe(article, 'Nota antigua', update=False, ids=['one'])

@@ -1,0 +1,58 @@
+{
+  "schema_version": 1,
+  "scope": "Measured corrections on real transport captures, persisted real queue rows and a copy of the completed real 300-person bank. Local replays are not new cold searches.",
+  "historical_replay": {
+    "people": 300,
+    "before_online_individual_phase_seconds": 108.16142799300724,
+    "after_local_batch_seconds": 0.47642344400810543,
+    "complete_audit_checks_per_batch": 1,
+    "all_300_replays_and_explanations_exact": true,
+    "database_unchanged": true,
+    "evidence_receipt_sha256": "b8281964dbea60db41635db3382e7af321c6f4475f098c95cf1f6899d61d58ee"
+  },
+  "article_extraction": {
+    "method": "Same captured HTML bytes; no new requests. Corrections were selected retrospectively after observed failures.",
+    "recovered_bodies_chars": {
+      "La Voz de la Ribera": 2735,
+      "Letra Fría": 3907,
+      "El Respetable": 4009
+    },
+    "unchanged_control_captures": 16,
+    "new_http_requests": 0,
+    "extractor_version": "article-main-7"
+  },
+  "multimedia_references": {
+    "reviewed": 15,
+    "not_usable_as_full_text": 15,
+    "scope": "Directed diagnostic of short introductions with a playable media element and no transcript; not prevalence or recall of all multimedia.",
+    "raw_snapshots_documents_and_historical_scores_preserved": true
+  },
+  "validation": {
+    "unit_tests": 1156,
+    "unit_optional_skips": 7,
+    "passed": true,
+    "performance_benchmark": false
+  },
+  "interface_checks": {
+    "real_bank_copy": true,
+    "desktop_mobile_and_filter_controls": 28,
+    "real_source_confirmation_race_controls": 9,
+    "external_http_requests": 0,
+    "performance_benchmark": false,
+    "final_online_cache_partial_attribution_scoring_controls": 21,
+    "all_300_rows_have_non_numeric_pending_or_insufficient_state": true,
+    "real_bank_layout_controls": 25,
+    "desktop_page_height_before_px": 9540,
+    "desktop_page_height_after_px": 1459,
+    "desktop_list_rows_preserved": 100
+  },
+  "candidate_projection": {
+    "before_pairs": 1220,
+    "after_pairs": 1223,
+    "new_http_requests": 0,
+    "repair_seconds": 3.645,
+    "second_and_third_local_passes_stable": true,
+    "immutable_corpus_and_audit_prefix_preserved": true,
+    "scope": "Production repair on a copy of warm1. Three metadata associations were omitted by the directed-query projection; no new articles or scoring inputs were created."
+  }
+}

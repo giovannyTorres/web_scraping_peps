@@ -1,0 +1,114 @@
+{
+  "receipt_sha256": "ba4404eaf4f994e5c74f81cb0a384d0f307bbc48c73a4bb8541c23ead3e332c8",
+  "started_at": "2026-10-17T01:00:08.269348+00:00",
+  "completed_at": "2026-10-17T01:38:13.188804+00:00",
+  "online_e2e_seconds": 2231.8942546219914,
+  "timings_seconds": {
+    "import": 0.08389464700303506,
+    "search_and_original_download": 2100.1923779210047,
+    "identity_attribution": 14.512216438000905,
+    "production_scoring": 8.200206591995084,
+    "replay_and_explanations": 108.16142799300724,
+    "production_export": 0.47532856299949344,
+    "actual_local_cache_reuse": 13.860870087999501,
+    "total_until_report": 2284.9194745569985
+  },
+  "summary": {
+    "people": 300,
+    "people_with_completed_nominal_search": 300,
+    "people_with_actual_query_http": 300,
+    "people_with_fetch_attempt_this_session": 300,
+    "people_with_current_candidates": 182,
+    "people_with_original_text": 143,
+    "current_candidate_urls": 1084,
+    "current_candidate_entity_pairs": 1202,
+    "unique_original_documents": 368,
+    "unique_original_body_hashes": 368,
+    "original_entity_text_pairs": 484,
+    "production_scores_computed": 300,
+    "assessment_states": {
+      "pending_identity": 143,
+      "insufficient_evidence": 157
+    },
+    "evaluated_zero_scores": 0,
+    "zeros_without_assessable_evidence_are_not_evaluated": true,
+    "actual_http_requests_cumulative": 3451,
+    "actual_http_requests_this_session": 3451,
+    "pending_jobs": 20,
+    "job_status_counts": {
+      "blocked": 215,
+      "done": 3433,
+      "cancelled": 5,
+      "deferred": 4,
+      "queued": 16
+    },
+    "query_status_counts": {
+      "blocked": 215,
+      "done": 3065,
+      "deferred": 4,
+      "queued": 16
+    },
+    "http_status_counts_this_session": {
+      "200": 3444,
+      "None": 4,
+      "202": 1,
+      "503": 1,
+      "301": 1
+    },
+    "fetch_outcome_counts_this_session": {
+      "robots_pending": 11,
+      "ok": 3433,
+      "host_interval": 10737,
+      "network_failure": 3,
+      "access_challenge": 1,
+      "host_circuit": 214,
+      "server_backoff": 1,
+      "session_limit": 1
+    },
+    "groups": {
+      "municipal_president": {
+        "people": 150,
+        "with_completed_nominal_search": 150,
+        "with_original_text": 100,
+        "assessment_states": {
+          "pending_identity": 100,
+          "insufficient_evidence": 50
+        }
+      },
+      "notary": {
+        "people": 150,
+        "with_completed_nominal_search": 150,
+        "with_original_text": 43,
+        "assessment_states": {
+          "pending_identity": 43,
+          "insufficient_evidence": 107
+        }
+      }
+    }
+  },
+  "checks": {
+    "all_people_imported": true,
+    "all_people_have_nominal_plan": true,
+    "plan_not_truncated": true,
+    "audit_valid": true,
+    "cumulative_http_budget_respected": true,
+    "actual_transport_and_durable_http_match": true,
+    "previous_completed_jobs_preserved": true,
+    "original_snapshots_hash_valid": true,
+    "captured_real_transport_bytes_hash_valid": true,
+    "candidate_entity_article_pairs_unique": true,
+    "all_people_received_production_score": true,
+    "all_current_scores_replayed_exactly": true,
+    "source_modules_stable_within_attempt": true,
+    "frozen_inputs_unchanged": true,
+    "no_fatal_error": true,
+    "original_body_content_hashes_valid": true,
+    "canonical_urls_unique": true,
+    "same_publisher_body_content_deduplicated": true,
+    "actual_cache_reuse_idempotent": false
+  },
+  "partial_reasons": [
+    "20 queued/deferred/running jobs remain",
+    "Some jobs are blocked/failed; their exact errors remain in jobs/query_results"
+  ]
+}

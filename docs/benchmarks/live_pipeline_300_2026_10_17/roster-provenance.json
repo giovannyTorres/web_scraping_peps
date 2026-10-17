@@ -1,0 +1,59 @@
+{
+  "schema_version": 1,
+  "frozen_at": "2026-10-17T00:56:01.369375+00:00",
+  "people": 300,
+  "groups": {
+    "municipal_president": 150,
+    "notary": 150
+  },
+  "selection_strata": {
+    "public_municipal_roster": 150,
+    "historical_report_selection": 30,
+    "previous_random_comparator": 30,
+    "additional_public_notary_roster": 90
+  },
+  "prior_60_entities_retained": 60,
+  "unique_ids": 300,
+  "unique_normalized_names": 300,
+  "canonical_name_only": true,
+  "aliases_count": 0,
+  "selection": {
+    "municipal": "All 150 from the previously published provenance-backed roster: 51 Nuevo Leon and 99 Jalisco.",
+    "historical": "All 30 historical-report selection cases from the frozen 60-person notary cohort; not all 30 are confirmed incident positives.",
+    "comparators": "Retain all prior 30 random CDMX comparators, including any subsequently found historical reports.",
+    "additional": "Python random.Random(20261017).sample(remaining_120_CDMX_notaries,90); original list order; 30 comparator IDs excluded before draw.",
+    "seed": 20261017
+  },
+  "limitations": [
+    "Purposive geographic and historical strata; not a national representative prevalence sample.",
+    "Roster roles are as reported at the source cutoff; current tenure or active professional authorization is not certified.",
+    "Historical selection and prior 60-person gold are reused diagnostics, not independent held-out data.",
+    "No negative personal labels have been certified. No news means unknown coverage, never absence of risk.",
+    "Roster provenance URLs must not be seeded as news candidates or supplied as gold discovery answers.",
+    "No prior article text, labels, scores or source captures are imported into the new production bank."
+  ],
+  "roster_sha256": "8c7398b917e23274d2dec092242ff3f6a7dbf82052448572cc4e92f2a43ec40e",
+  "source_captures": [
+    {
+      "url": "https://www.nl.gob.mx/sites/default/files/repositorio/Dependencias/Secretar%C3%ADa%20de%20Participaci%C3%B3n%20Ciudadana/Repositorios/20261001_directorio_alcaldias.pdf",
+      "sha256": "34de7494ba19ff72160b15d6241084ba53990888511c83ad707e243f4f107c11",
+      "all_original_rows_from_source": 51
+    },
+    {
+      "url": "https://iieg.gob.mx/ns/wp-content/uploads/2024/11/PresidentesMunicipalesCoaliciones2Nov24.pdf",
+      "sha256": "2e60cf30508128d5f84e3f76923c5ae9bc7367c29c4329e4328a00a0c198a70c",
+      "all_original_rows_from_source": 99
+    },
+    {
+      "url": "https://colegiodenotarios.org.mx/directorio",
+      "sha256": "cfb0b305d05bf2cad6ae8838369c850521d2edb13f8c1d2d38dce27387902248",
+      "all_original_rows_from_source": 150
+    }
+  ],
+  "additional_limits": [
+    "The NL directory reports the office heading Responsable de Presidencia Municipal; imported presidente municipal is a role hint, not a literal verified title for every row.",
+    "The Jalisco publication records election outcomes for 2024–2027, not uninterrupted individual tenure.",
+    "The CDMX college directory is a professional directory, not a licensing-authority certification.",
+    "Some historical context URLs are prior news references. They were not used as discovery seeds; use_context=false and aliases=[] in the cold plan."
+  ]
+}

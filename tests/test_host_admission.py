@@ -85,6 +85,23 @@ class HostAdmissionQueueTests(unittest.TestCase):
         return dict(error_code='host_interval', request_attempted=False, admission_host='news.example',
                     retry_at=self.target, **extra)
 
+    def test_unrelated_host_query_is_excluded_before_reconstructing_its_period(self):
+        from peps.news_search import query_url
+        source = dict(id='publisher', kind='wordpress_api', search_kind='wordpress_api_search',
+                      url='https://other.example/wp-json/wp/v2/posts', allowed_hosts=['other.example'],
+                      enabled=True, terms_approved=True, search_max_records=50)
+        self.news.config_path.write_text(json.dumps({'sources': [*self.sources, source]}), encoding='utf-8')
+        payload = dict(source_id='publisher', query='"Persona Pública Ejemplo"',
+                       start='20000101000000', end='20261018000000')
+        payload['url'] = query_url(source, payload)
+        identifier = self.store.enqueue('news_query', payload, due=0)
+        original = self.row(identifier)
+        with patch.object(self.news, '_query_url', wraps=self.news._query_url) as reconstruct:
+            self.assertEqual(self.news._defer_host_pending(self.fetcher, self.result()), 0)
+        reconstruct.assert_not_called()
+        self.assertEqual(self.row(identifier), original)
+        self.assertTrue(self.store.verify_audit()['ok'])
+
     def enqueue(self, suffix, host='news.example', kind='news_feed', source_id='one', **values):
         payload = dict(source_id=source_id, url='https://' + host + '/' + suffix)
         if kind == 'news_article':
